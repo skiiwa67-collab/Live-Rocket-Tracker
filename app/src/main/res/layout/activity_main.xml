@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A0E14"
+    android:padding="20dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textColor="#FFFFFF"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.08"
+            android:paddingBottom="2dp"/>
+
+        <TextView
+            android:id="@+id/txt_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Command Center · next launch on your home screen"
+            android:textColor="#C8D8E8"
+            android:textSize="15sp"
+            android:paddingBottom="14dp"/>
+
+        <Button
+            android:id="@+id/btn_set_wallpaper"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="SET AS LIVE WALLPAPER"
+            android:textColor="#00D4FF"
+            android:backgroundTint="#003344"
+            android:layout_marginBottom="8dp"/>
+
+        <Button
+            android:id="@+id/btn_open_console"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="OPEN COMMAND CENTER"
+            android:textColor="#F2C14E"
+            android:backgroundTint="#2A2208"
+            android:layout_marginBottom="20dp"/>
+
+        <LinearLayout
+            android:id="@+id/section_telemetry"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="TRACKING"
+                android:textColor="#00D4FF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:paddingBottom="6dp"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Current follows the next real launch. Historic is demos and past flights — search for a RUD, a booster, a pad."
+                android:textColor="#8AA0B0"
+                android:textSize="13sp"
+                android:paddingBottom="8dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+                <Button
+                    android:id="@+id/btn_list_current"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="CURRENT"
+                    android:textColor="#90FFB0"
+                    android:backgroundTint="#1A3040"
+                    android:layout_marginEnd="4dp"/>
+                <Button
+                    android:id="@+id/btn_list_historical"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="HISTORIC"
+                    android:textColor="#90E0FF"
+                    android:backgroundTint="#1A1A22"
+                    android:layout_marginStart="4dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/row_horizon"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="UPCOMING WINDOW"
+                    android:textColor="#00D4FF"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:paddingBottom="6dp"/>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <Button
+                        android:id="@+id/btn_horizon_week"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1"
+                        android:text="1 WK"
+                        android:textSize="12sp"
+                        android:textColor="#90E0FF"
+                        android:backgroundTint="#1A1A22"
+                        android:layout_marginEnd="3dp"/>
+                    <Button
+                        android:id="@+id/btn_horizon_month"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1"
+                        android:text="1 MO"
+                        android:textSize="12sp"
+                        android:textColor="#90E0FF"
+                        android:backgroundTint="#1A3040"
+                        android:layout_marginEnd="3dp"
+                        android:layout_marginStart="3dp"/>
+                    <Button
+                        android:id="@+id/btn_horizon_6mo"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1"
+                        android:text="6 MO"
+                        android:textSize="12sp"
+                        android:textColor="#90E0FF"
+                        android:backgroundTint="#1A1A22"
+                        android:layout_marginStart="3dp"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/row_search"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="SEARCH HISTORIC"
+                    android:textColor="#00D4FF"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:paddingBottom="6dp"/>
+                <EditText
+                    android:id="@+id/et_historic_search"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:hint="Falcon, RUD, Electron, SLC-40…"
+                    android:textColor="#FFFFFF"
+                    android:textColorHint="#668899"
+                    android:background="#1A3040"
+                    android:paddingLeft="12dp"
+                    android:paddingRight="12dp"
+                    android:inputType="text"
+                    android:imeOptions="actionSearch"
+                    android:singleLine="true"
+                    android:maxLines="1"/>
+            </LinearLayout>
+
+            <Spinner
+                android:id="@+id/spinner_launch"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="#1A3040"
+                android:popupBackground="#0A1018"
+                android:layout_marginBottom="6dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp"
+                android:gravity="center_vertical">
+                <Button
+                    android:id="@+id/btn_refresh_launches"
+                    android:layout_width="wrap_content"
+                    android:layout_height="44dp"
+                    android:text="REFRESH"
+                    android:textSize="12sp"
+                    android:textColor="#90FFB0"
+                    android:backgroundTint="#1A3040"
+                    android:layout_marginEnd="8dp"/>
+                <TextView
+                    android:id="@+id/txt_launch_status"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Idle — not fetched yet"
+                    android:textColor="#668899"
+                    android:textSize="11sp"
+                    android:maxLines="3"/>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="FOLLOW"
+                android:textColor="#00D4FF"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:paddingBottom="6dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="10dp">
+                <Button
+                    android:id="@+id/btn_auto_on"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="AUTO ON"
+                    android:textColor="#90FFB0"
+                    android:backgroundTint="#1A3040"
+                    android:layout_marginEnd="4dp"/>
+                <Button
+                    android:id="@+id/btn_auto_off"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="MANUAL"
+                    android:textColor="#90E0FF"
+                    android:backgroundTint="#1A1A22"
+                    android:layout_marginStart="4dp"/>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="UNITS"
+                android:textColor="#00D4FF"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:paddingBottom="6dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <Button
+                    android:id="@+id/btn_units_mph"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="MPH (US)"
+                    android:textColor="#FFD080"
+                    android:backgroundTint="#1A3040"
+                    android:layout_marginEnd="4dp"/>
+                <Button
+                    android:id="@+id/btn_units_kmh"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="KM/H"
+                    android:textColor="#90E0FF"
+                    android:backgroundTint="#1A1A22"
+                    android:layout_marginStart="4dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="HOME SCREENS"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:paddingBottom="4dp"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="After first-run setup, the eight buttons live on the extra home page you made (usually page 2). Look-only fills stay behind widgets on the other pages."
+            android:textColor="#C8D8E8"
+            android:textSize="14sp"
+            android:paddingBottom="8dp"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+            <Button android:id="@+id/btn_page_minus" android:layout_width="64dp" android:layout_height="52dp" android:text="−" android:textSize="24sp" android:backgroundTint="#1A3040" android:textColor="#FFFFFF"/>
+            <TextView android:id="@+id/txt_page_index" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="COMMAND PAGE 2" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold"/>
+            <Button android:id="@+id/btn_page_plus" android:layout_width="64dp" android:layout_height="52dp" android:text="+" android:textSize="24sp" android:backgroundTint="#123048" android:textColor="#FFFFFF"/>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="HOW MANY HOME SCREENS"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:paddingBottom="4dp"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Count every swipe page, including the command page. The wallpaper also learns this when you swipe."
+            android:textColor="#C8D8E8"
+            android:textSize="14sp"
+            android:paddingBottom="8dp"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+            <Button android:id="@+id/btn_screens_minus" android:layout_width="64dp" android:layout_height="52dp" android:text="−" android:textSize="24sp" android:backgroundTint="#1A3040" android:textColor="#FFFFFF"/>
+            <TextView android:id="@+id/txt_screen_count" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="3 SCREENS" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold"/>
+            <Button android:id="@+id/btn_screens_plus" android:layout_width="64dp" android:layout_height="52dp" android:text="+" android:textSize="24sp" android:backgroundTint="#123048" android:textColor="#FFFFFF"/>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="DATA FILL PER PAGE"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:paddingBottom="4dp"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Each home screen gets its own look-only fill. AUTO follows the live HUD. LAUNCH is countdown and flight. PHONE is battery, CPU, memory."
+            android:textColor="#C8D8E8"
+            android:textSize="14sp"
+            android:paddingBottom="8dp"/>
+        <LinearLayout
+            android:id="@+id/page_fill_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/panel_console"
+            android:padding="12dp"
+            android:layout_marginBottom="20dp">
+
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="DISPLAY" android:textColor="#00D4FF" android:textSize="16sp" android:textStyle="bold" android:paddingBottom="4dp"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Lamp and HUD text. Same rockers as CMD on the wallpaper." android:textColor="#C8D8E8" android:textSize="14sp" android:paddingBottom="10dp"/>
+
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="HUD TEXT SIZE" android:textColor="#FFFFFF" android:textSize="15sp" android:textStyle="bold" android:paddingBottom="8dp"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="12dp">
+                <Button android:id="@+id/btn_text_sm" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:text="SM" android:textSize="18sp" android:textColor="#FFFFFF" android:backgroundTint="#1A1A22" android:layout_marginEnd="4dp"/>
+                <Button android:id="@+id/btn_text_md" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:text="MD" android:textSize="18sp" android:textColor="#FFFFFF" android:backgroundTint="#1A3040" android:layout_marginEnd="4dp"/>
+                <Button android:id="@+id/btn_text_lg" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:text="LG" android:textSize="18sp" android:textColor="#FFFFFF" android:backgroundTint="#1A1A22"/>
+            </LinearLayout>
+
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="LAMP" android:textColor="#FFFFFF" android:textSize="15sp" android:textStyle="bold" android:paddingBottom="8dp"/>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <Button android:id="@+id/btn_lamp_dim" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:text="DIM" android:textSize="16sp" android:textColor="#FFFFFF" android:backgroundTint="#1A1A22" android:layout_marginEnd="4dp"/>
+                <Button android:id="@+id/btn_lamp_norm" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:text="NORM" android:textSize="16sp" android:textColor="#FFFFFF" android:backgroundTint="#1A3040" android:layout_marginEnd="4dp"/>
+                <Button android:id="@+id/btn_lamp_bright" android:layout_width="0dp" android:layout_height="52dp" android:layout_weight="1" android:text="BRIGHT" android:textSize="16sp" android:textColor="#FFFFFF" android:backgroundTint="#1A1A22"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="CMD double-tap on the wallpaper opens Settings. ENTER CONSOLE is the full MCC."
+            android:textColor="#445566"
+            android:textSize="13sp"
+            android:paddingBottom="24dp"/>
+
+    </LinearLayout>
+</ScrollView>

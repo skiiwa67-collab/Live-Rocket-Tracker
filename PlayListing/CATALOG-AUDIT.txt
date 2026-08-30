@@ -1,0 +1,434 @@
+CCOS LIVE ROCKET TRACKER — VEHICLE CATALOG AUDIT
+================================================
+Source: user's machine only. No clone. No edits.
+  C:\Users\skiiw\AndroidStudioProjects\RetroCommandCenter
+  app\src\main\java\com\ccos\retro\event\VehicleCatalog.kt
+  app\src\main\java\com\ccos\retro\event\FlightEvents.kt
+  app\src\main\java\com\ccos\retro\ui\CommandConsoleView.kt
+  app\src\main\java\com\ccos\retro\wallpaper\RetroCommandWallpaperService.kt
+  app\src\main\java\com\ccos\retro\geo\PadBook.kt
+  app\src\main\java\com\ccos\retro\data\LaunchModels.kt
+VectorRocketModule.kt is the idle-game Vector module, not this catalog.
+Date of read: 2026-08-20.
+
+Nothing below is invented. If a field is not on VehicleSpec, it is marked unknown.
+
+
+0. HOW DRAWINGS ARE GENERATED
+-----------------------------
+One data book, two paint copies.
+
+  VehicleCatalog.spec(launch) token-matches rocket/mission/provider.
+  First match wins. More specific tokens (falcon heavy, long march 5) are first.
+  Silhouette key is VehicleCatalog.drawFamily(launch), NOT family
+    (catalog comment still says family; zq3 is the counterexample: family=zq, drawFamily=f9).
+  Unmatched live rockets return private GENERIC (verified=false) and paint
+    drawGenericVehicle plus a NEW VEHICLE · DATA UPDATE REQUIRED banner.
+
+  CommandConsoleView.drawVehicle when (drawFamily):
+    "f9","zq"  -> drawFalconVehicle(..., cores=1)
+    "fh"       -> drawFalconVehicle(..., cores=3)
+    "sls"      -> drawSlsVehicle
+    "soyuz"    -> drawSoyuzVehicle
+    "starship" -> drawStarshipVehicle
+    "glenn"    -> drawGlennVehicle
+    "electron" -> drawElectronVehicle
+    "ariane"   -> drawArianeVehicle
+    "lm5"      -> drawLmVehicle(..., wide=true)
+    "lm"       -> drawLmVehicle(..., wide=false)
+    else       -> drawGenericVehicle   <<< isro, h3, generic, anything unmatched
+
+  RetroCommandWallpaperService.drawVehicle when (drawFamily):
+    Same families, same drawers. Order differs (electron before glenn).
+    Wallpaper sls/generic do not take a LaunchSnapshot; they use telemetryModule.tracked.
+    Wallpaper Glenn / Starship / Electron are NOT pixel-identical twins (see diffs).
+
+Shared primitives (both surfaces):
+  drawOgive     quadratic nose/fairing. Control Y is (base + tip) * 0.45f
+                That is a SUM, not a lerp. Screen-Y dependent. Can read as
+                dual-peak / V-notch / "two nipples" when the stack sits low.
+                Used by: Falcon fairing, SLS SRB, Soyuz shroud, Starship ship,
+                Glenn S2, Electron S2, Ariane S2, LM/LM5 S2, Generic S2.
+  drawRoundRect stage tubes
+  drawVehicleBell  trapezoid + oval exit (Ariane / LM bells)
+  drawCircle / engineDotLayout  engine dots, not noses
+  drawOval      SLS upper/Orion payload cap (the leftover circle nose)
+  drawStageTanks  LOX / fuel bars inside the tube
+  drawBookGap   NEW VEHICLE banner when verified=false
+
+There is no per-vehicle SVG/path asset. Every outline is code.
+
+Circle noses are NOT used for every vehicle. Only SLS Orion is a true
+drawOval fairing. Everything else that looks "pointy-wrong" is drawOgive
+with the broken control-Y.
+
+Wallpaper-only extras:
+  Starship: plasma tile wash + four purple flap-glow circles when hot.
+            No Pez deploy (console has drawPezRelease).
+  Glenn: all-navy, no landing fins, 7 engines in a ring, 1 S2 flame,
+         ogive halfW = w*1.05 on a body of w*0.85 (mushroom hat).
+  Electron: thinner tube (h*0.038 vs console h*0.048).
+
+
+1. SWITCH vs BOOK (every catalog row)
+-------------------------------------
+id        family   drawFamily   drawer (MCC + wallpaper)          timeline
+starship  starship starship     drawStarshipVehicle               starship() / starshipFlight13()
+fh        fh       fh           drawFalconVehicle cores=3         falcon()
+f9        f9       f9           drawFalconVehicle cores=1         falcon()
+glenn     glenn    glenn        drawGlennVehicle                  oneWay()          TIMELINE GAP
+sls       sls      sls          drawSlsVehicle                    sls()
+soyuz     soyuz    soyuz        drawSoyuzVehicle                  soyuz()
+electron  electron electron     drawElectronVehicle               electron()
+ariane    ariane   ariane       drawArianeVehicle                 oneWay()          TIMELINE GAP
+lm5       lm5      lm5          drawLmVehicle wide=true           oneWay()          TIMELINE GAP
+lm        lm       lm           drawLmVehicle wide=false          oneWay()          TIMELINE GAP
+isro      isro     isro         FALLTHROUGH drawGenericVehicle    oneWay()          SWITCH GAP
+zq3       zq       f9           drawFalconVehicle cores=1         zhuque()
+h3        h3       h3           FALLTHROUGH drawGenericVehicle    oneWay()          SWITCH GAP
+GENERIC   generic  generic      drawGenericVehicle + book-gap     unknownVehicle()
+            (private, not in VehicleCatalog.all)
+
+Families in the switch: f9, zq, fh, sls, soyuz, starship, glenn, electron, ariane, lm5, lm
+Families in the book with no case: isro, h3
+DrawFamily "zq" is listed in the switch but no row uses it (zq3 overrides to f9).
+
+
+2. TOTALS
+---------
+VehicleCatalog.all named rows: 13
+Private GENERIC fallback:      1
+Switch cases with a drawer:    10 keys (f9/zq share one)
+
+REAL outline (dedicated drawer, named parts, recognizable family):
+  starship, fh, f9, glenn, sls, soyuz, electron, ariane, lm5, zq3
+  = 10
+  (zq3 is a borrowed F9 outline on purpose. sls/starship still have shape bugs.)
+
+PLACEHOLDER / stub / fallthrough:
+  isro   (verified=true, no drawer)
+  h3     (verified=true, no drawer)
+  lm     (verified=true, drawer exists, numbers are almost all —)
+  GENERIC (verified=false, honest book-gap)
+  = 4
+
+BROKEN-SHAPE (obvious wrong geometry on a store screenshot):
+  starship STG2 dual-peak ogive
+  sls Orion drawOval circle
+  isro generic 2-fin tube
+  h3 generic 2-fin tube
+  = 4 P0
+  P1 class of the same bug: every drawOgive; wallpaper Glenn mushroom; FH flat side-core tops
+
+Counts the parent asked for:
+  real / placeholder / broken-shape  =  10 / 4 / 4
+  (broken-shape overlaps real: starship and sls are real drawers with broken noses)
+
+
+3. P0 DRAWING BUGS
+------------------
+P0-1  STARSHIP STG2 NOSE  (drawStarshipVehicle, both surfaces)
+      Ship cap is drawOgive(cx, top+sH*0.12, top, sW).
+      Shared (base+tip)*0.45 control-Y. Isolated stage-2 view makes a
+      dual-peak / V-notch / "two nipples" stainless nose.
+      Forward flaps are four rectangles on the shoulder of that ogive.
+      Ship spec is 6 Raptors; paint shows one flame, no 3 SL + 3 vac bells.
+      Console reentry card (drawReentryCard) is a separate belly-flop path
+      with real flaps — the stack silhouette is the broken one.
+
+P0-2  SLS CIRCLE NOSES  (drawSlsVehicle, both surfaces)
+      SRB: already drawOgive. Console comment: "ogive nose cap, not a grey disc."
+      Orion / payload cap: still canvas.drawOval(...) plus three LAS lines.
+      That is the leftover circle nose. Core paints one rs25 flame, not 4 RS-25.
+
+P0-3  H3 FALLTHROUGH  (id=h3, verified=true)
+      In the book with LE-9 / LE-5B numbers. drawFamily="h3" is not in the
+      switch. Paints drawGenericVehicle: grey tube, two delta fins, two
+      engine circles, ogive. Looks like a cartoon, not Tanegashima hardware.
+      Tokens also eat H-II / H-2.
+
+P0-4  ISRO LUMP FALLTHROUGH  (id=isro, verified=true)
+      Tokens pslv + gslv + lvm3, one row, family="isro", no switch case.
+      Same generic 2-fin tube as H3. LVM3 (S200 solids) would look ridiculous.
+
+Same class, not a one-rocket fix:
+  Ban drawOval/drawCircle as a vehicle nose.
+  Fix drawOgive control-Y to a lerp (or a named blunt-fairing helper).
+  A verified VehicleSpec must have a drawer on BOTH surfaces plus a timeline.
+  Do not ship verified=true with a generic tube.
+
+
+4. EACH VEHICLE (every row in VehicleCatalog.all, then GENERIC)
+---------------------------------------------------------------
+
+--- starship ---
+1. Name / id:        Starship / Super Heavy    id=starship
+                     family=starship  drawFamily=starship  tokens=starship, super heavy
+2. Country / operator: unknown on VehicleSpec. No country field.
+                     Runtime LaunchSnapshot.isSpaceX() if provider contains SpaceX.
+                     Engines named RAPTOR. Not stored as USA / SpaceX on the row.
+3. Drawing status:   REAL outline, named parts (booster tube, 33-dot 3/10/20 rings,
+                     grid fins, ship tube, 4 rect flaps, ogive). NOT a placeholder.
+                     BROKEN ship nose: drawOgive dual-peak class. Flaps are boxes.
+4. Data status:      real public-ish facts. s1=33 s2=6. recoverable=true methalox=true.
+                     Thrust / isp / mix / chamber / dry / prop filled (some ~).
+                     Profile: dedicated starship() + starshipFlight13().
+                     Pad: not on spec. PadBook alias boca chica -> starbase.
+5. Drawing bugs:     STG2 dual-peak ogive (P0). Rect flaps on the ogive shoulder.
+                     6 ship engines not drawn. Wallpaper purple flap-glow circles.
+                     No hot-stage ring. Ridiculous if the store shot is isolated STG2.
+
+--- fh ---
+1. Name / id:        Falcon Heavy    id=fh  family=fh  drawFamily=fh  tokens=falcon heavy
+2. Country / operator: unknown on VehicleSpec. Implied SpaceX only via runtime provider.
+3. Drawing status:   REAL-ish. drawFalconVehicle cores=3. White cores, 9 dots each,
+                     legs, grid fins, ogive fairing.
+4. Data status:      real public. s1=27 s2=1 MERLIN 1D. recoverable=true.
+                     Profile: falcon() — same tape as F9, no side-booster events.
+                     Pad: not on spec.
+5. Drawing bugs:     Side cores are flat-topped when stacked (no side-booster ogives).
+                     27 engines are 3x9 circles, not bells. Inherits drawOgive fairing.
+                     Flagged per request: recognizable three-stick, missing side noses.
+
+--- f9 ---
+1. Name / id:        Falcon 9    id=f9  family=f9  drawFamily=f9  tokens=falcon
+                     (token "falcon" would also hit Heavy if fh were not listed first)
+2. Country / operator: unknown on VehicleSpec.
+3. Drawing status:   REAL. Best silhouette in the book. Named parts: white core,
+                     black interstage, octaweb 9, grid fins, legs, ogive, vac Merlin.
+4. Data status:      real public. s1=9 s2=1. recoverable=true. Profile: falcon()
+                     with Starlink deploy time special. Landing times EST family tape.
+                     Pad: not on spec.
+5. Drawing bugs:     Fairing uses shared drawOgive (can dual-peak at some Y).
+                     Legs are line pairs, not four legs. No Octaweb copper bells.
+
+--- glenn ---
+1. Name / id:        New Glenn    id=glenn  family=glenn  drawFamily=glenn  tokens=new glenn
+2. Country / operator: unknown on VehicleSpec. nerdNote "The hat has a kick stage."
+                     Runtime isBlueOrigin() matches provider or rocket name.
+3. Drawing status:   REAL-ish dedicated drawer. Console: silver tube, navy band,
+                     two navy triangle fins, 7 engineDotLayout dots, 2 S2 flames, ogive.
+                     Wallpaper: worse — navy tube, no fins, ring of 7, 1 S2 flame,
+                     ogive wider than the stage (mushroom).
+4. Data status:      real public-ish. s1=7 s2=2  BE-4 / BE-3U. recoverable=true methalox.
+                     Profile: MISSING — falls to oneWay(). Pad: not on spec.
+5. Drawing bugs:     "Hat" is a generic ogive, not New Glenn's blunt fairing.
+                     No landing legs. Wallpaper missing fins + mushroom ogive.
+                     Flagged per request. Store risk on wallpaper STG2.
+
+--- sls ---
+1. Name / id:        SLS / Space Launch System / Artemis    id=sls
+                     family=sls  drawFamily=sls  tokens=sls, space launch system, artemis
+2. Country / operator: unknown on VehicleSpec. Runtime isNasa() if provider NASA/ULA.
+3. Drawing status:   REAL body (orange core + 2 white SRB + ogive SRB caps).
+                     BROKEN upper: drawOval Orion + 3-line LAS. Circle nose.
+4. Data status:      real public-ish. s1=4 s2=1  RS-25 / RL10. recoverable=false.
+                     Profile: sls() dedicated. Pad: not on spec.
+5. Drawing bugs:     P0 oval payload. One core flame not four RS-25. No engine bells.
+                     Comment proves they already knew SRB discs were wrong; Orion
+                     was not converted in the same pass.
+
+--- soyuz ---
+1. Name / id:        Soyuz    id=soyuz  family=soyuz  drawFamily=soyuz  tokens=soyuz
+2. Country / operator: unknown on VehicleSpec. nerdNote "Korolev cross."
+                     Runtime isRussian() matches Roscosmos / Soyuz / Proton / Angara.
+3. Drawing status:   REAL-ish. Four tapered strap-ons + core + ogive shroud + rust band.
+4. Data status:      real public-ish. s1=20 s2=4  RD-107 / RD-0110. recoverable=false.
+                     Profile: soyuz() dedicated (no payload-deploy event).
+                     Pad: not on spec.
+5. Drawing bugs:     20 engines in data, 5 flames in paint. No launch-escape tower.
+                     Strap-ons are two side pairs, not a true X. Upper is drawOgive.
+
+--- electron ---
+1. Name / id:        Electron    id=electron  family=electron  drawFamily=electron  tokens=electron
+2. Country / operator: unknown on VehicleSpec. Runtime isRocketLab().
+3. Drawing status:   REAL-ish simple. Skinny carbon tube, 9 dots, ogive. Looks like a stick.
+4. Data status:      mostly real. s1=9 s2=1 RUTHERFORD. chamberBar="—". recoverable=false.
+                     Profile: electron() dedicated. Pad: not on spec.
+5. Drawing bugs:     No kick stage, no battery look, no recovery hardware.
+                     Flagged per request: acceptable small silhouette, not store-toxic.
+                     Wallpaper thinner than console.
+
+--- ariane ---
+1. Name / id:        Ariane    id=ariane  family=ariane  drawFamily=ariane  tokens=ariane
+                     Token matches Ariane 5 and Ariane 6. No A62/A64 split.
+2. Country / operator: unknown on VehicleSpec. nerdNote "Kourou." Runtime isEsa().
+3. Drawing status:   REAL-ish. Black core + 2 white SRB + ogive + copper bells.
+                     Reads as Ariane 6 A62, not A64, not Ariane 5.
+4. Data status:      real-ish numbers. s1=4 s2=1 VULCAIN / VINCI. recoverable=false.
+                     Profile: MISSING — oneWay(). Pad: not on spec.
+                     PadBook alias guiana -> kourou.
+5. Drawing bugs:     Always 2 solids (A64 is 4). Spec 4 S1 engines vs 1 Vulcain + 2 SRB
+                     in paint. Flagged per request: lump, not a circle-nose, but wrong
+                     for half the Ariane flights.
+
+--- lm5 ---
+1. Name / id:        Long March 5    id=lm5  family=lm5  drawFamily=lm5
+                     tokens=long march 5, cz-5, cz5
+2. Country / operator: unknown on VehicleSpec. nerdNote "China's heavy."
+                     Runtime isChinese() matches CASC / Long March / Zhuque / LandSpace.
+3. Drawing status:   REAL-ish. drawLmVehicle wide: fat white core + 4 strap-ons
+                     (2 bells each) + 2 core bells + ogive.
+4. Data status:      mostly real thrust/isp. chamberBar="—". s1=10 s2=2 YF-77 / YF-75D.
+                     recoverable=false. Profile: MISSING — oneWay(). Pad: not on spec.
+5. Drawing bugs:     All white (no hydrolox-core vs kerosene-booster split).
+                     Flames use merlin / rs25 kinds. Four boosters sit as two side pairs.
+
+--- lm ---
+1. Name / id:        Long March (catch-all)    id=lm  family=lm  drawFamily=lm
+                     tokens=long march, cz-
+2. Country / operator: unknown on VehicleSpec. nerdNote "Hypergolic workhorse."
+3. Drawing status:   GENERIC-LM. drawLmVehicle wide=false: skinny white core +
+                     2 strap-ons + 2 core bells + ogive. Not CZ-2F, not CZ-7, not CZ-8.
+4. Data status:      STUB. s1=4 s2=1 YF-100 / YF-20. thrust/isp/mix/chamber/dry/prop
+                     all "—". verified=true anyway. nerdNote: "Add a row when the
+                     specific CZ variant matters." Profile: oneWay(). Pad: not on spec.
+5. Drawing bugs:     Flagged per request: Long March generic. One shape for a family.
+                     verified=true with empty numbers is a data lie.
+                     Store-ridiculous if the live flight is CZ-6/7/8/11/12.
+
+--- isro ---
+1. Name / id:        ISRO lump    id=isro  family=isro  drawFamily=isro
+                     tokens=pslv, gslv, lvm3
+2. Country / operator: unknown on VehicleSpec. nerdNote "Sriharikota special."
+                     Runtime isIsro(). PadBook alias sriharikota -> satish dhawan.
+3. Drawing status:   PLACEHOLDER. FALLTHROUGH drawGenericVehicle.
+                     Grey tube, two delta fins, two engine circles, ogive.
+                     Banner does NOT show (verified=true).
+4. Data status:      LUMP / incomplete. s1=6 s2=1  S139 / VIKAS / CE-20.
+                     s1Thrust="—" mix="—" chamber="—" dry="—" prop="—".
+                     s2Thrust 186 kN / isp 443 s filled (CE-20-ish).
+                     Profile: oneWay() — not unknownVehicle(), because verified=true.
+                     Pad: not on spec.
+5. Drawing bugs:     P0. Three different public rockets, one generic tube.
+                     LVM3 on a store screenshot would look ridiculous.
+
+--- zq3 ---
+1. Name / id:        Zhuque-3    id=zq3  family=zq  drawFamily=f9
+                     tokens=zhuque-3, zhuque 3, zq-3, zq3
+2. Country / operator: unknown on VehicleSpec. nerdNote Minqin / stainless methalox.
+                     Runtime isLandSpace() / isChinese().
+3. Drawing status:   REAL borrowed outline. Hits Falcon drawer on purpose.
+                     Catalog comment: "Zhuque-3 is Falcon-shaped, not Long March."
+                     "Looks like Falcon 9 because the physics is the same."
+4. Data status:      mostly real. s1=9 s2=1 TQ-12A / TQ-15A. recoverable=true methalox.
+                     isp/mix/chamber/dry="—". s1Prop="~550 t GROSS".
+                     Profile: zhuque() (sep 137s, Minqin ~T+8). Pad: not on spec.
+5. Drawing bugs:     Identity, not geometry: stainless methalox painted as white RP
+                     Falcon with Merlin flames. Acceptable per the book comment.
+                     Other Zhuque (not 3) token-miss → GENERIC.
+
+--- h3 ---
+1. Name / id:        H3 / H-II lump    id=h3  family=h3  drawFamily=h3
+                     tokens=h3, h-ii, h-2
+2. Country / operator: unknown on VehicleSpec. nerdNote "Tanegashima."
+                     Runtime isJaxa() matches JAXA / MHI / H-II / H3 / Epsilon.
+3. Drawing status:   PLACEHOLDER. FALLTHROUGH drawGenericVehicle.
+                     Same cartoon 2-fin tube as ISRO. No SRB-3s. No LE-9 pair.
+                     Banner does NOT show (verified=true).
+4. Data status:      partial public. s1=2 s2=1 LE-9 / LE-5B. thrust/isp/mix filled.
+                     chamber/dry/prop="—". recoverable=false.
+                     Profile: oneWay(). Pad: not on spec.
+                     Tokens also match H-IIA / H-IIB.
+5. Drawing bugs:     P0. In the book, no drawer. Store-ridiculous.
+                     Flagged per request.
+
+--- GENERIC (private, not in all) ---
+1. Name / id:        generic    family=generic  drawFamily=generic  tokens=empty
+2. Country / operator: unknown
+3. Drawing status:   PLACEHOLDER. drawGenericVehicle + drawBookGap
+                     "NEW VEHICLE · DATA UPDATE REQUIRED"
+                     "WILL NOT INVENT DRAWING OR NUMBERS"
+4. Data status:      honest stub. engines 9/1 named UNKNOWN. all "—". verified=false.
+                     Profile: unknownVehicle() (liftoff + book-gap event).
+                     Recovery: UNKNOWN · DATA UPDATE REQUIRED
+5. Drawing bugs:     Cartoon tube, but the banner is the point. Keep this path.
+                     Anything not in the 13 rows lands here (Vulcan, Atlas, Neutron,
+                     Angara, Proton, Vega, Firefly, Kuaizhou, Nuri, New Shepard,
+                     Epsilon, …). LaunchModels already has isUla / isJaxa helpers
+                     for some of those names; they are not catalog rows.
+
+
+5. DATA / PROFILE / PAD GAPS (book-wide)
+----------------------------------------
+VehicleSpec has no country, no operator, no pad, no stage count beyond s1/s2 engines.
+Pad is always LaunchSnapshot.pad / PadBook (ne_pads.bin). Not a vehicle field.
+
+Missing dedicated timeline (else -> oneWay EST tape):
+  glenn, ariane, lm5, lm, isro, h3
+
+Dashes / incomplete numbers on verified=true rows:
+  electron  chamberBar
+  zq3       isp, mix, chamber, dry
+  lm5       chamber
+  lm        thrust, isp, mix, chamber, dry, prop   (almost empty)
+  isro      s1Thrust, mix, chamber, dry, prop
+  h3        chamber, dry, prop
+
+verified=true with empty numbers: lm, and isro/h3 with no drawer.
+That is the opposite of GENERIC's honest verified=false.
+
+
+6. STARSHIP AND SLS (the known pair, as a class)
+------------------------------------------------
+Starship STG2 dual-point nose and SLS circle noses are the same class of bug:
+  a shared primitive used as a fairing without a named real outline.
+
+  Starship ship: drawOgive, control-Y = (base+tip)*0.45, flaps as rects on the cap.
+  SLS Orion:     drawOval leftover after SRBs were moved to drawOgive.
+
+Fixing only those two leaves Glenn wallpaper mushroom, every other ogive, and
+the H3/ISRO fallthrough tubes. Sweep every drawer. Both surfaces.
+
+
+7. STORE-SCREENSHOT RIDICULOUS
+------------------------------
+Would look fake on a Play listing shot:
+  1. Isolated Starship ship with dual-peak / two-nipple nose
+  2. SLS with a white egg for Orion
+  3. H3 as a 2-fin generic tube (and it is a verified book row)
+  4. LVM3 / PSLV / GSLV as that same 2-fin tube
+  5. Wallpaper New Glenn mushroom hat, no fins
+  6. Any non-CZ-5 Long March as a skinny 2-booster white stick
+  7. Falcon Heavy stacked with flat-top side cores (milder)
+
+Would look fine:
+  Falcon 9, Zhuque-3-as-F9, Soyuz stack, Electron stick, Ariane A62-ish, LM-5-ish
+
+
+8. TOP SHAPES TO DRAW NEXT
+--------------------------
+Chris already has these as stubs / broken drawers. Public outlines exist.
+Do not invent. Do not add new rockets until the switch gaps close.
+
+  1. H3          in the book, verified, NO drawer. LE-9 + SRB-3 is public.
+  2. ISRO split  tokens already name PSLV, GSLV, LVM3. Three shapes, three counts.
+  3. Long March  verified=true, numbers empty. Split or mark unverified.
+  4. Starship    ship ogive + flap placement (drawer exists, shape is wrong).
+  5. SLS Orion   replace drawOval (drawer exists, cap is wrong).
+  6. New Glenn   blunt hat + fins on BOTH surfaces (drawer exists, wallpaper is worse).
+
+Then, only as a spec + drawer(both) + timeline triple:
+  anything currently honest-GENERIC (Vulcan, Neutron, Vega, …).
+
+
+9. CONSOLE vs WALLPAPER DIFFS (twins that drifted)
+--------------------------------------------------
+Same switch keys. Not the same paint.
+  Glenn     console has fins + 2 S2 flames + silver; wallpaper navy, no fins, 1 flame, wide ogive
+  Starship  wallpaper plasma/tile + purple flap circles; console has Pez, no tile wash
+  SLS       wallpaper drawer drops launch, uses telemetryModule.tracked ?: return
+  Generic   wallpaper drops launch; methalox/flame kind always RP/merlin
+  Electron  different tube width
+Any shape fix has to land in both files or the wallpaper listing shot will still be wrong.
+
+
+10. RULE FOR THE NEXT PASS
+--------------------------
+Never fix one rocket.
+  Shape law: no circle noses, no dual-peak ogives. Sweep every drawer, both surfaces.
+  Switch law: verified=true requires a drawer case on MCC and wallpaper plus a timeline.
+  Data law:  verified=true only when the public numbers are actually filled.
+  GENERIC + NEW VEHICLE · DATA UPDATE REQUIRED is correct. Keep it. Do not replace
+  it with a circle.
+

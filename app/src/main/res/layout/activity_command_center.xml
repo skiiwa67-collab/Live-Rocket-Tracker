@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/mcc_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#070A0E">
+
+<LinearLayout
+    android:id="@+id/chrome"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#070A0E">
+
+    <LinearLayout
+        android:id="@+id/top_chrome"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#070A0E">
+
+        <LinearLayout
+            android:id="@+id/util_row"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:orientation="horizontal"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:gravity="center_vertical"
+            android:background="#070A0E">
+
+            <Button
+                android:id="@+id/btn_exit"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:minWidth="88dp"
+                android:text="EXIT"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#5A1016"
+                android:textAllCaps="true"/>
+
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"/>
+
+            <Button
+                android:id="@+id/btn_vid"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:minWidth="128dp"
+                android:layout_marginEnd="8dp"
+                android:text="○  VID"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#8AA0B0"
+                android:backgroundTint="#0C1820"
+                android:textAllCaps="false"/>
+
+            <Button
+                android:id="@+id/btn_analog"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:minWidth="72dp"
+                android:text="DIG"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#8AA0B0"
+                android:backgroundTint="#0C1820"
+                android:textAllCaps="true"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#2A3A44"/>
+
+        <LinearLayout
+            android:id="@+id/event_row"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:orientation="horizontal"
+            android:paddingLeft="8dp"
+            android:paddingRight="8dp"
+            android:gravity="center_vertical"
+            android:background="#070A0E">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="EVENT"
+                android:textColor="#8AA0B0"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:paddingEnd="8dp"/>
+
+            <Button
+                android:id="@+id/btn_event_prev"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:text="-  PREV"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#101C28"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                android:textAllCaps="false"/>
+
+            <Button
+                android:id="@+id/btn_event_next"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_weight="1"
+                android:text="+  NEXT"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#101C28"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                android:textAllCaps="false"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#2A3A44"/>
+
+        <LinearLayout
+            android:id="@+id/tab_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="6dp"
+            android:background="#070A0E">
+
+            <TextView
+                android:id="@+id/tab_tel"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:layout_margin="3dp"
+                android:gravity="center"
+                android:text="TEL"
+                android:textColor="#00D4FF"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:includeFontPadding="false"
+                android:autoSizeTextType="uniform"
+                android:autoSizeMinTextSize="8sp"
+                android:autoSizeMaxTextSize="11sp"
+                android:clickable="true"
+                android:focusable="true"/>
+
+            <TextView
+                android:id="@+id/tab_traj"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:layout_margin="3dp"
+                android:gravity="center"
+                android:text="TRAJ"
+                android:textColor="#8AA0B0"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:includeFontPadding="false"
+                android:autoSizeTextType="uniform"
+                android:autoSizeMinTextSize="8sp"
+                android:autoSizeMaxTextSize="11sp"
+                android:clickable="true"
+                android:focusable="true"/>
+
+            <TextView
+                android:id="@+id/tab_stg1"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:layout_margin="3dp"
+                android:gravity="center"
+                android:text="STG1"
+                android:textColor="#8AA0B0"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:includeFontPadding="false"
+                android:autoSizeTextType="uniform"
+                android:autoSizeMinTextSize="8sp"
+                android:autoSizeMaxTextSize="11sp"
+                android:clickable="true"
+                android:focusable="true"/>
+
+            <TextView
+                android:id="@+id/tab_stg2"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:layout_margin="3dp"
+                android:gravity="center"
+                android:text="STG2"
+                android:textColor="#8AA0B0"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:includeFontPadding="false"
+                android:autoSizeTextType="uniform"
+                android:autoSizeMinTextSize="8sp"
+                android:autoSizeMaxTextSize="11sp"
+                android:clickable="true"
+                android:focusable="true"/>
+
+            <TextView
+                android:id="@+id/tab_eng"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:layout_margin="3dp"
+                android:gravity="center"
+                android:text="ENG"
+                android:textColor="#8AA0B0"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:includeFontPadding="false"
+                android:autoSizeTextType="uniform"
+                android:autoSizeMinTextSize="8sp"
+                android:autoSizeMaxTextSize="11sp"
+                android:clickable="true"
+                android:focusable="true"/>
+
+            <TextView
+                android:id="@+id/tab_prop"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:layout_margin="3dp"
+                android:gravity="center"
+                android:text="PROP"
+                android:textColor="#8AA0B0"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:includeFontPadding="false"
+                android:autoSizeTextType="uniform"
+                android:autoSizeMinTextSize="8sp"
+                android:autoSizeMaxTextSize="11sp"
+                android:clickable="true"
+                android:focusable="true"/>
+
+            <TextView
+                android:id="@+id/tab_pad"
+                android:layout_width="0dp"
+                android:layout_height="58dp"
+                android:layout_weight="1"
+                android:layout_margin="3dp"
+                android:gravity="center"
+                android:text="MISS"
+                android:textColor="#8AA0B0"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:includeFontPadding="false"
+                android:autoSizeTextType="uniform"
+                android:autoSizeMinTextSize="8sp"
+                android:autoSizeMaxTextSize="11sp"
+                android:clickable="true"
+                android:focusable="true"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#1A88AA"/>
+    </LinearLayout>
+
+    <com.ccos.retro.ui.EventBannerView
+        android:id="@+id/event_banner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"/>
+
+    <com.ccos.retro.ui.CommandConsoleView
+        android:id="@+id/console_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+</LinearLayout>
+
+<com.ccos.retro.ui.VideoFeedOverlay
+    android:id="@+id/video_overlay"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"/>
+
+</FrameLayout>

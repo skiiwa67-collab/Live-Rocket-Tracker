@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Live Rocket Tracker</string>
+    <string name="wallpaper_description">Live Rocket Tracker wallpaper. Home HUD plus full Command Center.</string>
+    <string name="set_wallpaper">Set as Live Wallpaper</string>
+    <string name="command_desk_label">Command Desk</string>
+    <string name="command_desk_desc">Empty desk page for the eight HUD buttons. Wallpaper shows through.</string>
+</resources>

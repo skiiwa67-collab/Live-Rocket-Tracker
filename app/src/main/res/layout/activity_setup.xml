@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A0E14"
+    android:fillViewport="true"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textColor="#FFFFFF"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.06"
+            android:gravity="center"
+            android:paddingTop="36dp"
+            android:paddingBottom="8dp"/>
+
+        <LinearLayout
+            android:id="@+id/panel_ask"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Needs one more home screen page. Create a blank page now."
+                android:textColor="#C8D8E8"
+                android:textSize="18sp"
+                android:lineSpacingExtra="4dp"
+                android:gravity="center"
+                android:paddingTop="20dp"
+                android:paddingBottom="32dp"/>
+
+            <Button
+                android:id="@+id/btn_yes"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="YES"
+                android:textColor="#00D4FF"
+                android:backgroundTint="#003344"
+                android:layout_marginBottom="10dp"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/panel_guide"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Long-press the home screen, swipe right to the + button, tap + for a new page. The HUD buttons show up on their own."
+                android:textColor="#C8D8E8"
+                android:textSize="18sp"
+                android:lineSpacingExtra="4dp"
+                android:gravity="center"
+                android:paddingTop="20dp"
+                android:paddingBottom="32dp"/>
+
+            <Button
+                android:id="@+id/btn_done"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="GOT IT"
+                android:textColor="#00D4FF"
+                android:backgroundTint="#003344"/>
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

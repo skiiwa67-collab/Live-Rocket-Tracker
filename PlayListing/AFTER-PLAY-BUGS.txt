@@ -1,0 +1,73 @@
+AFTER PLAY PUSH — FULL PRODUCT SWEEP
+====================================
+Rule: never fix one rocket. Any shape bug is a book bug.
+Ship 1.0.3 first. Then this whole list. One pass.
+
+THE ACTUAL BUG CLASS
+  Drawings are a when(drawFamily) switch copied in MCC and wallpaper.
+  If a VehicleSpec is verified=true but its family is not in that switch,
+  it silently becomes a generic tube. That is how H3 and ISRO look fake.
+  If a drawer still calls drawOval for a fairing, you get a circle nose.
+  Shared drawOgive control-Y is (base + tip) * 0.45, a SUM not a lerp.
+  When the stack sits low on the screen the curves overshoot the tip.
+  Dual-peak / V-notch / nipples on ANY vehicle that uses it.
+  Starship isolated STG2 is the worst. Same helper is Falcon fairing, Soyuz shroud,
+  Glenn, Electron, Ariane, LM, Generic.
+  SLS Orion is a leftover drawOval. Wallpaper Glenn drifted (no fins, mushroom hat).
+  Fix the primitive. Not one vehicle.
+
+CATALOG (13 named + GENERIC)
+  id        drawer              data              verdict
+  starship  drawStarship        real              P0 shape: STG2 nose/flaps read as two peaks
+  f9        drawFalcon          real              ok
+  fh        drawFalcon x3       real              ok
+  zq3       falcon (drawFamily) mostly real       ok to share F9 physics. keep
+  glenn     drawGlenn           real              ok
+  sls       drawSls             real              P0 shape: payload cap is still drawOval (circle). SRBs already ogive.
+  soyuz     drawSoyuz           real              ok
+  electron  drawElectron        chamber is —      fill public Rutherford number or leave —
+  ariane    drawAriane          real              timeline falls to generic oneWay
+  lm5       drawLm heavy        some —            ok shape, finish numbers
+  lm        drawLm light        mostly —          verified=true with empty thrust/isp/dry. lie. either fill or verified=false
+  isro      FALLTHROUGH generic lumped PSLV/GSLV/LVM3   P0: three different rockets, one stub, generic tube
+  h3        FALLTHROUGH generic H3 and H-II same tokens P0: in the book, no drawer. generic tube
+  generic   generic + UPDATE    honest            keep. this is the good placeholder.
+
+SWITCH GAPS (MCC + wallpaper must match)
+  In the book, missing from when():  isro, h3
+  Timeline has specials for: starship, f9/fh, sls, soyuz, electron, zq
+  Timeline else -> oneWay: glenn, ariane, lm5, lm, h3, isro
+  Add a family only as a triple: VehicleSpec + drawer on BOTH surfaces + timeline.
+  verified=true only when the public numbers are actually filled.
+
+SHAPE RULE (one primitive)
+  Every nose/fairing goes through drawOgive or a named blunt-fairing helper.
+  Ban drawOval / drawCircle as a vehicle nose.
+  Sweep every drawer for leftover ovals: SLS upper is the known one. Check wallpaper twin.
+  Starship: one steel ogive. Forward flaps cannot sit on the tip.
+  Same pass on wallpaper drawStarshipVehicle. They are twins.
+
+DATA STUBS TO FILL FROM PUBLIC FACTS (or mark unverified)
+  lm       Long March catch-all. Split CZ-2/3/4/7/8 or keep unverified.
+  isro     Split PSLV, GSLV Mk II, LVM3. Three shapes. Three engine counts.
+  h3       Own drawer (LE-9 + SRB). Do not alias H-II on the same tokens.
+  electron chamberBar
+  zq3      isp / mix / dry
+  lm5      chamber / remaining dashes
+  h3       dry / prop / chamber
+
+NOT IN THE BOOK (correctly GENERIC today)
+  Anything else from Launch Library: Vulcan, Atlas, Neutron, Angara, Proton,
+  Vega, Firefly, Kuaizhou, Nuri, etc.
+  Do not invent a drawing to make the list look full.
+  Add later as the same triple: spec + drawer + timeline.
+
+ORDER AFTER PLAY
+  1. Shape law: no circle noses, no dual peaks. Sweep every drawer.
+  2. Close switch gaps: H3 drawer, split ISRO, or mark them unverified.
+  3. verified=true only if numbers are real.
+  4. Then add new rockets Chris wants, one triple at a time.
+
+HAPPY PATH YOU ALREADY HAVE
+  GENERIC + NEW VEHICLE · DATA UPDATE REQUIRED is correct.
+  Keep it. Fill the book. Never replace it with a circle.

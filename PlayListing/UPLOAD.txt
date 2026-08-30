@@ -1,0 +1,66 @@
+LIVE ROCKET TRACKER — Play listing media
+========================================
+Play Console → Grow users → Store presence → Main store listing
+First slots are what people see. Upload in this order.
+
+PHONE (7 of 8. SpaceX first. All-countries last.)
+  1  phone/01-liftoff.jpg          Starship Flight 13 liftoff
+  2  phone/05-plasma-map.jpg       Starship reentry plasma. the pretty one.
+  3  phone/04-digital-track.jpg    Starship Atlantic-to-Indian-Ocean map
+  4  phone/03-stage-sep.jpg        Starship STG1 / STG2
+  5  phone/02-booster-entry.jpg    Super Heavy 0/33
+  6  phone/06-ship-reentry.jpg     Soyuz-2.1a. Russia. proves all countries.
+  7  phone/07-landspace.jpg        Zhuque-3. China. proves all countries.
+
+  Do not lead with 06 or 07. Those two are the "we do every country" proof.
+  06 is Soyuz even though the filename says ship-reentry. Do not treat it as Starship.
+
+TABLET 7-inch (optional, already SpaceX)
+  tablet-7in/01-mcc-tel-vid.jpg     MCC TEL + SpaceX / NSF webcast. Starship F13
+  tablet-7in/02-mcc-analog-vid.jpg
+  tablet-7in/03-mcc-gauges.jpg
+
+FEATURE GRAPHIC (required)
+  feature-graphic-1024x500.jpg      Starship Flight 13 map. keep this.
+
+PROMO VIDEO
+  https://www.youtube.com/watch?v=sW30xia3gnw
+  Graphic assets → Promo video.
+
+APP ICON (512x512 PNG, full square, no rounded corners)
+  Still pick ONE. Files in this folder:
+  play-app-icon-512-A-MAP.png
+  play-app-icon-512-B-REENTRY.png
+  play-app-icon-512-C-COLLAGE.png
+
+WHY THE CROPS
+  Razr inner shots are 1224x2992 (2.44:1). Play rejects over 2:1.
+  These are 9:16 from the top. Dock is gone. HUD stays.
+
+========================================
+PASTE INTO PLAY — short description
+========================================
+Starship HUD on a second home screen page. Rockets from every country.
+
+========================================
+PASTE INTO PLAY — full description
+========================================
+Set Live Rocket Tracker as your live wallpaper and a second home screen page turns into a mission-control HUD. Choose that page number in Settings. Android only lets a live wallpaper live on one page, so keep your icons on page 1 and put the console on page 2.
+
+Watch a launch without opening anything. Countdown, vehicle, pad, analog or digital gauges, stage stacks, engine lights, the ground track, and the event tape sit right on the wallpaper. Skip through historic launches with + and -. Flip to digital when you want the big map.
+
+Tap in for the full command center: telemetry, trajectory, engines, propellant, and two webcast panes. Sign in once inside a pane, or jump to the real YouTube app if you already have Premium.
+
+Numbers you see are labeled EST. We do not pretend we have a secret live downlink. If a rocket is not in the catalog, you get an honest “data update required,” not a made-up drawing.
+
+Built around Starship and Falcon. The same HUD also covers published vehicles from all countries, with real public facts in one catalog. Built for a phone first.
+
+If you want your phone to feel like a console on launch day, this is it.
+
+========================================
+PASTE INTO PLAY — release notes 1.0.3 (versionCode 4)
+500 char max. this is 269.
+========================================
+<en-US>
+Ground track now stays with the vehicle through reentry and splash instead of jumping back to the pad. RANGE is real distance downrange. Event names on the tape stay readable. Wallpaper HUD and Command Center share the same flight book. Numbers you see are labeled EST.
+</en-US>
