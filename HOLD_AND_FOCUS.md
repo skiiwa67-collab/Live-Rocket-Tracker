@@ -3,7 +3,12 @@
 ## The bug
 `RocketTelemetryModule.resolveTracked` in AUTO calls `getNextAny()`, which keeps only `isUpcoming` (T+5 min). An in-flight Falcon is not upcoming. The wallpaper then locks the soonest NET on Earth (Arianespace, etc.).
 
-AUTO = browse. HOLD = watch. Never let AUTO steal a HOLD.
+AUTO = browse. HOLD = watch. LCK = hard pin. Never let AUTO steal a HOLD or a pin.
+
+## LCK
+- Sticky launch id. Does not expire.
+- AUTO must stay off (lamp included) while pinned.
+- Catalog refresh / missed `findById` keeps the pinned snapshot. Do not fall through to `getNextAny`.
 
 ## HOLD
 - Sticky launch id + `holdUntilMs`.

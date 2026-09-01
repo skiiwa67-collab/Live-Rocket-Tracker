@@ -1089,7 +1089,6 @@ class RetroCommandWallpaperService : WallpaperService() {
                             val tNow = telemetryModule.effectiveSecondsFromNet(now)
                             val live = telemetryModule.tracked
                             val alert = kinetic.shouldAlertOnWallpaper(live, tNow, telemetryModule.simSecondsFromNet)
-                            if (alert) kinetic.holdLiveFocus() else kinetic.releaseLiveFocus()
                             for (e in eventMonitor.poll(live, tNow)) {
                                 if (alert) kinetic.play(e)
                             }

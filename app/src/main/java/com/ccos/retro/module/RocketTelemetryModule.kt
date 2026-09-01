@@ -55,13 +55,28 @@ class RocketTelemetryModule(
     /** Force status overlay e.g. "Scrubbed" for testing. */
     var forceStatus: String? = null
 
-    /** Auto mode: always lock to the next upcoming launch. */
+    /** Last snapshot that matched the LCK id. Survives a catalog miss of findById. */
+    private var pinnedSnapshot: LaunchSnapshot? = null
+
+    /** Auto mode: always lock to the next upcoming launch. LCK forces this off. */
     var autoMode: Boolean
-        get() = prefs.telemetryAuto
-        set(v) { prefs.telemetryAuto = v }
+        get() = prefs.telemetryAuto && !prefs.telemetryPinned
+        set(v) {
+            if (v && prefs.telemetryPinned) {
+                prefs.telemetryAuto = false
+                return
+            }
+            prefs.telemetryAuto = v
+        }
 
     override fun onModuleButton(index: Int): Boolean {
         if (index == 7) {
+            if (prefs.telemetryPinned) {
+                // LCK wins. AUTO is browse; do not steal the pin or light the lamp.
+                prefs.telemetryAuto = false
+                if (activePage == 7) activePage = 2
+                return true
+            }
             autoMode = !autoMode
             if (autoMode) {
                 releaseHold()
@@ -171,13 +186,37 @@ class RocketTelemetryModule(
     /** Call from engine tick / visibility to keep tracked launch current. */
     fun resolveTracked(now: Long = System.currentTimeMillis()) {
         val prevId = tracked?.id
-        if (prefs.telemetryPinned && prefs.telemetryLaunchId.isNotBlank()) {
-            // LCK: same flight in wallpaper and MCC. Fresh process must not T-30 a LIVE shot.
-            tracked = provider.findById(prefs.telemetryLaunchId) ?: tracked
+        if (prefs.telemetryPinned) {
+            // LCK is a hard pin. AUTO must not run, even if findById misses this tick.
+            if (prefs.telemetryAuto) prefs.telemetryAuto = false
+            val pinId = prefs.telemetryLaunchId.ifBlank { tracked?.id ?: pinnedSnapshot?.id ?: "" }
+            if (pinId.isNotBlank() && prefs.telemetryLaunchId.isBlank()) {
+                prefs.telemetryLaunchId = pinId
+            }
+            val found = if (pinId.isNotBlank()) provider.findById(pinId) else null
+            if (found != null) {
+                tracked = found
+                pinnedSnapshot = found
+            } else {
+                // Catalog refresh / process start can miss findById. Keep the pinned flight.
+                // Never fall through to getNextAny.
+                val keep = when {
+                    tracked?.id == pinId -> tracked
+                    pinnedSnapshot?.id == pinId -> pinnedSnapshot
+                    else -> tracked ?: pinnedSnapshot
+                }
+                if (keep != null) {
+                    tracked = keep
+                    pinnedSnapshot = keep
+                    if (prefs.telemetryLaunchId.isBlank()) prefs.telemetryLaunchId = keep.id
+                }
+            }
         } else if (isHolding(now)) {
             // HOLD beats AUTO. Do not let the next NET on Earth steal an in-flight vehicle.
+            pinnedSnapshot = null
             tracked = provider.findById(prefs.telemetryLaunchId) ?: tracked
         } else if (autoMode) {
+            pinnedSnapshot = null
             val live = provider.getCached()?.launches.orEmpty()
                 .filter { !it.id.startsWith("demo-") }
             val inFlight = live.filter { it.isInFlight(now) }
@@ -196,6 +235,7 @@ class RocketTelemetryModule(
                 clearSim()
             }
         } else {
+            pinnedSnapshot = null
             val id = prefs.telemetryLaunchId
             tracked = when {
                 id.isNotBlank() -> provider.findById(id)
@@ -237,7 +277,8 @@ class RocketTelemetryModule(
         if (t == null) return
         prefs.telemetryLaunchId = t.id
         prefs.telemetryPinned = true
-        autoMode = false
+        prefs.telemetryAuto = false
+        pinnedSnapshot = t
     }
 
     fun stepCatalog(dir: Int) {

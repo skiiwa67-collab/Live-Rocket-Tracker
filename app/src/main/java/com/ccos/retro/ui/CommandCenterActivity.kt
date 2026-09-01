@@ -301,9 +301,7 @@ class CommandCenterActivity : AppCompatActivity() {
         console.eventTape = eventMonitor.occurred(launch, tSec)
         val fresh = eventMonitor.poll(launch, tSec)
         val liveWatch = if (this::kinetic.isInitialized) {
-            val w = kinetic.shouldAlertOnWallpaper(launch, tSec, telemetryModule.simSecondsFromNet)
-            if (w) kinetic.holdLiveFocus() else kinetic.releaseLiveFocus()
-            w
+            kinetic.shouldAlertOnWallpaper(launch, tSec, telemetryModule.simSecondsFromNet)
         } else false
         for (e in fresh) {
             if (this::eventBanner.isInitialized) eventBanner.push(e)
