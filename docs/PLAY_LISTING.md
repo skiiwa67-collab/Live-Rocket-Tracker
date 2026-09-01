@@ -1,4 +1,11 @@
-# Live Rocket Tracker — Play listing draft
+# Live Rocket Tracker — Play listing
+
+## For Eve — where we are (1 Sep 2026)
+- Live Rocket Tracker and Alarm are two separate products.
+- Testers have versionCode 17 / 1.0.7. Frozen AAB. Do not overwrite it.
+- vc18 is a phone sideload only (PAD lettering / Click Me). No paywall in 18.
+- This file is listing copy. Notion is the board. GitHub is the code copy.
+
 Date: 1 Sep 2026. Testers are on versionCode 17. Listing copy only. Not Alarm. No paywall in the vc18 sideload.
 
 ## Money
