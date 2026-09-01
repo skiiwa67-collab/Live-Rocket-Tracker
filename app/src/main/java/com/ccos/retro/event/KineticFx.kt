@@ -6,6 +6,8 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.SoundPool
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -39,9 +41,10 @@ class KineticFx(context: Context) {
     private val audio = app.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private var focusReq: AudioFocusRequest? = null
     private var holding = false
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val releaseCue = Runnable { releaseLiveFocus() }
     private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
         if (change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
-            // Book (or anything else) took the speaker. That is his decision.
             holding = false
             focusReq = null
         }
@@ -55,7 +58,7 @@ class KineticFx(context: Context) {
     }
 
     fun play(event: FlightEvent) {
-        holdLiveFocus()
+        requestCueFocus()
         val title = event.title.uppercase()
         val detail = event.detail.uppercase()
         val blob = "$title $detail"
@@ -101,6 +104,7 @@ class KineticFx(context: Context) {
                 pool.play(tick, 0.45f, 0.45f, 0, 0, 1f)
             }
         }
+        releaseCueFocusSoon()
     }
 
     /** Wallpaper: only wake the phone for a live stack, not sim theater. */
@@ -112,22 +116,33 @@ class KineticFx(context: Context) {
     }
 
     fun release() {
+        mainHandler.removeCallbacks(releaseCue)
         releaseLiveFocus()
         try { pool.release() } catch (_: Exception) {}
     }
 
-    /** LIVE watch: take the speaker and keep it. Do not give it back after one cue. */
+    /**
+     * LIVE window used to exclusive-gain the speaker for ~90 min. That pauses YouTube PiP
+     * / NASA. Cues now duck briefly and release — see [requestCueFocus].
+     */
     fun holdLiveFocus() {
+        requestCueFocus()
+        releaseCueFocusSoon()
+    }
+
+    /** Duck other audio for one cue. Never exclusive-gain — YouTube PiP must keep the webcast. */
+    private fun requestCueFocus() {
         if (holding) return
         try {
             if (Build.VERSION.SDK_INT >= 26) {
-                val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
                     .setAudioAttributes(
                         AudioAttributes.Builder()
                             .setUsage(AudioAttributes.USAGE_GAME)
                             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                             .build()
                     )
+                    .setWillPauseWhenDucked(false)
                     .setAcceptsDelayedFocusGain(false)
                     .setOnAudioFocusChangeListener(focusListener)
                     .build()
@@ -137,15 +152,22 @@ class KineticFx(context: Context) {
             } else {
                 @Suppress("DEPRECATION")
                 val ok = audio.requestAudioFocus(
-                    focusListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN
+                    focusListener, AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
                 )
                 holding = ok == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
             }
         } catch (_: Exception) {}
     }
 
-    /** Unpin, catalog/historic/sim, or engine teardown. Book can play again. */
+    private fun releaseCueFocusSoon() {
+        mainHandler.removeCallbacks(releaseCue)
+        mainHandler.postDelayed(releaseCue, 2_500)
+    }
+
+    /** After the cue, or engine teardown. Webcast can have the speaker back. */
     fun releaseLiveFocus() {
+        mainHandler.removeCallbacks(releaseCue)
         if (!holding && focusReq == null) return
         holding = false
         abandonFocus()
