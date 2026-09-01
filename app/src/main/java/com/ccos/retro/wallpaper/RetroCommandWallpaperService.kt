@@ -329,6 +329,61 @@ class RetroCommandWallpaperService : WallpaperService() {
             return y
         }
 
+        /** Font-metric row box for the PAD packer. Leading is a fraction of the box. */
+        private fun packRowH(size: Float): Float {
+            hudPaint.textSize = size
+            val fm = hudPaint.fontMetrics
+            return (fm.descent - fm.ascent) * 1.12f
+        }
+
+        private fun packLead(size: Float): Float = packRowH(size) * 0.18f
+
+        private fun packWrapLines(text: String, maxW: Float, size: Float): List<String> {
+            if (text.isBlank() || maxW < 8f) return emptyList()
+            hudPaint.textSize = size
+            val words = text.split(' ')
+            val lines = ArrayList<String>()
+            var line = StringBuilder()
+            for (w in words) {
+                val trial = if (line.isEmpty()) w else "$line $w"
+                if (hudPaint.measureText(trial) > maxW && line.isNotEmpty()) {
+                    lines.add(line.toString())
+                    line = StringBuilder(w)
+                } else {
+                    if (line.isEmpty()) line.append(w) else line.append(' ').append(w)
+                }
+            }
+            if (line.isNotEmpty()) lines.add(line.toString())
+            return lines
+        }
+
+        private fun packWrapH(text: String, maxW: Float, size: Float): Float =
+            packWrapLines(text, maxW, size).size * packRowH(size)
+
+        /**
+         * Packer draw: [startTop] is the top of the slot, not a baseline.
+         * Returns the top of the next free slot. Each line owns its font-metric box.
+         */
+        private fun packDrawCenter(
+            canvas: Canvas, text: String, cx: Float, startTop: Float,
+            maxW: Float, size: Float, color: Int, tf: Typeface
+        ): Float {
+            val oldTf = hudPaint.typeface
+            hudPaint.typeface = tf
+            hudPaint.textSize = size
+            hudPaint.color = color
+            hudPaint.textAlign = Paint.Align.CENTER
+            val fm = hudPaint.fontMetrics
+            val row = packRowH(size)
+            var top = startTop
+            for (line in packWrapLines(text, maxW, size)) {
+                canvas.drawText(line, cx, top - fm.ascent, hudPaint)
+                top += row
+            }
+            hudPaint.typeface = oldTf
+            return top
+        }
+
         private val drawRunnable = object : Runnable {
             override fun run() {
                 if (!visible) return
@@ -6505,21 +6560,21 @@ class RetroCommandWallpaperService : WallpaperService() {
             layoutButtons()
             val lamp = prefs.lampBrightness
             val titleSz = pageBodyTs(22f)
-            val bodySz = pageBodyTs(26f)
-            val geoSz = pageBodyTs(28f)
+            val typeSz = pageBodyTs(26f)
+            val bodySz = pageBodyTs(34f)
+            val locSz = pageBodyTs(32f)
+            val geoSz = pageBodyTs(38f)
             val left = laneLeft()
             val right = laneRight()
             val cx = (left + right) * 0.5f
             val maxW = (right - left) * 0.94f
-            val gap = su(0.008f)
-            hudPaint.textAlign = Paint.Align.CENTER
-            var y = telHudBottom + gap
-            y = drawWrappedCenter(canvas, "PAD / SITE", cx, y, maxW, titleSz, withLamp(skin.accent, lamp))
+            val tfBold = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            val tfNorm = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+            val linkCol = Color.parseColor("#5EB8FF")
             val kind = PadGlyph.kind(launch)
-            y = drawWrappedCenter(canvas, PadGlyph.label(kind), cx, y, maxW, bodySz, Color.WHITE)
-
+            val typeLabel = PadGlyph.label(kind)
             val padLine = launch?.pad?.ifBlank { "—" } ?: "NO LOCK"
-            val locLine = launch?.location?.ifBlank { "—" } ?: ""
+            val locLine = launch?.location?.ifBlank { "" } ?: ""
             val ll = PadBook.lonLat(launch)
             val geoLine = if (ll != null) {
                 val (lon, lat) = ll
@@ -6530,47 +6585,106 @@ class RetroCommandWallpaperService : WallpaperService() {
             val seaLine = if (launch == null) "" else if (PadBook.isSea(launch)) "SEA / BARGE" else "LAND"
             val vehLine = if (launch == null) "" else "${launch.rocketName}  ·  ${launch.provider}"
 
-            fun lineH(sz: Float) = sz * 1.28f
-            var foot = gap
-            foot += lineH(bodySz)
-            if (locLine.isNotBlank()) foot += lineH(bodySz)
-            if (geoLine.isNotBlank()) foot += lineH(geoSz)
-            if (seaLine.isNotBlank()) foot += lineH(bodySz)
-            if (vehLine.isNotBlank()) foot += lineH(bodySz)
-
             val floor = dockFloor()
-            val glyphTop = y + gap
-            val glyphBot = (floor - foot).coerceAtLeast(glyphTop + su(0.12f))
-            val leftoverH = (glyphBot - glyphTop).coerceAtLeast(8f)
-            val plate = buttonRects[4]
-            val aspect = if (plate.height() > 4f) plate.width() / plate.height() else 0.90f
-            var gw = leftoverH * aspect
-            val glyphMaxW = (right - left) * 1.08f
-            if (gw > glyphMaxW) gw = glyphMaxW
-            val gx = cx - gw * 0.5f
-            val glyph = RectF(gx, glyphTop, gx + gw, glyphBot)
-            PadGlyph.draw(canvas, glyph, Color.WHITE, kind, strokePaint)
-            y = glyph.bottom + gap
+            canvas.save()
+            canvas.clipRect(0f, 0f, width.toFloat(), floor)
+
+            // Two exclusive header slots — page title and pad-type title cannot share a band.
+            var y = telHudBottom + packLead(titleSz)
+            y = packDrawCenter(canvas, "PAD / SITE", cx, y, maxW, titleSz, withLamp(skin.accent, lamp), tfBold)
+            y += packLead(titleSz)
+            y = packDrawCenter(canvas, typeLabel, cx, y, maxW, typeSz, Color.WHITE, tfBold)
+
+            var foot = packLead(bodySz)
+            if (launch == null) {
+                foot += packWrapH("NO LOCK", maxW, bodySz)
+            } else {
+                foot += packWrapH(padLine, maxW, bodySz)
+                if (locLine.isNotBlank()) foot += packWrapH(locLine, maxW, locSz)
+                if (geoLine.isNotBlank()) foot += packRowH(geoSz)
+                if (seaLine.isNotBlank()) foot += packWrapH(seaLine, maxW, bodySz)
+                if (vehLine.isNotBlank()) foot += packWrapH(vehLine, maxW, bodySz)
+            }
+
+            val glyphTop = y + packLead(typeSz)
+            var glyphBot = floor - foot
+            if (glyphBot < glyphTop) glyphBot = glyphTop
+            val leftoverH = (glyphBot - glyphTop).coerceAtLeast(0f)
+            if (leftoverH > 8f) {
+                val plate = buttonRects[4]
+                val aspect = if (plate.height() > 4f) plate.width() / plate.height() else 0.90f
+                var gw = leftoverH * aspect
+                val glyphMaxW = (right - left) * 1.08f
+                if (gw > glyphMaxW) gw = glyphMaxW
+                val gx = cx - gw * 0.5f
+                val glyph = RectF(gx, glyphTop, gx + gw, glyphBot)
+                PadGlyph.draw(canvas, glyph, Color.WHITE, kind, strokePaint)
+            }
+            y = glyphBot + packLead(bodySz)
 
             if (launch == null) {
-                drawWrappedCenter(canvas, "NO LOCK", cx, y, maxW, bodySz, withLamp(skin.muted, lamp))
+                packDrawCenter(canvas, "NO LOCK", cx, y, maxW, bodySz, withLamp(skin.text, lamp), tfBold)
+                canvas.restore()
                 return
             }
-            y = drawWrappedCenter(canvas, padLine, cx, y, maxW, bodySz, withLamp(skin.text, lamp))
+            y = packDrawCenter(canvas, padLine, cx, y, maxW, bodySz, withLamp(skin.text, lamp), tfBold)
             if (locLine.isNotBlank()) {
-                y = drawWrappedCenter(canvas, locLine, cx, y, maxW, bodySz, withLamp(skin.muted, lamp))
+                y = packDrawCenter(canvas, locLine, cx, y, maxW, locSz, Color.WHITE, tfBold)
             }
             if (geoLine.isNotBlank()) {
-                val y0 = y
-                y = drawWrappedCenter(canvas, geoLine, cx, y, maxW, geoSz, Color.WHITE)
-                geoHit.set(left, y0 - geoSz, right, y)
+                y = packDrawGeoRow(canvas, geoLine, cx, y, geoSz, withLamp(linkCol, lamp), tfBold)
             }
             if (seaLine.isNotBlank()) {
-                y = drawWrappedCenter(canvas, seaLine, cx, y, maxW, bodySz, withLamp(skin.muted, lamp))
+                y = packDrawCenter(canvas, seaLine, cx, y, maxW, bodySz, withLamp(skin.text, lamp), tfNorm)
             }
             if (vehLine.isNotBlank()) {
-                drawWrappedCenter(canvas, vehLine, cx, y, maxW, bodySz, withLamp(skin.text, lamp))
+                packDrawCenter(canvas, vehLine, cx, y, maxW, bodySz, withLamp(skin.text, lamp), tfBold)
             }
+            canvas.restore()
+        }
+
+        /** Coords + "Click Me" on one row. Width is free; height is one packer slot. */
+        private fun packDrawGeoRow(
+            canvas: Canvas,
+            geo: String,
+            cx: Float,
+            startTop: Float,
+            size: Float,
+            color: Int,
+            tf: Typeface
+        ): Float {
+            val oldTf = hudPaint.typeface
+            val oldAlign = hudPaint.textAlign
+            hudPaint.typeface = tf
+            hudPaint.textSize = size
+            hudPaint.color = color
+            hudPaint.textAlign = Paint.Align.LEFT
+            val fm = hudPaint.fontMetrics
+            val row = packRowH(size)
+            val click = "Click Me"
+            val gap = hudPaint.measureText("   ")
+            val geoW = hudPaint.measureText(geo)
+            val clickW = hudPaint.measureText(click)
+            val total = geoW + gap + clickW
+            val screenL = fullLeft()
+            val screenR = fullRight()
+            var x = cx - total * 0.5f
+            if (x < screenL) x = screenL
+            if (x + total > screenR) x = (screenR - total).coerceAtLeast(screenL)
+            val baseline = startTop - fm.ascent
+            canvas.drawText(geo, x, baseline, hudPaint)
+            val clickX = x + geoW + gap
+            canvas.drawText(click, clickX, baseline, hudPaint)
+            strokePaint.style = Paint.Style.STROKE
+            strokePaint.strokeWidth = (size * 0.055f).coerceAtLeast(1.6f)
+            strokePaint.color = color
+            val ulY = baseline + fm.descent * 0.28f
+            canvas.drawLine(x, ulY, x + geoW, ulY, strokePaint)
+            canvas.drawLine(clickX, ulY, clickX + clickW, ulY, strokePaint)
+            geoHit.set(x, startTop, x + total, startTop + row)
+            hudPaint.typeface = oldTf
+            hudPaint.textAlign = oldAlign
+            return startTop + row
         }
 
         private fun drawTelVideo(canvas: Canvas, launch: com.ccos.retro.data.LaunchSnapshot?, skin: TelemetrySkin.Tokens, ts: Float) {
