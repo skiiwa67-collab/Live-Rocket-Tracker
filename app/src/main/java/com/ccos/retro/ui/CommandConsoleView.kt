@@ -348,6 +348,7 @@ class CommandConsoleView @JvmOverloads constructor(
             propStg1Hit.offset(0f, stripH)
             propStg2Hit.offset(0f, stripH)
         }
+        if (stripH > 0f && !geoHit.isEmpty) geoHit.offset(0f, stripH)
         canvas.restore()
         val dt = SystemClock.uptimeMillis() - t0
         if (dt > 32) Log.w("CCOS.TRAJ", "onDraw ${dt}ms screen=$screen")
@@ -2396,6 +2397,63 @@ class CommandConsoleView @JvmOverloads constructor(
             )
             y += max(used, lineH)
         }
+        fun siteRow(lab: String, value: String) {
+            if (!can()) return
+            val labW = maxW * 0.20f
+            val valW = maxW * 0.76f
+            val valX = left + dp(12f) + maxW * 0.22f
+            val wish = sp(16f)
+            drawLabel(
+                canvas, lab, left + dp(12f), y, withLamp(skin.text),
+                labW, lineH * 0.92f, sp(14f), Paint.Align.LEFT
+            )
+            val room = floor - y
+            val fit = (room / (wish * 1.12f)).toInt().coerceIn(1, 4)
+            val used = drawWrapped(
+                canvas, value, valX, y - wish * 0.85f, Color.WHITE,
+                valW, wish, Paint.Align.LEFT, fit
+            )
+            y += max(used, lineH)
+        }
+        fun geoLinkRow(geo: String) {
+            if (!can()) return
+            val link = Color.parseColor("#5EB8FF")
+            val click = "Click Me"
+            val labW = maxW * 0.20f
+            val wish = sp(16f)
+            drawLabel(
+                canvas, "GEO", left + dp(12f), y, withLamp(skin.text),
+                labW, lineH * 0.92f, sp(14f), Paint.Align.LEFT
+            )
+            val oldTf = textPaint.typeface
+            val oldAlign = textPaint.textAlign
+            textPaint.typeface = Typeface.DEFAULT_BOLD
+            textPaint.textSize = wish
+            textPaint.color = withLamp(link)
+            textPaint.textAlign = Paint.Align.LEFT
+            val gap = textPaint.measureText("   ")
+            val geoW = textPaint.measureText(geo)
+            val clickW = textPaint.measureText(click)
+            val pair = geoW + gap + clickW
+            val valX = left + dp(12f) + maxW * 0.22f
+            val roomW = (right - dp(8f) - valX).coerceAtLeast(pair)
+            val drawX = if (pair <= roomW) valX else (right - dp(8f) - pair).coerceAtLeast(left)
+            val fm = textPaint.fontMetrics
+            canvas.drawText(geo, drawX, y, textPaint)
+            val clickX = drawX + geoW + gap
+            canvas.drawText(click, clickX, y, textPaint)
+            strokePaint.style = Paint.Style.STROKE
+            strokePaint.strokeWidth = (wish * 0.055f).coerceAtLeast(1.6f)
+            strokePaint.color = withLamp(link)
+            val ulY = y + fm.descent * 0.28f
+            canvas.drawLine(drawX, ulY, drawX + geoW, ulY, strokePaint)
+            canvas.drawLine(clickX, ulY, clickX + clickW, ulY, strokePaint)
+            val box = (fm.descent - fm.ascent) * 1.12f
+            geoHit.set(drawX, y + fm.ascent, clickX + clickW, y + fm.descent)
+            textPaint.typeface = oldTf
+            textPaint.textAlign = oldAlign
+            y += max(box, lineH)
+        }
 
         headline("MISSION", skin.accent, sp(12f))
         wrapHead(m.title, skin.text, sp(15f), 3)
@@ -2450,16 +2508,14 @@ class CommandConsoleView @JvmOverloads constructor(
         m.ship?.let { sh -> slots += Slot(6, 1) { row("SHIP", sh, skin.go) } }
         geoHit.setEmpty()
         slots += Slot(7, 2) {
-            row("SITE", m.site, skin.muted)
+            siteRow("SITE", m.site)
             val ll = PadBook.lonLat(launch)
             if (ll != null) {
                 val (lon, lat) = ll
                 val hemiNS = if (lat >= 0f) "N" else "S"
                 val hemiEW = if (lon >= 0f) "E" else "W"
                 val geo = String.format("%.2f°%s  %.2f°%s", abs(lat), hemiNS, abs(lon), hemiEW)
-                val y0 = y
-                row("GEO", geo, skin.accent)
-                geoHit.set(left, y0 - lineH, right, y)
+                geoLinkRow(geo)
             }
         }
         if (!launch?.holdReason.isNullOrBlank()) {
