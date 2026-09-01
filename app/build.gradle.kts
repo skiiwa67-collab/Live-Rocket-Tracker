@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.ccos.retro"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.liverockettracker"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 17
         versionName = "1.0.7"
     }
