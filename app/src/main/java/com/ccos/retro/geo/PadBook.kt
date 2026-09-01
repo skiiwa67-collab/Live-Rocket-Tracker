@@ -85,6 +85,23 @@ object PadBook {
             "sea launch" in blob || "odyssey" in blob || "air launch" in blob
     }
 
+    /**
+     * Compact pad id already in the stored name (4E from Space Launch Complex 4E / SLC-4E).
+     * Does not invent a new pad label. No Regex — this can run from paint.
+     */
+    fun padShort(launch: LaunchSnapshot?): String {
+        val raw = launch?.pad?.trim().orEmpty()
+            .ifBlank { find(launch)?.name?.trim().orEmpty() }
+            .ifBlank { launch?.location?.trim().orEmpty() }
+        return shortFrom(raw)
+    }
+
+    /** One footer / SITE row: "4E  LAND" or "4E  WATER". Shore = LAND, ship/barge/sea/air = WATER. */
+    fun padShoreLine(launch: LaunchSnapshot?): String {
+        if (launch == null) return "—"
+        return "${padShort(launch)}  ${if (isSea(launch)) "WATER" else "LAND"}"
+    }
+
     fun find(launch: LaunchSnapshot?): Site? {
         if (launch == null) return null
         val id = launch.id
@@ -127,6 +144,96 @@ object PadBook {
             }
         }
         return if (bestScore >= 6) best else null
+    }
+
+    private fun shortFrom(raw: String): String {
+        if (raw.isBlank() || raw[0] == '{' || raw[0] == '[') return "—"
+        val up = raw.uppercase()
+        if (up == "UNKNOWN" || up == "UNKNOWN PAD" || up == "PAD") return "—"
+        afterPhrase(up, "SPACE LAUNCH COMPLEX")?.let { return stripLead(it) }
+        afterPhrase(up, "LAUNCH COMPLEX")?.let { return stripLead(it) }
+        afterPhrase(up, "LAUNCH PAD")?.let { return stripLead(it) }
+        afterPhrase(up, "SITE ")?.let { tok ->
+            if (tok.indexOf('/') >= 0) return tok
+        }
+        markedId(up)?.let { return it }
+        val tokens = splitTokens(up)
+        tokens.lastOrNull { looksId(it) }?.let { return stripLead(it) }
+        if (tokens.size == 1 && up.length <= 14) return up
+        return raw
+    }
+
+    private fun afterPhrase(up: String, phrase: String): String? {
+        val i = up.indexOf(phrase)
+        if (i < 0) return null
+        var j = i + phrase.length
+        while (j < up.length && up[j] == ' ') j++
+        if (j >= up.length) return null
+        val start = j
+        while (j < up.length && (up[j].isLetterOrDigit() || up[j] == '-' || up[j] == '/')) j++
+        if (j == start) return null
+        val tok = up.substring(start, j)
+        return if (looksId(tok) || tok.startsWith("LP-") || tok.startsWith("SLC-") ||
+            tok.startsWith("LC-") || tok.startsWith("ELA-")
+        ) tok else null
+    }
+
+    private fun markedId(up: String): String? {
+        findMark(up, "SLC-")?.let { return it }
+        findMark(up, "ELA-")?.let { return it }
+        findMark(up, "LC-")?.let { return it }
+        findMark(up, "LP-")?.let { return it }
+        return null
+    }
+
+    private fun findMark(up: String, mark: String): String? {
+        var i = 0
+        while (i < up.length) {
+            val at = up.indexOf(mark, i)
+            if (at < 0) return null
+            val beforeOk = at == 0 || !up[at - 1].isLetterOrDigit()
+            var j = at + mark.length
+            if (beforeOk && j < up.length && up[j].isLetterOrDigit()) {
+                val start = j
+                while (j < up.length && (up[j].isLetterOrDigit() || up[j] == '/')) j++
+                if (j > start) return stripLead(mark + up.substring(start, j))
+            }
+            i = at + 1
+        }
+        return null
+    }
+
+    private fun stripLead(tok: String): String = when {
+        tok.startsWith("SLC-") -> tok.substring(4)
+        tok.startsWith("LC-") -> tok.substring(3)
+        else -> tok
+    }
+
+    private fun looksId(tok: String): Boolean {
+        if (tok.length !in 1..12) return false
+        var digit = false
+        for (c in tok) {
+            if (c.isDigit()) digit = true
+            else if (!(c.isLetter() || c == '/' || c == '-')) return false
+        }
+        return digit
+    }
+
+    private fun splitTokens(up: String): List<String> {
+        val out = ArrayList<String>()
+        val sb = StringBuilder()
+        fun flush() {
+            if (sb.isNotEmpty()) {
+                out.add(sb.toString())
+                sb.setLength(0)
+            }
+        }
+        for (c in up) {
+            if (c.isLetterOrDigit() || c == '-' || c == '/') sb.append(c)
+            else flush()
+        }
+        flush()
+        return out
     }
 
     fun norm(s: String): String {

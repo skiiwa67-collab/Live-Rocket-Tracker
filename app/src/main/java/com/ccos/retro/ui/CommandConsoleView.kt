@@ -2508,7 +2508,7 @@ class CommandConsoleView @JvmOverloads constructor(
         m.ship?.let { sh -> slots += Slot(6, 1) { row("SHIP", sh, skin.go) } }
         geoHit.setEmpty()
         slots += Slot(7, 2) {
-            siteRow("SITE", m.site)
+            siteRow("SITE", PadBook.padShoreLine(launch))
             val ll = PadBook.lonLat(launch)
             if (ll != null) {
                 val (lon, lat) = ll

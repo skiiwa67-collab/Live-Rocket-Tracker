@@ -6569,11 +6569,10 @@ class RetroCommandWallpaperService : WallpaperService() {
             val cx = (left + right) * 0.5f
             val maxW = (right - left) * 0.94f
             val tfBold = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-            val tfNorm = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
             val linkCol = Color.parseColor("#5EB8FF")
             val kind = PadGlyph.kind(launch)
             val typeLabel = PadGlyph.label(kind)
-            val padLine = launch?.pad?.ifBlank { "—" } ?: "NO LOCK"
+            val padLine = if (launch == null) "NO LOCK" else PadBook.padShoreLine(launch)
             val locLine = launch?.location?.ifBlank { "" } ?: ""
             val ll = PadBook.lonLat(launch)
             val geoLine = if (ll != null) {
@@ -6582,7 +6581,6 @@ class RetroCommandWallpaperService : WallpaperService() {
                 val hemiEW = if (lon >= 0f) "E" else "W"
                 String.format("%.2f°%s  %.2f°%s", abs(lat), hemiNS, abs(lon), hemiEW)
             } else ""
-            val seaLine = if (launch == null) "" else if (PadBook.isSea(launch)) "SEA / BARGE" else "LAND"
             val vehLine = if (launch == null) "" else "${launch.rocketName}  ·  ${launch.provider}"
 
             val floor = dockFloor()
@@ -6602,7 +6600,6 @@ class RetroCommandWallpaperService : WallpaperService() {
                 foot += packWrapH(padLine, maxW, bodySz)
                 if (locLine.isNotBlank()) foot += packWrapH(locLine, maxW, locSz)
                 if (geoLine.isNotBlank()) foot += packRowH(geoSz)
-                if (seaLine.isNotBlank()) foot += packWrapH(seaLine, maxW, bodySz)
                 if (vehLine.isNotBlank()) foot += packWrapH(vehLine, maxW, bodySz)
             }
 
@@ -6633,9 +6630,6 @@ class RetroCommandWallpaperService : WallpaperService() {
             }
             if (geoLine.isNotBlank()) {
                 y = packDrawGeoRow(canvas, geoLine, cx, y, geoSz, withLamp(linkCol, lamp), tfBold)
-            }
-            if (seaLine.isNotBlank()) {
-                y = packDrawCenter(canvas, seaLine, cx, y, maxW, bodySz, withLamp(skin.text, lamp), tfNorm)
             }
             if (vehLine.isNotBlank()) {
                 packDrawCenter(canvas, vehLine, cx, y, maxW, bodySz, withLamp(skin.text, lamp), tfBold)
