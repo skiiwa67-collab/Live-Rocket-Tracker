@@ -1,11 +1,19 @@
-# Live Rocket Tracker — closed tester notes (stamp 22)
+# Live Rocket Tracker — closed tester notes (stamp 24)
 
 Sideload this APK. This is **not** a Play production upload. Play testers on versionCode 17 stay on 17. Play 17 stays frozen.
 
 Stamp **20** (`stamp-20-debug`) stays the KEEP for units + AUTO pin.
 Stamp **21** (`stamp-21-debug`) is the GISAT look + Electron HUD locks.
-Stamp **22** still left the tape under the Google search widget and hotseat.
-This stamp is **23**: tape packed above the **whole** launcher gap (search + Phone/Messages hotseat + nav) from WindowInsetsCompat + the HOME launcher's own dimens. 21 GISAT look stays. No AUDIOFOCUS_GAIN.
+Stamp **23** stays in Downloads for Elon. Do not overwrite it.
+
+This stamp is **24**: Bottom gap Auto / Dock-only / Dock+search. Stock Pixel/Android **glues** the Google search bar to the dock. Testers usually cannot delete it. Drag it onto another page if the launcher lets you. Nova can hide it. Do not assume the bar is gone. Pixel emu stays the stock look. Nova is optional, not the default.
+
+CMD double-tap → Settings → HOME SCREENS → **BOTTOM GAP**:
+- **AUTO** (default) — packer clears dock + search + nav (the stamp-23 stock gap).
+- **DOCK** — dock + nav only. Use this after you dragged the search bar off a page.
+- **DOCK+SEARCH** — force the full stock gap.
+
+Tape-above-dock still has to work **with** the search bar present. 21 GISAT look stays. No AUDIOFOCUS_GAIN. Overlay PiP stays signed.
 
 Chris is on a Razr. PrimeTestLab used a Galaxy Note 10+. Any phone or tablet is fine.
 

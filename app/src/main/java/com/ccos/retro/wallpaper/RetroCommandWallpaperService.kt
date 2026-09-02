@@ -495,7 +495,8 @@ class RetroCommandWallpaperService : WallpaperService() {
         private fun dockFloor(): Float {
             val gap = LauncherChrome.bottomGap(
                 this@RetroCommandWallpaperService,
-                lastEngineInsets
+                lastEngineInsets,
+                prefs.bottomGapMode
             )
             return (height - gap).coerceAtMost(height.toFloat())
         }

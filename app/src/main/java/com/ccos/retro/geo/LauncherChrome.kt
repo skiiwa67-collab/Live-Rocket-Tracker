@@ -32,14 +32,28 @@ object LauncherChrome {
         "hotseat_bar_bottom_space", "hotseat_extra_vertical_size"
     )
 
-    fun bottomGap(ctx: Context, engineInsets: WindowInsets?): Float {
+    /**
+     * @param mode auto = stock (search + hotseat + nav). dock = hotseat + nav
+     * after they dragged the glued Google search bar off. dock_search = force
+     * the full stock gap even if insets look small.
+     */
+    fun bottomGap(ctx: Context, engineInsets: WindowInsets?, mode: String = "auto"): Float {
         val chrome = max(packEngine(engineInsets), packWindowMetrics(ctx))
         val nav = navBand(ctx, engineInsets)
-        val workspace = workspaceAboveNav(ctx)
-        val gap = when {
-            workspace > 0f && chrome + 1f >= nav + workspace -> chrome
-            workspace > 0f -> chrome + workspace
-            else -> chrome
+        val hotseat = hotseatRow(ctx)
+        val search = searchRow(ctx)
+        val full = hotseat + search
+        val gap = when (mode) {
+            "dock" -> {
+                if (hotseat > 0f && chrome + 1f >= nav + hotseat) chrome
+                else chrome + hotseat
+            }
+            "dock_search" -> max(chrome, nav + full)
+            else -> {
+                if (full > 0f && chrome + 1f >= nav + full) chrome
+                else if (full > 0f) chrome + full
+                else chrome
+            }
         }
         return gap.coerceAtLeast(nav)
     }
@@ -98,23 +112,18 @@ object LauncherChrome {
         return nav
     }
 
-    /**
-     * Hotseat + Google search row from the default HOME package and the
-     * published QSB widget. Those are the launcher's sizes, not ours.
-     */
-    private fun workspaceAboveNav(ctx: Context): Float {
-        val fromHome = homeLauncherWorkspace(ctx)
-        val qsb = publishedSearchHeight(ctx)
+    private fun hotseatRow(ctx: Context): Float {
+        val fromHome = homeDims(ctx, HOTSEAT_DIMENS)
         val icon = ctx.resources.getDimension(android.R.dimen.app_icon_size)
-        return when {
-            fromHome > 0f && qsb > 0f -> max(fromHome, qsb + icon)
-            fromHome > 0f -> fromHome
-            qsb > 0f -> qsb + icon
-            else -> icon
-        }
+        return if (fromHome > 0f) fromHome else icon
     }
 
-    private fun homeLauncherWorkspace(ctx: Context): Float {
+    private fun searchRow(ctx: Context): Float {
+        val fromHome = homeDims(ctx, QSB_DIMENS) + homeDims(ctx, SPACE_DIMENS)
+        return max(fromHome, publishedSearchHeight(ctx))
+    }
+
+    private fun homeDims(ctx: Context, names: Array<String>): Float {
         val pm = ctx.packageManager
         val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
         val ri = try {
@@ -126,19 +135,14 @@ object LauncherChrome {
         if (pkg == ctx.packageName) return 0f
         return try {
             val res = pm.getResourcesForApplication(pkg)
-            fun dim(name: String): Float {
+            names.maxOf { name ->
                 val id = res.getIdentifier(name, "dimen", pkg)
-                if (id == 0) return 0f
-                return try {
+                if (id == 0) 0f else try {
                     res.getDimension(id)
                 } catch (_: Exception) {
                     0f
                 }
             }
-            val hotseat = HOTSEAT_DIMENS.maxOf { dim(it) }
-            val qsb = QSB_DIMENS.maxOf { dim(it) }
-            val space = SPACE_DIMENS.maxOf { dim(it) }
-            if (hotseat <= 0f && qsb <= 0f) 0f else hotseat + qsb + space
         } catch (_: Exception) {
             0f
         }

@@ -256,6 +256,21 @@ class AppPrefs(context: Context) {
         set(v) = prefs.edit().putInt("launcher_pages", v.coerceIn(1, 12)).apply()
 
     /**
+     * HUD bottom gap. Auto = stock packer (search + hotseat + nav from insets
+     * and the HOME launcher). Dock-only = they dragged the glued Google
+     * search bar off a page. Dock+search = force the full stock gap.
+     */
+    var bottomGapMode: String
+        get() = when (prefs.getString("bottom_gap_mode", "auto")) {
+            "dock", "dock_search" -> prefs.getString("bottom_gap_mode", "auto")!!
+            else -> "auto"
+        }
+        set(v) = prefs.edit().putString(
+            "bottom_gap_mode",
+            when (v) { "dock", "dock_search" -> v; else -> "auto" }
+        ).apply()
+
+    /**
      * Look-only data for a specific launcher page.
      * auto = follow the active module.
      */
