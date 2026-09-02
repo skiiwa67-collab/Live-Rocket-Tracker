@@ -61,6 +61,7 @@
             android:theme="@style/Theme.OverlayPip"
             android:launchMode="singleTop"
             android:supportsPictureInPicture="true"
+            android:resizeableActivity="true"
             android:excludeFromRecents="true"
             android:taskAffinity=""
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"

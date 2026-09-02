@@ -1,19 +1,21 @@
-# Live Rocket Tracker — closed tester notes (stamp 34)
+# Live Rocket Tracker — closed tester notes (stamp 35)
 
 Sideload this APK. This is **not** a Play production upload. Play testers on versionCode 17 stay on 17. Play 17 stays frozen.
 
-This stamp is **34** / **1.0.24**. Same HUD as stamp 26. Overlay PiP enters Android system PiP from the laid-out 280×168 window rect (16:9). If enter fails, OverlayPipActivity finishes — it must not stay fullscreen over plates. Do not overwrite stamp-20 through stamp-33.
+This stamp is **35** / **1.0.25**. Same HUD as stamp 26/34. HUD VID is chrome-less (no SignIN YT − + X, no resize handle) and OverlayPip is **opaque** so Motorola Razr can enter system PiP. `setAutoEnterEnabled` + `onUserLeaveHint` — Home/leave is the Razr hop (supportsEnterPipOnTaskSwitch). Sign in once on MCC VID (the big player); CookieManager persists so HUD does not ask again. If PiP cannot be entered at all, OverlayPipActivity finishes — it must not stay fullscreen over plates. Do not overwrite stamp-20 through stamp-34.
 
 ---
 
-# Stamp 26 notes (this APK is 26 + PiP enter only)
+# Stamp 26 notes (this APK is 26 + opaque chrome-less PiP)
 
 Stamp **20** (`stamp-20-debug`) stays the KEEP for units + AUTO pin.
 Stamp **21** (`stamp-21-debug`) is the GISAT look + Electron HUD locks.
 Stamp **23** (`stamp-23-debug`) is SIGNED usable WITH the Pixel bar. Do not overwrite it.
 Stamp **25** (`stamp-25-debug`) is SIGNED. Auto packs THIS page. Do not overwrite it.
+Stamp **26** (`stamp-26-debug`) was **26** / **1.0.16**. Owl AUTO.
+Stamp **34** (`stamp-34-debug`) entered system PiP from the laid-out 280×168 rect.
 
-Stamp 26 was **26** / **1.0.16**. Owl AUTO. Not a rebuild of 25. HUD/catalog/tape/packer unchanged in 34.
+HUD/catalog/tape/packer unchanged in 35.
 
 ## Owl / AUTO
 
@@ -32,7 +34,7 @@ GISAT Hindi look remains when that ISRO launch is pinned/selected. Do not force 
 - Clock at the top and T-/T+ under it are SIGNED. Do not treat a change there as a pass.
 - Event tape packs above the Razr dock (WindowInsets / packer). Eight plates are not moved.
 - ALT/SPD family is a bit smaller. Digital gauges stay.
-- VID well is LINKS. LIVE if a watch URL exists, else official vs keep-alive historic/agency. Tap switches overlay PiP. No extra MCC YouTube panes. PiP volume down without mute. Never AUDIOFOCUS_GAIN. Overlay PiP drag stays. If AUTO is on Electron, no Starlink/SpaceX buttons on that bird.
+- VID well is LINKS. LIVE if a watch URL exists, else official vs keep-alive historic/agency. Tap switches overlay PiP. No extra MCC YouTube panes. PiP volume down without mute. Never AUDIOFOCUS_GAIN. Overlay PiP drag stays if the overlay still exists. HUD VID has no FloatingVideoWindow chrome. If AUTO is on Electron, no Starlink/SpaceX buttons on that bird.
 - STS fills the well under the eight buttons. Text is spread. Agency logo is not covered.
 - Background grid is a little brighter so a dark overlay PiP reads.
 
