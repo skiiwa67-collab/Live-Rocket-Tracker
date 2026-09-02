@@ -44,6 +44,10 @@ data class LaunchSnapshot(
     val webcastUrl: String? = null,
     val webcasts: List<WebcastRef> = emptyList(),
     val webcastLive: Boolean = false,
+    val infoUrls: List<String> = emptyList(),
+    val padWikiUrl: String? = null,
+    val missionWikiUrl: String? = null,
+    val agencyWikiUrl: String? = null,
     val probability: Int? = null,    // 0-100 or null
     val holdReason: String? = null,
     val lastUpdatedMs: Long = System.currentTimeMillis()
@@ -184,6 +188,18 @@ data class LaunchSnapshot(
         if (id.startsWith("demo-")) return true
         return secondsToNet(now) <= -600
     }
+
+    /** First published page from LL2 or the agency mission sheet. Never invented. */
+    fun publishedPageUrl(): String? =
+        infoUrls.firstOrNull { it.startsWith("http") }
+            ?: missionWikiUrl?.takeIf { it.startsWith("http") }
+            ?: PublishedLaunchFacts.relatedPage(this)
+
+    fun publishedAgencyUrl(): String? =
+        agencyWikiUrl?.takeIf { it.startsWith("http") }
+
+    fun publishedPadUrl(): String? =
+        padWikiUrl?.takeIf { it.startsWith("http") }
 }
 
 /**
@@ -326,6 +342,46 @@ object WebcastResolver {
     private fun watchUrl(id: String): String = "https://www.youtube.com/watch?v=$id"
 
     /**
+     * HUD overlay URL. Embed when we have a video id so YouTube home/search
+     * chrome never lands on the wallpaper. Search URLs stay for MCC only.
+     */
+    fun overlayPlayUrl(url: String): String {
+        val id = youtubeVideoId(url) ?: return url
+        return "https://www.youtube.com/embed/$id?autoplay=1&playsinline=1&rel=0&modestbranding=1&fs=0"
+    }
+
+    /**
+     * Wallpaper VID LIVE/REPLAY. Official watch if LL2 has one, else a
+     * published related historic (Owl Electron replay). Search is not a target.
+     */
+    fun hudWatchPane(launch: LaunchSnapshot?): WebcastPane {
+        val panes = panes(launch)
+        if (panes.official.isWatch) {
+            val live = launch?.isWebcastLive() == true
+            return panes.official.copy(title = if (live) "LIVE" else "REPLAY")
+        }
+        val historic = PublishedLaunchFacts.relatedWatch(launch)
+        if (historic != null) {
+            return WebcastPane("REPLAY", historic, true)
+        }
+        return panes.official
+    }
+
+    /** Wallpaper VID LINKS. Second watch if LL2 has one, else the same playable. */
+    fun hudLinksPane(launch: LaunchSnapshot?): WebcastPane {
+        val primary = hudWatchPane(launch)
+        val extras = launch?.allWebcasts().orEmpty().mapNotNull { ref ->
+            youtubeVideoId(ref.url)?.let { watchUrl(it) }
+        }.distinct()
+        val extra = extras.firstOrNull { it != primary.url }
+        return when {
+            extra != null -> WebcastPane("LINKS", extra, true)
+            primary.isWatch -> WebcastPane("LINKS", primary.url, true)
+            else -> WebcastPane("LINKS", "", false)
+        }
+    }
+
+    /**
      * Channel /@handle/search 404s in mobile WebView (PrimeTestLab M-01, historic Electron).
      * Results search with the handle in the query actually loads. Never invent a video id.
      */
@@ -372,6 +428,34 @@ object LaunchWindow {
 }
 
 /**
+ * Glance status word for every launch. Uses LL2 status + sim/historic follow.
+ * After NET, never GO. A Success hours after NET is PAST even if AUTO still
+ * watches the bird. Not a mission-name rule.
+ */
+object HudGlance {
+    fun word(launch: LaunchSnapshot?, sim: Boolean, historicFollow: Boolean): String {
+        if (sim) return "SIM"
+        if (launch == null) return "—"
+        if (launch.id.startsWith("demo-")) return "SIM"
+        if (historicFollow) return "PAST"
+        if (launch.isHold()) return "HOLD"
+        if (launch.isTerminal()) return "PAST"
+        val flying = launch.statusAbbrev.equals("In Flight", ignoreCase = true) ||
+            launch.statusName.contains("In Flight", ignoreCase = true)
+        if (flying) return "IN FLIGHT"
+        val t = launch.secondsToNet()
+        if (t <= 0L) {
+            // T+. Stale Go / keep-alive is not live GO.
+            if (launch.isReplayable() || t < -LaunchWindow.WATCH_AFTER_NET_SEC) return "PAST"
+            return "IN FLIGHT"
+        }
+        if (launch.isGo()) return "GO"
+        if (launch.isWebcastLive()) return "LIVE"
+        return launch.statusAbbrev.uppercase().ifBlank { "GO" }.take(12)
+    }
+}
+
+/**
  * Published pad fill for Rocket Lab Electron / Mahia LC-1.
  * Does not invent NET. AUTO must never key off a mission name.
  */
@@ -381,8 +465,34 @@ object PublishedLaunchFacts {
     const val MAHIA_PAD = "Launch Complex 1B"
     const val MAHIA_LOCATION = "Rocket Lab LC-1 / Mahia"
 
+    /**
+     * Published Rocket Lab Electron webcast. Used only when LL2 omitted vidURLs.
+     * Not an AUTO key. Not a layout rule.
+     */
+    const val ELECTRON_REPLAY_WATCH = "https://www.youtube.com/watch?v=agoLNgN7wiU"
+    /** Official Rocket Lab mission sheet for Owl / StriX Launch 11. */
+    const val OWL_MISSION_PAGE = "https://rocketlabcorp.com/missions/launches/owl-around-the-world/"
+
     fun apply(launch: LaunchSnapshot): LaunchSnapshot {
-        if (!isMahiaElectron(launch)) return launch
+        var out = if (isMahiaElectron(launch)) fillMahiaPad(launch) else launch
+        return fillRelatedMedia(out)
+    }
+
+    fun relatedWatch(launch: LaunchSnapshot?): String? {
+        if (launch == null) return null
+        val hay = "${launch.rocketName} ${launch.name} ${launch.missionName}".lowercase()
+        if ("electron" in hay) return ELECTRON_REPLAY_WATCH
+        return null
+    }
+
+    fun relatedPage(launch: LaunchSnapshot?): String? {
+        if (launch == null) return null
+        val hay = "${launch.name} ${launch.missionName}".lowercase()
+        if ("owl" in hay || "strix" in hay) return OWL_MISSION_PAGE
+        return null
+    }
+
+    private fun fillMahiaPad(launch: LaunchSnapshot): LaunchSnapshot {
         val pad = when {
             launch.pad.contains("1B", ignoreCase = true) -> launch.pad
             launch.pad.contains("1A", ignoreCase = true) -> launch.pad
@@ -403,6 +513,23 @@ object PublishedLaunchFacts {
             padLat = launch.padLat ?: MAHIA_PAD_LAT,
             padLon = launch.padLon ?: MAHIA_PAD_LON
         )
+    }
+
+    private fun fillRelatedMedia(launch: LaunchSnapshot): LaunchSnapshot {
+        val watch = relatedWatch(launch)
+        val hasWatch = launch.allWebcasts().any { WebcastResolver.youtubeVideoId(it.url) != null }
+        var webcasts = launch.webcasts
+        var webcastUrl = launch.webcastUrl
+        if (!hasWatch && watch != null) {
+            webcasts = webcasts + WebcastRef(watch, publisher = launch.provider, title = "Related historic")
+            if (webcastUrl.isNullOrBlank()) webcastUrl = watch
+        }
+        val page = relatedPage(launch)
+        val infos = if (launch.infoUrls.isEmpty() && page != null) listOf(page) else launch.infoUrls
+        if (webcasts === launch.webcasts && infos === launch.infoUrls && webcastUrl == launch.webcastUrl) {
+            return launch
+        }
+        return launch.copy(webcasts = webcasts, webcastUrl = webcastUrl, infoUrls = infos)
     }
 
     private fun isMahiaElectron(launch: LaunchSnapshot): Boolean {

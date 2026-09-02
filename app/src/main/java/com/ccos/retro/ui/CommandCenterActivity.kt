@@ -49,6 +49,7 @@ class CommandCenterActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private var lastSimTickMs = 0L
     private var running = false
+    private var handingOffPip = false
 
     private val tabIds = intArrayOf(
         R.id.tab_tel, R.id.tab_traj, R.id.tab_stg1, R.id.tab_stg2,
@@ -89,7 +90,7 @@ class CommandCenterActivity : AppCompatActivity() {
         console.bind(telemetryModule, prefs)
         console.onScreenChanged = { highlightTabs(it) }
 
-        findViewById<Button>(R.id.btn_exit).setOnClickListener { finish() }
+        findViewById<Button>(R.id.btn_exit).setOnClickListener { leaveToHudPip() }
         analogBtn = findViewById(R.id.btn_analog)
         analogBtn.setOnClickListener {
             prefs.telemetryAnalog = !prefs.telemetryAnalog
@@ -189,14 +190,19 @@ class CommandCenterActivity : AppCompatActivity() {
         running = false
         handler.removeCallbacks(tick)
         if (this::videoOverlay.isInitialized) {
-            videoOverlay.pauseAll()
             videoOverlay.flushCookies()
+            if (!handingOffPip) videoOverlay.pauseAll()
         }
         super.onPause()
     }
 
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (this::videoOverlay.isInitialized && videoOverlay.isShowing()) leaveToHudPip()
+    }
+
     override fun onDestroy() {
-        if (this::videoOverlay.isInitialized) videoOverlay.destroyAll()
+        if (this::videoOverlay.isInitialized && !handingOffPip) videoOverlay.destroyAll()
         if (this::kinetic.isInitialized) kinetic.release()
         super.onDestroy()
     }
@@ -208,7 +214,35 @@ class CommandCenterActivity : AppCompatActivity() {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        leaveToHudPip()
+    }
+
+    /**
+     * Minimize / back / exit: leave the YouTube session as the small HUD overlay.
+     * Cookies stay in-process so wallpaper VID does not demand a second SignIN.
+     */
+    private fun leaveToHudPip() {
+        keepHudPip()
         finish()
+    }
+
+    private fun keepHudPip() {
+        if (handingOffPip) return
+        if (!this::videoOverlay.isInitialized || !videoOverlay.isShowing()) return
+        handingOffPip = true
+        videoOverlay.flushCookies()
+        val launch = telemetryModule.tracked
+        val feeds = WebcastResolver.panes(launch)
+        val fromPane = videoOverlay.activeUrl()
+        val url = when {
+            WebcastResolver.youtubeVideoId(fromPane) != null -> fromPane
+            fromPane.isNotBlank() && !fromPane.contains("accounts.google", true) -> fromPane
+            else -> feeds.official.url
+        }
+        val title = videoOverlay.activeTitle().ifBlank {
+            if (feeds.official.isWatch) "LIVE" else feeds.official.title
+        }
+        OverlayPip.switch(this, url, title)
     }
 
     private fun updateAnalogButton() {

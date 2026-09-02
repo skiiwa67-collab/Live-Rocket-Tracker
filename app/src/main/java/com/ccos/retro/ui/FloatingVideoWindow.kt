@@ -45,7 +45,8 @@ class FloatingVideoWindow(
     private var lastY = 0f
     private var dragging = false
     private var resizing = false
-    private var currentUrl = embedUrl
+    var currentUrl = embedUrl
+        private set
     private var parkedUrl: String? = null
     private var signingIn = false
     private var signedHint = false
@@ -187,6 +188,8 @@ class FloatingVideoWindow(
     fun setTitle(text: String) {
         titleView.text = text
     }
+
+    fun titleText(): String = titleView.text?.toString().orEmpty()
 
     /** Lower playback volume without mute. Never AUDIOFOCUS_GAIN. YouTube keeps the speaker. */
     fun lowerVolume() {
