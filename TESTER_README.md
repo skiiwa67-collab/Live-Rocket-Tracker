@@ -1,8 +1,10 @@
-# Live Rocket Tracker — closed tester notes (stamp 21)
+# Live Rocket Tracker — closed tester notes (stamp 22)
 
 Sideload this APK. This is **not** a Play production upload. Play testers on versionCode 17 stay on 17. Play 17 stays frozen.
 
-Stamp **20** (`stamp-20-debug`) stays the KEEP for units + AUTO pin. This stamp is GISAT look plus the Electron HUD locks from SCREEN 1 at T+52m.
+Stamp **20** (`stamp-20-debug`) stays the KEEP for units + AUTO pin.
+Stamp **21** (`stamp-21-debug`) is the GISAT look + Electron HUD locks.
+This stamp is **22**: one-pane MCC VID + persisted YouTube sign-in. GISAT look stays.
 
 Chris is on a Razr. PrimeTestLab used a Galaxy Note 10+. Any phone or tablet is fine.
 
@@ -13,11 +15,14 @@ Chris is on a Razr. PrimeTestLab used a Galaxy Note 10+. Any phone or tablet is 
 This is what testers hunted.
 
 1. Pick a historic Electron (Command Center / historic list). Owl Around The World is the stamp-20 recapture case.
-2. Open Command Center → tap VID.
-3. Two panes: official (Rocket Lab) and NASASpaceflight.
-4. Historic Electron used to 404 on YouTube channel `/search`. Stamp 20/21 must **load** a results page or a real watch URL. YouTube 404 is a fail.
+2. Open Command Center → tap VID **once**. One screen only (official). Sign in there (`SignIN`). Do not expect two panes on first click.
+3. Tap VID a second time for NASASpaceflight. Third tap closes.
+4. Close MCC and open VID again. The Google / YouTube session must still be there. Getting kicked out is a fail.
+5. Historic Electron used to 404 on YouTube channel `/search`. Must **load** a results page or a real watch URL. YouTube 404 is a fail.
 
-**PiP / webcast panes require a Google / YouTube account signed in ON THAT DEVICE** (the phone or tablet you are testing). Sign in inside the VID pane (`SignIN`). Chrome login does not carry over to the app WebView.
+**Wallpaper PiP is unchanged.** HUD first, webcast ~60–90s later. Do not regress live-wallpaper PiP.
+
+**MCC panes require a Google / YouTube account signed in ON THAT DEVICE.** Sign in inside the VID pane (`SignIN`). Chrome login does not carry over to the app WebView.
 
 Also test a **live** upcoming webcast the same way (VID on a flight that has a watch URL).
 

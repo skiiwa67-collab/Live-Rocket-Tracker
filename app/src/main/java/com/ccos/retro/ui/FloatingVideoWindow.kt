@@ -123,6 +123,7 @@ class FloatingVideoWindow(
                     }
                     if (signingIn && u.contains("youtube.com") && !u.contains("accounts.google") && !u.contains("/signin")) {
                         signingIn = false
+                        cookies.flush()
                         onSignInFinished(this@FloatingVideoWindow)
                     }
                 }

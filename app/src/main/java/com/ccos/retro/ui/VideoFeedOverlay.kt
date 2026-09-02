@@ -29,19 +29,32 @@ class VideoFeedOverlay @JvmOverloads constructor(
         clipToPadding = false
     }
 
+    /**
+     * VID tap cycle. First tap = ONE pane so Google/YouTube sign-in can finish.
+     * Second tap adds NSF. Third tap closes. Never two panes on first click.
+     */
     fun toggleFeeds(
         primaryUrl: String,
         secondaryUrl: String,
         primaryTitle: String = "OFFICIAL",
         secondaryTitle: String = "NASASPACEFLIGHT"
     ) {
-        if (windows.isNotEmpty()) {
-            closeAll()
-            onChanged?.invoke()
-            return
+        when (windows.size) {
+            0 -> {
+                openFeed("official", primaryTitle, primaryUrl, corner = 0, autoplay = true)
+                layoutPanes()
+            }
+            1 -> {
+                if (!windows.containsKey("nsf")) {
+                    openFeed("nsf", secondaryTitle, secondaryUrl, corner = 1, autoplay = false)
+                } else {
+                    openFeed("official", primaryTitle, primaryUrl, corner = 0, autoplay = true)
+                }
+                layoutPanes()
+            }
+            else -> closeAll()
         }
-        openFeed("official", primaryTitle, primaryUrl, corner = 0, autoplay = true)
-        openFeed("nsf", secondaryTitle, secondaryUrl, corner = 1, autoplay = false)
+        onChanged?.invoke()
     }
 
     fun openFeed(id: String, title: String, url: String, corner: Int, autoplay: Boolean = (id == "official")) {
@@ -56,34 +69,25 @@ class VideoFeedOverlay @JvmOverloads constructor(
             onClosed = { closed ->
                 windows.remove(closed.feedId)
                 removeView(closed)
+                CookieManager.getInstance().flush()
+                layoutPanes()
                 onChanged?.invoke()
             },
             onActivated = { focus(it) },
             onSignInStarted = { hibernateOthers(it) },
-            onSignInFinished = { wakeOthers(it) }
+            onSignInFinished = {
+                CookieManager.getInstance().flush()
+                wakeOthers(it)
+            }
         )
-        val d = resources.displayMetrics.density
-        val pw = width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
-        val ph = height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
-        val ww = (pw * 0.47f).toInt().coerceAtLeast((176 * d).toInt())
-        val wh = (ph * 0.30f).toInt().coerceAtLeast((160 * d).toInt())
-        val lp = LayoutParams(ww, wh).apply {
-            gravity = Gravity.TOP or Gravity.START
-        }
-        val gutter = (8 * d).toInt()
-        val topBand = (ph - wh - gutter).coerceAtLeast(gutter)
-        if (corner == 0) {
-            lp.leftMargin = gutter
-            lp.topMargin = topBand
-        } else {
-            lp.leftMargin = (pw - ww - gutter).coerceAtLeast(gutter)
-            lp.topMargin = topBand
-        }
+        val lp = LayoutParams(100, 100).apply { gravity = Gravity.TOP or Gravity.START }
         windows[id] = win
         addView(win, lp)
+        layoutPanes()
         onChanged?.invoke()
     }
 
+    /** FAIL / auto path: one official pane only. Second pane is a second VID tap. */
     fun ensureFeeds(
         primaryUrl: String,
         secondaryUrl: String,
@@ -92,7 +96,44 @@ class VideoFeedOverlay @JvmOverloads constructor(
     ) {
         if (windows.isEmpty()) {
             openFeed("official", primaryTitle, primaryUrl, corner = 0, autoplay = true)
-            openFeed("nsf", secondaryTitle, secondaryUrl, corner = 1, autoplay = false)
+            layoutPanes()
+        }
+    }
+
+    private fun layoutPanes() {
+        if (windows.isEmpty()) return
+        val d = resources.displayMetrics.density
+        val pw = width.takeIf { it > 0 } ?: resources.displayMetrics.widthPixels
+        val ph = height.takeIf { it > 0 } ?: resources.displayMetrics.heightPixels
+        val gutter = (8 * d).toInt()
+        val two = windows.size >= 2
+        val ww = if (two) {
+            (pw * 0.47f).toInt().coerceAtLeast((176 * d).toInt())
+        } else {
+            (pw * 0.86f).toInt().coerceAtLeast((220 * d).toInt())
+        }
+        val wh = if (two) {
+            (ph * 0.30f).toInt().coerceAtLeast((160 * d).toInt())
+        } else {
+            (ph * 0.52f).toInt().coerceAtLeast((200 * d).toInt())
+        }
+        val topBand = (ph - wh - gutter).coerceAtLeast(gutter)
+        windows.entries.forEachIndexed { i, (_, win) ->
+            val lp = (win.layoutParams as? LayoutParams) ?: LayoutParams(ww, wh)
+            lp.width = ww
+            lp.height = wh
+            lp.gravity = Gravity.TOP or Gravity.START
+            if (!two) {
+                lp.leftMargin = ((pw - ww) / 2).coerceAtLeast(gutter)
+                lp.topMargin = ((ph - wh) / 2).coerceAtLeast(gutter)
+            } else if (i == 0) {
+                lp.leftMargin = gutter
+                lp.topMargin = topBand
+            } else {
+                lp.leftMargin = (pw - ww - gutter).coerceAtLeast(gutter)
+                lp.topMargin = topBand
+            }
+            win.layoutParams = lp
         }
     }
 
@@ -118,6 +159,7 @@ class VideoFeedOverlay @JvmOverloads constructor(
     }
 
     fun closeAll() {
+        CookieManager.getInstance().flush()
         windows.values.toList().forEach { it.close() }
         windows.clear()
         removeAllViews()
@@ -138,6 +180,7 @@ class VideoFeedOverlay @JvmOverloads constructor(
     }
 
     fun destroyAll() {
+        CookieManager.getInstance().flush()
         windows.values.forEach { it.destroyFeed() }
         windows.clear()
         removeAllViews()
