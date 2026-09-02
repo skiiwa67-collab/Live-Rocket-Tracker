@@ -19,6 +19,7 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.webkit.CookieManager
+import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -531,7 +532,36 @@ class CommandCenterActivity : AppCompatActivity() {
                 if (inPip()) applyPipVideoFill(true)
             }
         }
-        vidWeb.webChromeClient = WebChromeClient()
+        vidWeb.addJavascriptInterface(LrtPipBridge(), "LrtPip")
+        vidWeb.webChromeClient = object : WebChromeClient() {
+            override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
+                if (inPip()) {
+                    hopToMccMax()
+                    try { callback?.onCustomViewHidden() } catch (_: Exception) {}
+                    return
+                }
+                super.onShowCustomView(view, callback)
+            }
+        }
+    }
+
+    /** YouTube's own full-square maps to MAX MCC. No invented LRT chrome. */
+    private inner class LrtPipBridge {
+        @JavascriptInterface
+        fun toMax() {
+            handler.post { hopToMccMax() }
+        }
+    }
+
+    private fun hopToMccMax() {
+        if (!vidShowing) return
+        if (!inPip()) return
+        try {
+            val i = Intent(this, CommandCenterActivity::class.java)
+            i.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            startActivity(i)
+        } catch (_: Exception) {
+        }
     }
 
     private fun consumeVidIntent(intent: Intent?) {
@@ -605,10 +635,10 @@ class CommandCenterActivity : AppCompatActivity() {
 
     /**
      * In system PiP the WebView is the whole window. Hide YouTube *page*
-     * chrome (masthead, comments, related) and make the video cover.
-     * MIN keeps in-player chrome off so only Android grow-arrows + X show.
-     * MEDIUM / MCC leave YouTube's own CC / gear / mute on tap.
-     * Restore the watch page when leaving PiP. Same WebView — no second player.
+     * chrome (masthead, comments, related). Do not invent LRT buttons.
+     * MIN: stock YouTube/Android PiP. Hide mute/CC/gear so tap is X + grow.
+     * MEDIUM: no 100vh video fill — YouTube's own mute/CC/arrows/square/X
+     * can appear on tap, then hide again. MAX / MCC: restore the watch page.
      */
     private fun applyPipVideoFill(fill: Boolean) {
         if (!this::vidWeb.isInitialized) return
@@ -625,14 +655,16 @@ class CommandCenterActivity : AppCompatActivity() {
         }
     }
 
-    /** MEDIUM = leftover HUD packer. MAX = fullscreen MCC (not in system PiP). */
+    /** MEDIUM once the window has grown well past stock MIN. Not 75% leftover. */
     private fun pipIsMediumOrLarger(): Boolean {
         if (!inPip()) return true
         if (!this::vidWeb.isInitialized) return false
         val w = vidWeb.width
         if (w <= 0) return false
-        val leftover = leftoverHudBox()
-        return w >= leftover.width() * 3 / 4
+        val minW = stockPipBox().width()
+        val medW = comfortableMediumBox().width()
+        val gate = (minW * 2 + medW) / 3
+        return w >= gate
     }
 
     private fun enterVidPip() {
@@ -666,10 +698,9 @@ class CommandCenterActivity : AppCompatActivity() {
     private fun pipParams(): PictureInPictureParams {
         val b = PictureInPictureParams.Builder()
             .setAspectRatio(Rational(16, 9))
-        // MIN = stock Android / YouTube PiP size (no 280x168 postage).
-        // MEDIUM = leftover HUD on THIS screen. OEM may ignore; never OverlayPip.
-        b.setSourceRectHint(pipSourceHint())
-        // No LRT RemoteActions. MIN chrome is Android grow-arrows + X only.
+        // MIN hop = stock YouTube/Android PiP rect. NOT full WebView (42).
+        b.setSourceRectHint(stockPipBox())
+        // No RemoteActions. No overlay-permission gear. YouTube owns the icons.
         if (Build.VERSION.SDK_INT >= 26) {
             b.setActions(emptyList())
         }
@@ -686,22 +717,48 @@ class CommandCenterActivity : AppCompatActivity() {
         return b.build()
     }
 
-    /** Enter animation from the playing video. Not a pixel-size command. */
-    private fun pipSourceHint(): Rect {
-        if (this::vidWeb.isInitialized && vidWeb.width > 0 && vidWeb.height > 0) {
-            val loc = IntArray(2)
+    /**
+     * Stock Android/YouTube PiP: ~1/3 of the short edge, 16:9. Smaller than
+     * 42's full-WebView hint. OEM uses this as the default hop size.
+     */
+    private fun stockPipBox(): Rect {
+        val dm = resources.displayMetrics
+        val screenW = dm.widthPixels.coerceAtLeast(1)
+        val screenH = dm.heightPixels.coerceAtLeast(1)
+        val short = minOf(screenW, screenH)
+        val w = (short * 0.32f).toInt().coerceAtLeast(1)
+        val h = (w * 9f / 16f).toInt().coerceAtLeast(1)
+        val loc = IntArray(2)
+        if (this::vidWeb.isInitialized && vidWeb.width > 0) {
             vidWeb.getLocationOnScreen(loc)
-            val w = vidWeb.width
-            val h = (w * 9f / 16f).toInt().coerceAtMost(vidWeb.height).coerceAtLeast(1)
-            return Rect(loc[0], loc[1], loc[0] + w, loc[1] + h)
+            val left = loc[0] + (vidWeb.width - w).coerceAtLeast(0)
+            val top = loc[1] + ((vidWeb.height - h).coerceAtLeast(0) / 2)
+            return Rect(left, top, left + w, top + h)
         }
-        return leftoverHudBox()
+        val left = (screenW - w - (8f * dm.density).toInt()).coerceAtLeast(0)
+        val top = (screenH - h - (48f * dm.density).toInt()).coerceAtLeast(0)
+        return Rect(left, top, left + w, top + h)
     }
 
     /**
-     * Leftover HUD rectangle on THIS screen: system bars + dump-X room at the
-     * bottom so Android's drag-to-bottom close still has space. Packer, no
-     * magic 1120x630 / 280x168.
+     * MEDIUM = Chris 16:30 clean globe window: ~85% screen width, 16:9,
+     * lower third, dump-X room below. Not the 16:24 HUD-covering FAIL pane.
+     */
+    private fun comfortableMediumBox(): Rect {
+        val dm = resources.displayMetrics
+        val screenW = dm.widthPixels.coerceAtLeast(1)
+        val screenH = dm.heightPixels.coerceAtLeast(1)
+        val pack = leftoverHudBox()
+        val w = (screenW * 0.85f).toInt().coerceAtMost(pack.width()).coerceAtLeast(1)
+        val h = (w * 9f / 16f).toInt().coerceAtMost((screenH * 0.25f).toInt()).coerceAtLeast(1)
+        val left = (screenW - w) / 2
+        val top = (pack.bottom - h).coerceAtLeast(pack.top)
+        return Rect(left, top, left + w, top + h)
+    }
+
+    /**
+     * Leftover HUD on THIS screen with dump-X room at the bottom so Android
+     * drag-to-bottom close still has space. Packer bounds, not the medium size.
      */
     private fun leftoverHudBox(): Rect {
         val dm = resources.displayMetrics
@@ -711,7 +768,7 @@ class CommandCenterActivity : AppCompatActivity() {
         val insets = if (root != null) ViewCompat.getRootWindowInsets(root) else null
         val sys = insets?.getInsets(WindowInsetsCompat.Type.systemBars())
         val top = sys?.top ?: (screenH * 0.04f).toInt()
-        val dumpRoom = (screenH * 0.18f).toInt().coerceAtLeast(1)
+        val dumpRoom = (screenH * 0.22f).toInt().coerceAtLeast(1)
         val bottom = (sys?.bottom ?: 0) + dumpRoom
         val left = sys?.left ?: 0
         val right = screenW - (sys?.right ?: 0)
@@ -723,11 +780,11 @@ class CommandCenterActivity : AppCompatActivity() {
     }
 
     /**
-     * MEDIUM grow-arrow target: leftover HUD aspect, legal for Android
-     * expanded PiP and different from 16:9 so the system arrows change pixels.
+     * MEDIUM grow target: comfortable box aspect, legal for expanded PiP
+     * and different from 16:9 so the arrows change pixels. Not leftover-full.
      */
     private fun packedMediumRatio(): Rational {
-        val box = leftoverHudBox()
+        val box = comfortableMediumBox()
         var w = box.width().coerceAtLeast(1)
         var h = box.height().coerceAtLeast(1)
         val raw = w.toFloat() / h.toFloat()
@@ -740,7 +797,8 @@ class CommandCenterActivity : AppCompatActivity() {
         }
         var rat = Rational(w, h)
         if (rat == Rational(16, 9) || kotlin.math.abs(rat.toFloat() - 16f / 9f) < 0.02f) {
-            rat = Rational(8, 5)
+            // Stay a video window (Chris 16:30). Not 8:5 leftover HUD pane.
+            rat = Rational(7, 4)
         }
         return rat
     }
@@ -760,28 +818,35 @@ class CommandCenterActivity : AppCompatActivity() {
         private const val PIP_PAGE_HIDE =
             "#masthead-container,ytd-masthead,ytm-mobile-topbar-renderer,ytm-header-bar,#header,header,ytm-pivot-bar-renderer,#guide,#secondary,#related,#comments,ytd-comments,ytm-comment-section-renderer,#below,#meta,#info,#chat,ytd-live-chat-frame,ytd-watch-metadata,ytm-slim-video-metadata-section-renderer,ytm-slim-owner-renderer,ytm-item-section-renderer,ytm-engagement-panel,ytd-engagement-panel-section-list-renderer,#player-ads,.ytp-ce-element,.ytp-pause-overlay,.ytp-endscreen-content,.ytp-title,ytm-chip-cloud-renderer{display:none!important;visibility:hidden!important;height:0!important;}"
 
-        private const val PIP_PLAYER_HIDE =
-            ".ytp-chrome-top,.ytp-chrome-bottom,.ytp-gradient-top,.ytp-gradient-bottom,.ytp-subtitles-button,.ytp-settings-button,.ytp-mute-button,.ytp-play-button{display:none!important;visibility:hidden!important;}"
+        /** MIN tap: only YouTube X + grow. Hide mute / CC / settings / play / square. */
+        private const val PIP_MIN_CHROME =
+            ".ytp-mute-button,.ytp-volume-icon,.ytp-volume-panel,.ytp-subtitles-button,.ytp-settings-button,.ytp-play-button,.ytp-fullscreen-button,.ytp-progress-bar-container,.ytp-time-display,.ytp-chapter-container,.ytp-chrome-controls .ytp-right-controls .ytp-button.ytp-settings-button{display:none!important;visibility:hidden!important;}"
 
         private const val PIP_CAPTIONS_ON =
             ".ytp-caption-window-container,.caption-window,.ytp-caption-segment,.captions-text,ytm-caption-overlay-renderer{display:block!important;visibility:visible!important;opacity:1!important;z-index:2147483647!important;}"
 
-        private const val PIP_VIDEO_FILL =
-            "html,body,ytd-app,ytm-app,#content,#page-manager,ytd-watch-flexy,ytm-watch{background:#000!important;margin:0!important;padding:0!important;overflow:hidden!important;width:100%!important;height:100%!important;}" +
-            "#player,#player-container,#player-container-inner,#player-container-outer,#player-theater-container,ytd-player,#ytd-player,#movie_player,.html5-video-player,ytm-player,.player-container,#player-container-id{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;z-index:2147483646!important;background:#000!important;}" +
-            ".html5-video-container,video,video.html5-main-video,.html5-main-video{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center!important;background:#000!important;}"
+        /** Keep YouTube's own chrome above the video when it shows itself on tap. */
+        private const val PIP_CHROME_STACK =
+            ".ytp-chrome-bottom,.ytp-chrome-top,.ytp-gradient-bottom,.ytp-gradient-top,.ytp-overlay-close-button,.ytp-close-button,.ytp-size-button,.ytp-miniplayer-button,.ytp-fullscreen-button,.ytp-mute-button,.ytp-subtitles-button{z-index:2147483647!important;pointer-events:auto!important;}" +
+            "html,body,ytd-app,ytm-app,#content,#page-manager,ytd-watch-flexy,ytm-watch{background:#000!important;margin:0!important;padding:0!important;overflow:hidden!important;}" +
+            "#player,#player-container,ytd-player,#ytd-player,#movie_player,.html5-video-player,ytm-player,.player-container{position:relative!important;inset:auto!important;width:100%!important;height:auto!important;max-height:100%!important;z-index:1!important;background:#000!important;}" +
+            ".html5-video-container,video,video.html5-main-video,.html5-main-video{position:relative!important;inset:auto!important;width:100%!important;height:auto!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center!important;background:#000!important;}"
 
-        /** MIN: video only. Android grow-arrows + dump-X stay system chrome. */
+        /** MIN: page chrome gone. No 100vh fill. Tap = YouTube X + grow only. */
         private val PIP_FILL_MIN_JS =
             "(function(){var id='lrt-pip-fill';var s=document.getElementById(id);if(!s){s=document.createElement('style');s.id=id;document.documentElement.appendChild(s);}s.textContent='" +
-                PIP_VIDEO_FILL + PIP_PAGE_HIDE + PIP_PLAYER_HIDE + PIP_CAPTIONS_ON +
-                "';var v=document.querySelector('video');if(v){v.style.objectFit='cover';v.style.width='100vw';v.style.height='100vh';try{v.play();}catch(e){}}})();"
+                PIP_PAGE_HIDE + PIP_CHROME_STACK + PIP_MIN_CHROME +
+                "';var v=document.querySelector('video');if(v){v.style.objectFit='contain';v.style.width='100%';v.style.height='auto';v.style.position='relative';try{v.play();}catch(e){}}})();"
 
-        /** MEDIUM: same video fill, YouTube's own CC / gear / mute on tap. */
+        private const val PIP_YT_FULL_HOOK =
+            "if(!window._lrtPipTap){window._lrtPipTap=1;document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('.ytp-fullscreen-button,button[aria-label*=\"Full screen\"],button[title*=\"Full screen\"],button[aria-label*=\"Fullscreen\"]');if(t&&window.LrtPip){try{window.LrtPip.toMax();}catch(x){}}},true);}"
+
+        /** MEDIUM: no 100vh fill. Untapped clean. Tap shows YouTube mute/CC/arrows/square/X. */
         private val PIP_FILL_MEDIUM_JS =
             "(function(){var id='lrt-pip-fill';var s=document.getElementById(id);if(!s){s=document.createElement('style');s.id=id;document.documentElement.appendChild(s);}s.textContent='" +
-                PIP_VIDEO_FILL + PIP_PAGE_HIDE + PIP_CAPTIONS_ON +
-                "';var v=document.querySelector('video');if(v){v.style.objectFit='cover';v.style.width='100vw';v.style.height='100vh';try{v.play();}catch(e){}}})();"
+                PIP_PAGE_HIDE + PIP_CHROME_STACK + PIP_CAPTIONS_ON +
+                "';var v=document.querySelector('video');if(v){v.style.objectFit='contain';v.style.width='100%';v.style.height='auto';v.style.position='relative';try{v.play();}catch(e){}}" +
+                PIP_YT_FULL_HOOK + "})();"
 
         private const val PIP_CLEAR_JS = """
 (function(){
