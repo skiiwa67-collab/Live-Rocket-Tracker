@@ -304,7 +304,7 @@
     android:visibility="gone"
     android:importantForAutofill="yes"/>
 
-    <!-- Compact PiP/minimize chip on the playing WebView. Not a sign-in overlay bar. -->
+    <!-- Compact PiP chip, top-end. Top/end margins come from statusBars + cutout (not y=0). Hidden in system PiP. -->
     <LinearLayout
         android:id="@+id/vid_pip_bar"
         android:layout_width="wrap_content"

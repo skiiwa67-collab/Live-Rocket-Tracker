@@ -1,4 +1,4 @@
-# Live Rocket Tracker — closed tester notes (stamp 37)
+# Live Rocket Tracker — closed tester notes (stamp 38)
 
 Sideload this APK. This is **not** a Play production upload. Play testers on versionCode 17 stay on 17. Play 17 stays frozen.
 
@@ -8,8 +8,9 @@ Stamp **23** (`stamp-23-debug`) is SIGNED usable WITH the Pixel bar. Do not over
 Stamp **25** (`stamp-25-debug`) is SIGNED. Auto packs THIS page. Do not overwrite it.
 Stamp **26** (`stamp-26-debug`) is Owl AUTO / Electron HUD. Do not overwrite it.
 Stamp **36** (`stamp-36-debug`) deleted OverlayPiP. Full-screen MCC WebView + sign-in. Do not overwrite it.
+Stamp **37** (`stamp-37-debug`) explicit MCC WebView PiP + HUD session reuse. Do not overwrite it.
 
-This stamp is **37** / **1.0.27**. Built from stamp 36. OverlayPiP stays deleted.
+This stamp is **38** / **1.0.28**. Built from stamp 37. OverlayPiP stays deleted.
 
 ## VID (locked cut)
 
@@ -17,6 +18,8 @@ This stamp is **37** / **1.0.27**. Built from stamp 36. OverlayPiP stays deleted
 - CommandCenterActivity is the player (`singleTask`). Manifest has `supportsPictureInPicture=true`.
 - MCC VID is a full-screen WebView for Google / YouTube sign-in. Not 280x168. Not FloatingVideoWindow overlay chrome. Password Manager can autofill. Sign-in YT overlay bar stays gone.
 - MCC VID has an explicit **PIP** chip. One tap calls `enterPictureInPictureMode` on the playing WebView. Do not require Razr recents / taskbar swipe.
+- The PIP chip sits **below** the status bar and display cutout (`WindowInsets` statusBars). Not y=0 under signal/battery. Still top-end. Hidden while in system PiP.
+- In system PiP the window is a small **16:9 video-only** surface: MCC chrome, the PIP chip, and YouTube page chrome (title / comments / related) are hidden. The video element covers the WebView edge to edge (`object-fit: cover`). Source rect is the video surface, not the full MCC activity.
 - Back and EXIT while video is up also PiP that same WebView. They do not `finish()` or `closeVid()` the player.
 - HUD VID reuses the same Command Center session. If a video is already playing, do not load a different historic URL. Same YouTube, same `CookieManager` cookies. Existing player is brought forward and PiP'd if needed.
 - PiP is the YouTube frame (16:9 of the WebView). MCC chrome and the PIP chip are hidden in PiP. Source rect is the WebView. If `enterPictureInPictureMode` fails, stay fullscreen MCC with video still playing.
