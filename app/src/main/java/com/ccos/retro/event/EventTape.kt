@@ -3,17 +3,19 @@ package com.ccos.retro.event
 import android.graphics.Canvas
 import android.graphics.Paint
 import kotlin.math.abs
-import kotlin.math.min
 
 /**
  * Shared TEL event tape for wallpaper and MCC.
+ * The tape is the selected launch's event list — not a now-centered time clip.
  * Labels sit ABOVE and BELOW the line so they do not stack.
  * Acronyms on the tape. Full words stay on the catalog / detail.
- * Upcoming marks grow to full size ~2 minutes out. The window slides with now.
+ * Upcoming marks grow to full size ~2 minutes out. Past marks stay after they fly.
  */
 object EventTape {
 
     const val FULL_READ_SEC = 120f
+    /** Past events stay this readable after they have left the 2-minute peak. */
+    const val PAST_READ = 0.78f
 
     fun mark(title: String): String {
         val t = title.uppercase()
@@ -50,7 +52,7 @@ object EventTape {
     fun read01(tSec: Float, eventT: Float): Float {
         val until = eventT - tSec
         return when {
-            until <= -60f -> 0.40f
+            until <= -60f -> PAST_READ
             until <= FULL_READ_SEC -> 1f
             until >= 600f -> 0.32f
             else -> {
@@ -60,18 +62,18 @@ object EventTape {
         }
     }
 
-    fun window(tSec: Float, events: List<Pair<Float, String>>): Pair<Float, Float> {
-        val first = events.firstOrNull()?.first ?: 0f
-        val behind = 80f
-        val ahead = 200f
-        var w0 = tSec - behind
-        var w1 = tSec + ahead
-        if (tSec < first - 30f) {
-            w0 = min(tSec, first - 60f)
-            w1 = first + 200f
-        }
-        if (w1 - w0 < 90f) w1 = w0 + 90f
-        return w0 to w1
+    /**
+     * View of the selected launch's event list. Independent of now.
+     * Scroll/zoom (if any) is a slice of this span, never a now-centered 80s gate.
+     */
+    fun launchSpan(events: List<Pair<Float, String>>): Pair<Float, Float> {
+        if (events.isEmpty()) return 0f to 90f
+        val first = events.minOf { it.first }
+        val last = events.maxOf { it.first }
+        var a = first - 30f
+        var b = last + 40f
+        if (b - a < 90f) b = a + 90f
+        return a to b
     }
 
     fun draw(
@@ -94,7 +96,7 @@ object EventTape {
         fillPaint: Paint
     ) {
         if (right - left < 24f || bot - top < 28f || events.isEmpty()) return
-        val (win0, win1) = window(tSec, events)
+        val (win0, win1) = launchSpan(events)
         val span = (win1 - win0).coerceAtLeast(30f)
         val h = bot - top
         val lineY = top + h * 0.50f
@@ -113,21 +115,16 @@ object EventTape {
         fillPaint.color = go
         canvas.drawCircle(nowX, lineY, 7f, fillPaint)
 
-        val inWin = events.filter { it.first in (win0 - 8f)..(win1 + 8f) }
-        val visible = if (inWin.size <= 8) inWin else {
-            val near = inWin.sortedBy { abs(it.first - tSec) }.take(6)
-            (listOfNotNull(inWin.firstOrNull(), inWin.lastOrNull()) + near).distinct()
-                .sortedBy { it.first }
-        }
-        val minGap = (right - left) * 0.16f
-        val placed = ArrayList<Float>()
+        val visible = events.sortedBy { it.first }
+        val minGap = (right - left) * minOf(0.12f, 0.70f / maxOf(visible.size, 2).toFloat())
+        val placed = ArrayList<Pair<Float, Boolean>>()
         val clip = canvas.save()
         canvas.clipRect(left, top, right, bot)
         visible.forEachIndexed { i, (et, title) ->
             val x = (left + ((et - win0) / span) * (right - left)).coerceIn(left + 10f, right - 10f)
-            if (placed.any { abs(it - x) < minGap }) return@forEachIndexed
-            placed.add(x)
             val above = i % 2 == 0
+            if (placed.any { it.second == above && abs(it.first - x) < minGap }) return@forEachIndexed
+            placed.add(x to above)
             val mark = mark(title)
             val read = read01(tSec, et)
             val done = tSec >= et

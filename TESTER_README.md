@@ -26,7 +26,7 @@ Also test a **live** upcoming webcast the same way (VID on a flight that has a w
 - **AUTO double-tap** pins the flight. Lock light on AUTO when pinned. Double-tap again unpins. Single tap AUTO still browses. `+` / `-` walk events on the pinned flight. Launch pick is still CMD / MCC. There is no LCK plate.
 - **Agency / space-org display icon** stays visible. Mission text uses empty space (under the plates / below the icon) and **wraps the full name** (not “Owl Aroun”). It must not sit on the icon. Do not move home-screen widgets.
 - **Eight plates stay visible:** CMD CDT TEL STS PAD VID MSK AUTO. They are the buttons. A giant CDT slab must not sit on top of them.
-- **TEL event tape:** acronyms above and below the line (`L/O`, `MECO`, `SEP`, `SECO`, `FAIR`, `DEPLOY`). Upcoming marks get fully readable ~2 minutes out. Far-future marks stay compact. Scrolling is obvious.
+- **TEL event tape:** the selected launch (not an 80s now-window). Acronyms above and below (`L/O`, `MECO`, `SEP`, `SECO`, `FAIR`, `DEPLOY`). Past marks stay after they fly; `+`/`-` walks them. Upcoming marks get fully readable ~2 minutes out. Far-future marks stay compact. After last payload deploy the tape does not go blank.
 - **Dock gap:** nothing draws under Phone / Messages / app drawer / system nav.
 
 ## Hard locks
