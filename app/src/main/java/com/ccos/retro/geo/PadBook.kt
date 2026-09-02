@@ -114,6 +114,7 @@ object PadBook {
         val blob = "$padRaw $locRaw $siteName"
         val low = blob.lowercase()
         val place = when {
+            "mahia" in low || "māhia" in low || "rocket lab lc-1" in low -> "Rocket Lab LC-1 / Mahia"
             "satish" in low -> "Satish Dhawan"
             "sriharikota" in low || "sdsc" in low -> "Sriharikota"
             locRaw.isNotBlank() -> locRaw.split(',').first().trim().take(22)

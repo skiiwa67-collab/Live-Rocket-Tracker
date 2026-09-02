@@ -677,6 +677,16 @@ class RetroCommandWallpaperService : WallpaperService() {
                         state.registerInteraction()
                         return
                     }
+                    if (onCommandPage && prefs.isTelemetry() && telemetryModule.activePage == 5) {
+                        for ((r, url) in vidLinkHits) {
+                            if (r.contains(x, y)) {
+                                trackingSwipe = false
+                                openWebcast(url)
+                                state.registerInteraction()
+                                return
+                            }
+                        }
+                    }
                     // CDT jump chips (time scrub for demos / historical)
                     if (onCommandPage && prefs.isTelemetry() && telemetryModule.activePage == 1) {
                         for (i in jumpChipRects.indices) {
@@ -863,17 +873,19 @@ class RetroCommandWallpaperService : WallpaperService() {
             } catch (_: Exception) { }
         }
 
-        private fun openWebcast() {
+        private fun openWebcast(url: String? = null) {
             telemetryModule.resolveTracked()
             val launch = telemetryModule.tracked
-            // Prefer fresh cache entry (webcast often appears only close to NET)
             val fresh = launch?.id?.let { telemetryModule.selectableLaunches().firstOrNull { s -> s.id == it } } ?: launch
-            val url = WebcastResolver.panes(fresh).official.url
+            val panes = WebcastResolver.panes(fresh)
+            val target = url?.takeIf { it.isNotBlank() } ?: panes.official.url
+            val title = if (panes.official.isWatch) "LIVE" else panes.official.title
             try {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                startActivity(intent)
+                com.ccos.retro.ui.OverlayPip.switch(
+                    this@RetroCommandWallpaperService,
+                    target,
+                    title
+                )
             } catch (_: Exception) { }
         }
 
@@ -890,6 +902,7 @@ class RetroCommandWallpaperService : WallpaperService() {
         private val telStripAnalog = RectF()
         private val eventSkipHit = RectF()
         private val geoHit = RectF()
+        private val vidLinkHits = mutableListOf<Pair<RectF, String>>()
         private val telStripUnits = RectF()
         private val telStripText = RectF()
         private val telStripColorRects = mutableListOf<Pair<Int, RectF>>()
@@ -3797,10 +3810,10 @@ class RetroCommandWallpaperService : WallpaperService() {
                             else -> skin.muted
                         }, lamp
                     )
-                    hudPaint.textSize = telFit(value, cellW * 0.94f, valH, 18f + scale01 * 32f)
+                    hudPaint.textSize = telFit(value, cellW * 0.94f, valH, 15f + scale01 * 22f)
                     canvas.drawText(value, x, top + valH, hudPaint)
                     hudPaint.color = withLamp(skin.muted, lamp)
-                    hudPaint.textSize = telFit(lab, cellW * 0.94f, labH, 13f + scale01 * 18f)
+                    hudPaint.textSize = telFit(lab, cellW * 0.94f, labH, 11f + scale01 * 12f)
                     canvas.drawText(lab, x, bot - 2f, hudPaint)
                 }
                 return
@@ -3836,7 +3849,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                 telBold()
                 hudPaint.textAlign = Paint.Align.CENTER
                 hudPaint.color = withLamp(if (live || lab == "ACCEL") skin.text else skin.muted, lamp)
-                hudPaint.textSize = telFit(value, cellW * 0.94f, topTextH * 0.95f, 16f + scale01 * 28f)
+                hudPaint.textSize = telFit(value, cellW * 0.94f, topTextH * 0.95f, 14f + scale01 * 18f)
                 canvas.drawText(value, x, top + topTextH * 0.88f, hudPaint)
                 try {
                 drawInstrumentCan(canvas, can, skin, lamp)
@@ -6614,28 +6627,38 @@ class RetroCommandWallpaperService : WallpaperService() {
         private fun drawTelStatus(canvas: Canvas, launch: com.ccos.retro.data.LaunchSnapshot?, skin: TelemetrySkin.Tokens, ts: Float) {
             val lamp = prefs.lampBrightness
             val cx = width / 2f
-            val maxW = width * 0.72f
+            val maxW = width * 0.78f
             val titleSz = pageBodyTs(18f)
-            val bodySz = pageBodyTs(22f)
-            val subSz = pageBodyTs(14f)
+            val bodySz = pageBodyTs(20f)
+            val subSz = pageBodyTs(15f)
             val top = spreadTop()
+            val floor = dockFloor()
             hudPaint.textAlign = Paint.Align.CENTER
-            var y = top
-            y = drawWrappedCenter(canvas, "STATUS BOARD", cx, y, maxW, titleSz, withLamp(skin.accent, lamp))
-            if (launch == null) {
-                drawWrappedCenter(canvas, "AWAITING DATA", cx, y, maxW, bodySz, withLamp(skin.muted, lamp))
-                return
-            }
             val tSec = telemetryModule.effectiveSecondsFromNet()
-            val goCol = if (hudFailed(launch, tSec)) skin.danger else if (!launch.holdReason.isNullOrBlank()) skin.hold else skin.go
-            y = drawWrappedCenter(canvas, launch.statusName.uppercase(), cx, y, maxW, bodySz, withLamp(goCol, lamp))
-            y = drawWrappedCenter(canvas, launch.name, cx, y, maxW, subSz, withLamp(skin.text, lamp))
-            y = drawWrappedCenter(canvas, "${launch.rocketName}  ·  ${launch.provider}", cx, y, maxW, subSz, withLamp(skin.muted, lamp))
-            if (!launch.holdReason.isNullOrBlank()) {
-                y = drawWrappedCenter(canvas, "HOLD  ${launch.holdReason}", cx, y, maxW, subSz, withLamp(skin.hold, lamp))
+            val goCol = if (launch == null) skin.muted
+            else if (hudFailed(launch, tSec)) skin.danger
+            else if (launch.isHold()) skin.hold
+            else skin.go
+            val rows = mutableListOf<Triple<String, Int, Float>>()
+            rows += Triple("STATUS BOARD", withLamp(skin.accent, lamp), titleSz)
+            if (launch == null) {
+                rows += Triple("AWAITING DATA", withLamp(skin.muted, lamp), bodySz)
+            } else {
+                rows += Triple(launch.statusName.uppercase(), withLamp(goCol, lamp), bodySz)
+                rows += Triple(launch.name, withLamp(skin.text, lamp), subSz)
+                rows += Triple("${launch.rocketName}  ·  ${launch.provider}", withLamp(skin.muted, lamp), subSz)
+                if (!launch.holdReason.isNullOrBlank()) {
+                    rows += Triple("HOLD  ${launch.holdReason}", withLamp(skin.hold, lamp), subSz)
+                }
+                launch.probability?.let {
+                    rows += Triple("WEATHER  $it%", withLamp(skin.text, lamp), subSz)
+                }
             }
-            launch.probability?.let {
-                y = drawWrappedCenter(canvas, "WEATHER  $it%", cx, y, maxW, subSz, withLamp(skin.text, lamp))
+            val well = (floor - top).coerceAtLeast(64f)
+            val step = well / (rows.size + 1).toFloat()
+            rows.forEachIndexed { i, (text, color, sz) ->
+                val y = top + step * (i + 1f) - packRowH(sz) * 0.45f
+                drawWrappedCenter(canvas, text, cx, y, maxW, sz, color)
             }
         }
 
@@ -6766,47 +6789,37 @@ class RetroCommandWallpaperService : WallpaperService() {
         }
 
         private fun drawTelVideo(canvas: Canvas, launch: com.ccos.retro.data.LaunchSnapshot?, skin: TelemetrySkin.Tokens, ts: Float) {
+            vidLinkHits.clear()
             val lamp = prefs.lampBrightness
             val titleSz = pageBodyTs(18f)
-            val y0 = spreadTop()
-            hudPaint.color = withLamp(skin.accent, lamp)
-            hudPaint.textSize = titleSz
+            val bodySz = pageBodyTs(16f)
+            val top = spreadTop()
+            val floor = dockFloor()
+            val cx = width / 2f
+            val maxW = width * 0.78f
             hudPaint.textAlign = Paint.Align.CENTER
-            canvas.drawText("WEBCAST", width / 2f, y0 + titleSz, hudPaint)
-            // Fake embed frame — below the agency mark, above the dock
-            strokePaint.style = Paint.Style.STROKE
-            strokePaint.strokeWidth = 2f
-            strokePaint.color = withLamp(skin.accent, lamp * 0.7f)
-            val fx = laneLeft()
-            val fy = y0 + titleSz + packLead(titleSz)
-            val fw = (laneRight() - laneLeft()).coerceAtLeast(8f)
-            val fh = min(height * 0.22f, (dockFloor() - fy) * 0.55f)
-            canvas.drawRoundRect(fx, fy, fx + fw, fy + fh, 10f, 10f, strokePaint)
-            fillPaint.color = withLamp(Color.parseColor("#18000000"), lamp)
-            canvas.drawRoundRect(fx, fy, fx + fw, fy + fh, 10f, 10f, fillPaint)
-            // Play triangle
-            fillPaint.color = withLamp(skin.accent, lamp)
-            val path = Path()
-            val pcx = width / 2f
-            val pcy = fy + fh / 2f
-            path.moveTo(pcx - 18f, pcy - 22f)
-            path.lineTo(pcx - 18f, pcy + 22f)
-            path.lineTo(pcx + 26f, pcy)
-            path.close()
-            canvas.drawPath(path, fillPaint)
-            hudPaint.color = withLamp(skin.text, lamp)
-            hudPaint.textSize = 14f * ts
-            hudPaint.color = withLamp(skin.text, lamp)
-            hudPaint.textSize = pageBodyTs(14f)
-            canvas.drawText("TAP TO OPEN LIVE FOR THIS LAUNCH", width / 2f, fy + fh + 28f, hudPaint)
-            if (launch != null) {
-                drawWrappedCenter(
-                    canvas, launch.name, width / 2f, fy + fh + 52f,
-                    width * 0.72f, pageBodyTs(16f), withLamp(skin.accent, lamp)
-                )
-                hudPaint.color = withLamp(skin.muted, lamp)
-                hudPaint.textSize = pageBodyTs(13f)
-                canvas.drawText(launch.provider.take(24), width / 2f, fy + fh + 100f, hudPaint)
+            val panes = com.ccos.retro.data.WebcastResolver.panes(launch)
+            val live = launch != null && panes.official.isWatch
+            val hideAgency = launch?.isRocketLab() == true || launch?.isIsro() == true
+            val rows = mutableListOf<Triple<String, String, Int>>()
+            rows += Triple("LINKS", "", withLamp(skin.accent, lamp))
+            if (live) {
+                rows += Triple("LIVE", panes.official.url, withLamp(skin.go, lamp))
+            } else {
+                rows += Triple(panes.official.title.ifBlank { "OFFICIAL" }, panes.official.url, withLamp(skin.text, lamp))
+                if (!hideAgency) {
+                    rows += Triple("KEEP-ALIVE  HISTORIC / AGENCY", panes.nsf.url, withLamp(skin.muted, lamp))
+                }
+            }
+            val well = (floor - top).coerceAtLeast(64f)
+            val step = well / (rows.size + 1).toFloat()
+            rows.forEachIndexed { i, (label, url, color) ->
+                val y = top + step * (i + 1f)
+                drawWrappedCenter(canvas, label, cx, y, maxW, if (i == 0) titleSz else bodySz, color)
+                if (url.isNotBlank()) {
+                    val h = packRowH(bodySz) + 12f
+                    vidLinkHits += RectF(laneLeft(), y - 8f, laneRight(), y + h) to url
+                }
             }
         }
 

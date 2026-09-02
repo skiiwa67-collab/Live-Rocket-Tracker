@@ -752,7 +752,23 @@ object VehicleDraw {
             tanks(canvas, cx, baseY - s1H, baseY, w, fuelOf(tSec, launch, 1), false, lamp, alpha)
             stroke.color = strokeC
             canvas.drawRoundRect(cx - w, baseY - s1H, cx + w, baseY, 2f, 2f, stroke)
-            bell(canvas, cx, baseY, w * 0.7f, h * 0.028f, lamp, alpha, false)
+            val bellW = w * 0.34f
+            val bellH = h * 0.032f
+            bell(canvas, cx, baseY, bellW, bellH, lamp, alpha, false)
+            for (i in 0 until 8) {
+                val a = Math.toRadians(-90.0 + i * 45.0)
+                val rr = w * 0.78f
+                bell(
+                    canvas,
+                    cx + (rr * cos(a)).toFloat(),
+                    baseY,
+                    bellW,
+                    bellH,
+                    lamp,
+                    alpha,
+                    false
+                )
+            }
             if (burning(tSec, launch, 1, sep)) flame(canvas, cx, baseY, w * 2.2f, h * 0.12f, alpha, tSec, "merlin")
         }
         if (drawS2) {
@@ -764,6 +780,7 @@ object VehicleDraw {
             stroke.color = strokeC
             canvas.drawRoundRect(cx - w * 0.78f, bot - s2H, cx + w * 0.78f, bot, 2f, 2f, stroke)
             ogive(canvas, cx, bot - s2H, bot - s2H - (if (drawS1) h * 0.16f else h * 0.32f), w * 0.78f, carbon, strokeC)
+            bell(canvas, cx, bot, w * 0.55f, h * 0.048f, lamp, alpha, true)
             if (burning(tSec, launch, 2, sep) && !drawS1) flame(canvas, cx, bot, w * 1.6f, h * 0.10f, alpha, tSec, "merlin")
         }
     }

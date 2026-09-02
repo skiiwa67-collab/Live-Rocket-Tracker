@@ -116,12 +116,14 @@ class CommandCenterActivity : AppCompatActivity() {
         vidBtn.setOnClickListener {
             val launch = telemetryModule.tracked
             val feeds = WebcastResolver.panes(launch)
-            videoOverlay.toggleFeeds(
-                primaryUrl = feeds.official.url,
-                secondaryUrl = feeds.nsf.url,
-                primaryTitle = feeds.official.title,
-                secondaryTitle = feeds.nsf.title
-            )
+            if (videoOverlay.isShowing()) {
+                videoOverlay.closeAll()
+            } else {
+                videoOverlay.switchFeed(
+                    feeds.official.url,
+                    if (feeds.official.isWatch) "LIVE" else feeds.official.title
+                )
+            }
             updateVidButton()
         }
         updateVidButton()

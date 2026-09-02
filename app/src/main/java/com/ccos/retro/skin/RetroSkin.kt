@@ -8,7 +8,7 @@ import android.graphics.Color
  */
 object RetroSkin {
     val bg          = Color.parseColor("#060708")
-    val grid        = Color.parseColor("#12161A")
+    val grid        = Color.parseColor("#2A323C")
     val cyan        = Color.parseColor("#D8E0E8")   // stencil silver
     val orange      = Color.parseColor("#E8A020")   // amber needle
     val green       = Color.parseColor("#3DCC7A")   // GO lamp

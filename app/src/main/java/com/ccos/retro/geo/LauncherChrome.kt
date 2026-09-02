@@ -21,7 +21,8 @@ object LauncherChrome {
 
     private val HOTSEAT_DIMENS = arrayOf(
         "hotseat_bar_size", "hotseat_height", "hotseat_size",
-        "dynamic_grid_hotseat_size", "hotseat_bar_height", "hotseat_layout_height"
+        "dynamic_grid_hotseat_size", "hotseat_bar_height", "hotseat_layout_height",
+        "taskbar_size", "taskbar_height", "dock_height", "dock_bar_height"
     )
     private val QSB_DIMENS = arrayOf(
         "qsb_widget_height", "qsb_height", "search_widget_hotseat_height",
@@ -84,6 +85,7 @@ object LauncherChrome {
             WindowInsetsCompat.Type.systemGestures() or
             WindowInsetsCompat.Type.mandatorySystemGestures() or
             WindowInsetsCompat.Type.tappableElement() or
+            WindowInsetsCompat.Type.captionBar() or
             WindowInsetsCompat.Type.displayCutout()
         var b = max(
             max(compat.getInsets(mask).bottom, compat.getInsetsIgnoringVisibility(mask).bottom),
