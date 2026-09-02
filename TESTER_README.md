@@ -11,6 +11,14 @@ Stamp **27** (`stamp-27-debug`) is SIGNED. Live LL2 AUTO/picker window. Do not o
 
 This stamp is **28** / **1.0.18**. Overlay PiP player well. Not a rebuild of 20–27.
 
+## HUD look (queued after PiP)
+
+- VID LIVE / LINKS are real targets (bigger type, Click Me). Official watch if LL2 has one, else related historic Electron replay. Taps switch the **clean overlay PiP**, not a fat YouTube pane.
+- STS / MSK spread big in the well. Published pages only (LL2 info/wiki, or the official Rocket Lab Owl sheet). Taps are ACTION_VIEW like PAD geo.
+- Tape takes a packer share above `dockFloor()` so L/O MAXQ SECO DEPLOY stay readable. Now = wall-clock. After the book, now sits at the right. No invented past marks.
+- ACCEL / ENG labels sit under the analog cans, not at the band floor toward the dock.
+- Clock is still the biggest. T-/T+ is next. A glance word is reserved: **LIVE / HOLD / GO / IN FLIGHT / PAST / SIM**. A Success hours after NET is PAST, not live GO. Every launch — not an Owl AUTO/layout key.
+
 ## Overlay PiP (the Razr bug)
 
 Stamp 27 HUD VID was a collapsed title bar (SignIN YT − + X, no player) or a full-screen YouTube pane that stole every plate tap.

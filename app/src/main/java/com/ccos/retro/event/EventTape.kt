@@ -6,10 +6,10 @@ import kotlin.math.abs
 
 /**
  * Shared TEL event tape for wallpaper and MCC.
- * The tape is the selected launch's event list — not a now-centered time clip.
+ * Now is wall-clock T-/T+. After the book, now sits at the right so L/O MAXQ
+ * SECO DEPLOY stay spread. In a long book, the window centers on now.
+ * Catalog events only — no invented past marks.
  * Labels sit ABOVE and BELOW the line so they do not stack.
- * Acronyms on the tape. Full words stay on the catalog / detail.
- * Upcoming marks grow to full size ~2 minutes out. Past marks stay after they fly.
  */
 object EventTape {
 
@@ -63,8 +63,8 @@ object EventTape {
     }
 
     /**
-     * View of the selected launch's event list. Independent of now.
-     * Scroll/zoom (if any) is a slice of this span, never a now-centered 80s gate.
+     * Catalog span. Used after the book and for short tapes (Electron-class)
+     * so L/O MAXQ SECO DEPLOY stay readable. No fake marks.
      */
     fun launchSpan(events: List<Pair<Float, String>>): Pair<Float, Float> {
         if (events.isEmpty()) return 0f to 90f
@@ -72,6 +72,27 @@ object EventTape {
         val last = events.maxOf { it.first }
         var a = first - 30f
         var b = last + 40f
+        if (b - a < 90f) b = a + 90f
+        return a to b
+    }
+
+    /**
+     * Tape window. Center = now while the vehicle is still in the book.
+     * After the last catalog mark (Success T+ hours), keep the book spread.
+     */
+    fun viewSpan(events: List<Pair<Float, String>>, tSec: Float): Pair<Float, Float> {
+        val catalog = launchSpan(events)
+        if (events.isEmpty()) return catalog
+        val first = events.minOf { it.first }
+        val last = events.maxOf { it.first }
+        val book = (last - first).coerceAtLeast(1f)
+        if (book <= 900f) return catalog
+        if (tSec < first - 30f || tSec > last + 40f) return catalog
+        val half = (book * 0.28f).coerceIn(240f, 720f)
+        var a = tSec - half
+        var b = tSec + half
+        if (tSec - first < half) a = catalog.first
+        if (last - tSec < half) b = catalog.second
         if (b - a < 90f) b = a + 90f
         return a to b
     }
@@ -95,8 +116,8 @@ object EventTape {
         strokePaint: Paint,
         fillPaint: Paint
     ) {
-        if (right - left < 24f || bot - top < 28f || events.isEmpty()) return
-        val (win0, win1) = launchSpan(events)
+        if (right - left < 24f || bot - top < 22f || events.isEmpty()) return
+        val (win0, win1) = viewSpan(events, tSec)
         val span = (win1 - win0).coerceAtLeast(30f)
         val h = bot - top
         val lineY = top + h * 0.50f

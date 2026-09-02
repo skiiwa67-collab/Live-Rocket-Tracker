@@ -328,6 +328,9 @@ class LaunchDataProvider {
             val padLat = floatOrNull(padObj, "latitude")
             val padLon = floatOrNull(padObj, "longitude")
             val refs = extractWebcasts(o)
+            val missionObj = o.optJSONObject("mission")
+            val lspObj = o.optJSONObject("launch_service_provider") ?: o.optJSONObject("lsp")
+            val rocketCfg = o.optJSONObject("rocket")?.optJSONObject("configuration")
             list.add(
                 LaunchSnapshot(
                     id = strOrNull(o, "id") ?: "unknown-$i",
@@ -350,6 +353,11 @@ class LaunchDataProvider {
                     webcastUrl = refs.firstOrNull()?.url,
                     webcasts = refs,
                     webcastLive = o.optBoolean("webcast_live", false),
+                    infoUrls = extractHttpUrls(o, "infoURLs", "info_urls"),
+                    padWikiUrl = httpOrNull(padObj, "wiki_url") ?: httpOrNull(padObj, "info_url"),
+                    missionWikiUrl = httpOrNull(missionObj, "wiki_url") ?: httpOrNull(missionObj, "info_url"),
+                    agencyWikiUrl = httpOrNull(lspObj, "wiki_url") ?: httpOrNull(lspObj, "info_url")
+                        ?: httpOrNull(rocketCfg, "wiki_url"),
                     probability = if (o.has("probability") && !o.isNull("probability"))
                         o.optInt("probability") else null,
                     holdReason = strOrNull(o, "holdreason")?.takeIf { it.isNotBlank() },
@@ -388,6 +396,29 @@ class LaunchDataProvider {
             strOrNull(o, "video_url")?.let { out += WebcastRef(it) }
         }
         return out
+    }
+
+    private fun extractHttpUrls(o: JSONObject, vararg keys: String): List<String> {
+        val out = mutableListOf<String>()
+        for (key in keys) {
+            val arr = o.optJSONArray(key) ?: continue
+            for (i in 0 until arr.length()) {
+                val item = arr.opt(i)
+                val u = when (item) {
+                    is String -> item
+                    is JSONObject -> strOrNull(item, "url") ?: strOrNull(item, "info_url")
+                    else -> null
+                }
+                if (!u.isNullOrBlank() && u.startsWith("http")) out += u
+            }
+        }
+        return out.distinct()
+    }
+
+    private fun httpOrNull(o: JSONObject?, key: String): String? {
+        if (o == null) return null
+        val u = strOrNull(o, key) ?: return null
+        return u.takeIf { it.startsWith("http") }
     }
 
     private fun parseIso(s: String?): Long? {
