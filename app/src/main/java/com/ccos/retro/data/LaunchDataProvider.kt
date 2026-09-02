@@ -35,7 +35,14 @@ class LaunchDataProvider {
         private val cache = AtomicReference<LaunchListResult?>(null)
         private val pastCache = AtomicReference<LaunchListResult?>(null)
         @Volatile private var lastFetchMs = 0L
-        private const val minIntervalMs = 2 * 60 * 1000L
+        @Volatile private var lastAttemptMs = 0L
+        @Volatile private var backoffUntilMs = 0L
+        @Volatile private var throttleHits = 0
+        @Volatile private var allowLldev = false
+        @Volatile private var lastWasThrottle = false
+        private const val minIntervalMs = 5 * 60 * 1000L
+        private const val backoffMs = 5 * 60 * 1000L
+        private const val backoffMaxMs = 15 * 60 * 1000L
         @Volatile var sharedStatus: String = "Idle — not fetched yet"
         @Volatile var sharedFetching: Boolean = false
         @Volatile var sharedError: String? = null
@@ -143,54 +150,117 @@ class LaunchDataProvider {
 
     fun refreshIfNeeded(force: Boolean = false, onDone: ((LaunchListResult?) -> Unit)? = null) {
         val now = System.currentTimeMillis()
-        if (!force && cache.get() != null && (now - lastFetchMs) < minIntervalMs) {
-            sharedStatus = "Cached · ${lastCount} launches · ${lastSource}"
-            onDone?.invoke(cache.get())
+        val cached = cache.get()
+        if (isFetching) {
+            onDone?.invoke(cached)
             return
         }
-        if (isFetching) {
-            sharedStatus = "Fetching…"
-            onDone?.invoke(cache.get())
+        if (now < backoffUntilMs) {
+            sharedStatus = throttleStatus(cached)
+            onDone?.invoke(cached)
+            return
+        }
+        if (!force && cached != null && lastFetchMs > 0L && (now - lastFetchMs) < minIntervalMs) {
+            sharedStatus = "Cached · $lastCount launches · $lastSource"
+            onDone?.invoke(cached)
+            return
+        }
+        if (!force && lastAttemptMs > 0L && (now - lastAttemptMs) < minIntervalMs) {
+            sharedStatus = if (lastWasThrottle) throttleStatus(cached)
+            else "Cached · $lastCount launches · $lastSource"
+            onDone?.invoke(cached)
             return
         }
         sharedFetching = true
-        sharedStatus = "Fetching Launch Library 2…"
-        sharedError = null
+        lastAttemptMs = now
+        sharedStatus = if (cached != null) "Refreshing… · cache $lastCount" else "Fetching Launch Library 2…"
         executor.execute {
             try {
-                var source = "ll2"
-                var upcoming = fetchList(PROD_UPCOMING, "ll2")
-                if (upcoming == null) {
-                    sharedStatus = "Prod upcoming throttled — trying lldev…"
-                    upcoming = fetchList(DEV_UPCOMING, "lldev")
-                    if (upcoming != null) source = "lldev"
-                }
-                var previous = fetchList(PROD_PREVIOUS, "ll2")
-                if (previous == null) {
-                    previous = fetchList(DEV_PREVIOUS, "lldev")
-                }
-                previous?.let { pastCache.set(enrich(it)) }
-                val upcomingList = upcoming ?: LaunchListResult(emptyList(), System.currentTimeMillis(), source)
-                val merged = mergeWatch(enrich(upcomingList), pastCache.get())
-                if (merged.launches.isNotEmpty() || pastCache.get() != null) {
-                    cache.set(merged)
-                    lastFetchMs = System.currentTimeMillis()
-                    sharedCount = merged.launches.size
-                    sharedSource = source
-                    sharedError = if (upcoming == null) lastError else null
-                    val pastN = previous?.launches?.size ?: 0
-                    sharedStatus = "OK · ${upcomingList.launches.size} upcoming · $pastN past · $source"
-                    Log.i(TAG, lastStatus)
-                    onDone?.invoke(merged)
-                } else {
-                    sharedError = lastError ?: "No launches from LL2"
-                    sharedStatus = "NO CATALOG · $lastError · past=${previous?.launches?.size ?: 0}"
-                    Log.w(TAG, lastStatus)
-                    onDone?.invoke(cache.get())
-                }
+                pullCatalog(cached, onDone)
             } finally {
                 sharedFetching = false
             }
+        }
+    }
+
+    private fun pullCatalog(cached: LaunchListResult?, onDone: ((LaunchListResult?) -> Unit)?) {
+        var source = "ll2"
+        var upcoming = fetchList(PROD_UPCOMING, "ll2")
+        var previous = fetchList(PROD_PREVIOUS, "ll2")
+        val prodThrottled = lastWasThrottle && upcoming == null
+
+        if (upcoming == null && allowLldev) {
+            val devUp = fetchList(DEV_UPCOMING, "lldev")
+            if (devUp != null) {
+                upcoming = devUp
+                source = "lldev"
+            }
+            if (previous == null) previous = fetchList(DEV_PREVIOUS, "lldev")
+            allowLldev = false
+        } else if (upcoming == null) {
+            allowLldev = true
+            keepCache(cached, previous, throttled = true, onDone)
+            return
+        }
+
+        previous?.let { pastCache.set(enrich(it)) }
+        if (upcoming != null) {
+            val merged = mergeWatch(enrich(upcoming), pastCache.get())
+            cache.set(merged)
+            lastFetchMs = System.currentTimeMillis()
+            throttleHits = 0
+            backoffUntilMs = 0L
+            allowLldev = false
+            lastWasThrottle = false
+            sharedCount = merged.launches.size
+            sharedSource = source
+            sharedError = null
+            val pastN = pastCache.get()?.launches?.size ?: 0
+            sharedStatus = "OK · ${upcoming.launches.size} upcoming · $pastN past · $source"
+            Log.i(TAG, lastStatus)
+            onDone?.invoke(merged)
+            return
+        }
+        keepCache(cached, previous, prodThrottled, onDone)
+    }
+
+    private fun keepCache(
+        cached: LaunchListResult?,
+        previous: LaunchListResult?,
+        throttled: Boolean,
+        onDone: ((LaunchListResult?) -> Unit)?
+    ) {
+        previous?.let { pastCache.set(enrich(it)) }
+        val keep = cached ?: cache.get()
+        if (throttled) startBackoff()
+        if (keep != null) {
+            sharedCount = keep.launches.size
+            sharedStatus = if (throttled || lastWasThrottle) throttleStatus(keep)
+            else "Cached · ${keep.launches.size} launches · $lastSource"
+            Log.w(TAG, lastStatus)
+            onDone?.invoke(keep)
+        } else {
+            sharedError = sharedError ?: "No launches from LL2"
+            sharedStatus = if (throttled || lastWasThrottle) throttleStatus(null)
+            else "NO CATALOG · $sharedError"
+            Log.w(TAG, lastStatus)
+            onDone?.invoke(null)
+        }
+    }
+
+    private fun startBackoff() {
+        throttleHits += 1
+        val wait = (backoffMs * throttleHits).coerceAtMost(backoffMaxMs)
+        backoffUntilMs = System.currentTimeMillis() + wait
+    }
+
+    private fun throttleStatus(cached: LaunchListResult?): String {
+        val waitMs = (backoffUntilMs - System.currentTimeMillis()).coerceAtLeast(0L)
+        val waitMin = ((waitMs + 59_999L) / 60_000L).coerceAtLeast(1L)
+        return if (cached != null || cache.get() != null) {
+            "THROTTLED · using cache (${lastCount}) · retry in ${waitMin}m"
+        } else {
+            "THROTTLED · retry in ${waitMin}m"
         }
     }
 
@@ -201,18 +271,22 @@ class LaunchDataProvider {
                 readTimeout = 12_000
                 requestMethod = "GET"
                 setRequestProperty("Accept", "application/json")
-                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.17 (Android; upcoming+previous)")
+                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.18 (Android; upcoming+previous)")
             }
             val code = conn.responseCode
             if (code != 200) {
                 val errBody = try { conn.errorStream?.bufferedReader()?.use { it.readText() } } catch (_: Exception) { null }
+                lastWasThrottle = code == 429 ||
+                    errBody?.contains("throttl", ignoreCase = true) == true
                 sharedError = "HTTP $code${errBody?.let { " · ${it.take(80)}" } ?: ""}"
                 Log.w(TAG, "HTTP $code from $urlStr · $errBody")
                 return null
             }
+            lastWasThrottle = false
             val body = conn.inputStream.bufferedReader().use { it.readText() }
             parseList(body, sourceTag)
         } catch (e: Exception) {
+            lastWasThrottle = false
             sharedError = e.message ?: "network error"
             Log.e(TAG, "Fetch failed: ${e.message}")
             null

@@ -193,8 +193,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         populateLaunchSpinner()
-        updateLaunchStatus("Fetching…")
-        launchProvider.refreshIfNeeded(force = true) {
+        updateLaunchStatus(launchProvider.lastStatus)
+        launchProvider.refreshIfNeeded(force = false) {
             runOnUiThread {
                 populateLaunchSpinner()
                 updateLaunchStatus(launchProvider.lastStatus)

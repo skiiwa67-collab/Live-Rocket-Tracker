@@ -28,3 +28,4 @@ Stamp 27 HUD VID was a collapsed title bar (SignIN YT − + X, no player) or a f
 - Eight plates: **CMD CDT TEL STS PAD VID MSK AUTO**.
 - No AUDIOFOCUS_GAIN. YouTube keeps the speaker. Overlay mute is JS only.
 - AUTO / picker is the stamp 27 live LL2 window.
+- LL2: cache upcoming+previous. No refetch on every plate/frame. Throttle backs off minutes and keeps last good cache. lldev only after that backoff.
