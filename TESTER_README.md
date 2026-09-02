@@ -26,7 +26,6 @@ GISAT Hindi look remains when that ISRO launch is pinned/selected. Do not force 
 
 - Clock at the top and T-/T+ under it are SIGNED. Do not treat a change there as a pass.
 - Event tape packs above the Razr dock (WindowInsets / packer). Eight plates are not moved.
-- Unknown vehicle = **NEW VEHICLE**. We do not invent drawings or numbers.
 - No AUDIOFOCUS_GAIN. Overlay PiP stays signed.
 
 ## Also still true from 25 / 26
