@@ -13,7 +13,6 @@ import android.os.Build
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.WindowInsets
-import android.view.WindowManager
 import com.ccos.retro.BuildConfig
 import com.ccos.retro.data.LaunchDataProvider
 import com.ccos.retro.data.SystemMetricsProvider
@@ -33,6 +32,7 @@ import com.ccos.retro.event.VehicleOutline
 import com.ccos.retro.event.FlightEventCatalog
 import com.ccos.retro.event.FlightEventMonitor
 import com.ccos.retro.event.KineticFx
+import com.ccos.retro.geo.LauncherChrome
 import com.ccos.retro.geo.PadBook
 import com.ccos.retro.geo.PadGlyph
 import com.ccos.retro.event.MissionFacts
@@ -207,6 +207,7 @@ class RetroCommandWallpaperService : WallpaperService() {
         private var insetTappableBottom = 0
         private var insetGestureBottom = 0
         private var insetMandatoryBottom = 0
+        private var lastEngineInsets: WindowInsets? = null
         private var touchStartX = 0f
         private var touchStartY = 0f
         private var trackingSwipe = false
@@ -465,6 +466,7 @@ class RetroCommandWallpaperService : WallpaperService() {
         }
 
         override fun onApplyWindowInsets(insets: WindowInsets?) {
+            lastEngineInsets = insets
             if (insets != null) {
                 insetNavBottom = insets.systemWindowInsetBottom
                 if (Build.VERSION.SDK_INT >= 30) {
@@ -476,7 +478,6 @@ class RetroCommandWallpaperService : WallpaperService() {
                     insetTappableBottom = insets.getInsets(WindowInsets.Type.tappableElement()).bottom
                     insetGestureBottom = insets.getInsets(WindowInsets.Type.systemGestures()).bottom
                     insetMandatoryBottom = insets.getInsets(WindowInsets.Type.mandatorySystemGestures()).bottom
-                    packWindowMetricsInsets()
                 } else if (Build.VERSION.SDK_INT >= 29) {
                     insetTappableBottom = insets.systemGestureInsets.bottom
                     insetGestureBottom = insets.systemGestureInsets.bottom
@@ -485,51 +486,18 @@ class RetroCommandWallpaperService : WallpaperService() {
             super.onApplyWindowInsets(insets)
         }
 
-        /** Display window metrics — wallpaper Engine insets are often nav-pill only. */
-        private fun packWindowMetricsInsets() {
-            if (Build.VERSION.SDK_INT < 30) return
-            try {
-                val wm = this@RetroCommandWallpaperService.getSystemService(WINDOW_SERVICE) as WindowManager
-                val wi = wm.currentWindowMetrics.windowInsets
-                insetNavBottom = maxOf(
-                    insetNavBottom,
-                    wi.getInsets(WindowInsets.Type.navigationBars()).bottom,
-                    wi.getInsets(WindowInsets.Type.systemBars()).bottom
-                )
-                insetTappableBottom = maxOf(
-                    insetTappableBottom,
-                    wi.getInsets(WindowInsets.Type.tappableElement()).bottom
-                )
-                insetGestureBottom = maxOf(
-                    insetGestureBottom,
-                    wi.getInsets(WindowInsets.Type.systemGestures()).bottom
-                )
-                insetMandatoryBottom = maxOf(
-                    insetMandatoryBottom,
-                    wi.getInsets(WindowInsets.Type.mandatorySystemGestures()).bottom
-                )
-            } catch (_: Exception) { }
-        }
-
         /**
-         * Top of Phone/Messages/app drawer + nav pill.
-         * Packer uses system insets + the system launcher icon dimen for the
-         * hotseat row. A tappable bump above the pill is not the dock.
+         * Top of the whole launcher gap: Google search + Phone/Messages
+         * hotseat + nav. Live wallpaper is fullscreen; nav-only insets are
+         * not that gap. [LauncherChrome] reads WindowInsetsCompat plus the
+         * HOME launcher's own hotseat/QSB dimens. Plates are not moved.
          */
         private fun dockFloor(): Float {
-            packWindowMetricsInsets()
-            val icon = resources.getDimension(android.R.dimen.app_icon_size)
-            val navRes = resources.getIdentifier("navigation_bar_height", "dimen", "android")
-            val navDim = if (navRes != 0) resources.getDimension(navRes) else 0f
-            val nav = maxOf(insetNavBottom.toFloat(), navDim)
-            val chrome = maxOf(
-                nav,
-                insetTappableBottom.toFloat(),
-                insetGestureBottom.toFloat(),
-                insetMandatoryBottom.toFloat()
+            val gap = LauncherChrome.bottomGap(
+                this@RetroCommandWallpaperService,
+                lastEngineInsets
             )
-            val hotseat = if (chrome >= nav + icon) 0f else icon
-            return (height - chrome - hotseat).coerceAtMost(height.toFloat())
+            return (height - gap).coerceAtMost(height.toFloat())
         }
 
         /**
