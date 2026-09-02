@@ -195,10 +195,6 @@ class VideoFeedOverlay @JvmOverloads constructor(
 
     fun isShowing(): Boolean = windows.isNotEmpty()
 
-    fun activeUrl(): String = windows.values.lastOrNull()?.currentUrl.orEmpty()
-
-    fun activeTitle(): String = windows.values.lastOrNull()?.titleText().orEmpty()
-
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (windows.isEmpty()) return false
         if (ev.actionMasked == MotionEvent.ACTION_DOWN && !hitWindow(ev)) return false
