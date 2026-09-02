@@ -1,4 +1,4 @@
-# Live Rocket Tracker — closed tester notes (stamp 39)
+# Live Rocket Tracker — closed tester notes (stamp 42)
 
 Sideload this APK. This is **not** a Play production upload. Play testers on versionCode 17 stay on 17. Play 17 stays frozen.
 
@@ -10,30 +10,35 @@ Stamp **26** (`stamp-26-debug`) is Owl AUTO / Electron HUD. Do not overwrite it.
 Stamp **36** (`stamp-36-debug`) deleted OverlayPiP. Full-screen MCC WebView + sign-in. Do not overwrite it.
 Stamp **37** (`stamp-37-debug`) explicit MCC WebView PiP + HUD session reuse. Do not overwrite it.
 Stamp **38** (`stamp-38-debug`) inset PIP chip + video-only 16:9 system PiP. Chris SIGNED as nice. Do not overwrite it.
+Stamp **39** (`stamp-39-debug`) mute + brighter HUD grid + MCC square expand. Do not overwrite it.
+Leave **40** and **41** tags if they exist. This stamp is **not** those overlay cuts.
 
-This stamp is **39** / **1.0.29**. Built from stamp 38 only. OverlayPiP stays deleted. Do not invent OverlayPipActivity or FloatingVideoWindow.
+This stamp is **42** / **1.0.32**. Built from stamp 39 only. OverlayPiP stays deleted. SizedVidWindow is not in the tree. Do not invent OverlayPipActivity, FloatingVideoWindow, or SizedVidWindow.
 
 ## VID (locked cut)
 
 - OverlayPipActivity stays gone. HUD VID and MCC VID do not wrap it, hop it, or PiP it.
 - CommandCenterActivity is the player (`singleTask`). Manifest has `supportsPictureInPicture=true`.
 - MCC VID is a full-screen WebView for Google / YouTube sign-in. Not OverlayPip. Password Manager can autofill.
-- MCC VID has an explicit **PIP** chip. One tap calls `enterPictureInPictureMode` on the playing WebView.
+- MCC VID has an explicit **PIP** chip. One tap calls `enterPictureInPictureMode` on the playing WebView. Home / `onUserLeaveHint` / `setAutoEnterEnabled` hop to **system** PiP.
 - The PIP chip sits **below** the status bar and display cutout. Hidden while in system PiP. After center-expand back to fullscreen MCC, the PIP chip is still there to hop back to PiP.
-- In system PiP the window is a **16:9 video-only** surface: MCC chrome, the PIP chip, and YouTube page chrome (title / comments / related) are hidden. Video fills the WebView.
 - **Center expand** on the system PiP chrome = fullscreen MCC to browse videos. That is kept. It is not a second player.
 - Back and EXIT while video is up also PiP that same WebView.
 - HUD VID reuses the same Command Center session.
 - No AUDIOFOCUS_GAIN. YouTube wins.
+- SignIN YT − + X bar stays dead.
 
-## Stamp 39 PiP chrome (system only)
+## Stamp 42 PiP chrome (system only)
 
-- Tap the PiP chrome: **MUTE** (speaker) and **CC** (closed captions) sit next to the system gear / X via `PictureInPictureParams.setActions` `RemoteAction`. Not a new overlay window.
-- CC stays enabled / tappable. Mute toggles the playing WebView `video.muted` (JS on the video element). Broadcasts are wired in `CommandCenterActivity`.
-- Size toggle (system bottom-right arrows, plus a size RemoteAction): inward = compact like stamp-26 emu ~280x168; outward = current big Razr ~1120x630. Implemented with `setPictureInPictureParams` / `sourceRectHint` / 16:9 `aspectRatio`.
-- **OEM note:** Motorola currently pins ~1120x630 (`Rect 52,1606-1172,2236`). If the OEM ignores the compact hint, this stamp does **not** invent OverlayPip to fake a small window. Report that — the mute/CC actions still work on the system chrome.
+- **REAL Android Picture-in-Picture.** Drag the picture to the bottom: Android's dump-X appears. Dump it. That is the close. OEM PiP X if present can stay. Still draggable.
+- **MIN** (stock YouTube / Android PiP size — not 280x168 postage): only system grow-arrows + X. No LRT CC, no LRT gear, no LRT mute overlay, no invented buttons. Fake `ic_pip_cc` RemoteAction is deleted.
+- **MEDIUM** (grow arrows): leftover HUD on THIS screen, packer — not magic 1120x630. Tap shows YouTube's own CC / gear / mute / arrows.
+- **MAX**: fullscreen MCC square path. Full YouTube icons including CC and gear.
+- Mute is YouTube mute (native chrome on MEDIUM / MAX tap). Not an LRT overlay at MIN.
+- Captions render on the video frame (`textTracks` / YouTube caption windows). We do not draw an LRT CC button.
+- If the OEM ignores size hints, live with Android's size plus the dump-X. Do not invent a second overlay window to fake resize.
 
-## HUD (issue 11)
+## HUD (issue 11, from 39)
 
 - Wallpaper **grid / design art underneath** is a notch brighter so a dark space webcast reads against the wallpaper (Path of Exile / black-on-black case).
 - Do not blow out plates / clock / chrome. Clock and eight plates are not restacked. No catalog rewrite.
