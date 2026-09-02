@@ -19,6 +19,7 @@ import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import com.ccos.retro.data.WebcastResolver
 
 /**
  * Draggable / resizable MCC video window.
@@ -36,7 +37,10 @@ class FloatingVideoWindow(
     private val onClosed: (FloatingVideoWindow) -> Unit,
     private val onActivated: (FloatingVideoWindow) -> Unit,
     private val onSignInStarted: (FloatingVideoWindow) -> Unit,
-    private val onSignInFinished: (FloatingVideoWindow) -> Unit
+    private val onSignInFinished: (FloatingVideoWindow) -> Unit,
+    private val showSignIn: Boolean = true,
+    private val onWindowMove: ((Int, Int) -> Unit)? = null,
+    private val onWindowResize: ((Int, Int) -> Unit)? = null
 ) : LinearLayout(context) {
 
     private val web: WebView
@@ -49,6 +53,8 @@ class FloatingVideoWindow(
     private var parkedUrl: String? = null
     private var signingIn = false
     private var signedHint = false
+    private var dead = false
+    private var desktopRetry = 0
 
     init {
         CookieManager.getInstance().setAcceptCookie(true)
@@ -88,7 +94,7 @@ class FloatingVideoWindow(
         titleView.setOnTouchListener(dragListener)
         bar.addView(grip)
         bar.addView(titleView)
-        bar.addView(chromeBtn("SignIN") { startSignIn() })
+        if (showSignIn) bar.addView(chromeBtn("SignIN") { startSignIn() })
         bar.addView(chromeBtn("YT") { openInYoutube() })
         bar.addView(chromeBtn("−") { scale(1f / 1.22f) })
         bar.addView(chromeBtn("+") { scale(1.22f) })
@@ -127,10 +133,16 @@ class FloatingVideoWindow(
                         cookies.flush()
                         onSignInFinished(this@FloatingVideoWindow)
                     }
+                    scheduleError153Probe()
                 }
             }
-            webChromeClient = WebChromeClient()
+            webChromeClient = object : WebChromeClient() {
+                override fun onReceivedTitle(view: WebView?, title: String?) {
+                    if (looksLike153(title)) retryDesktop()
+                }
+            }
             layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f)
+            minimumHeight = (80 * d).toInt()
             setOnTouchListener { _, ev ->
                 if (ev.actionMasked == MotionEvent.ACTION_DOWN) activate()
                 false
@@ -157,13 +169,19 @@ class FloatingVideoWindow(
                     }
                     MotionEvent.ACTION_MOVE -> {
                         if (!resizing) return@setOnTouchListener false
-                        val lp = this@FloatingVideoWindow.layoutParams as FrameLayout.LayoutParams
-                        lp.width = (lp.width + (ev.rawX - lastX)).toInt()
-                        lp.height = (lp.height + (ev.rawY - lastY)).toInt()
-                        clamp(lp)
-                        this@FloatingVideoWindow.layoutParams = lp
+                        val dw = (ev.rawX - lastX).toInt()
+                        val dh = (ev.rawY - lastY).toInt()
                         lastX = ev.rawX
                         lastY = ev.rawY
+                        onWindowResize?.let { cb ->
+                            cb(width + dw, height + dh)
+                            return@setOnTouchListener true
+                        }
+                        val lp = this@FloatingVideoWindow.layoutParams as FrameLayout.LayoutParams
+                        lp.width = lp.width + dw
+                        lp.height = lp.height + dh
+                        clamp(lp)
+                        this@FloatingVideoWindow.layoutParams = lp
                         true
                     }
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
@@ -180,8 +198,10 @@ class FloatingVideoWindow(
     }
 
     fun load(url: String) {
-        currentUrl = url
-        web.loadUrl(url)
+        desktopRetry = 0
+        currentUrl = WebcastResolver.watchPlayUrl(url)
+        web.settings.userAgentString = chromeMobileUa(web.settings.userAgentString)
+        web.loadUrl(currentUrl)
     }
 
     fun setTitle(text: String) {
@@ -239,6 +259,8 @@ class FloatingVideoWindow(
     }
 
     fun destroyFeed() {
+        if (dead) return
+        dead = true
         web.stopLoading()
         web.loadUrl("about:blank")
         web.onPause()
@@ -283,12 +305,79 @@ class FloatingVideoWindow(
 
     private fun chromeMobileUa(current: String?): String {
         val raw = current.orEmpty()
+        if (raw.contains("Windows NT") || raw.contains("Macintosh")) return MOBILE_UA
         val stripped = raw.replace("; wv", "").replace(" Version/4.0", "")
-        return if (stripped.contains("Chrome/")) stripped
-        else "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36"
+        return if (stripped.contains("Chrome/")) stripped else MOBILE_UA
+    }
+
+    private fun chromeDesktopUa(): String =
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+
+    private fun looksLike153(text: String?): Boolean {
+        val t = text.orEmpty()
+        return t.contains("Error 153", ignoreCase = true) ||
+            t.contains("Video player configuration error", ignoreCase = true)
+    }
+
+    private fun scheduleError153Probe() {
+        if (dead || signingIn || desktopRetry >= 2) return
+        if (WebcastResolver.youtubeVideoId(currentUrl) == null) return
+        web.postDelayed({ probeError153() }, 1600)
+        web.postDelayed({ probeError153() }, 4000)
+    }
+
+    private fun probeError153() {
+        if (dead || signingIn || desktopRetry >= 2) return
+        if (WebcastResolver.youtubeVideoId(currentUrl) == null) return
+        try {
+            web.evaluateJavascript(
+                """
+                (function(){
+                  var t = (document.body && document.body.innerText) || '';
+                  var h = document.documentElement ? document.documentElement.innerHTML : '';
+                  if (t.indexOf('Error 153') >= 0 || h.indexOf('Error 153') >= 0) return '153';
+                  if (t.indexOf('Video player configuration error') >= 0) return '153';
+                  var videos = document.querySelectorAll('video').length;
+                  var host = (location && location.hostname) || '';
+                  if (videos === 0 && host.indexOf('youtube') >= 0 &&
+                      (t.indexOf('Sign in') >= 0 || t.indexOf('Sign In') >= 0) &&
+                      t.indexOf('player') < 0) return '153';
+                  return 'ok';
+                })()
+                """.trimIndent()
+            ) { r ->
+                if (r != null && r.contains("153")) retryDesktop()
+            }
+        } catch (_: Exception) {
+        }
+    }
+
+    /**
+     * Error 153 / empty YouTube well in WebView. Retry once as desktop watch,
+     * then once with &app=desktop. Do not navigate away during MCC SignIN.
+     */
+    private fun retryDesktop() {
+        if (dead || signingIn || desktopRetry >= 2) return
+        if (WebcastResolver.youtubeVideoId(currentUrl) == null) return
+        desktopRetry++
+        web.settings.userAgentString = chromeDesktopUa()
+        val next = if (desktopRetry == 1) {
+            WebcastResolver.watchPlayUrl(currentUrl)
+        } else {
+            WebcastResolver.desktopWatchUrl(currentUrl)
+        }
+        currentUrl = next
+        try {
+            web.loadUrl(next)
+        } catch (_: Exception) {
+        }
     }
 
     private fun scale(factor: Float) {
+        onWindowResize?.let { cb ->
+            cb((width * factor).toInt(), (height * factor).toInt())
+            return
+        }
         val parent = parent as? View ?: return
         val lp = layoutParams as FrameLayout.LayoutParams
         lp.width = (lp.width * factor).toInt()
@@ -309,14 +398,20 @@ class FloatingVideoWindow(
             }
             MotionEvent.ACTION_MOVE -> {
                 if (!dragging) return false
-                val lp = layoutParams as FrameLayout.LayoutParams
-                lp.gravity = Gravity.TOP or Gravity.START
-                lp.leftMargin = (lp.leftMargin + (ev.rawX - lastX)).toInt()
-                lp.topMargin = (lp.topMargin + (ev.rawY - lastY)).toInt()
-                clamp(lp, clampSize = false)
-                layoutParams = lp
+                val dx = (ev.rawX - lastX).toInt()
+                val dy = (ev.rawY - lastY).toInt()
                 lastX = ev.rawX
                 lastY = ev.rawY
+                onWindowMove?.let { cb ->
+                    cb(dx, dy)
+                    return true
+                }
+                val lp = layoutParams as FrameLayout.LayoutParams
+                lp.gravity = Gravity.TOP or Gravity.START
+                lp.leftMargin = lp.leftMargin + dx
+                lp.topMargin = lp.topMargin + dy
+                clamp(lp, clampSize = false)
+                layoutParams = lp
                 return true
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
@@ -365,5 +460,10 @@ class FloatingVideoWindow(
             minHeight = (22 * d).toInt()
             setOnClickListener { click() }
         }
+    }
+
+    companion object {
+        private const val MOBILE_UA =
+            "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36"
     }
 }

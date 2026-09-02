@@ -342,6 +342,21 @@ object WebcastResolver {
     private fun watchUrl(id: String): String = "https://www.youtube.com/watch?v=$id"
 
     /**
+     * HUD overlay play URL. Watch page only — never /embed.
+     * Embed + WebView is Error 153 / empty well. Search URLs pass through.
+     */
+    fun watchPlayUrl(url: String): String {
+        val id = youtubeVideoId(url) ?: return url
+        return watchUrl(id)
+    }
+
+    /** Error 153 fallback: same watch id with the desktop app flag. */
+    fun desktopWatchUrl(url: String): String {
+        val id = youtubeVideoId(url) ?: return url
+        return "${watchUrl(id)}&app=desktop"
+    }
+
+    /**
      * Wallpaper VID LIVE/REPLAY. Official watch if LL2 has one, else a
      * published related historic (Owl Electron replay). Search is not a target.
      */

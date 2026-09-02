@@ -1,4 +1,4 @@
-# Live Rocket Tracker — closed tester notes (stamp 31)
+# Live Rocket Tracker — closed tester notes (stamp 32)
 
 Sideload this APK. This is **not** a Play production upload. Play testers on versionCode 17 stay on 17. Play 17 stays frozen.
 
@@ -6,13 +6,14 @@ Stamp **20** (`stamp-20-debug`) stays the KEEP for units + AUTO pin.
 Stamp **21** (`stamp-21-debug`) is the GISAT look + Electron HUD locks.
 Stamp **23** (`stamp-23-debug`) is SIGNED usable WITH the Pixel bar. Do not overwrite it.
 Stamp **25** (`stamp-25-debug`) is SIGNED. Auto packs THIS page. Do not overwrite it.
-Stamp **26** (`stamp-26-debug`) is SIGNED. Last working HUD overlay PiP. Do not overwrite it.
+Stamp **26** (`stamp-26-debug`) is SIGNED. Last working HUD overlay layout params. Do not overwrite it.
 Stamp **27** (`stamp-27-debug`) is SIGNED. Live LL2 AUTO/picker window. Do not overwrite it.
 Stamp **28** (`stamp-28-debug`) is SIGNED. Do not overwrite it.
 Stamp **29** (`stamp-29-debug`) is SIGNED. Do not overwrite it.
 Stamp **30** (`stamp-30-debug`) is SIGNED. Do not overwrite it.
+Stamp **31** (`stamp-31-debug`) is SIGNED. Do not overwrite it.
 
-This stamp is **31** / **1.0.21**. HUD overlay player files are byte-for-byte from `stamp-26-debug`. Not a rebuild of 20–30.
+This stamp is **32** / **1.0.22**. HUD overlay is a 280×168 dp FloatingVideoWindow. Not a rebuild of 20–31.
 
 ## Header (SIGNED — do not restack)
 
@@ -20,16 +21,17 @@ This stamp is **31** / **1.0.21**. HUD overlay player files are byte-for-byte fr
 - T-/T+ is **one line** under the clock. Units stay (`4h 11m`, not a naked clock). Smaller than the type that ate SIM.
 - Status word is on the **side** of that countdown line: **SIM / LIVE / HOLD / GO / IN FLIGHT / PAST**. Historic / demo / just-flew that is not a live GO reads SIM or PAST on the side. Not a third row underneath.
 
-## Overlay PiP (stamp 26 player, copied)
+## Overlay player (stamp 32)
 
-Stamp 30 left MCC SignIN chrome (`SignIN YT − + X`) on the HUD with no player. Stamp 31 copies the stamp 26 player files and the stamp 26 SHOW/HIDE/switch call. MCC SignIN stays in MCC. It is not glued onto the HUD.
+Stamp 31 still called `enterPictureInPictureMode` with `setSourceRectHint(Rect(0, 0, 16, 9))` — a 16×9 **pixel** hint. When the WebView did not paint (Error 153 / YouTube cache), Android system PiP collapsed to a SignIN YT − + X sliver. Copying stamp 26 files did not help because stamp 26 did this `enterPip()`.
 
-- `FloatingVideoWindow.kt`, `OverlayPipActivity.kt`, `VideoFeedOverlay.kt` match tag `stamp-26-debug`.
-- ONE `FloatingVideoWindow` on the HUD. Watch URL. Volume lowered in the WebView. No AUDIOFOCUS_GAIN.
-- Enter Android PiP **once**. Do not re-enter. Do not spawn a second chrome window. −/+ resize this same player.
-- VID REPLAY / LINKS Click Me switch **this** overlay. Same window.
-- MCC VID stays one official pane. Sign-in there. Cookies stay in-process. Exit MCC does **not** hand a SignIN strip to the HUD.
-- Close leaves the HUD. No leftover SignIN YT bar from a second invented window.
+- **Do not** call `enterPictureInPictureMode`. The player **is** the 280×168 dp `FloatingVideoWindow`.
+- Activity window is that rect. `FLAG_NOT_TOUCH_MODAL` — taps outside hit CMD CDT TEL STS PAD VID MSK AUTO.
+- − / + resize **that** window. X finishes the activity. No second window. No system PiP sliver.
+- Load `youtube.com/watch?v=` (not `/embed`). Error 153 → desktop UA on watch, then `watch?v=…&app=desktop`.
+- MCC one-pane SignIN stays in MCC. HUD overlay is a player well, not SignIN YT as the product.
+- VID REPLAY / LINKS Click Me still `OverlayPip.switch` the same activity.
+- Always dynamic. No Owl special-case.
 
 ## Still true (later stamps, not overlay)
 
