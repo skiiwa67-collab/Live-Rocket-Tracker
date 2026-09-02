@@ -1,4 +1,4 @@
-# Live Rocket Tracker — closed tester notes (stamp 42)
+# Live Rocket Tracker — closed tester notes (stamp 43)
 
 Sideload this APK. This is **not** a Play production upload. Play testers on versionCode 17 stay on 17. Play 17 stays frozen.
 
@@ -13,7 +13,9 @@ Stamp **38** (`stamp-38-debug`) inset PIP chip + video-only 16:9 system PiP. Chr
 Stamp **39** (`stamp-39-debug`) mute + brighter HUD grid + MCC square expand. Do not overwrite it.
 Leave **40** and **41** tags if they exist. This stamp is **not** those overlay cuts.
 
-This stamp is **42** / **1.0.32**. Built from stamp 39 only. OverlayPiP stays deleted. SizedVidWindow is not in the tree. Do not invent OverlayPipActivity, FloatingVideoWindow, or SizedVidWindow.
+This stamp is **43** / **1.0.33**. Built from **stamp-42-debug** only. OverlayPiP stays deleted. SizedVidWindow is not in the tree. Do not invent OverlayPipActivity, FloatingVideoWindow, or SizedVidWindow. Do not clobber stamp-20 through stamp-42.
+
+Stamp **43** three sizes, YouTube tools only: **MIN** = stock YouTube/Android PiP (`sourceRectHint` that size, not the full WebView). Tap shows YouTube's own X + grow only. **MEDIUM** = the 16:30 clean globe window (~85% wide, 16:9, lower third, dump-X room below) — untapped is that clean shot; tap shows YouTube mute left, CC, shrink/grow, full square, X top-right, then chrome goes away again. **MAX** = normal full YouTube / MCC; PIP chip stays so you can hop back. Dump-X KEEP. Overlay-permission gear DELETED. No RemoteActions, no fake `ic_pip_cc`, no invented circles. `PIP_VIDEO_FILL` 100vh no longer covers YouTube chrome on medium/max. The 16:24 gear shot was FAIL.
 
 ## VID (locked cut)
 
@@ -28,15 +30,13 @@ This stamp is **42** / **1.0.32**. Built from stamp 39 only. OverlayPiP stays de
 - No AUDIOFOCUS_GAIN. YouTube wins.
 - SignIN YT − + X bar stays dead.
 
-## Stamp 42 PiP chrome (system only)
+## Stamp 43 PiP chrome (YouTube tools, three sizes)
 
-- **REAL Android Picture-in-Picture.** Drag the picture to the bottom: Android's dump-X appears. Dump it. That is the close. OEM PiP X if present can stay. Still draggable.
-- **MIN** (stock YouTube / Android PiP size — not 280x168 postage): only system grow-arrows + X. No LRT CC, no LRT gear, no LRT mute overlay, no invented buttons. Fake `ic_pip_cc` RemoteAction is deleted.
-- **MEDIUM** (grow arrows): leftover HUD on THIS screen, packer — not magic 1120x630. Tap shows YouTube's own CC / gear / mute / arrows.
-- **MAX**: fullscreen MCC square path. Full YouTube icons including CC and gear.
-- Mute is YouTube mute (native chrome on MEDIUM / MAX tap). Not an LRT overlay at MIN.
-- Captions render on the video frame (`textTracks` / YouTube caption windows). We do not draw an LRT CC button.
-- If the OEM ignores size hints, live with Android's size plus the dump-X. Do not invent a second overlay window to fake resize.
+- **REAL Android Picture-in-Picture.** Drag the picture to the bottom: Android's dump-X appears. Dump it. That is the close. Still draggable.
+- **MIN** = stock YouTube / Android PiP size (not 42's full-WebView hop). Tap: YouTube X + grow only. No LRT CC, no overlay gear, no mute overlay, no invented buttons.
+- **MEDIUM** = Chris 16:30 clean globe window. Untapped = clean video. Tap: YouTube mute, CC, shrink/grow, full square, X. Then chrome hides again.
+- **MAX** = fullscreen MCC. Normal YouTube. PIP chip KEEP.
+- Overlay-permission gear is gone. Fake `ic_pip_cc` RemoteAction stays deleted. No 100vh video fill covering YouTube chrome on medium/max.
 
 ## HUD (issue 11, from 39)
 
