@@ -14,6 +14,7 @@ import android.view.WindowManager
 import android.webkit.WebView
 import android.widget.FrameLayout
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import com.ccos.retro.R
 
@@ -92,14 +93,16 @@ class SizedVidWindow(
         chrome = strip
         frame.chrome = strip
         frame.onDrag = { dx, dy ->
-            val params = lp ?: return@DragRoot
-            params.x += dx
-            params.y += dy
-            val dm = host.resources.displayMetrics
-            clamp(params, dm.widthPixels, dm.heightPixels)
-            try {
-                wm.updateViewLayout(frame, params)
-            } catch (_: Exception) {
+            val params = lp
+            if (params != null) {
+                params.x += dx
+                params.y += dy
+                val dm = host.resources.displayMetrics
+                clamp(params, dm.widthPixels, dm.heightPixels)
+                try {
+                    wm.updateViewLayout(frame, params)
+                } catch (_: Exception) {
+                }
             }
         }
         val params = newParams()
@@ -186,7 +189,7 @@ class SizedVidWindow(
             btn.setImageResource(icon)
             btn.contentDescription = desc
             btn.background = chipBg(density)
-            btn.scaleType = ImageButton.ScaleType.CENTER_INSIDE
+            btn.scaleType = ImageView.ScaleType.CENTER_INSIDE
             btn.setPadding((8f * density).toInt(), (8f * density).toInt(), (8f * density).toInt(), (8f * density).toInt())
             btn.setOnClickListener { onClick() }
             val mlp = LinearLayout.LayoutParams(tap, tap)
