@@ -13,6 +13,7 @@ import android.os.Build
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.WindowInsets
+import android.view.WindowManager
 import com.ccos.retro.BuildConfig
 import com.ccos.retro.data.LaunchDataProvider
 import com.ccos.retro.data.SystemMetricsProvider
@@ -204,6 +205,8 @@ class RetroCommandWallpaperService : WallpaperService() {
         private var telHudBottom = 0f
         private var insetNavBottom = 0
         private var insetTappableBottom = 0
+        private var insetGestureBottom = 0
+        private var insetMandatoryBottom = 0
         private var touchStartX = 0f
         private var touchStartY = 0f
         private var trackingSwipe = false
@@ -467,27 +470,66 @@ class RetroCommandWallpaperService : WallpaperService() {
                 if (Build.VERSION.SDK_INT >= 30) {
                     insetNavBottom = maxOf(
                         insetNavBottom,
-                        insets.getInsets(WindowInsets.Type.navigationBars()).bottom
+                        insets.getInsets(WindowInsets.Type.navigationBars()).bottom,
+                        insets.getInsets(WindowInsets.Type.systemBars()).bottom
                     )
                     insetTappableBottom = insets.getInsets(WindowInsets.Type.tappableElement()).bottom
+                    insetGestureBottom = insets.getInsets(WindowInsets.Type.systemGestures()).bottom
+                    insetMandatoryBottom = insets.getInsets(WindowInsets.Type.mandatorySystemGestures()).bottom
+                    packWindowMetricsInsets()
                 } else if (Build.VERSION.SDK_INT >= 29) {
                     insetTappableBottom = insets.systemGestureInsets.bottom
+                    insetGestureBottom = insets.systemGestureInsets.bottom
                 }
             }
             super.onApplyWindowInsets(insets)
         }
 
-        /** Full launcher band: hotseat (Phone/Messages/drawer) + nav. Never nav-only. */
+        /** Display window metrics — wallpaper Engine insets are often nav-pill only. */
+        private fun packWindowMetricsInsets() {
+            if (Build.VERSION.SDK_INT < 30) return
+            try {
+                val wm = this@RetroCommandWallpaperService.getSystemService(WINDOW_SERVICE) as WindowManager
+                val wi = wm.currentWindowMetrics.windowInsets
+                insetNavBottom = maxOf(
+                    insetNavBottom,
+                    wi.getInsets(WindowInsets.Type.navigationBars()).bottom,
+                    wi.getInsets(WindowInsets.Type.systemBars()).bottom
+                )
+                insetTappableBottom = maxOf(
+                    insetTappableBottom,
+                    wi.getInsets(WindowInsets.Type.tappableElement()).bottom
+                )
+                insetGestureBottom = maxOf(
+                    insetGestureBottom,
+                    wi.getInsets(WindowInsets.Type.systemGestures()).bottom
+                )
+                insetMandatoryBottom = maxOf(
+                    insetMandatoryBottom,
+                    wi.getInsets(WindowInsets.Type.mandatorySystemGestures()).bottom
+                )
+            } catch (_: Exception) { }
+        }
+
+        /**
+         * Top of Phone/Messages/app drawer + nav pill.
+         * Packer uses system insets + the system launcher icon dimen for the
+         * hotseat row. A tappable bump above the pill is not the dock.
+         */
         private fun dockFloor(): Float {
+            packWindowMetricsInsets()
             val icon = resources.getDimension(android.R.dimen.app_icon_size)
             val navRes = resources.getIdentifier("navigation_bar_height", "dimen", "android")
-            val navFallback = if (navRes != 0) resources.getDimension(navRes) else icon
-            val nav = if (insetNavBottom > 0) insetNavBottom.toFloat() else navFallback
-            val tap = insetTappableBottom.toFloat()
-            val hotseatInInsets = tap > nav + icon * 0.5f
-            val row = icon * 2f
-            val gap = if (hotseatInInsets) tap else nav + row
-            return height - gap
+            val navDim = if (navRes != 0) resources.getDimension(navRes) else 0f
+            val nav = maxOf(insetNavBottom.toFloat(), navDim)
+            val chrome = maxOf(
+                nav,
+                insetTappableBottom.toFloat(),
+                insetGestureBottom.toFloat(),
+                insetMandatoryBottom.toFloat()
+            )
+            val hotseat = if (chrome >= nav + icon) 0f else icon
+            return (height - chrome - hotseat).coerceAtMost(height.toFloat())
         }
 
         /**
@@ -2556,6 +2598,8 @@ class RetroCommandWallpaperService : WallpaperService() {
 
             canvas.drawColor(skin.bg)
             val trackingPage = telemetryModule.activePage == 0 || telemetryModule.activePage == 2
+            canvas.save()
+            canvas.clipRect(0f, 0f, width.toFloat(), dockFloor())
             drawAgencyBackground(canvas, skin, lamp, showMark = !trackingPage && telemetryModule.activePage != 4)
 
             // === ALWAYS-ON TOP HUD (clock / countdown / agency) ===
@@ -2570,6 +2614,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                 6 -> drawTelMission(canvas, launch, skin, ts)
                 else -> drawTelCountdown(canvas, launch, skin, ts, now)
             }
+            canvas.restore()
         }
 
         /** Large permanent top stack: local time, T- clock, agency/mission. */
@@ -3106,7 +3151,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             packDrawCenter(canvas, miss, (gapL + gapR) * 0.5f, packTop, gapR - gapL, missSz, withLamp(skin.text, lamp), tfBold)
             // Tape + readout stay above the Android dock. Not telSp(72) that dumps labels into the hotseat.
             val readH = min(telSp(18f), packH * 0.08f).coerceIn(16f, 28f)
-            val timeH = min(telSp(40f), packH * 0.16f).coerceIn(44f, 72f)
+            val timeH = min(telSp(40f), packH * 0.16f).coerceAtMost(72f).coerceAtLeast(28f)
             val readBot = dock - 2f
             val readTop = readBot - readH
             val timeBot = min(readTop - pad, dock - readH - pad)

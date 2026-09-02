@@ -4,7 +4,7 @@ Sideload this APK. This is **not** a Play production upload. Play testers on ver
 
 Stamp **20** (`stamp-20-debug`) stays the KEEP for units + AUTO pin.
 Stamp **21** (`stamp-21-debug`) is the GISAT look + Electron HUD locks.
-This stamp is **22**: one-pane MCC VID + persisted YouTube sign-in. GISAT look stays.
+This stamp is **22**: GISAT 21 look + tape packed above the Android dock + wallpaper cues that never take audio focus. MCC one-pane VID + persist stays. Overlay PiP stays signed.
 
 Chris is on a Razr. PrimeTestLab used a Galaxy Note 10+. Any phone or tablet is fine.
 
@@ -39,7 +39,8 @@ Also test a **live** upcoming webcast the same way (VID on a flight that has a w
 - **TEL event tape:** the selected launch (not an 80s now-window). Acronyms above and below (`L/O`, `MECO`, `SEP`, `SECO`, `FAIR`, `DEPLOY`), readable, not a smashed `L/OMECO` pile. Past marks stay after they fly; `+`/`-` walks them. After last payload deploy the tape does not go blank.
 - **HUD TEXT SIZE** default is MD (not SM) so the clock can be king. Clock and T- glance stay unit-labeled (`23m 25s` / `1d 9h`).
 - **GISAT / ISRO (when that launch is selected):** Hindi dual-label on the eight plates (acronyms stay CMD CDT TEL STS PAD VID MSK AUTO). Agency **इसरो**. Map shows published pad name + real lat/lon and short `GSLV Mk II` (not the GISAT-1A mission string). Stack is solid S139 core + 4 L40 Vikas liquid strap-ons + GS2 + CUS + ogive. Solid core is not a liquid bell. No DATA UPDATE REQUIRED on that stack.
-- **Dock gap:** nothing draws under Phone / Messages / app drawer / system nav. Tape stays above that line.
+- **Dock gap:** nothing draws under Phone / Messages / app drawer / system nav. Tape stays above that line. Packer uses system insets + the system launcher icon dimen — not a magic pixel.
+- **Wallpaper audio:** launch cues must not pause YouTube / overlay PiP. No AUDIOFOCUS_GAIN. Live feed never pauses. If cues cannot mix, they stay quiet.
 
 ## Hard locks
 
