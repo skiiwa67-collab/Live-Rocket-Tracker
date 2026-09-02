@@ -43,6 +43,7 @@ data class LaunchSnapshot(
     val imageUrl: String? = null,
     val webcastUrl: String? = null,
     val webcasts: List<WebcastRef> = emptyList(),
+    val webcastLive: Boolean = false,
     val probability: Int? = null,    // 0-100 or null
     val holdReason: String? = null,
     val lastUpdatedMs: Long = System.currentTimeMillis()
@@ -108,15 +109,44 @@ data class LaunchSnapshot(
     fun secondsToNet(now: Long = System.currentTimeMillis()): Long =
         (netMs - now) / 1000L
 
-    fun isInFlight(now: Long = System.currentTimeMillis()): Boolean {
-        val t = secondsToNet(now)
-        // Rough: after T-0 and within ~20 min for LEO, or status says In Flight
-        return (t < 0 && t > -1800) || statusAbbrev.equals("In Flight", ignoreCase = true) ||
-                statusName.contains("In Flight", ignoreCase = true)
+    fun isHold(): Boolean {
+        if (!holdReason.isNullOrBlank()) return true
+        val a = statusAbbrev
+        val n = statusName
+        return a.equals("Hold", ignoreCase = true) ||
+            a.equals("In Hold", ignoreCase = true) ||
+            n.contains("Hold", ignoreCase = true)
     }
 
-    fun isUpcoming(now: Long = System.currentTimeMillis()): Boolean =
-        secondsToNet(now) > -300   // still show until a few min after
+    fun isTerminal(): Boolean {
+        val blob = "$statusAbbrev $statusName".lowercase()
+        return "success" in blob || "failure" in blob || "fail" in blob || "partial" in blob
+    }
+
+    fun isWebcastLive(): Boolean {
+        if (webcastLive) return true
+        val watch = allWebcasts().any { WebcastResolver.youtubeVideoId(it.url) != null }
+        if (!watch || isTerminal()) return false
+        return isInFlight() || isHold() || secondsToNet() > -6 * 3600L
+    }
+
+    /** HOLD / in-flight / live webcast stay selectable. AUTO must not drop them. */
+    fun isActiveWatch(now: Long = System.currentTimeMillis()): Boolean =
+        isInFlight(now) || isHold() || isWebcastLive()
+
+    fun isInFlight(now: Long = System.currentTimeMillis()): Boolean {
+        if (isTerminal()) return false
+        val flying = statusAbbrev.equals("In Flight", ignoreCase = true) ||
+            statusName.contains("In Flight", ignoreCase = true)
+        if (flying) return true
+        val t = secondsToNet(now)
+        return t < 0 && t > -1800
+    }
+
+    fun isUpcoming(now: Long = System.currentTimeMillis()): Boolean {
+        if (isInFlight(now) || isHold() || webcastLive) return true
+        return secondsToNet(now) > -300
+    }
 
     /** Past flights and demos: CDT jump chips drive a replay clock. Live stays wall-clock. */
     fun isReplayable(now: Long = System.currentTimeMillis()): Boolean {
@@ -296,3 +326,48 @@ data class LaunchListResult(
     val fetchedAtMs: Long,
     val source: String
 )
+
+/**
+ * Published-only fill for Owl Around The World. Does not invent NET.
+ * Vehicle / pad / orbit come from Rocket Lab + LL2 public sheets.
+ */
+object PublishedLaunchFacts {
+    const val OWL_ID = "9f5a4cb6-63f9-47e1-9512-b468bae2a8e6"
+    const val OWL_PAD_LAT = -39.26085f
+    const val OWL_PAD_LON = 177.86586f
+    const val OWL_PAD = "Launch Complex 1B"
+    const val OWL_LOCATION = "Rocket Lab LC-1 / Mahia"
+
+    fun isOwl(launch: LaunchSnapshot?): Boolean {
+        if (launch == null) return false
+        if (launch.id == OWL_ID) return true
+        val blob = "${launch.name} ${launch.missionName} ${launch.rocketName}".lowercase()
+        return "owl around" in blob || ("strix" in blob && launch.isRocketLab())
+    }
+
+    fun apply(launch: LaunchSnapshot): LaunchSnapshot {
+        if (!isOwl(launch)) return launch
+        val pad = when {
+            launch.pad.contains("1B", ignoreCase = true) -> launch.pad
+            launch.pad.contains("Launch Complex 1", ignoreCase = true) -> "Launch Complex 1B"
+            launch.pad.isBlank() -> OWL_PAD
+            else -> launch.pad
+        }
+        val loc = when {
+            launch.location.contains("Mahia", ignoreCase = true) ||
+                launch.location.contains("Māhia", ignoreCase = true) -> OWL_LOCATION
+            launch.location.isBlank() -> OWL_LOCATION
+            else -> OWL_LOCATION
+        }
+        val mission = launch.missionName.ifBlank { "Owl Around The World" }.let { m ->
+            if ("owl" in m.lowercase() || "strix" in m.lowercase()) m else "Owl Around The World"
+        }
+        return launch.copy(
+            pad = pad,
+            location = loc,
+            padLat = OWL_PAD_LAT,
+            padLon = OWL_PAD_LON,
+            missionName = mission
+        )
+    }
+}

@@ -30,8 +30,8 @@ class VideoFeedOverlay @JvmOverloads constructor(
     }
 
     /**
-     * VID tap cycle. First tap = ONE pane so Google/YouTube sign-in can finish.
-     * Second tap adds NSF. Third tap closes. Never two panes on first click.
+     * VID tap cycle. One overlay PiP only. Second tap closes. Links switch the same pane.
+     * No extra MCC YouTube panes.
      */
     fun toggleFeeds(
         primaryUrl: String,
@@ -39,20 +39,26 @@ class VideoFeedOverlay @JvmOverloads constructor(
         primaryTitle: String = "OFFICIAL",
         secondaryTitle: String = "NASASPACEFLIGHT"
     ) {
-        when (windows.size) {
-            0 -> {
-                openFeed("official", primaryTitle, primaryUrl, corner = 0, autoplay = true)
-                layoutPanes()
-            }
-            1 -> {
-                if (!windows.containsKey("nsf")) {
-                    openFeed("nsf", secondaryTitle, secondaryUrl, corner = 1, autoplay = false)
-                } else {
-                    openFeed("official", primaryTitle, primaryUrl, corner = 0, autoplay = true)
-                }
-                layoutPanes()
-            }
-            else -> closeAll()
+        if (windows.isEmpty()) {
+            openFeed("official", primaryTitle, primaryUrl, corner = 0, autoplay = true)
+            layoutPanes()
+        } else {
+            closeAll()
+        }
+        onChanged?.invoke()
+    }
+
+    fun switchFeed(url: String, title: String) {
+        val existing = windows.values.firstOrNull()
+        if (existing != null) {
+            existing.setTitle(title)
+            existing.load(url)
+            existing.lowerVolume()
+            existing.bringToFront()
+            focus(existing)
+        } else {
+            openFeed("official", title, url, corner = 0, autoplay = true)
+            layoutPanes()
         }
         onChanged?.invoke()
     }
@@ -83,6 +89,7 @@ class VideoFeedOverlay @JvmOverloads constructor(
         val lp = LayoutParams(100, 100).apply { gravity = Gravity.TOP or Gravity.START }
         windows[id] = win
         addView(win, lp)
+        win.lowerVolume()
         layoutPanes()
         onChanged?.invoke()
     }

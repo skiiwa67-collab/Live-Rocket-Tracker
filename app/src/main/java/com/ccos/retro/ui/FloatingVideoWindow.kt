@@ -116,6 +116,7 @@ class FloatingVideoWindow(
             webViewClient = object : WebViewClient() {
                 override fun onPageFinished(view: WebView?, url: String?) {
                     cookies.flush()
+                    lowerVolume()
                     val u = url.orEmpty().lowercase()
                     if (u.contains("accounts.google") || u.contains("/signin")) {
                         signedHint = true
@@ -181,6 +182,21 @@ class FloatingVideoWindow(
     fun load(url: String) {
         currentUrl = url
         web.loadUrl(url)
+    }
+
+    fun setTitle(text: String) {
+        titleView.text = text
+    }
+
+    /** Lower playback volume without mute. Never AUDIOFOCUS_GAIN. YouTube keeps the speaker. */
+    fun lowerVolume() {
+        try {
+            web.evaluateJavascript(
+                "try{document.querySelectorAll('video').forEach(function(v){v.muted=false;v.volume=0.35})}catch(e){}",
+                null
+            )
+        } catch (_: Exception) {
+        }
     }
 
     /** Pause HTML video only. Do NOT WebView.onPause here — that freezes a sibling during Google login. */

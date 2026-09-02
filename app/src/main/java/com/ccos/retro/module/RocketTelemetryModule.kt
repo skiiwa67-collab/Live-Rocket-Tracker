@@ -79,7 +79,8 @@ class RocketTelemetryModule(
             }
             autoMode = !autoMode
             if (autoMode) {
-                releaseHold()
+                val watching = tracked?.isActiveWatch() == true
+                if (!watching) releaseHold()
                 clearSim()
                 resolveTracked()
             }
@@ -237,18 +238,17 @@ class RocketTelemetryModule(
             tracked = provider.findById(prefs.telemetryLaunchId) ?: tracked
         } else if (autoMode) {
             pinnedSnapshot = null
-            val live = provider.getCached()?.launches.orEmpty()
-                .filter { !it.id.startsWith("demo-") }
-            val inFlight = live.filter { it.isInFlight(now) }
+            val live = provider.livePool()
+            val watch = live.filter { it.isActiveWatch(now) }
                 .minByOrNull { kotlin.math.abs(it.secondsToNet(now)) }
-            val next = inFlight ?: provider.getNextAny(now)
+            val next = watch ?: provider.getNextAny(now)
             tracked = next
             if (next != null && prefs.telemetryLaunchId != next.id) {
                 prefs.telemetryLaunchId = next.id
             }
-            if (inFlight != null) {
+            if (watch != null) {
                 val dur = prefs.telemetryHoldDurationMs
-                val until = maxOf(now + dur, inFlight.netMs + dur)
+                val until = maxOf(now + dur, watch.netMs + dur)
                 if (prefs.telemetryHoldUntilMs < until) prefs.telemetryHoldUntilMs = until
                 clearSim()
             } else if (next != null) {
@@ -375,7 +375,11 @@ class RocketTelemetryModule(
         loopReplay = true
     }
 
-    fun selectableLaunches(): List<LaunchSnapshot> = provider.allSelectable()
+    fun selectableLaunches(): List<LaunchSnapshot> {
+        val all = provider.allSelectable()
+        val keep = provider.findById(prefs.telemetryLaunchId) ?: tracked
+        return if (keep != null && all.none { it.id == keep.id }) listOf(keep) + all else all
+    }
 
     fun forceRefresh(onDone: (() -> Unit)? = null) {
         provider.refreshIfNeeded(force = true) {

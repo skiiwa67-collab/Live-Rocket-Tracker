@@ -309,17 +309,22 @@ object VehicleCatalog {
             fuelName = "RP",
             boostbackLit = 0,
             landingLit = 0,
-            engineName = "RUTHERFORD",
-            s1Thrust = "224 kN SL",
-            s2Thrust = "26 kN VAC",
+            engineName = "RUTHERFORD SL",
+            s1Thrust = "9× SL",
+            s2Thrust = "5800 lbf VAC",
             ispVac = "343 s",
             mixRatio = "2.4 O/F",
             chamberBar = "—",
             s1Dry = "~1.2 t",
             s1Prop = "~9 t",
-            nerdNote = "Electric pumps. The whole first stage is a battery with a bad attitude.",
+            nerdNote = "9 Rutherford sea-level + 1 Rutherford vacuum. LOX/RP-1 electric-pump-fed. Smithsonian vac ~5800 lbf, Isp 343 s.",
             s1Pattern = EnginePattern.ELECTRON9,
-            s2Pattern = EnginePattern.MERLIN_VAC
+            s2Pattern = EnginePattern.VACUUM1,
+            s1Isp = "—",
+            s2Isp = "343 s",
+            s1Name = "STAGE 1",
+            s2Name = "STAGE 2",
+            s2EngineName = "RUTHERFORD VAC"
         ),
         VehicleSpec(
             id = "ariane",
@@ -618,6 +623,7 @@ object VehicleCatalog {
         return when (s.family) {
             "gslv2" -> "GSLV Mk II"
             "lvm3" -> "LVM3"
+            "electron" -> "Electron"
             else -> launch?.rocketName?.trim()?.take(16).orEmpty().ifBlank { "—" }
         }
     }
