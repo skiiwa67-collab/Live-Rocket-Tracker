@@ -10,7 +10,13 @@ Stamp **26** (`stamp-26-debug`) is SIGNED. Owl AUTO one-mission hack. Do not ove
 Stamp **27** (`stamp-27-debug`) is SIGNED. Live LL2 AUTO/picker window. Do not overwrite it.
 Stamp **28** (`stamp-28-debug`) is SIGNED. Do not overwrite it.
 
-This stamp is **29** / **1.0.19**. Restores the stamp 25/26 HUD overlay PiP. Not a rebuild of 20–28.
+This stamp is **29** / **1.0.19**. Restores the stamp 25/26 HUD overlay PiP. Signed two-row header (clock + T-/T+ with status on the side). Not a rebuild of 20–28.
+
+## Header (SIGNED — do not restack)
+
+- Current time at the top. Full gap. Biggest. Dynamic for phone/desk.
+- T-/T+ is **one line** under the clock. Units stay (`4h 11m`, not a naked clock). Smaller than the type that ate SIM.
+- Status word is on the **side** of that countdown line: **SIM / LIVE / HOLD / GO / IN FLIGHT / PAST**. Historic / demo / just-flew that is not a live GO reads SIM or PAST on the side. Not a third row underneath.
 
 ## Overlay PiP (Razr tap-sink + Error 153)
 
