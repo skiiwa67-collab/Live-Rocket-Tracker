@@ -2568,16 +2568,30 @@ class RetroCommandWallpaperService : WallpaperService() {
             val failed = hudFailed(launch, tSec)
 
             val phone = isPhoneDesk()
-            // Modest glance — do not pour a giant CDT slab over the eight plates.
-            val clockH = height * if (phone) 0.034f else 0.048f
-            val cdtH = height * if (phone) 0.038f else 0.052f
-            val clockSize = telFit("00:00", gapW, clockH, if (phone) 28f else 44f)
-            val cdtSize = telFit("T-33h 45m EST", gapW, cdtH, if (phone) 26f else 40f)
-            val clockBaseline = topInset + clockSize * 0.86f
-            val cdtBaseline = clockBaseline + cdtSize * 1.02f
-            var barH = cdtBaseline + 8f
+            // Chris: HUD clock + countdown were too skinny. Stay in the center
+            // lane — do not move plates or sit on the agency mark.
+            val clockH = height * if (phone) 0.055f else 0.068f
+            val cdtH = height * if (phone) 0.062f else 0.076f
+            var clockSize = telFit("00:00", gapW, clockH, if (phone) 44f else 58f)
+            var cdtSize = telFit("T-33h 45m EST", gapW, cdtH, if (phone) 40f else 54f)
             val markCeiling = if (showingAgencyMark()) agencyMarkCy() - agencyMarkR() else height.toFloat()
-            if (barH > markCeiling - 4f) barH = (markCeiling - 4f).coerceAtLeast(topInset + clockSize)
+            val ceiling = markCeiling - 8f
+            var clockBaseline = topInset + clockSize * 0.86f
+            var cdtBaseline = clockBaseline + cdtSize * 1.10f
+            var barH = cdtBaseline + 10f
+            if (barH > ceiling) {
+                val avail = (ceiling - topInset - 10f).coerceAtLeast(36f)
+                val need = clockSize * 0.86f + cdtSize * 1.10f
+                if (need > avail && need > 1f) {
+                    val k = avail / need
+                    clockSize *= k
+                    cdtSize *= k
+                    clockBaseline = topInset + clockSize * 0.86f
+                    cdtBaseline = clockBaseline + cdtSize * 1.10f
+                    barH = cdtBaseline + 10f
+                }
+                barH = barH.coerceAtMost(ceiling)
+            }
             telHudBottom = barH
 
             canvas.save()
@@ -2590,21 +2604,29 @@ class RetroCommandWallpaperService : WallpaperService() {
             strokePaint.color = withLamp(skin.accent, lamp)
             canvas.drawLine(gapL, barH, gapR, barH, strokePaint)
 
-            hudPaint.textAlign = Paint.Align.CENTER
-            hudPaint.color = withLamp(Color.WHITE, lamp)
-            hudPaint.textSize = clockSize
-            canvas.drawText(timeStr, cx, clockBaseline, hudPaint)
+            fun drawHudClockLine(text: String, y: Float, size: Float, color: Int) {
+                hudPaint.textAlign = Paint.Align.CENTER
+                hudPaint.color = color
+                hudPaint.textSize = size
+                hudPaint.style = Paint.Style.FILL_AND_STROKE
+                hudPaint.strokeWidth = (size * 0.055f).coerceIn(1.8f, 4.5f)
+                canvas.drawText(text, cx, y, hudPaint)
+                hudPaint.style = Paint.Style.FILL
+                hudPaint.strokeWidth = 0f
+            }
 
-            hudPaint.color = withLamp(
-                when {
-                    failed -> skin.danger
-                    telemetryModule.forceStatus != null -> skin.hold
-                    tSec in -15f..30f -> skin.go
-                    else -> skin.accent
-                }, lamp
+            drawHudClockLine(timeStr, clockBaseline, clockSize, withLamp(Color.WHITE, lamp))
+            drawHudClockLine(
+                cdt, cdtBaseline, cdtSize,
+                withLamp(
+                    when {
+                        failed -> skin.danger
+                        telemetryModule.forceStatus != null -> skin.hold
+                        tSec in -15f..30f -> skin.go
+                        else -> skin.accent
+                    }, lamp
+                )
             )
-            hudPaint.textSize = cdtSize
-            canvas.drawText(cdt, cx, cdtBaseline, hudPaint)
             canvas.restore()
         }
 
