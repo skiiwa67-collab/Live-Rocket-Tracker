@@ -142,8 +142,12 @@ data class LaunchSnapshot(
      * AUTO first bucket: HOLD / Go / in-flight / webcast-live / T+ watch window.
      * Success does not eject a bird during [LaunchWindow.WATCH_AFTER_NET_SEC].
      */
-    fun isActiveWatch(now: Long = System.currentTimeMillis()): Boolean =
-        isHold() || isGo() || isInFlight(now) || isWebcastLive() || isTPlusWatch(now)
+    fun isActiveWatch(now: Long = System.currentTimeMillis()): Boolean {
+        if (isHold() || isInFlight(now) || isWebcastLive() || isTPlusWatch(now)) return true
+        // Go counts while still upcoming or inside the T+ window. A day-old
+        // previous still marked Go must not steal AUTO from the next NET.
+        return isGo() && secondsToNet(now) > -LaunchWindow.WATCH_AFTER_NET_SEC
+    }
 
     fun isTPlusWatch(now: Long = System.currentTimeMillis()): Boolean {
         val t = secondsToNet(now)
