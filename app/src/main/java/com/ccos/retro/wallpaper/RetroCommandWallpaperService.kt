@@ -26,6 +26,7 @@ import com.ccos.retro.module.ModuleLicense
 import com.ccos.retro.module.ModuleRegistry
 import com.ccos.retro.event.EngineDraw
 import com.ccos.retro.event.EventClock
+import com.ccos.retro.event.EventTape
 import com.ccos.retro.event.VehicleDraw
 import com.ccos.retro.event.VehicleOutline
 import com.ccos.retro.event.FlightEventCatalog
@@ -2994,7 +2995,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             val packH = (dock - packTop).coerceAtLeast(80f)
             // Intrinsic rows: readout and tape take what they need. Leftover is the flex gap.
             val readH = min(telSp(26f), packH * 0.10f).coerceAtLeast(20f)
-            val timeH = min(telSp(34f), packH * 0.12f).coerceAtLeast(24f)
+            val timeH = min(telSp(72f), packH * 0.22f).coerceAtLeast(56f)
             val readBot = dock
             val readTop = readBot - readH
             val timeBot = readTop - pad
@@ -3181,12 +3182,6 @@ class RetroCommandWallpaperService : WallpaperService() {
             return (fromTime * 0.72f + fromAlt * 0.28f).coerceIn(0f, 1f)
         }
 
-        private fun currentMissionEvent(tSec: Float, launch: com.ccos.retro.data.LaunchSnapshot): String {
-            val ev = missionEvents(launch)
-            val passed = ev.lastOrNull { tSec >= it.first }
-            return passed?.second ?: "HOLDING / T-COUNT"
-        }
-
         private fun missionEvents(launch: com.ccos.retro.data.LaunchSnapshot): List<Pair<Float, String>> =
             com.ccos.retro.event.FlightProfiles.events(launch)
 
@@ -3199,76 +3194,19 @@ class RetroCommandWallpaperService : WallpaperService() {
             top: Float,
             bot: Float
         ) {
-            telBold()
-            val events = missionEvents(launch)
-            val nearest = events.minByOrNull { abs(it.first - tSec) } ?: return
-            val close = abs(nearest.first - tSec) < 32f && tSec > -8f
-            val lastT = events.last().first
-            val win0 = if (close) nearest.first - 48f else 0f
-            val win1 = if (close) nearest.first + 48f else lastT
-            val span = (win1 - win0).coerceAtLeast(30f)
-            val left = fullLeft()
-            val right = fullRight()
-            val h = (bot - top).coerceAtLeast(24f)
-            val failed = hudFailed(launch, tSec)
-            val title = when {
-                failed -> "FAIL"
-                close -> nearest.second
-                else -> currentMissionEvent(tSec, launch)
-            }
-            val titleH = h * 0.38f
-            val lineY = top + titleH + h * 0.18f
-            val labelH = (bot - lineY - 4f).coerceAtLeast(14f)
-
-            hudPaint.textAlign = Paint.Align.CENTER
-            hudPaint.color = withLamp(when {
-                failed -> skin.danger
-                close -> skin.hold
-                else -> skin.text
-            }, lamp)
-            val scale01 = ((prefs.textScale - 2.8f) / 6.2f).coerceIn(0f, 1f)
-            hudPaint.textSize = telFit(title, (right - left) * 0.96f, titleH, 18f + scale01 * 28f)
-            canvas.drawText(title, width / 2f, top + titleH, hudPaint)
-
-            strokePaint.style = Paint.Style.STROKE
-            strokePaint.strokeWidth = 6f
-            strokePaint.color = withLamp(skin.muted, lamp)
-            canvas.drawLine(left, lineY, right, lineY, strokePaint)
-            val nowX = left + ((tSec - win0).coerceIn(0f, span) / span) * (right - left)
-            strokePaint.color = withLamp(skin.go, lamp)
-            canvas.drawLine(left, lineY, nowX, lineY, strokePaint)
-            fillPaint.color = withLamp(skin.go, lamp)
-            canvas.drawCircle(nowX, lineY, 8f, fillPaint)
-
-            val inWindow = events.filter { it.first in (win0 - 4f)..(win1 + 4f) }
-            val visible = if (close) inWindow else {
-                val cur = inWindow.minByOrNull { abs(it.first - tSec) }
-                listOfNotNull(inWindow.firstOrNull(), cur, inWindow.getOrNull(inWindow.size / 2), inWindow.lastOrNull())
-                    .distinct()
-            }
-            val minGap = (right - left) * 0.22f
-            val labeled = mutableListOf<Pair<Float, String>>()
-            val mark = canvas.save()
-            canvas.clipRect(left, top, right, bot)
-            for ((et, label) in visible) {
-                val x = (left + ((et - win0) / span) * (right - left)).coerceIn(left + 8f, right - 8f)
-                val done = tSec >= et
-                fillPaint.color = withLamp(if (done) skin.go else skin.accent, lamp)
-                canvas.drawCircle(x, lineY, 7f, fillPaint)
-                if (label == title) continue
-                val clash = labeled.any { abs(it.first - x) < minGap }
-                if (clash) continue
-                labeled.add(x to label)
-            }
-            val slotW = ((right - left) / max(3, labeled.size + 1)).coerceAtLeast(36f)
-            for ((x, label) in labeled) {
-                hudPaint.textAlign = Paint.Align.CENTER
-                hudPaint.color = withLamp(skin.text, lamp)
-                hudPaint.textSize = telFit(label, slotW, labelH, 16f)
-                val tx = x.coerceIn(left + slotW * 0.5f, right - slotW * 0.5f)
-                canvas.drawText(label, tx, lineY + labelH * 0.85f, hudPaint)
-            }
-            canvas.restoreToCount(mark)
+            resetHudPaints()
+            EventTape.draw(
+                canvas, missionEvents(launch), tSec,
+                fullLeft(), top, fullRight(), bot,
+                withLamp(skin.accent, lamp),
+                withLamp(skin.go, lamp),
+                withLamp(skin.muted, lamp),
+                withLamp(skin.text, lamp),
+                withLamp(skin.hold, lamp),
+                withLamp(skin.danger, lamp),
+                hudFailed(launch, tSec),
+                hudPaint, strokePaint, fillPaint
+            )
         }
 
         private fun drawAgencyOrbitView(
