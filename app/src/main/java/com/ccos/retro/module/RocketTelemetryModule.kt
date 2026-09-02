@@ -89,7 +89,7 @@ class RocketTelemetryModule(
         }
         activePage = index.coerceIn(0, 6)
         val launch = tracked
-        if (index == 1 && launch != null && launch.isReplayable() && simSecondsFromNet == null) {
+        if (index == 1 && launch != null && !isLiveWallClock() && simSecondsFromNet == null) {
             jumpTo(-30f)
         }
         return true
@@ -137,20 +137,40 @@ class RocketTelemetryModule(
         persistEventCursor(null)
     }
 
+    /**
+     * Live current flights use Launch Library 2 NET only.
+     * Theater (demo / historic scrub) may use the event cursor.
+     * Never let a leftover T-30 cursor lie about a live Owl-class lift.
+     */
+    fun isLiveWallClock(now: Long = System.currentTimeMillis()): Boolean {
+        val t = tracked ?: return true
+        if (t.id.startsWith("demo-")) return false
+        if (prefs.telemetryListMode == "historical") return false
+        if (simSecondsFromNet != null) return false
+        return true
+    }
+
     /** Effective seconds from NET for display/metrics (sim or real). */
     fun effectiveSecondsFromNet(now: Long = System.currentTimeMillis()): Float {
         val launch = tracked ?: return 0f
-        val sim = simSecondsFromNet ?: prefs.eventCursorSec(launch.id)
-        if (sim != null) {
-            // Advance sim slowly when looping so wallpaper "flies"
-            return sim
+        if (!isLiveWallClock(now)) {
+            val sim = simSecondsFromNet ?: prefs.eventCursorSec(launch.id)
+            if (sim != null) return sim
         }
-        val t0 = prefs.pinnedNetMs(launch.id, launch.netMs)
+        val t0 = if (launch.id.startsWith("demo-")) {
+            prefs.pinnedNetMs(launch.id, launch.netMs)
+        } else {
+            launch.netMs
+        }
+        if (t0 <= 0L) return 0f
         return (now - t0) / 1000f
     }
 
     fun clockIsEst(): Boolean {
         val launch = tracked ?: return false
+        if (isLiveWallClock() && launch.netMs > 0L) {
+            return provider.catalogStale()
+        }
         if (simSecondsFromNet != null) return true
         if (prefs.usingFallbackT0(launch.id, launch.netMs)) return true
         return provider.catalogStale()
@@ -243,26 +263,28 @@ class RocketTelemetryModule(
             }
         }
         val t = tracked ?: return
-        if (prevId != null && t.id != prevId) {
-            simSecondsFromNet = prefs.eventCursorSec(t.id)
-            if (simSecondsFromNet == null) {
+        if (t.id.startsWith("demo-") || prefs.telemetryListMode == "historical") {
+            if (prevId != null && t.id != prevId) {
+                simSecondsFromNet = prefs.eventCursorSec(t.id)
+                if (simSecondsFromNet == null) {
+                    forceStatus = null
+                    loopReplay = false
+                } else {
+                    loopReplay = true
+                }
+            } else {
+                restoreEventCursor()
+            }
+            if (t.isReplayable(now)) {
+                if (prevId != null && t.id != prevId && simSecondsFromNet == null && !prefs.telemetryPinned) {
+                    jumpTo(-30f)
+                }
+            } else if (prefs.eventCursorSec(t.id) == null) {
+                simSecondsFromNet = null
                 forceStatus = null
                 loopReplay = false
-            } else {
-                loopReplay = true
             }
-        } else {
-            restoreEventCursor()
-        }
-        if (t.isReplayable(now)) {
-            // Only jump theater when THIS module already had a different flight.
-            // Fresh MCC / wallpaper process: prevId is null — keep wall-clock, do not T-30 a LIVE launch.
-            if (prevId != null && t.id != prevId && simSecondsFromNet == null && !prefs.telemetryPinned) {
-                jumpTo(-30f)
-            }
-        } else if (prefs.eventCursorSec(t.id) == null) {
-            // Live wall-clock. Keep a walked cursor; do not persist-wipe it every tick.
-            simSecondsFromNet = null
+        } else if (simSecondsFromNet == null) {
             forceStatus = null
             loopReplay = false
         }
@@ -314,7 +336,7 @@ class RocketTelemetryModule(
         tracked = provider.findById(id)
         holdFor(prefs.telemetryHoldDurationMs)
         val t = tracked
-        if (t != null && (t.id.startsWith("demo-") || t.secondsToNet() < -60)) {
+        if (t != null && (t.id.startsWith("demo-") || prefs.telemetryListMode == "historical")) {
             jumpTo(-30f)
         } else {
             clearSim()

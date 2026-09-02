@@ -242,6 +242,19 @@ object EventClock {
         return if (est) "$base EST" else base
     }
 
+    /**
+     * The one HUD clock. Units always. Never invent T- after LL2 says they lifted.
+     */
+    fun glance(launch: LaunchSnapshot?, tSec: Float, est: Boolean): String {
+        if (launch == null) return "NO LOCK"
+        if (launch.netMs <= 0L) return "HOLDING"
+        val blob = "${launch.statusName} ${launch.statusAbbrev} ${launch.holdReason.orEmpty()}".lowercase()
+        val lifted = launch.isInFlight() ||
+            "in flight" in blob || "liftoff" in blob || "success" in blob || "deployed" in blob
+        if (lifted && tSec < 0f) return "HOLDING"
+        return fmtEst(tSec, est)
+    }
+
     fun remain(from: Float, to: Float): String = "IN " + span((to - from).coerceAtLeast(0f))
 
     fun lastNext(launch: LaunchSnapshot?, tSec: Float): Pair<FlightEvent?, FlightEvent?> {
