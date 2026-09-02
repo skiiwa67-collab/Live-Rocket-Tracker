@@ -1,13 +1,19 @@
 package com.ccos.retro.ui
 
 import android.annotation.SuppressLint
+import android.app.PendingIntent
 import android.app.PictureInPictureParams
+import android.app.RemoteAction
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -64,6 +70,11 @@ class CommandCenterActivity : AppCompatActivity() {
     private var vidShowing = false
     private var lastVidUrl: String = ""
     private var pipAfterResume = false
+    private var pipMuted = false
+    private var pipCcOn = false
+    /** true = try stamp-26 280x168 compact; false = current big Razr ~1120x630. */
+    private var pipCompact = true
+    private var pipReceiverRegistered = false
     private lateinit var eventBanner: EventBannerView
     private val eventMonitor = FlightEventMonitor()
     private lateinit var kinetic: KineticFx
@@ -164,6 +175,7 @@ class CommandCenterActivity : AppCompatActivity() {
                 }
             }
         })
+        registerPipActions()
         consumeVidIntent(intent)
         updateVidButton()
 
@@ -255,6 +267,7 @@ class CommandCenterActivity : AppCompatActivity() {
             vidWeb.destroy()
         }
         if (this::kinetic.isInitialized) kinetic.release()
+        unregisterPipActions()
         super.onDestroy()
     }
 
@@ -273,6 +286,20 @@ class CommandCenterActivity : AppCompatActivity() {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         applyVidSurface()
         if (isInPictureInPictureMode && this::vidWeb.isInitialized) vidWeb.onResume()
+        if (isInPictureInPictureMode) {
+            applyPipMuteCc()
+            vidWeb.post { maybeSyncPipSizeFromWindow() }
+        }
+        updatePipParams()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (inPip()) {
+            applyVidSurface()
+            maybeSyncPipSizeFromWindow()
+            if (this::vidWeb.isInitialized) vidWeb.onResume()
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -519,6 +546,7 @@ class CommandCenterActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 CookieManager.getInstance().flush()
                 if (inPip()) applyPipVideoFill(true)
+                applyPipMuteCc()
             }
         }
         vidWeb.webChromeClient = WebChromeClient()
@@ -585,6 +613,7 @@ class CommandCenterActivity : AppCompatActivity() {
                 vidPipBar.visibility = if (pip) View.GONE else View.VISIBLE
             }
             applyPipVideoFill(pip)
+            applyPipMuteCc()
         } else {
             vidWeb.visibility = View.GONE
             chrome.visibility = View.VISIBLE
@@ -640,21 +669,224 @@ class CommandCenterActivity : AppCompatActivity() {
     private fun pipParams(): PictureInPictureParams {
         val b = PictureInPictureParams.Builder()
             .setAspectRatio(Rational(16, 9))
-        if (this::vidWeb.isInitialized && vidWeb.width > 0 && vidWeb.height > 0) {
-            val loc = IntArray(2)
-            vidWeb.getLocationOnScreen(loc)
-            val w = vidWeb.width
-            val h = vidWeb.height
-            // Video surface, not the full MCC activity. Watch-page player is
-            // the top 16:9; in PiP the filled WebView is the surface.
-            val hintH = if (inPip()) h else (w * 9f / 16f).toInt().coerceAtMost(h)
-            b.setSourceRectHint(Rect(loc[0], loc[1], loc[0] + w, loc[1] + hintH))
+        // Compact = stamp-26 emu ~280x168. Expanded = current Razr pin ~1120x630.
+        // OEM may ignore size; never invent OverlayPip to fake it.
+        b.setSourceRectHint(pipSizeHint())
+        if (Build.VERSION.SDK_INT >= 26) {
+            b.setActions(pipRemoteActions())
         }
         if (Build.VERSION.SDK_INT >= 31) {
             b.setAutoEnterEnabled(vidShowing)
             b.setSeamlessResizeEnabled(true)
         }
         return b.build()
+    }
+
+    /**
+     * Compact sourceRectHint is 280x168 px (stamp 26 emu look).
+     * Expanded is 1120x630 (Motorola Razr current pin Rect 52,1606-1172,2236).
+     */
+    private fun pipSizeHint(): Rect {
+        val dm = resources.displayMetrics
+        val targetW = if (pipCompact) COMPACT_PIP_W else EXPANDED_PIP_W
+        val targetH = if (pipCompact) COMPACT_PIP_H else EXPANDED_PIP_H
+        val pad = (12f * dm.density).toInt()
+        val left = (dm.widthPixels - targetW - pad).coerceAtLeast(0)
+        val top = (dm.heightPixels - targetH - pad * 6).coerceAtLeast(0)
+        if (this::vidWeb.isInitialized && vidWeb.width > 0 && vidWeb.height > 0 && !inPip()) {
+            val loc = IntArray(2)
+            vidWeb.getLocationOnScreen(loc)
+            val w = vidWeb.width
+            val h = (w * 9f / 16f).toInt().coerceAtMost(vidWeb.height)
+            // Enter animation still starts from the playing video, then the
+            // target size rect is the compact/expanded hint above.
+            if (!pipCompact) {
+                return Rect(loc[0], loc[1], loc[0] + w, loc[1] + h)
+            }
+        }
+        return Rect(left, top, left + targetW, top + targetH)
+    }
+
+    private fun pipRemoteActions(): ArrayList<RemoteAction> {
+        val actions = ArrayList<RemoteAction>(3)
+        val muteIcon = if (pipMuted) R.drawable.ic_pip_mute else R.drawable.ic_pip_volume
+        val muteLabel = if (pipMuted) "Unmute" else "Mute"
+        actions.add(
+            RemoteAction(
+                Icon.createWithResource(this, muteIcon),
+                muteLabel,
+                muteLabel,
+                pipActionIntent(ACTION_PIP_MUTE, REQ_PIP_MUTE)
+            )
+        )
+        val ccLabel = if (pipCcOn) "Captions on" else "Captions"
+        val cc = RemoteAction(
+            Icon.createWithResource(this, R.drawable.ic_pip_cc),
+            ccLabel,
+            "Closed captions",
+            pipActionIntent(ACTION_PIP_CC, REQ_PIP_CC)
+        )
+        cc.setEnabled(true)
+        actions.add(cc)
+        val sizeIcon = if (pipCompact) R.drawable.ic_pip_size_out else R.drawable.ic_pip_size_in
+        val sizeLabel = if (pipCompact) "Larger" else "Smaller"
+        actions.add(
+            RemoteAction(
+                Icon.createWithResource(this, sizeIcon),
+                sizeLabel,
+                if (pipCompact) "Expand PiP toward Razr size" else "Shrink PiP to 280x168",
+                pipActionIntent(ACTION_PIP_SIZE, REQ_PIP_SIZE)
+            )
+        )
+        return actions
+    }
+
+    private fun pipActionIntent(action: String, requestCode: Int): PendingIntent {
+        val intent = Intent(action).setPackage(packageName)
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        return PendingIntent.getBroadcast(this, requestCode, intent, flags)
+    }
+
+    private val pipActionReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                ACTION_PIP_MUTE -> togglePipMute()
+                ACTION_PIP_CC -> togglePipCc()
+                ACTION_PIP_SIZE -> togglePipSize()
+            }
+        }
+    }
+
+    private fun registerPipActions() {
+        if (pipReceiverRegistered) return
+        val filter = IntentFilter().apply {
+            addAction(ACTION_PIP_MUTE)
+            addAction(ACTION_PIP_CC)
+            addAction(ACTION_PIP_SIZE)
+        }
+        if (Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(pipActionReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(pipActionReceiver, filter)
+        }
+        pipReceiverRegistered = true
+    }
+
+    private fun unregisterPipActions() {
+        if (!pipReceiverRegistered) return
+        try {
+            unregisterReceiver(pipActionReceiver)
+        } catch (_: Exception) {
+        }
+        pipReceiverRegistered = false
+    }
+
+    private fun togglePipMute() {
+        pipMuted = !pipMuted
+        applyPipMuteCc()
+        updatePipParams()
+    }
+
+    private fun togglePipCc() {
+        pipCcOn = !pipCcOn
+        applyPipMuteCc()
+        updatePipParams()
+    }
+
+    /** Inward = 280x168 compact. Outward = current big Razr size. System chrome only. */
+    private fun togglePipSize() {
+        pipCompact = !pipCompact
+        updatePipParams()
+    }
+
+    /**
+     * If the user drags the system corner arrows, snap our compact flag to the
+     * new window. Motorola may ignore the hint and stay pinned at ~1120x630.
+     */
+    private fun maybeSyncPipSizeFromWindow() {
+        if (!inPip() || !this::vidWeb.isInitialized) return
+        val w = vidWeb.width
+        if (w <= 0) return
+        val nextCompact = w <= (COMPACT_PIP_W + 80)
+        if (nextCompact != pipCompact && w < EXPANDED_PIP_W - 80) {
+            pipCompact = nextCompact
+            updatePipParams()
+        }
+    }
+
+    /** Mute = video.muted. CC clicks YouTube captions / textTracks. Same WebView. */
+    private fun applyPipMuteCc() {
+        if (!this::vidWeb.isInitialized) return
+        try {
+            vidWeb.evaluateJavascript(muteJs(pipMuted), null)
+            vidWeb.evaluateJavascript(ccJs(pipCcOn), null)
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun muteJs(muted: Boolean): String {
+        val flag = if (muted) "true" else "false"
+        return """
+(function(){
+  var want=$flag;
+  var v=document.querySelector('video');
+  if(v){
+    v.muted=want;
+    try{v.defaultMuted=want;}catch(e){}
+    if(want){try{if(v.volume>0)v.dataset.lrtVol=v.volume; v.volume=0;}catch(e){}}
+    else {try{v.volume=parseFloat(v.dataset.lrtVol||'1')||1;}catch(e){}}
+  }
+  var p=document.querySelector('#movie_player,.html5-video-player');
+  try{
+    if(p){
+      if(want && p.mute) p.mute();
+      if(!want && p.unMute) p.unMute();
+    }
+  }catch(e){}
+  return want?'1':'0';
+})();"""
+    }
+
+    private fun ccJs(on: Boolean): String {
+        val flag = if (on) "true" else "false"
+        return """
+(function(){
+  var want=$flag;
+  var v=document.querySelector('video');
+  if(v && v.textTracks){
+    for(var i=0;i<v.textTracks.length;i++){
+      try{v.textTracks[i].mode=want?'showing':'hidden';}catch(e){}
+    }
+  }
+  var p=document.querySelector('#movie_player,.html5-video-player');
+  try{
+    if(p){
+      if(want){
+        try{if(p.loadModule)p.loadModule('captions');}catch(e){}
+        try{if(p.setOption)p.setOption('captions','track',{languageCode:'en'});}catch(e){}
+      } else {
+        try{if(p.setOption)p.setOption('captions','track',{});}catch(e){}
+        try{if(p.unloadModule)p.unloadModule('captions');}catch(e){}
+      }
+    }
+  }catch(e){}
+  var sel=[
+    '.ytp-subtitles-button','button.ytp-subtitles-button',
+    'button[aria-label*="captions" i]','button[aria-label*="Subtitles" i]',
+    'button[aria-label*="Closed caption" i]','button[aria-label*="subtitle" i]',
+    '.ytm-subtitle-button','ytm-subtitle-button'
+  ];
+  for(var s=0;s<sel.length;s++){
+    var btn=document.querySelector(sel[s]);
+    if(!btn) continue;
+    var pressed=btn.getAttribute('aria-pressed')==='true' ||
+      (btn.className||'').indexOf('ytp-button-toggled')>=0;
+    if(pressed!==want){try{btn.click();}catch(e){}}
+    break;
+  }
+  return want?'1':'0';
+})();"""
     }
 
     private fun chromeMobileUa(current: String?): String {
@@ -668,6 +900,17 @@ class CommandCenterActivity : AppCompatActivity() {
         const val EXTRA_OPEN_VID = "open_vid"
         const val EXTRA_URL = "url"
         const val EXTRA_TITLE = "title"
+
+        const val ACTION_PIP_MUTE = "com.liverockettracker.action.PIP_MUTE"
+        const val ACTION_PIP_CC = "com.liverockettracker.action.PIP_CC"
+        const val ACTION_PIP_SIZE = "com.liverockettracker.action.PIP_SIZE"
+        private const val REQ_PIP_MUTE = 3901
+        private const val REQ_PIP_CC = 3902
+        private const val REQ_PIP_SIZE = 3903
+        private const val COMPACT_PIP_W = 280
+        private const val COMPACT_PIP_H = 168
+        private const val EXPANDED_PIP_W = 1120
+        private const val EXPANDED_PIP_H = 630
 
         private const val PIP_FILL_JS = """
 (function(){

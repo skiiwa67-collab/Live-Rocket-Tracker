@@ -2879,10 +2879,12 @@ class RetroCommandWallpaperService : WallpaperService() {
             strokePaint.style = Paint.Style.STROKE
             // Boost: lamp 0.35→ visible, 1.0→ bold
             val L = (0.45f + 0.55f * lamp).coerceIn(0.4f, 1f)
+            // Issue 11: brighten the wallpaper grid under everything so a dark
+            // space webcast / PiP reads. Do not restack plates or blow chrome.
             when (skin.btnStyle) {
                 TelemetrySkin.ButtonStyle.SPACEX -> {
                     strokePaint.strokeWidth = 1f
-                    strokePaint.color = Color.argb((55 * L).toInt(), 60, 60, 60)
+                    strokePaint.color = Color.argb((110 * L).toInt(), 96, 100, 108)
                     val step = 44f
                     var x = 0f
                     while (x < width) { canvas.drawLine(x, 0f, x, height.toFloat(), strokePaint); x += step }
@@ -2897,7 +2899,7 @@ class RetroCommandWallpaperService : WallpaperService() {
 
                 TelemetrySkin.ButtonStyle.NASA -> {
                     strokePaint.strokeWidth = 1.2f
-                    strokePaint.color = Color.argb((70 * L).toInt(), 30, 50, 90)
+                    strokePaint.color = Color.argb((125 * L).toInt(), 56, 88, 148)
                     val step = 48f
                     var x = 0f
                     while (x < width) { canvas.drawLine(x, 0f, x, height.toFloat(), strokePaint); x += step }
@@ -2910,7 +2912,7 @@ class RetroCommandWallpaperService : WallpaperService() {
 
                 TelemetrySkin.ButtonStyle.CASC -> {
                     strokePaint.strokeWidth = 1.1f
-                    strokePaint.color = Color.argb((80 * L).toInt(), 80, 30, 25)
+                    strokePaint.color = Color.argb((135 * L).toInt(), 120, 58, 48)
                     val step = 42f
                     var x = 0f
                     while (x < width) { canvas.drawLine(x, 0f, x, height.toFloat(), strokePaint); x += step }
@@ -2930,7 +2932,7 @@ class RetroCommandWallpaperService : WallpaperService() {
 
                 TelemetrySkin.ButtonStyle.ROSCOSMOS -> {
                     strokePaint.strokeWidth = 1.2f
-                    strokePaint.color = Color.argb((90 * L).toInt(), 50, 55, 45)
+                    strokePaint.color = Color.argb((145 * L).toInt(), 78, 86, 70)
                     val step = 44f
                     var x = 0f
                     while (x < width) { canvas.drawLine(x, 0f, x, height.toFloat(), strokePaint); x += step }
@@ -2968,7 +2970,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                 }
                 TelemetrySkin.ButtonStyle.ISRO -> {
                     strokePaint.strokeWidth = 1.2f
-                    strokePaint.color = Color.argb((80 * L).toInt(), 80, 50, 20)
+                    strokePaint.color = Color.argb((135 * L).toInt(), 118, 82, 40)
                     val step = 44f
                     var x = 0f
                     while (x < width) { canvas.drawLine(x, 0f, x, height.toFloat(), strokePaint); x += step }
@@ -2990,7 +2992,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                 }
                 else -> {
                     strokePaint.strokeWidth = 1.1f
-                    strokePaint.color = Color.argb((70 * L).toInt(), 0, 60, 100)
+                    strokePaint.color = Color.argb((125 * L).toInt(), 28, 96, 148)
                     val step = 44f
                     var x = 0f
                     while (x < width) { canvas.drawLine(x, 0f, x, height.toFloat(), strokePaint); x += step }

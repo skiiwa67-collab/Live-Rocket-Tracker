@@ -1,4 +1,4 @@
-# Live Rocket Tracker — closed tester notes (stamp 38)
+# Live Rocket Tracker — closed tester notes (stamp 39)
 
 Sideload this APK. This is **not** a Play production upload. Play testers on versionCode 17 stay on 17. Play 17 stays frozen.
 
@@ -9,41 +9,38 @@ Stamp **25** (`stamp-25-debug`) is SIGNED. Auto packs THIS page. Do not overwrit
 Stamp **26** (`stamp-26-debug`) is Owl AUTO / Electron HUD. Do not overwrite it.
 Stamp **36** (`stamp-36-debug`) deleted OverlayPiP. Full-screen MCC WebView + sign-in. Do not overwrite it.
 Stamp **37** (`stamp-37-debug`) explicit MCC WebView PiP + HUD session reuse. Do not overwrite it.
+Stamp **38** (`stamp-38-debug`) inset PIP chip + video-only 16:9 system PiP. Chris SIGNED as nice. Do not overwrite it.
 
-This stamp is **38** / **1.0.28**. Built from stamp 37. OverlayPiP stays deleted.
+This stamp is **39** / **1.0.29**. Built from stamp 38 only. OverlayPiP stays deleted. Do not invent OverlayPipActivity or FloatingVideoWindow.
 
 ## VID (locked cut)
 
 - OverlayPipActivity stays gone. HUD VID and MCC VID do not wrap it, hop it, or PiP it.
 - CommandCenterActivity is the player (`singleTask`). Manifest has `supportsPictureInPicture=true`.
-- MCC VID is a full-screen WebView for Google / YouTube sign-in. Not 280x168. Not FloatingVideoWindow overlay chrome. Password Manager can autofill. Sign-in YT overlay bar stays gone.
-- MCC VID has an explicit **PIP** chip. One tap calls `enterPictureInPictureMode` on the playing WebView. Do not require Razr recents / taskbar swipe.
-- The PIP chip sits **below** the status bar and display cutout (`WindowInsets` statusBars). Not y=0 under signal/battery. Still top-end. Hidden while in system PiP.
-- In system PiP the window is a small **16:9 video-only** surface: MCC chrome, the PIP chip, and YouTube page chrome (title / comments / related) are hidden. The video element covers the WebView edge to edge (`object-fit: cover`). Source rect is the video surface, not the full MCC activity.
-- Back and EXIT while video is up also PiP that same WebView. They do not `finish()` or `closeVid()` the player.
-- HUD VID reuses the same Command Center session. If a video is already playing, do not load a different historic URL. Same YouTube, same `CookieManager` cookies. Existing player is brought forward and PiP'd if needed.
-- PiP is the YouTube frame (16:9 of the WebView). MCC chrome and the PIP chip are hidden in PiP. Source rect is the WebView. If `enterPictureInPictureMode` fails, stay fullscreen MCC with video still playing.
+- MCC VID is a full-screen WebView for Google / YouTube sign-in. Not OverlayPip. Password Manager can autofill.
+- MCC VID has an explicit **PIP** chip. One tap calls `enterPictureInPictureMode` on the playing WebView.
+- The PIP chip sits **below** the status bar and display cutout. Hidden while in system PiP. After center-expand back to fullscreen MCC, the PIP chip is still there to hop back to PiP.
+- In system PiP the window is a **16:9 video-only** surface: MCC chrome, the PIP chip, and YouTube page chrome (title / comments / related) are hidden. Video fills the WebView.
+- **Center expand** on the system PiP chrome = fullscreen MCC to browse videos. That is kept. It is not a second player.
+- Back and EXIT while video is up also PiP that same WebView.
+- HUD VID reuses the same Command Center session.
 - No AUDIOFOCUS_GAIN. YouTube wins.
+
+## Stamp 39 PiP chrome (system only)
+
+- Tap the PiP chrome: **MUTE** (speaker) and **CC** (closed captions) sit next to the system gear / X via `PictureInPictureParams.setActions` `RemoteAction`. Not a new overlay window.
+- CC stays enabled / tappable. Mute toggles the playing WebView `video.muted` (JS on the video element). Broadcasts are wired in `CommandCenterActivity`.
+- Size toggle (system bottom-right arrows, plus a size RemoteAction): inward = compact like stamp-26 emu ~280x168; outward = current big Razr ~1120x630. Implemented with `setPictureInPictureParams` / `sourceRectHint` / 16:9 `aspectRatio`.
+- **OEM note:** Motorola currently pins ~1120x630 (`Rect 52,1606-1172,2236`). If the OEM ignores the compact hint, this stamp does **not** invent OverlayPip to fake a small window. Report that — the mute/CC actions still work on the system chrome.
+
+## HUD (issue 11)
+
+- Wallpaper **grid / design art underneath** is a notch brighter so a dark space webcast reads against the wallpaper (Path of Exile / black-on-black case).
+- Do not blow out plates / clock / chrome. Clock and eight plates are not restacked. No catalog rewrite.
 
 ## Owl / AUTO (from 26)
 
 Catalog skip of Electron Owl is a bug. AUTO follows HOLD / in-flight / webcast-live. Owl stays in the CMD picker so you can reselect it and re-pin AUTO (double-tap AUTO still pins). Do not hide the current hold/in-flight bird as past.
-
-Published Owl only (no invented NET):
-- Vehicle Electron. 9 Rutherford sea-level + 1 Rutherford vacuum. LOX/RP-1 electric-pump-fed. Smithsonian vac ~5800 lbf, Isp 343 s.
-- Mission Owl Around The World, 1x StriX (Synspective). 575 km LEO, 38 deg. Pad Launch Complex 1 Māhia, this flight LC-1B.
-- Coords 39.26085 S, 177.86586 E. Map label: Rocket Lab LC-1 / Mahia. Tiny lat/lon like GISAT.
-- Draw Electron: 9 octaweb bells + 1 vac STG2. Not GSLV. Not Super Heavy.
-
-GISAT Hindi look remains when that ISRO launch is pinned/selected. Do not force GISAT over Owl AUTO.
-
-## HUD
-
-- Clock at the top and T-/T+ under it are SIGNED. Do not treat a change there as a pass.
-- Event tape packs above the Razr dock (WindowInsets / packer). Eight plates are not moved.
-- ALT/SPD family is a bit smaller. Digital gauges stay.
-- VID well is LINKS. LIVE if a watch URL exists, else official vs keep-alive historic/agency. Tap opens Command Center VID. If AUTO is on Electron, no Starlink/SpaceX buttons on that bird.
-- STS fills the well under the eight buttons. Text is spread. Agency logo is not covered.
 
 ## Also still true from 25
 
