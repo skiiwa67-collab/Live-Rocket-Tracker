@@ -40,6 +40,7 @@ import com.ccos.retro.event.VehicleOutline
 import com.ccos.retro.event.VehicleDraw
 import com.ccos.retro.event.EventClock
 import com.ccos.retro.event.EventTape
+import com.ccos.retro.event.FlightEventCatalog
 import com.ccos.retro.event.FlightEvent
 import com.ccos.retro.model.AppPrefs
 import com.ccos.retro.module.RocketTelemetryModule
@@ -497,7 +498,7 @@ class CommandConsoleView @JvmOverloads constructor(
     }
 
     private fun formatClock(tSec: Float): String =
-        EventClock.fmtEst(tSec, module?.clockIsEst() == true)
+        EventClock.glance(module?.tracked, tSec, module?.clockIsEst() == true)
 
     private fun isMethalox(launch: LaunchSnapshot?): Boolean = VehicleCatalog.spec(launch).methalox
 
@@ -519,8 +520,11 @@ class CommandConsoleView @JvmOverloads constructor(
         val pad = dp(10f)
         val subH = sp(18f)
         var y = pad + subH
-        val name = (launch?.name ?: "NO TRACKED LAUNCH").uppercase().take(36)
-        drawLabel(canvas, name, w * 0.5f, y, withLamp(skin.text), w * 0.92f, subH, sp(16f))
+        val name = (launch?.name ?: "NO TRACKED LAUNCH").uppercase()
+        y += drawWrapped(
+            canvas, name, w * 0.5f, y, withLamp(skin.text),
+            w * 0.92f, subH, Paint.Align.CENTER, 3
+        ) - subH
         y += subH + dp(2f)
         val vehPad = buildString {
             append((launch?.rocketName ?: "—").take(16))

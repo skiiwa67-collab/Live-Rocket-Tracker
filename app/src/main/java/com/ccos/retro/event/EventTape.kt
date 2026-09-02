@@ -32,7 +32,7 @@ object EventTape {
             "SECO" in t -> "SECO"
             "SES-1" in t || t == "SES1" -> "SES1"
             ("SEP" in t) && "SECO" !in t -> "SEP"
-            "LIFTOFF" in t || "ПУСК" in t -> "LIFT"
+            "LIFTOFF" in t || "ПУСК" in t -> "L/O"
             "MAX-Q" in t || t == "MAXQ" -> "MAXQ"
             "SHIP CUTOFF" in t -> "SECO"
             "SHIP RELIGHT" in t -> "RESTART"

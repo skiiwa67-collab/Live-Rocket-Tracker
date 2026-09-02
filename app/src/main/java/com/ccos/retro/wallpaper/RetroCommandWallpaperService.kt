@@ -262,6 +262,37 @@ class RetroCommandWallpaperService : WallpaperService() {
             val b = buttonRects[3]
             return if (b.bottom > 1f) b.bottom + su(0.010f) else height * 0.42f
         }
+
+        /** Agency mark is painted at height*0.26. Measure it — do not cover it. */
+        private fun showingAgencyMark(): Boolean {
+            val p = telemetryModule.activePage
+            return p != 0 && p != 2 && p != 4 && p != 7
+        }
+        private fun agencyMarkCy(): Float = height * 0.26f
+        private fun agencyMarkR(): Float = width * 0.18f
+
+        /**
+         * Empty-space start for mission / status / page body.
+         * Under the eight plates, below the agency mark. Never between the plates
+         * on top of the icon. Dock floor still clips via dockFloor().
+         */
+        private fun spreadTop(): Float {
+            val pad = su(0.008f)
+            var y = max(telHudBottom + pad, belowButtons())
+            if (showingAgencyMark()) y = max(y, agencyMarkCy() + agencyMarkR() + pad)
+            return y
+        }
+
+        private fun hudMissionLine(
+            launch: com.ccos.retro.data.LaunchSnapshot?,
+            tSec: Float
+        ): String = when {
+            hudFailed(launch, tSec) -> "FAIL · ${launch?.name ?: "VEHICLE"}"
+            telemetryModule.forceStatus != null -> "SCRUBBED · ${launch?.name ?: ""}"
+            telemetryModule.simSecondsFromNet != null -> "SIM · ${launch?.name ?: ""}"
+            launch != null -> "${launch.provider} · ${launch.name}"
+            else -> "NO LAUNCH TRACKED"
+        }
         private fun panelTitleSize(): Float = su(0.042f).coerceIn(28f, 48f)
         private fun panelLabelSize(): Float = su(0.032f).coerceIn(22f, 36f)
         private fun panelRockerH(): Float = (height * 0.078f).coerceIn(56f, 96f)
@@ -2533,27 +2564,20 @@ class RetroCommandWallpaperService : WallpaperService() {
                 String.format("%d:%02d", h, cal.get(java.util.Calendar.MINUTE))
             }
             val tSec = telemetryModule.effectiveSecondsFromNet(now)
-            val cdt = EventClock.fmtEst(tSec, telemetryModule.clockIsEst())
+            val cdt = EventClock.glance(launch, tSec, telemetryModule.clockIsEst())
             val failed = hudFailed(launch, tSec)
-            val line3 = when {
-                failed -> "FAIL · ${launch?.name?.take(22) ?: "VEHICLE"}"
-                telemetryModule.forceStatus != null -> "SCRUBBED · ${launch?.name?.take(22) ?: ""}"
-                telemetryModule.simSecondsFromNet != null -> "SIM · ${launch?.name?.take(26) ?: skin.label}"
-                launch != null -> "${launch.provider.take(12)} · ${launch.name.take(20)}"
-                else -> "NO LAUNCH TRACKED"
-            }
 
             val phone = isPhoneDesk()
-            val clockH = height * if (phone) 0.088f else 0.130f
-            val cdtH = height * if (phone) 0.062f else 0.088f
-            val metaH = height * if (phone) 0.022f else 0.026f
-            val clockSize = telFit("00:00", gapW, clockH, if (phone) 72f else 160f)
-            val cdtSize = telFit(if (telemetryModule.clockIsEst()) "T-33h 45m EST" else "T-33h 45m", gapW, cdtH, if (phone) 44f else 96f)
-            val metaSize = telFit(line3, gapW, metaH, 16f)
+            // Modest glance — do not pour a giant CDT slab over the eight plates.
+            val clockH = height * if (phone) 0.034f else 0.048f
+            val cdtH = height * if (phone) 0.038f else 0.052f
+            val clockSize = telFit("00:00", gapW, clockH, if (phone) 28f else 44f)
+            val cdtSize = telFit("T-33h 45m EST", gapW, cdtH, if (phone) 26f else 40f)
             val clockBaseline = topInset + clockSize * 0.86f
             val cdtBaseline = clockBaseline + cdtSize * 1.02f
-            val metaBaseline = cdtBaseline + metaSize * 1.15f
-            val barH = metaBaseline + 8f
+            var barH = cdtBaseline + 8f
+            val markCeiling = if (showingAgencyMark()) agencyMarkCy() - agencyMarkR() else height.toFloat()
+            if (barH > markCeiling - 4f) barH = (markCeiling - 4f).coerceAtLeast(topInset + clockSize)
             telHudBottom = barH
 
             canvas.save()
@@ -2581,9 +2605,6 @@ class RetroCommandWallpaperService : WallpaperService() {
             )
             hudPaint.textSize = cdtSize
             canvas.drawText(cdt, cx, cdtBaseline, hudPaint)
-            hudPaint.color = withLamp(if (failed) skin.danger else skin.text, lamp)
-            hudPaint.textSize = metaSize
-            canvas.drawText(line3, cx, metaBaseline, hudPaint)
             canvas.restore()
         }
 
@@ -2894,20 +2915,25 @@ class RetroCommandWallpaperService : WallpaperService() {
 
         private fun drawTelCountdown(canvas: Canvas, launch: com.ccos.retro.data.LaunchSnapshot?, skin: TelemetrySkin.Tokens, ts: Float, now: Long) {
             val lamp = prefs.lampBrightness
+            val tf = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            val left = laneLeft()
+            val right = laneRight()
+            val cx = (left + right) * 0.5f
+            val maxW = (right - left) * 0.96f
+            val floor = dockFloor()
+            val nameSz = pageBodyTs(16f)
+            val statusSz = pageBodyTs(14f)
+            val siteSz = pageBodyTs(12f)
+            canvas.save()
+            canvas.clipRect(0f, 0f, width.toFloat(), floor)
+            var y = spreadTop()
             if (launch == null) {
-                hudPaint.color = withLamp(skin.muted, lamp)
-                hudPaint.textSize = 22f * ts
-                hudPaint.textAlign = Paint.Align.CENTER
-                canvas.drawText("NO LAUNCH DATA", width / 2f, height * 0.4f, hudPaint)
+                packDrawCenter(canvas, "NO LAUNCH DATA", cx, y, maxW, nameSz, withLamp(skin.muted, lamp), tf)
+                canvas.restore()
                 return
             }
-            // Mission block sits high under the top HUD — above the logo zone
-            // so names never write through the agency mark
-            hudPaint.color = withLamp(skin.text, lamp)
-            hudPaint.textSize = (16f * ts).coerceIn(14f, 28f)
-            hudPaint.textAlign = Paint.Align.CENTER
-            canvas.drawText(launch.name.take(36), width / 2f, height * 0.22f, hudPaint)
-
+            y = packDrawCenter(canvas, launch.name, cx, y, maxW, nameSz, withLamp(skin.text, lamp), tf)
+            y += packLead(nameSz)
             val statusColor = when {
                 telemetryModule.forceStatus != null -> skin.hold
                 launch.statusAbbrev.equals("Go", true) || launch.statusName.contains("Go", true) -> skin.go
@@ -2915,53 +2941,50 @@ class RetroCommandWallpaperService : WallpaperService() {
                 launch.statusName.contains("Flight", true) -> skin.accent
                 else -> skin.muted
             }
-
             val statusLabel = telemetryModule.forceStatus ?: launch.statusAbbrev
-            fillPaint.color = Color.argb(60, Color.red(statusColor), Color.green(statusColor), Color.blue(statusColor))
-            val pillW = (160f * ts).coerceIn(140f, 240f)
-            val pillH = (32f * ts).coerceIn(28f, 48f)
-            val px = width / 2f - pillW / 2f
-            val py = height * 0.25f
-            canvas.drawRoundRect(px, py, px + pillW, py + pillH, 8f, 8f, fillPaint)
-            strokePaint.color = statusColor
-            strokePaint.strokeWidth = 2f
-            canvas.drawRoundRect(px, py, px + pillW, py + pillH, 8f, 8f, strokePaint)
-            hudPaint.color = statusColor
-            hudPaint.textSize = (14f * ts).coerceIn(12f, 22f)
-            canvas.drawText(statusLabel.uppercase(), width / 2f, py + pillH * 0.68f, hudPaint)
-
-            hudPaint.color = withLamp(skin.muted, lamp)
-            hudPaint.textSize = (12f * ts).coerceIn(11f, 18f)
-            canvas.drawText("${launch.pad} · ${launch.location}".take(42), width / 2f, height * 0.32f, hudPaint)
-
-
-            // Time-jump chips — scale with text slider, clear of bottom nav
-            val chipScale = ts.coerceIn(0.9f, 1.6f)
-            hudPaint.color = withLamp(skin.accent, lamp)
-            hudPaint.textSize = 16f * chipScale
-            canvas.drawText("JUMP TO EVENT", width / 2f, height * 0.50f, hudPaint)
-            val chipW = width * 0.30f
-            val chipH = 52f * chipScale
-            val gap = 12f * chipScale
-            val startY = height * 0.54f
+            y = packDrawCenter(canvas, statusLabel.uppercase(), cx, y, maxW, statusSz, withLamp(statusColor, lamp), tf)
+            y += packLead(statusSz)
+            y = packDrawCenter(
+                canvas, "${launch.pad} · ${launch.location}", cx, y, maxW, siteSz,
+                withLamp(skin.muted, lamp), tf
+            )
+            y += packLead(siteSz)
+            if (telemetryModule.isLiveWallClock(now)) {
+                for (i in jumpChipRects.indices) jumpChipRects[i].setEmpty()
+                canvas.restore()
+                return
+            }
+            y = packDrawCenter(canvas, "JUMP TO EVENT", cx, y, maxW, siteSz, withLamp(skin.accent, lamp), tf)
+            val gap = su(0.012f)
+            val chipH = packRowH(pageBodyTs(17f)) * 1.55f
+            val chipW = (maxW - 2f * gap) / 3f
             for (i in 0 until 6) {
                 val col = i % 3
                 val row = i / 3
-                val left = width * 0.05f + col * (chipW + gap)
-                val top = startY + row * (chipH + gap)
-                jumpChipRects[i].set(left, top, left + chipW, top + chipH)
+                val l = left + col * (chipW + gap)
+                val t = y + row * (chipH + gap)
+                jumpChipRects[i].set(l, t, l + chipW, t + chipH)
+                if (t + chipH > floor) {
+                    jumpChipRects[i].setEmpty()
+                    continue
+                }
                 fillPaint.color = withLamp(skin.btnIdleFill, lamp)
                 canvas.drawRoundRect(jumpChipRects[i], 12f, 12f, fillPaint)
-                strokePaint.color = withLamp(skin.accent, lamp)
+                strokePaint.style = Paint.Style.STROKE
                 strokePaint.strokeWidth = 2.5f
+                strokePaint.color = withLamp(skin.accent, lamp)
                 canvas.drawRoundRect(jumpChipRects[i], 12f, 12f, strokePaint)
+                hudPaint.textAlign = Paint.Align.CENTER
                 hudPaint.color = withLamp(skin.text, lamp)
-                hudPaint.textSize = 17f * chipScale
-                canvas.drawText(jumpChipLabels[i], jumpChipRects[i].centerX(), jumpChipRects[i].centerY() + 6f * chipScale, hudPaint)
+                hudPaint.textSize = telFit(jumpChipLabels[i], chipW * 0.90f, chipH * 0.62f, 16f)
+                canvas.drawText(
+                    jumpChipLabels[i],
+                    jumpChipRects[i].centerX(),
+                    jumpChipRects[i].centerY() + chipH * 0.18f,
+                    hudPaint
+                )
             }
-            hudPaint.color = withLamp(skin.muted, lamp)
-            hudPaint.textSize = 12f * chipScale
-            canvas.drawText("Sim loops for wallpaper theater", width / 2f, height * 0.80f, hudPaint)
+            canvas.restore()
         }
 
 
@@ -2993,6 +3016,11 @@ class RetroCommandWallpaperService : WallpaperService() {
             val dock = min(height * 0.838f, dockFloor())
             val packTop = max(belowButtons(), telHudBottom + pad)
             val packH = (dock - packTop).coerceAtLeast(80f)
+            val miss = hudMissionLine(launch, t)
+            val missSz = telFit(miss, (gapR - gapL).coerceAtLeast(8f), min(telSp(16f), packH * 0.08f), 14f)
+            val missH = packRowH(missSz)
+            val tfBold = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            packDrawCenter(canvas, miss, (gapL + gapR) * 0.5f, packTop, gapR - gapL, missSz, withLamp(skin.text, lamp), tfBold)
             // Intrinsic rows: readout and tape take what they need. Leftover is the flex gap.
             val readH = min(telSp(26f), packH * 0.10f).coerceAtLeast(20f)
             val timeH = min(telSp(72f), packH * 0.22f).coerceAtLeast(56f)
@@ -3000,7 +3028,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             val readTop = readBot - readH
             val timeBot = readTop - pad
             val timeTop = timeBot - timeH
-            val flexTop = packTop + pad
+            val flexTop = packTop + missH + pad
             val flexBot = timeTop - pad
             val flexH = (flexBot - flexTop).coerceAtLeast(40f)
 
@@ -6451,7 +6479,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             val titleSz = pageBodyTs(18f)
             val bodySz = pageBodyTs(22f)
             val subSz = pageBodyTs(14f)
-            val top = (telHudBottom + height * 0.03f).coerceAtLeast(height * 0.26f)
+            val top = spreadTop()
             hudPaint.textAlign = Paint.Align.CENTER
             var y = top
             y = drawWrappedCenter(canvas, "STATUS BOARD", cx, y, maxW, titleSz, withLamp(skin.accent, lamp))
@@ -6470,8 +6498,6 @@ class RetroCommandWallpaperService : WallpaperService() {
             launch.probability?.let {
                 y = drawWrappedCenter(canvas, "WEATHER  $it%", cx, y, maxW, subSz, withLamp(skin.text, lamp))
             }
-            val clock = EventClock.fmtEst(tSec, telemetryModule.clockIsEst())
-            drawWrappedCenter(canvas, clock, cx, y, maxW, bodySz, withLamp(skin.accent, lamp))
         }
 
         private fun drawTelPad(canvas: Canvas, launch: com.ccos.retro.data.LaunchSnapshot?, skin: TelemetrySkin.Tokens, ts: Float) {
@@ -6602,18 +6628,20 @@ class RetroCommandWallpaperService : WallpaperService() {
 
         private fun drawTelVideo(canvas: Canvas, launch: com.ccos.retro.data.LaunchSnapshot?, skin: TelemetrySkin.Tokens, ts: Float) {
             val lamp = prefs.lampBrightness
+            val titleSz = pageBodyTs(18f)
+            val y0 = spreadTop()
             hudPaint.color = withLamp(skin.accent, lamp)
-            hudPaint.textSize = pageBodyTs(18f)
+            hudPaint.textSize = titleSz
             hudPaint.textAlign = Paint.Align.CENTER
-            canvas.drawText("WEBCAST", width / 2f, height * 0.28f, hudPaint)
-            // Fake embed frame
+            canvas.drawText("WEBCAST", width / 2f, y0 + titleSz, hudPaint)
+            // Fake embed frame — below the agency mark, above the dock
             strokePaint.style = Paint.Style.STROKE
             strokePaint.strokeWidth = 2f
             strokePaint.color = withLamp(skin.accent, lamp * 0.7f)
-            val fx = width * 0.18f
-            val fy = height * 0.34f
-            val fw = width * 0.64f
-            val fh = height * 0.22f
+            val fx = laneLeft()
+            val fy = y0 + titleSz + packLead(titleSz)
+            val fw = (laneRight() - laneLeft()).coerceAtLeast(8f)
+            val fh = min(height * 0.22f, (dockFloor() - fy) * 0.55f)
             canvas.drawRoundRect(fx, fy, fx + fw, fy + fh, 10f, 10f, strokePaint)
             fillPaint.color = withLamp(Color.parseColor("#18000000"), lamp)
             canvas.drawRoundRect(fx, fy, fx + fw, fy + fh, 10f, 10f, fillPaint)
@@ -6652,7 +6680,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             val titleSz = pageBodyTs(18f)
             val bodySz = pageBodyTs(16f)
             val subSz = pageBodyTs(13f)
-            val top = (telHudBottom + height * 0.03f).coerceAtLeast(height * 0.26f)
+            val top = spreadTop()
             hudPaint.textAlign = Paint.Align.CENTER
             var y = top
             y = drawWrappedCenter(canvas, "MISSION", cx, y, maxW, titleSz, withLamp(skin.accent, lamp))
@@ -6749,14 +6777,15 @@ class RetroCommandWallpaperService : WallpaperService() {
             when (mode) {
                 AppPrefs.DATA_TELEMETRY -> {
                     val launch = telemetryModule.tracked
-                    val secs = launch?.secondsToNet(now)?.toFloat() ?: 0f
-                    val clock = EventClock.fmtEst(-secs, telemetryModule.clockIsEst())
+                    val tSec = telemetryModule.effectiveSecondsFromNet(now)
+                    val clock = EventClock.glance(launch, tSec, telemetryModule.clockIsEst())
                     hudPaint.textSize = bigSz
                     canvas.drawText(clock, width / 2f, top + titleSz + bigSz + 24f, hudPaint)
                     hudPaint.color = Color.WHITE
                     hudPaint.textSize = bodySz
                     val y0 = top + titleSz + bigSz + su(0.06f)
-                    canvas.drawText((launch?.name ?: "NO TRACKED LAUNCH").take(32), width / 2f, y0, hudPaint)
+                    val name = launch?.name ?: "NO TRACKED LAUNCH"
+                    drawWrappedCenter(canvas, name, width / 2f, y0, (right - left) * 0.90f, bodySz, Color.WHITE)
                     hudPaint.color = accent
                     canvas.drawText("${skin.label}  ·  ${launch?.statusAbbrev ?: "--"}", width / 2f, y0 + bodySz * 1.4f, hudPaint)
                     hudPaint.color = Color.parseColor("#E0E8F0")
