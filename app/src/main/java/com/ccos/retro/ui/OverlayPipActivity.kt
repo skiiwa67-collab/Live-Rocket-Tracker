@@ -11,9 +11,8 @@ import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 
 /**
- * Stamp 26 HUD overlay PiP. One FloatingVideoWindow. Enter PiP once.
- * Do not re-enter. Do not spawn a second chrome window.
- * YouTube keeps audio. Never AUDIOFOCUS_GAIN.
+ * Draggable overlay PiP for HUD VID links. One pane. YouTube keeps audio.
+ * Never requests AUDIOFOCUS_GAIN. Volume is lowered in the WebView, not muted.
  */
 class OverlayPipActivity : AppCompatActivity() {
 

@@ -21,7 +21,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 
 /**
- * Stamp 26 player. Draggable / resizable. HUD overlay and MCC share this.
+ * Draggable / resizable MCC video window.
  * Cookies persist in this app's WebView. Sign in once (YT / Google) and Premium
  * / subs apply here. Chrome does not share its login with WebView.
  * Do not call WebView.pauseTimers() from a single pane — that is process-wide.
@@ -45,8 +45,7 @@ class FloatingVideoWindow(
     private var lastY = 0f
     private var dragging = false
     private var resizing = false
-    var currentUrl = embedUrl
-        private set
+    private var currentUrl = embedUrl
     private var parkedUrl: String? = null
     private var signingIn = false
     private var signedHint = false
@@ -188,8 +187,6 @@ class FloatingVideoWindow(
     fun setTitle(text: String) {
         titleView.text = text
     }
-
-    fun titleText(): String = titleView.text?.toString().orEmpty()
 
     /** Lower playback volume without mute. Never AUDIOFOCUS_GAIN. YouTube keeps the speaker. */
     fun lowerVolume() {
