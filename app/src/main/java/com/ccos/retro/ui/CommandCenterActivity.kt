@@ -1,19 +1,13 @@
 package com.ccos.retro.ui
 
 import android.annotation.SuppressLint
-import android.app.PendingIntent
 import android.app.PictureInPictureParams
-import android.app.RemoteAction
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -70,11 +64,6 @@ class CommandCenterActivity : AppCompatActivity() {
     private var vidShowing = false
     private var lastVidUrl: String = ""
     private var pipAfterResume = false
-    private var pipMuted = false
-    private var pipCcOn = false
-    /** true = try stamp-26 280x168 compact; false = current big Razr ~1120x630. */
-    private var pipCompact = true
-    private var pipReceiverRegistered = false
     private lateinit var eventBanner: EventBannerView
     private val eventMonitor = FlightEventMonitor()
     private lateinit var kinetic: KineticFx
@@ -142,6 +131,7 @@ class CommandCenterActivity : AppCompatActivity() {
         pipBtn.setOnClickListener { enterVidPip() }
         vidWeb.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
             if (vidShowing) updatePipParams()
+            if (inPip()) applyPipVideoFill(true)
         }
         findViewById<Button>(R.id.btn_event_prev).setOnClickListener {
             telemetryModule.skipEvent(-1)
@@ -175,7 +165,6 @@ class CommandCenterActivity : AppCompatActivity() {
                 }
             }
         })
-        registerPipActions()
         consumeVidIntent(intent)
         updateVidButton()
 
@@ -267,7 +256,6 @@ class CommandCenterActivity : AppCompatActivity() {
             vidWeb.destroy()
         }
         if (this::kinetic.isInitialized) kinetic.release()
-        unregisterPipActions()
         super.onDestroy()
     }
 
@@ -286,10 +274,6 @@ class CommandCenterActivity : AppCompatActivity() {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         applyVidSurface()
         if (isInPictureInPictureMode && this::vidWeb.isInitialized) vidWeb.onResume()
-        if (isInPictureInPictureMode) {
-            applyPipMuteCc()
-            vidWeb.post { maybeSyncPipSizeFromWindow() }
-        }
         updatePipParams()
     }
 
@@ -297,7 +281,6 @@ class CommandCenterActivity : AppCompatActivity() {
         super.onConfigurationChanged(newConfig)
         if (inPip()) {
             applyVidSurface()
-            maybeSyncPipSizeFromWindow()
             if (this::vidWeb.isInitialized) vidWeb.onResume()
         }
     }
@@ -546,7 +529,6 @@ class CommandCenterActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 CookieManager.getInstance().flush()
                 if (inPip()) applyPipVideoFill(true)
-                applyPipMuteCc()
             }
         }
         vidWeb.webChromeClient = WebChromeClient()
@@ -613,7 +595,6 @@ class CommandCenterActivity : AppCompatActivity() {
                 vidPipBar.visibility = if (pip) View.GONE else View.VISIBLE
             }
             applyPipVideoFill(pip)
-            applyPipMuteCc()
         } else {
             vidWeb.visibility = View.GONE
             chrome.visibility = View.VISIBLE
@@ -623,19 +604,35 @@ class CommandCenterActivity : AppCompatActivity() {
     }
 
     /**
-     * In system PiP the WebView is the whole window. Hide YouTube page chrome
-     * (masthead, comments, related) and make the video element cover the
-     * surface. Restore the watch page when leaving PiP. Does not load a
-     * different URL or create a second player.
+     * In system PiP the WebView is the whole window. Hide YouTube *page*
+     * chrome (masthead, comments, related) and make the video cover.
+     * MIN keeps in-player chrome off so only Android grow-arrows + X show.
+     * MEDIUM / MCC leave YouTube's own CC / gear / mute on tap.
+     * Restore the watch page when leaving PiP. Same WebView — no second player.
      */
     private fun applyPipVideoFill(fill: Boolean) {
         if (!this::vidWeb.isInitialized) return
         vidWeb.setPadding(0, 0, 0, 0)
         vidWeb.setBackgroundColor(Color.BLACK)
         try {
-            vidWeb.evaluateJavascript(if (fill) PIP_FILL_JS else PIP_CLEAR_JS, null)
+            val js = when {
+                !fill -> PIP_CLEAR_JS
+                pipIsMediumOrLarger() -> PIP_FILL_MEDIUM_JS
+                else -> PIP_FILL_MIN_JS
+            }
+            vidWeb.evaluateJavascript(js, null)
         } catch (_: Exception) {
         }
+    }
+
+    /** MEDIUM = leftover HUD packer. MAX = fullscreen MCC (not in system PiP). */
+    private fun pipIsMediumOrLarger(): Boolean {
+        if (!inPip()) return true
+        if (!this::vidWeb.isInitialized) return false
+        val w = vidWeb.width
+        if (w <= 0) return false
+        val leftover = leftoverHudBox()
+        return w >= leftover.width() * 3 / 4
     }
 
     private fun enterVidPip() {
@@ -669,224 +666,83 @@ class CommandCenterActivity : AppCompatActivity() {
     private fun pipParams(): PictureInPictureParams {
         val b = PictureInPictureParams.Builder()
             .setAspectRatio(Rational(16, 9))
-        // Compact = stamp-26 emu ~280x168. Expanded = current Razr pin ~1120x630.
-        // OEM may ignore size; never invent OverlayPip to fake it.
-        b.setSourceRectHint(pipSizeHint())
+        // MIN = stock Android / YouTube PiP size (no 280x168 postage).
+        // MEDIUM = leftover HUD on THIS screen. OEM may ignore; never OverlayPip.
+        b.setSourceRectHint(pipSourceHint())
+        // No LRT RemoteActions. MIN chrome is Android grow-arrows + X only.
         if (Build.VERSION.SDK_INT >= 26) {
-            b.setActions(pipRemoteActions())
+            b.setActions(emptyList())
         }
         if (Build.VERSION.SDK_INT >= 31) {
             b.setAutoEnterEnabled(vidShowing)
             b.setSeamlessResizeEnabled(true)
         }
+        if (Build.VERSION.SDK_INT >= 33) {
+            try {
+                b.setExpandedAspectRatio(packedMediumRatio())
+            } catch (_: Exception) {
+            }
+        }
         return b.build()
     }
 
-    /**
-     * Compact sourceRectHint is 280x168 px (stamp 26 emu look).
-     * Expanded is 1120x630 (Motorola Razr current pin Rect 52,1606-1172,2236).
-     */
-    private fun pipSizeHint(): Rect {
-        val dm = resources.displayMetrics
-        val targetW = if (pipCompact) COMPACT_PIP_W else EXPANDED_PIP_W
-        val targetH = if (pipCompact) COMPACT_PIP_H else EXPANDED_PIP_H
-        val pad = (12f * dm.density).toInt()
-        val left = (dm.widthPixels - targetW - pad).coerceAtLeast(0)
-        val top = (dm.heightPixels - targetH - pad * 6).coerceAtLeast(0)
-        if (this::vidWeb.isInitialized && vidWeb.width > 0 && vidWeb.height > 0 && !inPip()) {
+    /** Enter animation from the playing video. Not a pixel-size command. */
+    private fun pipSourceHint(): Rect {
+        if (this::vidWeb.isInitialized && vidWeb.width > 0 && vidWeb.height > 0) {
             val loc = IntArray(2)
             vidWeb.getLocationOnScreen(loc)
             val w = vidWeb.width
-            val h = (w * 9f / 16f).toInt().coerceAtMost(vidWeb.height)
-            // Enter animation still starts from the playing video, then the
-            // target size rect is the compact/expanded hint above.
-            if (!pipCompact) {
-                return Rect(loc[0], loc[1], loc[0] + w, loc[1] + h)
-            }
+            val h = (w * 9f / 16f).toInt().coerceAtMost(vidWeb.height).coerceAtLeast(1)
+            return Rect(loc[0], loc[1], loc[0] + w, loc[1] + h)
         }
-        return Rect(left, top, left + targetW, top + targetH)
-    }
-
-    private fun pipRemoteActions(): ArrayList<RemoteAction> {
-        val actions = ArrayList<RemoteAction>(3)
-        val muteIcon = if (pipMuted) R.drawable.ic_pip_mute else R.drawable.ic_pip_volume
-        val muteLabel = if (pipMuted) "Unmute" else "Mute"
-        actions.add(
-            RemoteAction(
-                Icon.createWithResource(this, muteIcon),
-                muteLabel,
-                muteLabel,
-                pipActionIntent(ACTION_PIP_MUTE, REQ_PIP_MUTE)
-            )
-        )
-        val ccLabel = if (pipCcOn) "Captions on" else "Captions"
-        val cc = RemoteAction(
-            Icon.createWithResource(this, R.drawable.ic_pip_cc),
-            ccLabel,
-            "Closed captions",
-            pipActionIntent(ACTION_PIP_CC, REQ_PIP_CC)
-        )
-        cc.setEnabled(true)
-        actions.add(cc)
-        val sizeIcon = if (pipCompact) R.drawable.ic_pip_size_out else R.drawable.ic_pip_size_in
-        val sizeLabel = if (pipCompact) "Larger" else "Smaller"
-        actions.add(
-            RemoteAction(
-                Icon.createWithResource(this, sizeIcon),
-                sizeLabel,
-                if (pipCompact) "Expand PiP toward Razr size" else "Shrink PiP to 280x168",
-                pipActionIntent(ACTION_PIP_SIZE, REQ_PIP_SIZE)
-            )
-        )
-        return actions
-    }
-
-    private fun pipActionIntent(action: String, requestCode: Int): PendingIntent {
-        val intent = Intent(action).setPackage(packageName)
-        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        return PendingIntent.getBroadcast(this, requestCode, intent, flags)
-    }
-
-    private val pipActionReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            when (intent?.action) {
-                ACTION_PIP_MUTE -> togglePipMute()
-                ACTION_PIP_CC -> togglePipCc()
-                ACTION_PIP_SIZE -> togglePipSize()
-            }
-        }
-    }
-
-    private fun registerPipActions() {
-        if (pipReceiverRegistered) return
-        val filter = IntentFilter().apply {
-            addAction(ACTION_PIP_MUTE)
-            addAction(ACTION_PIP_CC)
-            addAction(ACTION_PIP_SIZE)
-        }
-        if (Build.VERSION.SDK_INT >= 33) {
-            registerReceiver(pipActionReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            @Suppress("UnspecifiedRegisterReceiverFlag")
-            registerReceiver(pipActionReceiver, filter)
-        }
-        pipReceiverRegistered = true
-    }
-
-    private fun unregisterPipActions() {
-        if (!pipReceiverRegistered) return
-        try {
-            unregisterReceiver(pipActionReceiver)
-        } catch (_: Exception) {
-        }
-        pipReceiverRegistered = false
-    }
-
-    private fun togglePipMute() {
-        pipMuted = !pipMuted
-        applyPipMuteCc()
-        updatePipParams()
-    }
-
-    private fun togglePipCc() {
-        pipCcOn = !pipCcOn
-        applyPipMuteCc()
-        updatePipParams()
-    }
-
-    /** Inward = 280x168 compact. Outward = current big Razr size. System chrome only. */
-    private fun togglePipSize() {
-        pipCompact = !pipCompact
-        updatePipParams()
+        return leftoverHudBox()
     }
 
     /**
-     * If the user drags the system corner arrows, snap our compact flag to the
-     * new window. Motorola may ignore the hint and stay pinned at ~1120x630.
+     * Leftover HUD rectangle on THIS screen: system bars + dump-X room at the
+     * bottom so Android's drag-to-bottom close still has space. Packer, no
+     * magic 1120x630 / 280x168.
      */
-    private fun maybeSyncPipSizeFromWindow() {
-        if (!inPip() || !this::vidWeb.isInitialized) return
-        val w = vidWeb.width
-        if (w <= 0) return
-        val nextCompact = w <= (COMPACT_PIP_W + 80)
-        if (nextCompact != pipCompact && w < EXPANDED_PIP_W - 80) {
-            pipCompact = nextCompact
-            updatePipParams()
+    private fun leftoverHudBox(): Rect {
+        val dm = resources.displayMetrics
+        val screenW = dm.widthPixels.coerceAtLeast(1)
+        val screenH = dm.heightPixels.coerceAtLeast(1)
+        val root = window?.decorView
+        val insets = if (root != null) ViewCompat.getRootWindowInsets(root) else null
+        val sys = insets?.getInsets(WindowInsetsCompat.Type.systemBars())
+        val top = sys?.top ?: (screenH * 0.04f).toInt()
+        val dumpRoom = (screenH * 0.18f).toInt().coerceAtLeast(1)
+        val bottom = (sys?.bottom ?: 0) + dumpRoom
+        val left = sys?.left ?: 0
+        val right = screenW - (sys?.right ?: 0)
+        val l = left.coerceIn(0, screenW - 1)
+        val t = top.coerceIn(0, screenH - 1)
+        val r = right.coerceAtLeast(l + 1)
+        val b = (screenH - bottom).coerceAtLeast(t + 1)
+        return Rect(l, t, r, b)
+    }
+
+    /**
+     * MEDIUM grow-arrow target: leftover HUD aspect, legal for Android
+     * expanded PiP and different from 16:9 so the system arrows change pixels.
+     */
+    private fun packedMediumRatio(): Rational {
+        val box = leftoverHudBox()
+        var w = box.width().coerceAtLeast(1)
+        var h = box.height().coerceAtLeast(1)
+        val raw = w.toFloat() / h.toFloat()
+        if (raw > 2.39f) {
+            w = 239
+            h = 100
+        } else if (raw < 1f / 2.39f) {
+            w = 100
+            h = 239
         }
-    }
-
-    /** Mute = video.muted. CC clicks YouTube captions / textTracks. Same WebView. */
-    private fun applyPipMuteCc() {
-        if (!this::vidWeb.isInitialized) return
-        try {
-            vidWeb.evaluateJavascript(muteJs(pipMuted), null)
-            vidWeb.evaluateJavascript(ccJs(pipCcOn), null)
-        } catch (_: Exception) {
+        var rat = Rational(w, h)
+        if (rat == Rational(16, 9) || kotlin.math.abs(rat.toFloat() - 16f / 9f) < 0.02f) {
+            rat = Rational(8, 5)
         }
-    }
-
-    private fun muteJs(muted: Boolean): String {
-        val flag = if (muted) "true" else "false"
-        return """
-(function(){
-  var want=$flag;
-  var v=document.querySelector('video');
-  if(v){
-    v.muted=want;
-    try{v.defaultMuted=want;}catch(e){}
-    if(want){try{if(v.volume>0)v.dataset.lrtVol=v.volume; v.volume=0;}catch(e){}}
-    else {try{v.volume=parseFloat(v.dataset.lrtVol||'1')||1;}catch(e){}}
-  }
-  var p=document.querySelector('#movie_player,.html5-video-player');
-  try{
-    if(p){
-      if(want && p.mute) p.mute();
-      if(!want && p.unMute) p.unMute();
-    }
-  }catch(e){}
-  return want?'1':'0';
-})();"""
-    }
-
-    private fun ccJs(on: Boolean): String {
-        val flag = if (on) "true" else "false"
-        return """
-(function(){
-  var want=$flag;
-  var v=document.querySelector('video');
-  if(v && v.textTracks){
-    for(var i=0;i<v.textTracks.length;i++){
-      try{v.textTracks[i].mode=want?'showing':'hidden';}catch(e){}
-    }
-  }
-  var p=document.querySelector('#movie_player,.html5-video-player');
-  try{
-    if(p){
-      if(want){
-        try{if(p.loadModule)p.loadModule('captions');}catch(e){}
-        try{if(p.setOption)p.setOption('captions','track',{languageCode:'en'});}catch(e){}
-      } else {
-        try{if(p.setOption)p.setOption('captions','track',{});}catch(e){}
-        try{if(p.unloadModule)p.unloadModule('captions');}catch(e){}
-      }
-    }
-  }catch(e){}
-  var sel=[
-    '.ytp-subtitles-button','button.ytp-subtitles-button',
-    'button[aria-label*="captions" i]','button[aria-label*="Subtitles" i]',
-    'button[aria-label*="Closed caption" i]','button[aria-label*="subtitle" i]',
-    '.ytm-subtitle-button','ytm-subtitle-button'
-  ];
-  for(var s=0;s<sel.length;s++){
-    var btn=document.querySelector(sel[s]);
-    if(!btn) continue;
-    var pressed=btn.getAttribute('aria-pressed')==='true' ||
-      (btn.className||'').indexOf('ytp-button-toggled')>=0;
-    if(pressed!==want){try{btn.click();}catch(e){}}
-    break;
-  }
-  return want?'1':'0';
-})();"""
+        return rat
     }
 
     private fun chromeMobileUa(current: String?): String {
@@ -901,31 +757,31 @@ class CommandCenterActivity : AppCompatActivity() {
         const val EXTRA_URL = "url"
         const val EXTRA_TITLE = "title"
 
-        const val ACTION_PIP_MUTE = "com.liverockettracker.action.PIP_MUTE"
-        const val ACTION_PIP_CC = "com.liverockettracker.action.PIP_CC"
-        const val ACTION_PIP_SIZE = "com.liverockettracker.action.PIP_SIZE"
-        private const val REQ_PIP_MUTE = 3901
-        private const val REQ_PIP_CC = 3902
-        private const val REQ_PIP_SIZE = 3903
-        private const val COMPACT_PIP_W = 280
-        private const val COMPACT_PIP_H = 168
-        private const val EXPANDED_PIP_W = 1120
-        private const val EXPANDED_PIP_H = 630
+        private const val PIP_PAGE_HIDE =
+            "#masthead-container,ytd-masthead,ytm-mobile-topbar-renderer,ytm-header-bar,#header,header,ytm-pivot-bar-renderer,#guide,#secondary,#related,#comments,ytd-comments,ytm-comment-section-renderer,#below,#meta,#info,#chat,ytd-live-chat-frame,ytd-watch-metadata,ytm-slim-video-metadata-section-renderer,ytm-slim-owner-renderer,ytm-item-section-renderer,ytm-engagement-panel,ytd-engagement-panel-section-list-renderer,#player-ads,.ytp-ce-element,.ytp-pause-overlay,.ytp-endscreen-content,.ytp-title,ytm-chip-cloud-renderer{display:none!important;visibility:hidden!important;height:0!important;}"
 
-        private const val PIP_FILL_JS = """
-(function(){
-  var id='lrt-pip-fill';
-  var s=document.getElementById(id);
-  if(!s){s=document.createElement('style');s.id=id;document.documentElement.appendChild(s);}
-  s.textContent=[
-    'html,body,ytd-app,ytm-app,#content,#page-manager,ytd-watch-flexy,ytm-watch{background:#000!important;margin:0!important;padding:0!important;overflow:hidden!important;width:100%!important;height:100%!important;}',
-    '#masthead-container,ytd-masthead,ytm-mobile-topbar-renderer,ytm-header-bar,#header,header,ytm-pivot-bar-renderer,#guide,#secondary,#related,#comments,ytd-comments,ytm-comment-section-renderer,#below,#meta,#info,#chat,ytd-live-chat-frame,ytd-watch-metadata,ytm-slim-video-metadata-section-renderer,ytm-slim-owner-renderer,ytm-item-section-renderer,ytm-engagement-panel,ytd-engagement-panel-section-list-renderer,#player-ads,.ytp-ce-element,.ytp-pause-overlay,.ytp-endscreen-content,.ytp-chrome-top,.ytp-chrome-bottom,.ytp-gradient-top,.ytp-gradient-bottom,.ytp-title,ytm-chip-cloud-renderer{display:none!important;visibility:hidden!important;height:0!important;}',
-    '#player,#player-container,#player-container-inner,#player-container-outer,#player-theater-container,ytd-player,#ytd-player,#movie_player,.html5-video-player,ytm-player,.player-container,#player-container-id{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;z-index:2147483647!important;background:#000!important;}',
-    '.html5-video-container,video,video.html5-main-video,.html5-main-video{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center!important;background:#000!important;}'
-  ].join('');
-  var v=document.querySelector('video');
-  if(v){v.style.objectFit='cover';v.style.width='100vw';v.style.height='100vh';try{v.play();}catch(e){}}
-})();"""
+        private const val PIP_PLAYER_HIDE =
+            ".ytp-chrome-top,.ytp-chrome-bottom,.ytp-gradient-top,.ytp-gradient-bottom,.ytp-subtitles-button,.ytp-settings-button,.ytp-mute-button,.ytp-play-button{display:none!important;visibility:hidden!important;}"
+
+        private const val PIP_CAPTIONS_ON =
+            ".ytp-caption-window-container,.caption-window,.ytp-caption-segment,.captions-text,ytm-caption-overlay-renderer{display:block!important;visibility:visible!important;opacity:1!important;z-index:2147483647!important;}"
+
+        private const val PIP_VIDEO_FILL =
+            "html,body,ytd-app,ytm-app,#content,#page-manager,ytd-watch-flexy,ytm-watch{background:#000!important;margin:0!important;padding:0!important;overflow:hidden!important;width:100%!important;height:100%!important;}" +
+            "#player,#player-container,#player-container-inner,#player-container-outer,#player-theater-container,ytd-player,#ytd-player,#movie_player,.html5-video-player,ytm-player,.player-container,#player-container-id{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;z-index:2147483646!important;background:#000!important;}" +
+            ".html5-video-container,video,video.html5-main-video,.html5-main-video{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center!important;background:#000!important;}"
+
+        /** MIN: video only. Android grow-arrows + dump-X stay system chrome. */
+        private val PIP_FILL_MIN_JS =
+            "(function(){var id='lrt-pip-fill';var s=document.getElementById(id);if(!s){s=document.createElement('style');s.id=id;document.documentElement.appendChild(s);}s.textContent='" +
+                PIP_VIDEO_FILL + PIP_PAGE_HIDE + PIP_PLAYER_HIDE + PIP_CAPTIONS_ON +
+                "';var v=document.querySelector('video');if(v){v.style.objectFit='cover';v.style.width='100vw';v.style.height='100vh';try{v.play();}catch(e){}}})();"
+
+        /** MEDIUM: same video fill, YouTube's own CC / gear / mute on tap. */
+        private val PIP_FILL_MEDIUM_JS =
+            "(function(){var id='lrt-pip-fill';var s=document.getElementById(id);if(!s){s=document.createElement('style');s.id=id;document.documentElement.appendChild(s);}s.textContent='" +
+                PIP_VIDEO_FILL + PIP_PAGE_HIDE + PIP_CAPTIONS_ON +
+                "';var v=document.querySelector('video');if(v){v.style.objectFit='cover';v.style.width='100vw';v.style.height='100vh';try{v.play();}catch(e){}}})();"
 
         private const val PIP_CLEAR_JS = """
 (function(){
