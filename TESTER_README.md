@@ -1,4 +1,4 @@
-# Live Rocket Tracker — closed tester notes (stamp 39)
+# Live Rocket Tracker — closed tester notes (stamp 41)
 
 Sideload this APK. This is **not** a Play production upload. Play testers on versionCode 17 stay on 17. Play 17 stays frozen.
 
@@ -10,8 +10,11 @@ Stamp **26** (`stamp-26-debug`) is Owl AUTO / Electron HUD. Do not overwrite it.
 Stamp **36** (`stamp-36-debug`) deleted OverlayPiP. Full-screen MCC WebView + sign-in. Do not overwrite it.
 Stamp **37** (`stamp-37-debug`) explicit MCC WebView PiP + HUD session reuse. Do not overwrite it.
 Stamp **38** (`stamp-38-debug`) inset PIP chip + video-only 16:9 system PiP. Chris SIGNED as nice. Do not overwrite it.
+Stamp **39** (`stamp-39-debug`) mute/speaker + brighter HUD grid. Chris SIGNED as not bad. Do not overwrite it. Leave stamp-40-debug if it exists.
 
-This stamp is **39** / **1.0.29**. Built from stamp 38 only. OverlayPiP stays deleted. Do not invent OverlayPipActivity or FloatingVideoWindow.
+This stamp is **41** / **1.0.31**. Built from stamp 39 only. OverlayPipActivity / FloatingVideoWindow / SignIN YT − + X bar stay deleted.
+
+**Stamp 41 sized window:** PIP chip (still below statusBars) hops the same MCC WebView into a chrome-less `WindowManager` window we size (SMALLEST ~280×168 grow+X only; MEDIUM ~1120×630 mute + real yt.player/CC JS + gear + shrink/grow + expand-to-full MCC). Drag the video surface. First hop asks for **Display over other apps**. Mute from 39 kept. No AUDIOFOCUS_GAIN. No catalog/clock restack. HUD grid from 39 stays.
 
 ## VID (locked cut)
 

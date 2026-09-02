@@ -1,24 +1,18 @@
 package com.ccos.retro.ui
 
 import android.annotation.SuppressLint
-import android.app.PendingIntent
 import android.app.PictureInPictureParams
-import android.app.RemoteAction
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
-import android.graphics.Rect
 import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.Icon
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Rational
+import android.provider.Settings
 import android.view.Gravity
 import android.view.View
 import android.view.WindowInsets
@@ -53,8 +47,9 @@ import com.ccos.retro.geo.PadBook
 /**
  * Full-screen Mission Control Center. Wallpaper stays the home HUD.
  * Status / camera cutout are padded — never drawn under the punch-hole.
- * VID is this activity's full-screen WebView. PiP is this same WebView
- * via enterPictureInPictureMode — not OverlayPip, not a second player.
+ * VID is this activity's WebView. Sized watch window is the same WebView
+ * reparented into a chrome-less WindowManager overlay we size ourselves.
+ * Not OverlayPipActivity. Not FloatingVideoWindow. No SignIN YT title bar.
  */
 class CommandCenterActivity : AppCompatActivity() {
 
@@ -72,9 +67,9 @@ class CommandCenterActivity : AppCompatActivity() {
     private var pipAfterResume = false
     private var pipMuted = false
     private var pipCcOn = false
-    /** true = try stamp-26 280x168 compact; false = current big Razr ~1120x630. */
-    private var pipCompact = true
-    private var pipReceiverRegistered = false
+    private var pendingSizedAfterOverlay = false
+    private var lastSized = SizedVidWindow.Size.MEDIUM
+    private var sizedVid: SizedVidWindow? = null
     private lateinit var eventBanner: EventBannerView
     private val eventMonitor = FlightEventMonitor()
     private lateinit var kinetic: KineticFx
@@ -122,7 +117,7 @@ class CommandCenterActivity : AppCompatActivity() {
         console.onScreenChanged = { highlightTabs(it) }
 
         findViewById<Button>(R.id.btn_exit).setOnClickListener {
-            if (vidShowing) enterVidPip() else finish()
+            if (vidShowing) enterSizedVid() else finish()
         }
         analogBtn = findViewById(R.id.btn_analog)
         analogBtn.setOnClickListener {
@@ -139,10 +134,7 @@ class CommandCenterActivity : AppCompatActivity() {
         vidPipBar = findViewById(R.id.vid_pip_bar)
         pipBtn = findViewById(R.id.btn_pip)
         bindVidWeb()
-        pipBtn.setOnClickListener { enterVidPip() }
-        vidWeb.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            if (vidShowing) updatePipParams()
-        }
+        pipBtn.setOnClickListener { enterSizedVid() }
         findViewById<Button>(R.id.btn_event_prev).setOnClickListener {
             telemetryModule.skipEvent(-1)
             pushFlightEvents()
@@ -156,7 +148,7 @@ class CommandCenterActivity : AppCompatActivity() {
         vidBtn = findViewById(R.id.btn_vid)
         vidBtn.setOnClickListener {
             if (vidShowing) {
-                enterVidPip()
+                enterSizedVid()
             } else {
                 val launch = telemetryModule.tracked
                 val feeds = WebcastResolver.panes(launch)
@@ -169,14 +161,14 @@ class CommandCenterActivity : AppCompatActivity() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (vidShowing) {
-                    enterVidPip()
+                    enterSizedVid()
                 } else {
                     finish()
                 }
             }
         })
-        registerPipActions()
         consumeVidIntent(intent)
+        disableOemAutoPip()
         updateVidButton()
 
         tabIds.forEachIndexed { index, id ->
@@ -240,10 +232,12 @@ class CommandCenterActivity : AppCompatActivity() {
         handler.removeCallbacks(tick)
         handler.post(tick)
         if (this::vidWeb.isInitialized) vidWeb.onResume()
-        updatePipParams()
-        if (pipAfterResume && vidShowing) {
+        if (pendingSizedAfterOverlay && vidShowing && SizedVidWindow.canDraw(this)) {
+            pendingSizedAfterOverlay = false
+            vidWeb.post { enterSizedVid() }
+        } else if (pipAfterResume && vidShowing) {
             pipAfterResume = false
-            vidWeb.post { enterVidPip() }
+            vidWeb.post { enterSizedVid() }
         }
     }
 
@@ -252,22 +246,23 @@ class CommandCenterActivity : AppCompatActivity() {
         handler.removeCallbacks(tick)
         CookieManager.getInstance().flush()
         super.onPause()
-        if (inPip() && this::vidWeb.isInitialized) vidWeb.onResume()
+        if (sizedShowing() && this::vidWeb.isInitialized) vidWeb.onResume()
     }
 
     override fun onStop() {
         super.onStop()
-        if (inPip() && this::vidWeb.isInitialized) vidWeb.onResume()
+        if (sizedShowing() && this::vidWeb.isInitialized) vidWeb.onResume()
     }
 
     override fun onDestroy() {
         CookieManager.getInstance().flush()
+        sizedVid?.dismiss(reparentHome = false)
+        sizedVid = null
         if (this::vidWeb.isInitialized) {
             vidWeb.stopLoading()
             vidWeb.destroy()
         }
         if (this::kinetic.isInitialized) kinetic.release()
-        unregisterPipActions()
         super.onDestroy()
     }
 
@@ -279,27 +274,22 @@ class CommandCenterActivity : AppCompatActivity() {
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        if (vidShowing) enterVidPip()
+        if (vidShowing && !sizedShowing()) enterSizedVid()
     }
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        applyVidSurface()
-        if (isInPictureInPictureMode && this::vidWeb.isInitialized) vidWeb.onResume()
-        if (isInPictureInPictureMode) {
-            applyPipMuteCc()
-            vidWeb.post { maybeSyncPipSizeFromWindow() }
+        // Size is ours now. Leave system PiP if the OEM auto-entered it.
+        if (isInPictureInPictureMode && vidShowing) {
+            vidWeb.post { enterSizedVid() }
+        } else {
+            applyVidSurface()
         }
-        updatePipParams()
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        if (inPip()) {
-            applyVidSurface()
-            maybeSyncPipSizeFromWindow()
-            if (this::vidWeb.isInitialized) vidWeb.onResume()
-        }
+        if (sizedShowing() && this::vidWeb.isInitialized) vidWeb.onResume()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -310,7 +300,7 @@ class CommandCenterActivity : AppCompatActivity() {
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (vidShowing) {
-            enterVidPip()
+            enterSizedVid()
             return
         }
         finish()
@@ -545,7 +535,7 @@ class CommandCenterActivity : AppCompatActivity() {
         vidWeb.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 CookieManager.getInstance().flush()
-                if (inPip()) applyPipVideoFill(true)
+                if (sizedShowing()) applyPipVideoFill(true)
                 applyPipMuteCc()
             }
         }
@@ -557,10 +547,9 @@ class CommandCenterActivity : AppCompatActivity() {
         if (vidShowing && lastVidUrl.isNotBlank()) {
             applyVidSurface()
             updateVidButton()
-            updatePipParams()
-            if (!inPip()) {
+            if (!sizedShowing()) {
                 if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-                    vidWeb.post { enterVidPip() }
+                    vidWeb.post { enterSizedVid() }
                 } else {
                     pipAfterResume = true
                 }
@@ -587,32 +576,30 @@ class CommandCenterActivity : AppCompatActivity() {
         }
         applyVidSurface()
         updateVidButton()
-        updatePipParams()
         CookieManager.getInstance().flush()
     }
 
     private fun closeVid() {
         vidShowing = false
+        sizedVid?.dismiss(reparentHome = true)
         CookieManager.getInstance().flush()
         applyVidSurface()
         updateVidButton()
-        updatePipParams()
     }
 
-    private fun inPip(): Boolean =
-        Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode
+    private fun sizedShowing(): Boolean = sizedVid?.isShowing == true
 
     private fun applyVidSurface() {
         if (!this::vidWeb.isInitialized || !this::chrome.isInitialized) return
-        val pip = inPip()
-        title = if (pip) "" else getString(R.string.app_name)
+        val sized = sizedShowing()
+        title = if (sized) "" else getString(R.string.app_name)
         if (vidShowing) {
             vidWeb.visibility = View.VISIBLE
             chrome.visibility = View.GONE
             if (this::vidPipBar.isInitialized) {
-                vidPipBar.visibility = if (pip) View.GONE else View.VISIBLE
+                vidPipBar.visibility = if (sized) View.GONE else View.VISIBLE
             }
-            applyPipVideoFill(pip)
+            applyPipVideoFill(sized)
             applyPipMuteCc()
         } else {
             vidWeb.visibility = View.GONE
@@ -623,10 +610,8 @@ class CommandCenterActivity : AppCompatActivity() {
     }
 
     /**
-     * In system PiP the WebView is the whole window. Hide YouTube page chrome
-     * (masthead, comments, related) and make the video element cover the
-     * surface. Restore the watch page when leaving PiP. Does not load a
-     * different URL or create a second player.
+     * Hide YouTube page chrome (masthead, comments, related) and make the
+     * video cover the surface. Same WebView — not a second player.
      */
     private fun applyPipVideoFill(fill: Boolean) {
         if (!this::vidWeb.isInitialized) return
@@ -638,184 +623,101 @@ class CommandCenterActivity : AppCompatActivity() {
         }
     }
 
-    private fun enterVidPip() {
-        if (Build.VERSION.SDK_INT < 26 || !vidShowing) return
-        if (inPip()) {
-            applyVidSurface()
-            if (this::vidWeb.isInitialized) vidWeb.onResume()
+    private fun ensureSized(): SizedVidWindow {
+        sizedVid?.let { return it }
+        val win = SizedVidWindow(
+            host = this,
+            onMute = { togglePipMute() },
+            onCc = { togglePipCc() },
+            onGear = { clickYtGear() },
+            onExpandFull = { expandSizedToFull() },
+            onClosed = { closeVid() },
+            muteOn = { pipMuted },
+            ccOn = { pipCcOn }
+        )
+        win.onSizeChanged = { lastSized = it }
+        sizedVid = win
+        return win
+    }
+
+    /** Chrome-less window we size. Overlay permission required. */
+    private fun enterSizedVid() {
+        if (!vidShowing || !this::vidWeb.isInitialized) return
+        if (!SizedVidWindow.canDraw(this)) {
+            pendingSizedAfterOverlay = true
+            requestOverlayPermission()
             return
         }
-        updatePipParams()
-        try {
-            val entered = enterPictureInPictureMode(pipParams())
-            if (!entered) {
-                applyVidSurface()
-                if (this::vidWeb.isInitialized) vidWeb.onResume()
+        val win = ensureSized()
+        lastSized = win.size.takeIf { win.isShowing } ?: lastSized
+        win.show(vidWeb, lastSized)
+        lastSized = win.size
+        applyVidSurface()
+        applyPipVideoFill(true)
+        applyPipMuteCc()
+        vidWeb.onResume()
+        if (Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode) {
+            try {
+                moveTaskToBack(true)
+            } catch (_: Exception) {
             }
-        } catch (_: Exception) {
-            applyVidSurface()
-            if (this::vidWeb.isInitialized) vidWeb.onResume()
-        }
-    }
-
-    private fun updatePipParams() {
-        if (Build.VERSION.SDK_INT < 26) return
-        try {
-            setPictureInPictureParams(pipParams())
-        } catch (_: Exception) {
-        }
-    }
-
-    private fun pipParams(): PictureInPictureParams {
-        val b = PictureInPictureParams.Builder()
-            .setAspectRatio(Rational(16, 9))
-        // Compact = stamp-26 emu ~280x168. Expanded = current Razr pin ~1120x630.
-        // OEM may ignore size; never invent OverlayPip to fake it.
-        b.setSourceRectHint(pipSizeHint())
-        if (Build.VERSION.SDK_INT >= 26) {
-            b.setActions(pipRemoteActions())
-        }
-        if (Build.VERSION.SDK_INT >= 31) {
-            b.setAutoEnterEnabled(vidShowing)
-            b.setSeamlessResizeEnabled(true)
-        }
-        return b.build()
-    }
-
-    /**
-     * Compact sourceRectHint is 280x168 px (stamp 26 emu look).
-     * Expanded is 1120x630 (Motorola Razr current pin Rect 52,1606-1172,2236).
-     */
-    private fun pipSizeHint(): Rect {
-        val dm = resources.displayMetrics
-        val targetW = if (pipCompact) COMPACT_PIP_W else EXPANDED_PIP_W
-        val targetH = if (pipCompact) COMPACT_PIP_H else EXPANDED_PIP_H
-        val pad = (12f * dm.density).toInt()
-        val left = (dm.widthPixels - targetW - pad).coerceAtLeast(0)
-        val top = (dm.heightPixels - targetH - pad * 6).coerceAtLeast(0)
-        if (this::vidWeb.isInitialized && vidWeb.width > 0 && vidWeb.height > 0 && !inPip()) {
-            val loc = IntArray(2)
-            vidWeb.getLocationOnScreen(loc)
-            val w = vidWeb.width
-            val h = (w * 9f / 16f).toInt().coerceAtMost(vidWeb.height)
-            // Enter animation still starts from the playing video, then the
-            // target size rect is the compact/expanded hint above.
-            if (!pipCompact) {
-                return Rect(loc[0], loc[1], loc[0] + w, loc[1] + h)
-            }
-        }
-        return Rect(left, top, left + targetW, top + targetH)
-    }
-
-    private fun pipRemoteActions(): ArrayList<RemoteAction> {
-        val actions = ArrayList<RemoteAction>(3)
-        val muteIcon = if (pipMuted) R.drawable.ic_pip_mute else R.drawable.ic_pip_volume
-        val muteLabel = if (pipMuted) "Unmute" else "Mute"
-        actions.add(
-            RemoteAction(
-                Icon.createWithResource(this, muteIcon),
-                muteLabel,
-                muteLabel,
-                pipActionIntent(ACTION_PIP_MUTE, REQ_PIP_MUTE)
-            )
-        )
-        val ccLabel = if (pipCcOn) "Captions on" else "Captions"
-        val cc = RemoteAction(
-            Icon.createWithResource(this, R.drawable.ic_pip_cc),
-            ccLabel,
-            "Closed captions",
-            pipActionIntent(ACTION_PIP_CC, REQ_PIP_CC)
-        )
-        cc.setEnabled(true)
-        actions.add(cc)
-        val sizeIcon = if (pipCompact) R.drawable.ic_pip_size_out else R.drawable.ic_pip_size_in
-        val sizeLabel = if (pipCompact) "Larger" else "Smaller"
-        actions.add(
-            RemoteAction(
-                Icon.createWithResource(this, sizeIcon),
-                sizeLabel,
-                if (pipCompact) "Expand PiP toward Razr size" else "Shrink PiP to 280x168",
-                pipActionIntent(ACTION_PIP_SIZE, REQ_PIP_SIZE)
-            )
-        )
-        return actions
-    }
-
-    private fun pipActionIntent(action: String, requestCode: Int): PendingIntent {
-        val intent = Intent(action).setPackage(packageName)
-        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        return PendingIntent.getBroadcast(this, requestCode, intent, flags)
-    }
-
-    private val pipActionReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            when (intent?.action) {
-                ACTION_PIP_MUTE -> togglePipMute()
-                ACTION_PIP_CC -> togglePipCc()
-                ACTION_PIP_SIZE -> togglePipSize()
-            }
-        }
-    }
-
-    private fun registerPipActions() {
-        if (pipReceiverRegistered) return
-        val filter = IntentFilter().apply {
-            addAction(ACTION_PIP_MUTE)
-            addAction(ACTION_PIP_CC)
-            addAction(ACTION_PIP_SIZE)
-        }
-        if (Build.VERSION.SDK_INT >= 33) {
-            registerReceiver(pipActionReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
-            @Suppress("UnspecifiedRegisterReceiverFlag")
-            registerReceiver(pipActionReceiver, filter)
+            moveTaskToBack(true)
         }
-        pipReceiverRegistered = true
     }
 
-    private fun unregisterPipActions() {
-        if (!pipReceiverRegistered) return
+    private fun expandSizedToFull() {
+        lastSized = sizedVid?.size ?: lastSized
+        sizedVid?.dismiss(reparentHome = true)
+        applyVidSurface()
+        applyPipVideoFill(false)
+        applyPipMuteCc()
+        if (this::vidWeb.isInitialized) vidWeb.onResume()
         try {
-            unregisterReceiver(pipActionReceiver)
+            val i = Intent(this, CommandCenterActivity::class.java)
+            i.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            startActivity(i)
         } catch (_: Exception) {
         }
-        pipReceiverRegistered = false
+    }
+
+    /** Motorola pins system PiP at ~1120x630. Size is ours; do not auto-enter OEM PiP. */
+    private fun disableOemAutoPip() {
+        if (Build.VERSION.SDK_INT < 31) return
+        try {
+            setPictureInPictureParams(
+                PictureInPictureParams.Builder().setAutoEnterEnabled(false).build()
+            )
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun requestOverlayPermission() {
+        if (Build.VERSION.SDK_INT < 23) return
+        try {
+            val i = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(i)
+        } catch (_: Exception) {
+        }
     }
 
     private fun togglePipMute() {
         pipMuted = !pipMuted
         applyPipMuteCc()
-        updatePipParams()
+        sizedVid?.refreshChrome()
     }
 
     private fun togglePipCc() {
         pipCcOn = !pipCcOn
         applyPipMuteCc()
-        updatePipParams()
+        sizedVid?.refreshChrome()
     }
 
-    /** Inward = 280x168 compact. Outward = current big Razr size. System chrome only. */
-    private fun togglePipSize() {
-        pipCompact = !pipCompact
-        updatePipParams()
-    }
-
-    /**
-     * If the user drags the system corner arrows, snap our compact flag to the
-     * new window. Motorola may ignore the hint and stay pinned at ~1120x630.
-     */
-    private fun maybeSyncPipSizeFromWindow() {
-        if (!inPip() || !this::vidWeb.isInitialized) return
-        val w = vidWeb.width
-        if (w <= 0) return
-        val nextCompact = w <= (COMPACT_PIP_W + 80)
-        if (nextCompact != pipCompact && w < EXPANDED_PIP_W - 80) {
-            pipCompact = nextCompact
-            updatePipParams()
-        }
-    }
-
-    /** Mute = video.muted. CC clicks YouTube captions / textTracks. Same WebView. */
+    /** Mute = video.muted / yt.player. Same WebView. No AUDIOFOCUS_GAIN. */
     private fun applyPipMuteCc() {
         if (!this::vidWeb.isInitialized) return
         try {
@@ -848,43 +750,67 @@ class CommandCenterActivity : AppCompatActivity() {
 })();"""
     }
 
+    private fun clickYtGear() {
+        if (!this::vidWeb.isInitialized) return
+        try {
+            vidWeb.evaluateJavascript(GEAR_JS, null)
+        } catch (_: Exception) {
+        }
+    }
+
     private fun ccJs(on: Boolean): String {
         val flag = if (on) "true" else "false"
         return """
 (function(){
   var want=$flag;
-  var v=document.querySelector('video');
-  if(v && v.textTracks){
-    for(var i=0;i<v.textTracks.length;i++){
-      try{v.textTracks[i].mode=want?'showing':'hidden';}catch(e){}
-    }
-  }
-  var p=document.querySelector('#movie_player,.html5-video-player');
-  try{
-    if(p){
-      if(want){
-        try{if(p.loadModule)p.loadModule('captions');}catch(e){}
-        try{if(p.setOption)p.setOption('captions','track',{languageCode:'en'});}catch(e){}
-      } else {
-        try{if(p.setOption)p.setOption('captions','track',{});}catch(e){}
-        try{if(p.unloadModule)p.unloadModule('captions');}catch(e){}
+  function tracks(on){
+    var v=document.querySelector('video');
+    if(v && v.textTracks){
+      for(var i=0;i<v.textTracks.length;i++){
+        try{v.textTracks[i].mode=on?'showing':'hidden';}catch(e){}
       }
     }
+  }
+  tracks(want);
+  var players=[];
+  try{
+    var mp=document.querySelector('#movie_player,.html5-video-player,ytm-player');
+    if(mp) players.push(mp);
+    if(window.yt && yt.player && yt.player.getPlayerByElement){
+      var el=document.querySelector('#movie_player,.html5-video-player');
+      if(el){var yp=yt.player.getPlayerByElement(el); if(yp) players.push(yp);}
+    }
   }catch(e){}
+  for(var p=0;p<players.length;p++){
+    var pl=players[p];
+    try{
+      if(want){
+        try{if(pl.loadModule)pl.loadModule('captions');}catch(e){}
+        try{if(pl.setOption)pl.setOption('captions','track',{languageCode:'en'});}catch(e){}
+        try{if(pl.setOption)pl.setOption('captions','reload',true);}catch(e){}
+      } else {
+        try{if(pl.setOption)pl.setOption('captions','track',{});}catch(e){}
+        try{if(pl.unloadModule)pl.unloadModule('captions');}catch(e){}
+      }
+    }catch(e){}
+  }
   var sel=[
     '.ytp-subtitles-button','button.ytp-subtitles-button',
     'button[aria-label*="captions" i]','button[aria-label*="Subtitles" i]',
     'button[aria-label*="Closed caption" i]','button[aria-label*="subtitle" i]',
-    '.ytm-subtitle-button','ytm-subtitle-button'
+    'button[aria-label*="CC" i]','.ytm-subtitle-button','ytm-subtitle-button',
+    'button[aria-keyshortcuts*="c" i]'
   ];
   for(var s=0;s<sel.length;s++){
-    var btn=document.querySelector(sel[s]);
-    if(!btn) continue;
-    var pressed=btn.getAttribute('aria-pressed')==='true' ||
-      (btn.className||'').indexOf('ytp-button-toggled')>=0;
-    if(pressed!==want){try{btn.click();}catch(e){}}
-    break;
+    var list=document.querySelectorAll(sel[s]);
+    for(var b=0;b<list.length;b++){
+      var btn=list[b];
+      var pressed=btn.getAttribute('aria-pressed')==='true' ||
+        (btn.className||'').indexOf('ytp-button-toggled')>=0;
+      if(pressed!==want){try{btn.click();}catch(e){}}
+    }
   }
+  tracks(want);
   return want?'1':'0';
 })();"""
     }
@@ -901,16 +827,17 @@ class CommandCenterActivity : AppCompatActivity() {
         const val EXTRA_URL = "url"
         const val EXTRA_TITLE = "title"
 
-        const val ACTION_PIP_MUTE = "com.liverockettracker.action.PIP_MUTE"
-        const val ACTION_PIP_CC = "com.liverockettracker.action.PIP_CC"
-        const val ACTION_PIP_SIZE = "com.liverockettracker.action.PIP_SIZE"
-        private const val REQ_PIP_MUTE = 3901
-        private const val REQ_PIP_CC = 3902
-        private const val REQ_PIP_SIZE = 3903
-        private const val COMPACT_PIP_W = 280
-        private const val COMPACT_PIP_H = 168
-        private const val EXPANDED_PIP_W = 1120
-        private const val EXPANDED_PIP_H = 630
+        private const val GEAR_JS = """
+(function(){
+  var sel=['.ytp-settings-button','button.ytp-settings-button',
+    'button[aria-label*="Settings" i]','button[aria-label*="settings" i]',
+    'ytm-settings-button','.ytm-settings-button'];
+  for(var i=0;i<sel.length;i++){
+    var btn=document.querySelector(sel[i]);
+    if(btn){try{btn.click();return '1';}catch(e){}}
+  }
+  return '0';
+})();"""
 
         private const val PIP_FILL_JS = """
 (function(){
