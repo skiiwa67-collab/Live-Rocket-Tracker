@@ -2,6 +2,7 @@ package com.ccos.retro.module
 
 import com.ccos.retro.data.LaunchDataProvider
 import com.ccos.retro.data.LaunchSnapshot
+import com.ccos.retro.data.LaunchWindow
 import com.ccos.retro.event.FlightEventCatalog
 import com.ccos.retro.event.FlightProfiles
 import com.ccos.retro.model.AppPrefs
@@ -323,8 +324,8 @@ class RocketTelemetryModule(
         if (t.id.startsWith("demo-")) return 15 * 60 * 1000L
         val secs = t.secondsToNet(now)
         return when {
-            secs in -300L..2 * 3600L -> 60_000L          // T-2h … T+5m → every 1 min
-            secs in 2 * 3600L..12 * 3600L -> 3 * 60_000L // T-12h → every 3 min
+            secs in -LaunchWindow.WATCH_AFTER_NET_SEC..2 * 3600L -> 60_000L
+            secs in 2 * 3600L..12 * 3600L -> 3 * 60_000L
             secs in 12 * 3600L..48 * 3600L -> 5 * 60_000L
             else -> 10 * 60_000L
         }
@@ -376,9 +377,10 @@ class RocketTelemetryModule(
     }
 
     fun selectableLaunches(): List<LaunchSnapshot> {
-        val all = provider.allSelectable()
+        val now = System.currentTimeMillis()
+        val live = provider.pickerPool(now, prefs.telemetryHorizonDays)
         val keep = provider.findById(prefs.telemetryLaunchId) ?: tracked
-        return if (keep != null && all.none { it.id == keep.id }) listOf(keep) + all else all
+        return if (keep != null && live.none { it.id == keep.id }) listOf(keep) + live else live
     }
 
     fun forceRefresh(onDone: (() -> Unit)? = null) {

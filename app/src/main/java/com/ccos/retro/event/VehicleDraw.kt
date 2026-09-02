@@ -52,6 +52,10 @@ object VehicleDraw {
         if (heat > 0.04f) {
             plasma(canvas, cx, baseY - h, baseY, h * 0.12f, heat, alpha, stage == 1)
         }
+        if (VehicleCatalog.needsUpdate(launch)) {
+            bookGap(canvas, cx, baseY - h * 0.55f, h, skin, lamp)
+            return
+        }
         when (VehicleCatalog.drawFamily(launch)) {
             "f9", "zq" -> falcon(canvas, cx, baseY, h, tSec, stage, separated, 1, skin, lamp, alpha, launch)
             "fh" -> falcon(canvas, cx, baseY, h, tSec, stage, separated, 3, skin, lamp, alpha, launch)
@@ -71,9 +75,6 @@ object VehicleDraw {
             "firefly" -> firefly(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
             "proton" -> proton(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
             else -> generic(canvas, cx, baseY, h, tSec, stage, separated, launch, skin, lamp, alpha)
-        }
-        if (VehicleCatalog.needsUpdate(launch)) {
-            bookGap(canvas, cx, baseY - h * 0.55f, h, skin, lamp)
         }
     }
 

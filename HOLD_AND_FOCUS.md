@@ -1,10 +1,16 @@
 # HOLD + FOCUS (do not "simplify" this back into AUTO)
 
 ## The bug
-`RocketTelemetryModule.resolveTracked` in AUTO calls `getNextAny()`, which keeps only `isUpcoming` (T+5 min). An in-flight Falcon is not upcoming. The wallpaper then locks the soonest NET on Earth (Arianespace, etc.).
+`isInFlight()` used to return false on Launch Successful, and the T+ window was 30 minutes. After Electron deploy (~56 min) + webcast_live false, AUTO dropped the bird and `getNextAny()` locked the soonest future NET (GISAT). A one-mission Owl name hack is not a catalog.
 
 AUTO = browse. HOLD = watch. AUTO double-tap = hard pin. Never let AUTO steal a HOLD or a pin.
 There is no LCK plate. The eight plates stay CMD CDT TEL STS PAD VID MSK AUTO.
+
+## Live window
+- Fetch LL2 upcoming **and** previous.
+- Picker: upcoming (min 14 days) + previous 48 hours + HOLD / in-flight / webcast-live / Go / T+ 6h.
+- AUTO first bucket: HOLD / Go / In Flight / webcast_live / T+ 6h, closest to now. Else soonest future NET.
+- Success is not a delete during the T+ watch window.
 
 ## Pin (AUTO double-tap)
 - Sticky launch id. Does not expire.

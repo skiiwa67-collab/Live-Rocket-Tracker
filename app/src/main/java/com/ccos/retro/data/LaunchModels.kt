@@ -123,29 +123,56 @@ data class LaunchSnapshot(
         return "success" in blob || "failure" in blob || "fail" in blob || "partial" in blob
     }
 
+    fun isGo(): Boolean {
+        val a = statusAbbrev.trim()
+        val n = statusName.trim()
+        return a.equals("Go", ignoreCase = true) ||
+            n.equals("Go", ignoreCase = true) ||
+            n.equals("Go for Launch", ignoreCase = true)
+    }
+
     fun isWebcastLive(): Boolean {
         if (webcastLive) return true
         val watch = allWebcasts().any { WebcastResolver.youtubeVideoId(it.url) != null }
         if (!watch || isTerminal()) return false
-        return isInFlight() || isHold() || secondsToNet() > -6 * 3600L
+        return isInFlight() || isHold() || isGo() || isTPlusWatch()
     }
 
-    /** HOLD / in-flight / live webcast stay selectable. AUTO must not drop them. */
+    /**
+     * AUTO first bucket: HOLD / Go / in-flight / webcast-live / T+ watch window.
+     * Success does not eject a bird during [LaunchWindow.WATCH_AFTER_NET_SEC].
+     */
     fun isActiveWatch(now: Long = System.currentTimeMillis()): Boolean =
-        isInFlight(now) || isHold() || isWebcastLive()
+        isHold() || isGo() || isInFlight(now) || isWebcastLive() || isTPlusWatch(now)
 
+    fun isTPlusWatch(now: Long = System.currentTimeMillis()): Boolean {
+        val t = secondsToNet(now)
+        return t <= 0 && t > -LaunchWindow.WATCH_AFTER_NET_SEC
+    }
+
+    /**
+     * In Flight status, or T+ inside the watch window.
+     * Launch Successful is not a delete — Electron deploy is ~56 min; customers
+     * in other timezones still need the bird. 30 minutes was the AUTO skip bug.
+     */
     fun isInFlight(now: Long = System.currentTimeMillis()): Boolean {
-        if (isTerminal()) return false
         val flying = statusAbbrev.equals("In Flight", ignoreCase = true) ||
             statusName.contains("In Flight", ignoreCase = true)
         if (flying) return true
-        val t = secondsToNet(now)
-        return t < 0 && t > -1800
+        return isTPlusWatch(now)
     }
 
     fun isUpcoming(now: Long = System.currentTimeMillis()): Boolean {
-        if (isInFlight(now) || isHold() || webcastLive) return true
-        return secondsToNet(now) > -300
+        if (isActiveWatch(now)) return true
+        return secondsToNet(now) > 0
+    }
+
+    /** CMD picker: upcoming + last 48h + anything AUTO is still watching. */
+    fun inPickerWindow(now: Long = System.currentTimeMillis(), upcomingHorizonSec: Long = LaunchWindow.UPCOMING_MIN_SEC): Boolean {
+        if (isActiveWatch(now)) return true
+        val t = secondsToNet(now)
+        if (t > 0) return t <= upcomingHorizonSec
+        return t > -LaunchWindow.PICKER_LOOKBACK_SEC
     }
 
     /** Past flights and demos: CDT jump chips drive a replay clock. Live stays wall-clock. */
@@ -328,46 +355,56 @@ data class LaunchListResult(
 )
 
 /**
- * Published-only fill for Owl Around The World. Does not invent NET.
- * Vehicle / pad / orbit come from Rocket Lab + LL2 public sheets.
+ * Catalog is a live LL2 window. These constants are the AUTO / picker rules.
+ * Never key AUTO off a mission nickname.
+ */
+object LaunchWindow {
+    /** Electron deploy ~56 min; other timezones. 30 minutes was the skip bug. */
+    const val WATCH_AFTER_NET_SEC = 6L * 3600L
+    /** Recent previous that must stay pickable after AUTO leaves. */
+    const val PICKER_LOOKBACK_SEC = 48L * 3600L
+    /** Fine-tooth upcoming compare: next ~14 days of LL2. */
+    const val UPCOMING_MIN_SEC = 14L * 24L * 3600L
+}
+
+/**
+ * Published pad fill for Rocket Lab Electron / Mahia LC-1.
+ * Does not invent NET. AUTO must never key off a mission name.
  */
 object PublishedLaunchFacts {
-    const val OWL_ID = "9f5a4cb6-63f9-47e1-9512-b468bae2a8e6"
-    const val OWL_PAD_LAT = -39.26085f
-    const val OWL_PAD_LON = 177.86586f
-    const val OWL_PAD = "Launch Complex 1B"
-    const val OWL_LOCATION = "Rocket Lab LC-1 / Mahia"
-
-    fun isOwl(launch: LaunchSnapshot?): Boolean {
-        if (launch == null) return false
-        if (launch.id == OWL_ID) return true
-        val blob = "${launch.name} ${launch.missionName} ${launch.rocketName}".lowercase()
-        return "owl around" in blob || ("strix" in blob && launch.isRocketLab())
-    }
+    const val MAHIA_PAD_LAT = -39.26085f
+    const val MAHIA_PAD_LON = 177.86586f
+    const val MAHIA_PAD = "Launch Complex 1B"
+    const val MAHIA_LOCATION = "Rocket Lab LC-1 / Mahia"
 
     fun apply(launch: LaunchSnapshot): LaunchSnapshot {
-        if (!isOwl(launch)) return launch
+        if (!isMahiaElectron(launch)) return launch
         val pad = when {
             launch.pad.contains("1B", ignoreCase = true) -> launch.pad
-            launch.pad.contains("Launch Complex 1", ignoreCase = true) -> "Launch Complex 1B"
-            launch.pad.isBlank() -> OWL_PAD
+            launch.pad.contains("1A", ignoreCase = true) -> launch.pad
+            launch.pad.contains("Launch Complex 1", ignoreCase = true) -> launch.pad
+            launch.pad.isBlank() -> MAHIA_PAD
             else -> launch.pad
         }
         val loc = when {
             launch.location.contains("Mahia", ignoreCase = true) ||
-                launch.location.contains("Māhia", ignoreCase = true) -> OWL_LOCATION
-            launch.location.isBlank() -> OWL_LOCATION
-            else -> OWL_LOCATION
-        }
-        val mission = launch.missionName.ifBlank { "Owl Around The World" }.let { m ->
-            if ("owl" in m.lowercase() || "strix" in m.lowercase()) m else "Owl Around The World"
+                launch.location.contains("Māhia", ignoreCase = true) ->
+                if (launch.location.contains("LC-1", ignoreCase = true)) launch.location else MAHIA_LOCATION
+            launch.location.isBlank() -> MAHIA_LOCATION
+            else -> launch.location
         }
         return launch.copy(
             pad = pad,
             location = loc,
-            padLat = OWL_PAD_LAT,
-            padLon = OWL_PAD_LON,
-            missionName = mission
+            padLat = launch.padLat ?: MAHIA_PAD_LAT,
+            padLon = launch.padLon ?: MAHIA_PAD_LON
         )
+    }
+
+    private fun isMahiaElectron(launch: LaunchSnapshot): Boolean {
+        if (!launch.isRocketLab()) return false
+        val blob = "${launch.pad} ${launch.location}".lowercase()
+        return "mahia" in blob || "māhia" in blob ||
+            "launch complex 1" in blob || "lc-1" in blob || "lc 1" in blob
     }
 }

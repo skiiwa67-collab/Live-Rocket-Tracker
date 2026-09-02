@@ -239,24 +239,19 @@ class MainActivity : AppCompatActivity() {
         val now = System.currentTimeMillis()
         val all = launchProvider.allSelectable()
         val keepId = prefs.telemetryLaunchId
-        val liveOnly = launchProvider.livePool()
-            .filter { !it.id.startsWith("demo-") && (it.isUpcoming(now) || it.isActiveWatch(now) || it.id == keepId) }
-        val horizonMs = prefs.telemetryHorizonDays * 24L * 3600L * 1000L
+        val liveOnly = launchProvider.pickerPool(now, prefs.telemetryHorizonDays)
         val historic = prefs.telemetryListMode == "historical"
 
         launchList = if (historic) {
             val pool = all.filter {
                 it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) < -60 ||
-                    it.isActiveWatch(now) || it.id == keepId
+                    it.isActiveWatch(now) || it.inPickerWindow(now) || it.id == keepId
             }
             val filtered = pool.filter { matchesHistoric(it, historicQuery) }
             if (historicQuery.isNotBlank()) filtered.take(80) else filtered.take(40)
         } else {
-            val window = liveOnly.filter { it.netMs <= now + horizonMs || it.isActiveWatch(now) || it.id == keepId }
-                .sortedBy { it.netMs }
-            val keep = all.firstOrNull { it.id == keepId }
-            val withKeep = if (keep != null && window.none { it.id == keep.id }) listOf(keep) + window else window
-            withKeep.take(12)
+            val keep = all.firstOrNull { it.id == keepId && !it.id.startsWith("demo-") }
+            if (keep != null && liveOnly.none { it.id == keep.id }) listOf(keep) + liveOnly else liveOnly
         }
 
         val labels = launchList.map { l ->
@@ -292,7 +287,7 @@ class MainActivity : AppCompatActivity() {
         suppressLaunchSelect = false
 
         val extra = if (!historic) {
-            " · ${launchList.size} shown · ${liveOnly.size} upcoming"
+            " · ${launchList.size} in window · ${liveOnly.size} live"
         } else {
             " · ${launchList.size} historic"
         }
@@ -305,7 +300,7 @@ class MainActivity : AppCompatActivity() {
         val now = System.currentTimeMillis()
         val next = launchProvider.getNextAny(now)
         tv.text = when {
-            next != null && next.secondsToNet(now) > -1800 -> {
+            next != null && (next.isActiveWatch(now) || next.secondsToNet(now) > 0) -> {
                 val s = next.secondsToNet(now)
                 val whenStr = when {
                     s < 0 -> "LIVE"
