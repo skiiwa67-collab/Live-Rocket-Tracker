@@ -4,8 +4,8 @@ import android.content.Context
 import android.content.Intent
 
 /**
- * One overlay PiP. Hot links switch the same window. Never a second MCC YouTube pane.
- * Wallpaper and CMD VID both land here.
+ * One HUD overlay player. Hot links switch the same activity. Never a second MCC pane.
+ * Wallpaper VID / REPLAY / LINKS Click Me land here. Not Android system PiP.
  */
 object OverlayPip {
     fun switch(context: Context, url: String, title: String) {
