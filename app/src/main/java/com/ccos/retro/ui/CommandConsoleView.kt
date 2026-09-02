@@ -495,16 +495,8 @@ class CommandConsoleView @JvmOverloads constructor(
         return stripH + dp(4f)
     }
 
-    private fun formatClock(tSec: Float): String {
-        val sign = if (tSec < 0f) "T-" else "T+"
-        val absSec = abs(tSec).toInt()
-        val hh = absSec / 3600
-        val mm = (absSec % 3600) / 60
-        val ss = absSec % 60
-        val base = if (hh > 0) String.format("%s%02d:%02d:%02d", sign, hh, mm, ss)
-        else String.format("%s%02d:%02d", sign, mm, ss)
-        return if (module?.clockIsEst() == true) "$base EST" else base
-    }
+    private fun formatClock(tSec: Float): String =
+        EventClock.fmtEst(tSec, module?.clockIsEst() == true)
 
     private fun isMethalox(launch: LaunchSnapshot?): Boolean = VehicleCatalog.spec(launch).methalox
 
@@ -2466,8 +2458,7 @@ class CommandConsoleView @JvmOverloads constructor(
             y += dp(6f)
         }
 
-        val clock = if (tSec >= 0f) String.format("T+%02d:%02d", (tSec / 60).toInt(), (tSec % 60).toInt())
-        else String.format("T-%02d:%02d", (-tSec / 60).toInt(), ((-tSec) % 60).toInt())
+        val clock = EventClock.fmtEst(tSec, module?.clockIsEst() == true)
 
         data class Slot(val pri: Int, val lines: Int, val draw: () -> Unit)
         val slots = ArrayList<Slot>()

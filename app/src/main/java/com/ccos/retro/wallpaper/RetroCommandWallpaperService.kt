@@ -2514,14 +2514,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                 String.format("%d:%02d", h, cal.get(java.util.Calendar.MINUTE))
             }
             val tSec = telemetryModule.effectiveSecondsFromNet(now)
-            val absSecs = kotlin.math.abs(tSec).toLong()
-            val sign = if (tSec <= 0f) "T-" else "T+"
-            val hh = absSecs / 3600
-            val mm = (absSecs % 3600) / 60
-            val ss = absSecs % 60
-            val cdtBase = if (hh > 0) String.format("%s%02d:%02d:%02d", sign, hh, mm, ss)
-            else String.format("%s%02d:%02d", sign, mm, ss)
-            val cdt = if (telemetryModule.clockIsEst()) "$cdtBase EST" else cdtBase
+            val cdt = EventClock.fmtEst(tSec, telemetryModule.clockIsEst())
             val failed = hudFailed(launch, tSec)
             val line3 = when {
                 failed -> "FAIL · ${launch?.name?.take(22) ?: "VEHICLE"}"
@@ -2536,7 +2529,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             val cdtH = height * if (phone) 0.062f else 0.088f
             val metaH = height * if (phone) 0.022f else 0.026f
             val clockSize = telFit("00:00", gapW, clockH, if (phone) 72f else 160f)
-            val cdtSize = telFit(if (telemetryModule.clockIsEst()) "T-00:00:00 EST" else "T-00:00:00", gapW, cdtH, if (phone) 44f else 96f)
+            val cdtSize = telFit(if (telemetryModule.clockIsEst()) "T-33h 45m EST" else "T-33h 45m", gapW, cdtH, if (phone) 44f else 96f)
             val metaSize = telFit(line3, gapW, metaH, 16f)
             val clockBaseline = topInset + clockSize * 0.86f
             val cdtBaseline = clockBaseline + cdtSize * 1.02f
@@ -6549,9 +6542,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             launch.probability?.let {
                 y = drawWrappedCenter(canvas, "WEATHER  $it%", cx, y, maxW, subSz, withLamp(skin.text, lamp))
             }
-            val absSecs = kotlin.math.abs(tSec).toLong()
-            val sign = if (tSec <= 0f) "T-" else "T+"
-            val clock = String.format("%s%02d:%02d:%02d", sign, absSecs / 3600, (absSecs % 3600) / 60, absSecs % 60)
+            val clock = EventClock.fmtEst(tSec, telemetryModule.clockIsEst())
             drawWrappedCenter(canvas, clock, cx, y, maxW, bodySz, withLamp(skin.accent, lamp))
         }
 
@@ -6830,13 +6821,8 @@ class RetroCommandWallpaperService : WallpaperService() {
             when (mode) {
                 AppPrefs.DATA_TELEMETRY -> {
                     val launch = telemetryModule.tracked
-                    val secs = launch?.secondsToNet(now) ?: 0L
-                    val absSecs = kotlin.math.abs(secs)
-                    val sign = if (secs >= 0) "T-" else "T+"
-                    val clock = String.format(
-                        "%s%02d:%02d:%02d",
-                        sign, absSecs / 3600, (absSecs % 3600) / 60, absSecs % 60
-                    )
+                    val secs = launch?.secondsToNet(now)?.toFloat() ?: 0f
+                    val clock = EventClock.fmtEst(-secs, telemetryModule.clockIsEst())
                     hudPaint.textSize = bigSz
                     canvas.drawText(clock, width / 2f, top + titleSz + bigSz + 24f, hudPaint)
                     hudPaint.color = Color.WHITE

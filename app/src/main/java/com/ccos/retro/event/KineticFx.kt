@@ -214,18 +214,32 @@ class KineticFx(context: Context) {
 }
 
 object EventClock {
+    /**
+     * Glance clock. Never print H:MM:SS — that reads as minutes on GISAT-class T-33h.
+     * Days → 1d 9h. Hours → 33h 45m. Under an hour → 45m 01s.
+     */
     fun span(sec: Float): String {
         val a = kotlin.math.abs(sec).toInt()
-        val hh = a / 3600
+        val days = a / 86400
+        val hours = (a % 86400) / 3600
         val mm = (a % 3600) / 60
         val ss = a % 60
-        return if (hh > 0) String.format("%02d:%02d:%02d", hh, mm, ss)
-        else String.format("%02d:%02d", mm, ss)
+        return when {
+            days > 0 -> if (hours > 0) "${days}d ${hours}h" else "${days}d"
+            hours > 0 -> if (mm > 0) "${hours}h ${mm}m" else "${hours}h"
+            mm > 0 -> if (ss > 0) String.format("%dm %02ds", mm, ss) else "${mm}m"
+            else -> "${ss}s"
+        }
     }
 
     fun fmt(tSec: Float): String {
         val sign = if (tSec >= 0f) "T+" else "T-"
         return sign + span(tSec)
+    }
+
+    fun fmtEst(tSec: Float, est: Boolean): String {
+        val base = fmt(tSec)
+        return if (est) "$base EST" else base
     }
 
     fun remain(from: Float, to: Float): String = "IN " + span((to - from).coerceAtLeast(0f))
