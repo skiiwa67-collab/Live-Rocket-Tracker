@@ -887,7 +887,6 @@ class RetroCommandWallpaperService : WallpaperService() {
                 ).apply {
                     addFlags(
                         Intent.FLAG_ACTIVITY_NEW_TASK or
-                            Intent.FLAG_ACTIVITY_SINGLE_TOP or
                             Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
                     )
                     putExtra(com.ccos.retro.ui.CommandCenterActivity.EXTRA_OPEN_VID, true)
@@ -6439,7 +6438,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             try {
                 val intent = Intent(this@RetroCommandWallpaperService, com.ccos.retro.ui.CommandCenterActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                 }
                 startActivity(intent)
             } catch (_: Exception) { }
