@@ -1,4 +1,4 @@
-# Live Rocket Tracker — closed tester notes (stamp 26)
+# Live Rocket Tracker — closed tester notes (stamp 36)
 
 Sideload this APK. This is **not** a Play production upload. Play testers on versionCode 17 stay on 17. Play 17 stays frozen.
 
@@ -6,10 +6,20 @@ Stamp **20** (`stamp-20-debug`) stays the KEEP for units + AUTO pin.
 Stamp **21** (`stamp-21-debug`) is the GISAT look + Electron HUD locks.
 Stamp **23** (`stamp-23-debug`) is SIGNED usable WITH the Pixel bar. Do not overwrite it.
 Stamp **25** (`stamp-25-debug`) is SIGNED. Auto packs THIS page. Do not overwrite it.
+Stamp **26** (`stamp-26-debug`) is Owl AUTO / Electron HUD. Do not overwrite it.
 
-This stamp is **26** / **1.0.16**. Owl AUTO. Not a rebuild of 25.
+This stamp is **36** / **1.0.26**. Built from stamp 26. OverlayPiP is deleted from the VID path.
 
-## Owl / AUTO
+## VID (locked cut)
+
+- OverlayPipActivity is gone. HUD VID and MCC VID do not wrap it, hop it, or PiP it.
+- CommandCenterActivity is the player. Manifest has `supportsPictureInPicture=true` on Command Center.
+- MCC VID is a full-screen WebView for Google / YouTube sign-in. Not 280x168. Not FloatingVideoWindow overlay chrome. Password Manager can autofill without collapsing the surface.
+- Home / `onUserLeaveHint` / `setAutoEnterEnabled` PiPs that same Command Center WebView. MCC chrome is hidden in PiP so the video fills the system PiP. If `enterPictureInPictureMode` fails, stay usable (plates / MCC tappable). No fat overlay hole over the HUD.
+- Wallpaper HUD VID starts Command Center VID (same activity / session). Cookies persist (`CookieManager`). No second empty player.
+- No AUDIOFOCUS_GAIN. YouTube wins.
+
+## Owl / AUTO (from 26)
 
 Catalog skip of Electron Owl is a bug. AUTO follows HOLD / in-flight / webcast-live. Owl stays in the CMD picker so you can reselect it and re-pin AUTO (double-tap AUTO still pins). Do not hide the current hold/in-flight bird as past.
 
@@ -26,12 +36,11 @@ GISAT Hindi look remains when that ISRO launch is pinned/selected. Do not force 
 - Clock at the top and T-/T+ under it are SIGNED. Do not treat a change there as a pass.
 - Event tape packs above the Razr dock (WindowInsets / packer). Eight plates are not moved.
 - ALT/SPD family is a bit smaller. Digital gauges stay.
-- VID well is LINKS. LIVE if a watch URL exists, else official vs keep-alive historic/agency. Tap switches overlay PiP. No extra MCC YouTube panes. PiP volume down without mute. Never AUDIOFOCUS_GAIN. Overlay PiP drag stays. If AUTO is on Electron, no Starlink/SpaceX buttons on that bird.
+- VID well is LINKS. LIVE if a watch URL exists, else official vs keep-alive historic/agency. Tap opens Command Center VID. If AUTO is on Electron, no Starlink/SpaceX buttons on that bird.
 - STS fills the well under the eight buttons. Text is spread. Agency logo is not covered.
-- Background grid is a little brighter so a dark overlay PiP reads.
 
 ## Also still true from 25
 
 Eight plates: **CMD CDT TEL STS PAD VID MSK AUTO**.
 Unknown vehicle = **NEW VEHICLE**. We do not invent drawings or numbers.
-No AUDIOFOCUS_GAIN. Overlay PiP stays signed.
+No AUDIOFOCUS_GAIN.

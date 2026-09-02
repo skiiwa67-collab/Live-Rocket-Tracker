@@ -881,11 +881,20 @@ class RetroCommandWallpaperService : WallpaperService() {
             val target = url?.takeIf { it.isNotBlank() } ?: panes.official.url
             val title = if (panes.official.isWatch) "LIVE" else panes.official.title
             try {
-                com.ccos.retro.ui.OverlayPip.switch(
+                val intent = Intent(
                     this@RetroCommandWallpaperService,
-                    target,
-                    title
-                )
+                    com.ccos.retro.ui.CommandCenterActivity::class.java
+                ).apply {
+                    addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                            Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                    )
+                    putExtra(com.ccos.retro.ui.CommandCenterActivity.EXTRA_OPEN_VID, true)
+                    putExtra(com.ccos.retro.ui.CommandCenterActivity.EXTRA_URL, target)
+                    putExtra(com.ccos.retro.ui.CommandCenterActivity.EXTRA_TITLE, title)
+                }
+                startActivity(intent)
             } catch (_: Exception) { }
         }
 

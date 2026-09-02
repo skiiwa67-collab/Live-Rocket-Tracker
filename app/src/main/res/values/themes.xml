@@ -10,11 +10,4 @@
         <item name="android:windowBackground">#060708</item>
     </style>
 
-    <style name="Theme.OverlayPip" parent="Theme.RetroCommand">
-        <item name="android:windowIsTranslucent">true</item>
-        <item name="android:windowBackground">#00000000</item>
-        <item name="android:statusBarColor">#00000000</item>
-        <item name="android:navigationBarColor">#00000000</item>
-        <item name="android:windowAnimationStyle">@null</item>
-    </style>
 </resources>

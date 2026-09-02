@@ -1,17 +1,28 @@
 package com.ccos.retro.ui
 
+import android.annotation.SuppressLint
+import android.app.PictureInPictureParams
+import android.content.Intent
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.Rect
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Rational
 import android.view.Gravity
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
+import android.webkit.CookieManager
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -24,7 +35,6 @@ import com.ccos.retro.data.LaunchDataProvider
 import com.ccos.retro.data.WebcastResolver
 import com.ccos.retro.model.AppPrefs
 import com.ccos.retro.event.EventSeverity
-import com.ccos.retro.event.MissionFacts
 import com.ccos.retro.event.FlightEventMonitor
 import com.ccos.retro.event.KineticFx
 import com.ccos.retro.module.RocketTelemetryModule
@@ -34,6 +44,8 @@ import com.ccos.retro.geo.PadBook
 /**
  * Full-screen Mission Control Center. Wallpaper stays the home HUD.
  * Status / camera cutout are padded — never drawn under the punch-hole.
+ * VID is this activity's full-screen WebView. PiP is this same WebView.
+ * OverlayPipActivity is not on this path.
  */
 class CommandCenterActivity : AppCompatActivity() {
 
@@ -42,7 +54,10 @@ class CommandCenterActivity : AppCompatActivity() {
     private lateinit var console: CommandConsoleView
     private lateinit var analogBtn: Button
     private lateinit var vidBtn: Button
-    private lateinit var videoOverlay: VideoFeedOverlay
+    private lateinit var chrome: View
+    private lateinit var vidWeb: WebView
+    private var vidShowing = false
+    private var lastVidUrl: String = ""
     private lateinit var eventBanner: EventBannerView
     private val eventMonitor = FlightEventMonitor()
     private lateinit var kinetic: KineticFx
@@ -100,8 +115,9 @@ class CommandCenterActivity : AppCompatActivity() {
         updateAnalogButton()
 
         eventBanner = findViewById(R.id.event_banner)
-        videoOverlay = findViewById(R.id.video_overlay)
-        videoOverlay.onChanged = { updateVidButton() }
+        chrome = findViewById(R.id.chrome)
+        vidWeb = findViewById(R.id.vid_web)
+        bindVidWeb()
         findViewById<Button>(R.id.btn_event_prev).setOnClickListener {
             telemetryModule.skipEvent(-1)
             pushFlightEvents()
@@ -114,18 +130,18 @@ class CommandCenterActivity : AppCompatActivity() {
         }
         vidBtn = findViewById(R.id.btn_vid)
         vidBtn.setOnClickListener {
-            val launch = telemetryModule.tracked
-            val feeds = WebcastResolver.panes(launch)
-            if (videoOverlay.isShowing()) {
-                videoOverlay.closeAll()
+            if (vidShowing) {
+                closeVid()
             } else {
-                videoOverlay.switchFeed(
+                val launch = telemetryModule.tracked
+                val feeds = WebcastResolver.panes(launch)
+                openVid(
                     feeds.official.url,
                     if (feeds.official.isWatch) "LIVE" else feeds.official.title
                 )
             }
-            updateVidButton()
         }
+        consumeVidIntent(intent)
         updateVidButton()
 
         tabIds.forEachIndexed { index, id ->
@@ -182,23 +198,41 @@ class CommandCenterActivity : AppCompatActivity() {
         running = true
         handler.removeCallbacks(tick)
         handler.post(tick)
-        if (this::videoOverlay.isInitialized) videoOverlay.resumeAll()
+        if (this::vidWeb.isInitialized) vidWeb.onResume()
+        updatePipParams()
     }
 
     override fun onPause() {
         running = false
         handler.removeCallbacks(tick)
-        if (this::videoOverlay.isInitialized) {
-            videoOverlay.pauseAll()
-            videoOverlay.flushCookies()
-        }
+        CookieManager.getInstance().flush()
         super.onPause()
     }
 
     override fun onDestroy() {
-        if (this::videoOverlay.isInitialized) videoOverlay.destroyAll()
+        CookieManager.getInstance().flush()
+        if (this::vidWeb.isInitialized) {
+            vidWeb.stopLoading()
+            vidWeb.destroy()
+        }
         if (this::kinetic.isInitialized) kinetic.release()
         super.onDestroy()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        consumeVidIntent(intent)
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (vidShowing) enterVidPip()
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        applyVidSurface()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -208,6 +242,10 @@ class CommandCenterActivity : AppCompatActivity() {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
+        if (vidShowing && !inPip()) {
+            closeVid()
+            return
+        }
         finish()
     }
 
@@ -255,8 +293,7 @@ class CommandCenterActivity : AppCompatActivity() {
 
     private fun updateVidButton() {
         if (!this::vidBtn.isInitialized) return
-        val on = this::videoOverlay.isInitialized && videoOverlay.isShowing()
-        paintVidSwitch(on)
+        paintVidSwitch(vidShowing)
     }
 
     /** Hardware lamp switch. Green + VID ON when feeds are up. Dark + VID when cold. */
@@ -310,15 +347,9 @@ class CommandCenterActivity : AppCompatActivity() {
             if (this::kinetic.isInitialized && liveWatch) kinetic.play(e)
             if (e.severity == EventSeverity.FAIL) {
                 console.failedSystem = e.failedSystem
-                if (this::videoOverlay.isInitialized) {
+                if (this::vidWeb.isInitialized) {
                     val feeds = WebcastResolver.panes(launch)
-                    videoOverlay.ensureFeeds(
-                        feeds.official.url,
-                        feeds.nsf.url,
-                        feeds.official.title,
-                        feeds.nsf.title
-                    )
-                    updateVidButton()
+                    openVid(feeds.official.url, feeds.official.title)
                 }
             }
         }
@@ -395,5 +426,128 @@ class CommandCenterActivity : AppCompatActivity() {
             tv.setPadding(0, (3f * d).toInt(), 0, (2f * d).toInt())
         }
         findViewById<TextView>(R.id.tab_pad).text = "MISS"
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun bindVidWeb() {
+        CookieManager.getInstance().setAcceptCookie(true)
+        vidWeb.setBackgroundColor(Color.BLACK)
+        vidWeb.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+        if (Build.VERSION.SDK_INT >= 26) {
+            vidWeb.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+        }
+        vidWeb.settings.javaScriptEnabled = true
+        vidWeb.settings.domStorageEnabled = true
+        vidWeb.settings.databaseEnabled = true
+        vidWeb.settings.mediaPlaybackRequiresUserGesture = false
+        vidWeb.settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+        vidWeb.settings.loadWithOverviewMode = true
+        vidWeb.settings.useWideViewPort = true
+        vidWeb.settings.javaScriptCanOpenWindowsAutomatically = true
+        vidWeb.settings.setSupportMultipleWindows(false)
+        vidWeb.settings.cacheMode = WebSettings.LOAD_DEFAULT
+        vidWeb.settings.userAgentString = chromeMobileUa(vidWeb.settings.userAgentString)
+        CookieManager.getInstance().setAcceptThirdPartyCookies(vidWeb, true)
+        vidWeb.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                CookieManager.getInstance().flush()
+            }
+        }
+        vidWeb.webChromeClient = WebChromeClient()
+    }
+
+    private fun consumeVidIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra(EXTRA_OPEN_VID, false) != true) return
+        val url = intent.getStringExtra(EXTRA_URL).orEmpty()
+        val title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
+        val launch = telemetryModule.tracked
+        val feeds = WebcastResolver.panes(launch)
+        val target = url.ifBlank { feeds.official.url }
+        val label = title.ifBlank { if (feeds.official.isWatch) "LIVE" else feeds.official.title }
+        openVid(target, label)
+    }
+
+    private fun openVid(url: String, title: String) {
+        if (!this::vidWeb.isInitialized) return
+        val target = url.ifBlank { return }
+        vidShowing = true
+        vidWeb.contentDescription = title.ifBlank { "VID" }
+        if (target != lastVidUrl) {
+            lastVidUrl = target
+            vidWeb.loadUrl(target)
+        }
+        applyVidSurface()
+        updateVidButton()
+        updatePipParams()
+        CookieManager.getInstance().flush()
+    }
+
+    private fun closeVid() {
+        vidShowing = false
+        CookieManager.getInstance().flush()
+        applyVidSurface()
+        updateVidButton()
+        updatePipParams()
+    }
+
+    private fun inPip(): Boolean =
+        Build.VERSION.SDK_INT >= 26 && isInPictureInPictureMode
+
+    private fun applyVidSurface() {
+        if (!this::vidWeb.isInitialized || !this::chrome.isInitialized) return
+        if (vidShowing) {
+            vidWeb.visibility = View.VISIBLE
+            chrome.visibility = View.GONE
+        } else {
+            vidWeb.visibility = View.GONE
+            chrome.visibility = View.VISIBLE
+        }
+    }
+
+    private fun enterVidPip() {
+        if (Build.VERSION.SDK_INT < 26 || !vidShowing) return
+        try {
+            enterPictureInPictureMode(pipParams())
+        } catch (_: Exception) {
+            // Stay in Command Center. HUD plates / MCC stay tappable — no overlay hole.
+        }
+    }
+
+    private fun updatePipParams() {
+        if (Build.VERSION.SDK_INT < 26) return
+        try {
+            setPictureInPictureParams(pipParams())
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun pipParams(): PictureInPictureParams {
+        val b = PictureInPictureParams.Builder()
+            .setAspectRatio(Rational(16, 9))
+        if (this::vidWeb.isInitialized && vidWeb.width > 0 && vidWeb.height > 0) {
+            val loc = IntArray(2)
+            vidWeb.getLocationOnScreen(loc)
+            b.setSourceRectHint(
+                Rect(loc[0], loc[1], loc[0] + vidWeb.width, loc[1] + vidWeb.height)
+            )
+        }
+        if (Build.VERSION.SDK_INT >= 31) {
+            b.setAutoEnterEnabled(vidShowing)
+            b.setSeamlessResizeEnabled(true)
+        }
+        return b.build()
+    }
+
+    private fun chromeMobileUa(current: String?): String {
+        val raw = current.orEmpty()
+        val stripped = raw.replace("; wv", "").replace(" Version/4.0", "")
+        return if (stripped.contains("Chrome/")) stripped
+        else "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36"
+    }
+
+    companion object {
+        const val EXTRA_OPEN_VID = "open_vid"
+        const val EXTRA_URL = "url"
+        const val EXTRA_TITLE = "title"
     }
 }
