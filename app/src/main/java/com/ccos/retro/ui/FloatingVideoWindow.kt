@@ -36,11 +36,15 @@ class FloatingVideoWindow(
     private val onClosed: (FloatingVideoWindow) -> Unit,
     private val onActivated: (FloatingVideoWindow) -> Unit,
     private val onSignInStarted: (FloatingVideoWindow) -> Unit,
-    private val onSignInFinished: (FloatingVideoWindow) -> Unit
+    private val onSignInFinished: (FloatingVideoWindow) -> Unit,
+    private val onMove: ((Int, Int) -> Unit)? = null,
+    private val onResize: ((Int, Int) -> Unit)? = null
 ) : LinearLayout(context) {
 
     private val web: WebView
     private val titleView: TextView
+    private val bar: LinearLayout
+    private val handle: TextView
     private var lastX = 0f
     private var lastY = 0f
     private var dragging = false
@@ -62,7 +66,7 @@ class FloatingVideoWindow(
         background = chrome
         elevation = 16f * d
 
-        val bar = LinearLayout(context).apply {
+        bar = LinearLayout(context).apply {
             orientation = HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setBackgroundColor(0xE00A2030.toInt())
@@ -89,12 +93,18 @@ class FloatingVideoWindow(
         titleView.setOnTouchListener(dragListener)
         bar.addView(grip)
         bar.addView(titleView)
-        bar.addView(chromeBtn("SignIN") { startSignIn() })
-        bar.addView(chromeBtn("YT") { openInYoutube() })
+        val signInBtn = chromeBtn("SignIN") { startSignIn() }
+        val ytBtn = chromeBtn("YT") { openInYoutube() }
+        bar.addView(signInBtn)
+        bar.addView(ytBtn)
         bar.addView(chromeBtn("−") { scale(1f / 1.22f) })
         bar.addView(chromeBtn("+") { scale(1.22f) })
         bar.addView(chromeBtn("X") { close() })
         addView(bar)
+        if (feedId == "overlay") {
+            signInBtn.visibility = GONE
+            ytBtn.visibility = GONE
+        }
 
         val cookies = CookieManager.getInstance()
         cookies.setAcceptCookie(true)
@@ -102,6 +112,7 @@ class FloatingVideoWindow(
         web = WebView(context).apply {
             setBackgroundColor(Color.BLACK)
             setLayerType(LAYER_TYPE_HARDWARE, null)
+            minimumHeight = (120 * d).toInt()
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             settings.databaseEnabled = true
@@ -139,7 +150,7 @@ class FloatingVideoWindow(
         }
         addView(web)
 
-        val handle = TextView(context).apply {
+        handle = TextView(context).apply {
             text = "◢"
             setTextColor(0xFF8AA0B0.toInt())
             textSize = 14f
@@ -158,13 +169,20 @@ class FloatingVideoWindow(
                     }
                     MotionEvent.ACTION_MOVE -> {
                         if (!resizing) return@setOnTouchListener false
-                        val lp = this@FloatingVideoWindow.layoutParams as FrameLayout.LayoutParams
-                        lp.width = (lp.width + (ev.rawX - lastX)).toInt()
-                        lp.height = (lp.height + (ev.rawY - lastY)).toInt()
-                        clamp(lp)
-                        this@FloatingVideoWindow.layoutParams = lp
+                        val nw = (width + (ev.rawX - lastX)).toInt()
+                        val nh = (height + (ev.rawY - lastY)).toInt()
                         lastX = ev.rawX
                         lastY = ev.rawY
+                        val resize = onResize
+                        if (resize != null) {
+                            resize(nw, nh)
+                        } else {
+                            val lp = this@FloatingVideoWindow.layoutParams as FrameLayout.LayoutParams
+                            lp.width = nw
+                            lp.height = nh
+                            clamp(lp)
+                            this@FloatingVideoWindow.layoutParams = lp
+                        }
                         true
                     }
                     MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
@@ -182,7 +200,19 @@ class FloatingVideoWindow(
 
     fun load(url: String) {
         currentUrl = url
-        web.loadUrl(url)
+        // Watch/channel URL — not /embed. Embed is Error 153 in this WebView.
+        if (url.contains("youtube.com", true) || url.contains("youtu.be", true)) {
+            web.loadUrl(url, mapOf("Referer" to "https://www.youtube.com"))
+        } else {
+            web.loadUrl(url)
+        }
+    }
+
+    /** HUD system PiP: hide title/handle so the well is the window. MCC keeps chrome. */
+    fun setPipChrome(show: Boolean) {
+        val v = if (show) VISIBLE else GONE
+        bar.visibility = v
+        handle.visibility = v
     }
 
     fun setTitle(text: String) {
@@ -292,10 +322,17 @@ class FloatingVideoWindow(
     }
 
     private fun scale(factor: Float) {
+        val nw = (width * factor).toInt()
+        val nh = (height * factor).toInt()
+        val resize = onResize
+        if (resize != null) {
+            resize(nw, nh)
+            return
+        }
         val parent = parent as? View ?: return
         val lp = layoutParams as FrameLayout.LayoutParams
-        lp.width = (lp.width * factor).toInt()
-        lp.height = (lp.height * factor).toInt()
+        lp.width = nw
+        lp.height = nh
         clamp(lp, parent)
         layoutParams = lp
     }
@@ -312,14 +349,21 @@ class FloatingVideoWindow(
             }
             MotionEvent.ACTION_MOVE -> {
                 if (!dragging) return false
-                val lp = layoutParams as FrameLayout.LayoutParams
-                lp.gravity = Gravity.TOP or Gravity.START
-                lp.leftMargin = (lp.leftMargin + (ev.rawX - lastX)).toInt()
-                lp.topMargin = (lp.topMargin + (ev.rawY - lastY)).toInt()
-                clamp(lp, clampSize = false)
-                layoutParams = lp
+                val dx = (ev.rawX - lastX).toInt()
+                val dy = (ev.rawY - lastY).toInt()
                 lastX = ev.rawX
                 lastY = ev.rawY
+                val move = onMove
+                if (move != null) {
+                    move(dx, dy)
+                    return true
+                }
+                val lp = layoutParams as FrameLayout.LayoutParams
+                lp.gravity = Gravity.TOP or Gravity.START
+                lp.leftMargin = lp.leftMargin + dx
+                lp.topMargin = lp.topMargin + dy
+                clamp(lp, clampSize = false)
+                layoutParams = lp
                 return true
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {

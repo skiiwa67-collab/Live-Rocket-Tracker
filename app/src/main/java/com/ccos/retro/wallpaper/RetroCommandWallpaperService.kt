@@ -2634,7 +2634,11 @@ class RetroCommandWallpaperService : WallpaperService() {
             canvas.restore()
         }
 
-        /** Large permanent top stack: local time, T- clock, agency/mission. */
+        /**
+         * SIGNED two-row header. Do not restack.
+         * 1) Local time — full gap, biggest.
+         * 2) One T-/T+ line under it; SIM/LIVE/HOLD/GO/IN FLIGHT/PAST on that line's side.
+         */
         private fun drawTelemetryTopBar(
             canvas: Canvas,
             launch: com.ccos.retro.data.LaunchSnapshot?,
@@ -2649,7 +2653,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             val gapR = laneRight()
             val gapW = (gapR - gapL).coerceAtLeast(8f)
             val cx = (gapL + gapR) / 2f
-            val topInset = statusBarTop()
+            val topInset = max(statusBarTop(), height * 0.062f)
 
             val cal = java.util.Calendar.getInstance()
             val is24 = DateFormat.is24HourFormat(this@RetroCommandWallpaperService)
@@ -2668,42 +2672,60 @@ class RetroCommandWallpaperService : WallpaperService() {
                 launch?.isReplayable(now) == true
             val word = HudGlance.word(launch, sim, historicFollow)
 
-            // Ceiling is THIS page: status/cutout, side plates, agency mark. Not a guessed Y.
-            var markCeiling = dockFloor()
-            if (buttonRects[1].bottom > 1f) {
-                markCeiling = min(markCeiling, buttonRects[1].bottom)
+            val phone = isPhoneDesk()
+            // Wall clock is king. T-/T+ is secondary and must leave room for the side word.
+            val k = (prefs.textScale / 3.2f).coerceIn(1f, 2.7f)
+            val clockH = height * (if (phone) 0.078f else 0.095f) * k
+            val cdtH = height * (if (phone) 0.022f else 0.028f) * k
+            var clockSize = telFit("00:00", gapW, clockH, (if (phone) 56f else 76f) * k)
+            var cdtSize = telFit("T+52m EST", gapW * 0.62f, cdtH, (if (phone) 14f else 18f) * k)
+            if (cdtSize > clockSize * 0.36f) cdtSize = clockSize * 0.36f
+            var wordSize = min(cdtSize * 0.92f, clockSize * 0.30f)
+
+            fun measure(text: String, size: Float): Float {
+                hudPaint.textSize = size
+                return hudPaint.measureText(text)
             }
-            if (showingAgencyMark()) {
-                markCeiling = min(markCeiling, agencyMarkCy() - agencyMarkR())
+            val sidePad = (cdtSize * 0.35f).coerceAtLeast(8f)
+            var cdtW = measure(cdt, cdtSize)
+            var wordW = measure(word, wordSize)
+            val pairMax = gapW * 0.96f
+            var guard = 0
+            while (guard++ < 24 && cdtW + sidePad + wordW > pairMax && cdtSize > clockSize * 0.20f) {
+                cdtSize *= 0.92f
+                wordSize = min(cdtSize * 0.92f, clockSize * 0.30f)
+                cdtW = measure(cdt, cdtSize)
+                wordW = measure(word, wordSize)
             }
-            val avail = (markCeiling - topInset).coerceAtLeast(packRowH(telSp(14f)) * 3f)
-            val scale01 = ((prefs.textScale - 2.8f) / 6.2f).coerceIn(0f, 1f)
-            // Clock is SIGNED biggest. Word is reserved from THIS well so T-/T+ cannot delete it.
-            var clockSize = telFit("00:00", gapW, avail * 0.50f, 48f + scale01 * 28f)
-            var cdtSize = telFit("T+52m EST", gapW, avail * 0.20f, 16f + scale01 * 10f)
-            var wordSize = telFit(word, gapW, avail * 0.18f, 15f + scale01 * 8f)
-            if (cdtSize > clockSize * 0.45f) cdtSize = clockSize * 0.45f
-            if (wordSize > clockSize * 0.40f) wordSize = clockSize * 0.40f
-            if (wordSize < cdtSize * 0.72f) wordSize = min(cdtSize * 0.88f, clockSize * 0.40f)
-            var clockRow = packRowH(clockSize)
-            var cdtRow = packRowH(cdtSize)
-            var wordRow = packRowH(wordSize)
-            val lead = packLead(clockSize)
-            var need = clockRow + cdtRow + wordRow + lead
-            if (need > avail) {
-                val wordKeep = min(wordRow, avail * 0.24f).coerceAtLeast(packRowH(telSp(13f)))
-                val cdtKeep = min(cdtRow, avail * 0.26f).coerceAtLeast(packRowH(telSp(12f)))
-                val clockKeep = (avail - wordKeep - cdtKeep - lead).coerceAtLeast(avail * 0.42f)
-                if (clockRow > 1f) clockSize *= (clockKeep / clockRow).coerceIn(0.40f, 1f)
-                if (cdtRow > 1f) cdtSize *= (cdtKeep / cdtRow).coerceIn(0.40f, 1f)
-                if (wordRow > 1f) wordSize *= (wordKeep / wordRow).coerceIn(0.40f, 1f)
-                if (cdtSize > clockSize * 0.45f) cdtSize = clockSize * 0.45f
-                if (wordSize > clockSize * 0.40f) wordSize = clockSize * 0.40f
-                clockRow = packRowH(clockSize)
-                cdtRow = packRowH(cdtSize)
-                wordRow = packRowH(wordSize)
+            if (wordW > gapW * 0.40f) {
+                wordSize = telFit(word, gapW * 0.36f, cdtH, wordSize / resources.displayMetrics.scaledDensity)
+                wordW = measure(word, wordSize)
             }
-            val tfBold = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+
+            val markCeiling = if (showingAgencyMark()) agencyMarkCy() - agencyMarkR() else height.toFloat()
+            val ceiling = markCeiling - 8f
+            var clockBaseline = topInset + clockSize * 0.86f
+            var cdtBaseline = clockBaseline + cdtSize * 1.12f
+            var barH = cdtBaseline + 8f
+            if (barH > ceiling) {
+                val avail = (ceiling - topInset - 8f).coerceAtLeast(36f)
+                val cdtNeed = cdtSize * 1.12f
+                val clockNeed = clockSize * 0.86f
+                var room = avail
+                if (clockNeed + cdtNeed > room) {
+                    val cdtKeep = min(cdtNeed, room * 0.22f)
+                    cdtSize *= if (cdtNeed > 1f) cdtKeep / cdtNeed else 1f
+                    wordSize = min(cdtSize * 0.92f, clockSize * 0.30f)
+                    room -= cdtKeep
+                    if (clockNeed > room && clockNeed > 1f) clockSize *= room / clockNeed
+                    clockBaseline = topInset + clockSize * 0.86f
+                    cdtBaseline = clockBaseline + cdtSize * 1.12f
+                    barH = cdtBaseline + 8f
+                }
+                barH = barH.coerceAtMost(ceiling)
+            }
+            telHudBottom = barH
+
             val cdtCol = withLamp(
                 when {
                     failed -> skin.danger
@@ -2720,21 +2742,34 @@ class RetroCommandWallpaperService : WallpaperService() {
                     else -> if (failed) skin.danger else skin.accent
                 }, lamp
             )
-            var y = topInset
-            val packedBot = y + clockRow + cdtRow + wordRow + lead
-            telHudBottom = packedBot.coerceAtMost(markCeiling)
+
             canvas.save()
-            canvas.clipRect(gapL, 0f, gapR, telHudBottom)
+            canvas.clipRect(gapL, 0f, gapR, barH + 4f)
             fillPaint.color = withLamp(skin.panel, lamp)
-            canvas.drawRect(gapL, topInset, gapR, telHudBottom, fillPaint)
-            y = packDrawCenter(canvas, timeStr, cx, y, gapW, clockSize, withLamp(Color.WHITE, lamp), tfBold)
-            y = packDrawCenter(canvas, cdt, cx, y, gapW, cdtSize, cdtCol, tfBold)
-            y = packDrawCenter(canvas, word, cx, y, gapW, wordSize, wordCol, tfBold)
-            telHudBottom = (y + lead).coerceAtMost(markCeiling)
+            canvas.drawRect(gapL, topInset - 6f, gapR, barH, fillPaint)
             strokePaint.style = Paint.Style.STROKE
             strokePaint.strokeWidth = su(0.004f).coerceIn(2.5f, 4f)
             strokePaint.color = withLamp(skin.accent, lamp)
-            canvas.drawLine(gapL, telHudBottom, gapR, telHudBottom, strokePaint)
+            canvas.drawLine(gapL, barH, gapR, barH, strokePaint)
+
+            fun drawHudClockLine(text: String, x: Float, y: Float, size: Float, color: Int, align: Paint.Align) {
+                hudPaint.textAlign = align
+                hudPaint.color = color
+                hudPaint.textSize = size
+                hudPaint.style = Paint.Style.FILL_AND_STROKE
+                hudPaint.strokeWidth = (size * 0.055f).coerceIn(1.8f, 4.5f)
+                canvas.drawText(text, x, y, hudPaint)
+                hudPaint.style = Paint.Style.FILL
+                hudPaint.strokeWidth = 0f
+            }
+
+            drawHudClockLine(timeStr, cx, clockBaseline, clockSize, withLamp(Color.WHITE, lamp), Paint.Align.CENTER)
+            cdtW = measure(cdt, cdtSize)
+            wordW = measure(word, wordSize)
+            val pairW = cdtW + sidePad + wordW
+            val cdtX = (cx - pairW / 2f + cdtW / 2f).coerceIn(gapL + cdtW / 2f, gapR - wordW - sidePad - 4f)
+            drawHudClockLine(cdt, cdtX, cdtBaseline, cdtSize, cdtCol, Paint.Align.CENTER)
+            drawHudClockLine(word, cdtX + cdtW / 2f + sidePad, cdtBaseline, wordSize, wordCol, Paint.Align.LEFT)
             canvas.restore()
         }
 

@@ -4,8 +4,8 @@ import android.content.Context
 import android.content.Intent
 
 /**
- * One HUD overlay PiP. Small player window. Wallpaper VID and MCC minimize land here.
- * Never a second MCC YouTube pane. Never a full-screen touch sink.
+ * One overlay PiP. Hot links switch the same window. Never a second MCC YouTube pane.
+ * Wallpaper and CMD VID both land here.
  */
 object OverlayPip {
     fun switch(context: Context, url: String, title: String) {
