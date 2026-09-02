@@ -2,7 +2,7 @@
 
 Sideload this APK. This is **not** a Play production upload. Play testers on versionCode 17 stay on 17. Play 17 stays frozen.
 
-This stamp is **35** / **1.0.25**. Same HUD as stamp 26/34. HUD VID is chrome-less (no SignIN YT − + X, no resize handle) and OverlayPip is **opaque** so Motorola Razr can enter system PiP. Sign-in is a one-shot fullscreen WebView; cookies persist. If enter PiP fails, OverlayPipActivity finishes — it must not stay fullscreen over plates. Do not overwrite stamp-20 through stamp-34.
+This stamp is **35** / **1.0.25**. Same HUD as stamp 26/34. HUD VID is chrome-less (no SignIN YT − + X, no resize handle) and OverlayPip is **opaque** so Motorola Razr can enter system PiP. `setAutoEnterEnabled` + `onUserLeaveHint` — Home/leave is the Razr hop (supportsEnterPipOnTaskSwitch). Sign in once on MCC VID (the big player); CookieManager persists so HUD does not ask again. If PiP cannot be entered at all, OverlayPipActivity finishes — it must not stay fullscreen over plates. Do not overwrite stamp-20 through stamp-34.
 
 ---
 

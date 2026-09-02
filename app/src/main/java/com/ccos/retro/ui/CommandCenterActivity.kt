@@ -195,6 +195,20 @@ class CommandCenterActivity : AppCompatActivity() {
         super.onPause()
     }
 
+    /**
+     * Chris's Razr path: sign in on this big MCC VID, then Home/leave.
+     * Hand the same URL to OverlayPip so wallpaper HUD is already system PiP.
+     */
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (isFinishing) return
+        if (!this::videoOverlay.isInitialized || !videoOverlay.isShowing()) return
+        val feed = videoOverlay.currentFeed() ?: return
+        OverlayPip.switch(this, feed.first, feed.second)
+        videoOverlay.closeAll()
+        updateVidButton()
+    }
+
     override fun onDestroy() {
         if (this::videoOverlay.isInitialized) videoOverlay.destroyAll()
         if (this::kinetic.isInitialized) kinetic.release()

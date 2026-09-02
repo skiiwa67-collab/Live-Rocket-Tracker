@@ -58,7 +58,6 @@ class FloatingVideoWindow(
     private var currentUrl = embedUrl
     private var parkedUrl: String? = null
     private var signingIn = false
-    private var lastSignInGen = YoutubeSignInActivity.generation
     private val dragSlop: Float
 
     init {
@@ -137,19 +136,14 @@ class FloatingVideoWindow(
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                     val u = request?.url?.toString().orEmpty()
-                    if (YoutubeSignInActivity.isAuthUrl(u)) {
-                        handOffSignIn()
-                        return true
-                    }
+                    // HUD 280×168 never loads Google OAuth. MCC big player may.
+                    if (chromeLess && isAuthUrl(u)) return true
                     return false
                 }
 
                 @Deprecated("Deprecated in Java")
                 override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                    if (YoutubeSignInActivity.isAuthUrl(url)) {
-                        handOffSignIn()
-                        return true
-                    }
+                    if (chromeLess && isAuthUrl(url)) return true
                     return false
                 }
 
@@ -157,13 +151,16 @@ class FloatingVideoWindow(
                     cookies.flush()
                     lowerVolume()
                     val u = url.orEmpty()
-                    if (YoutubeSignInActivity.isAuthUrl(u)) {
+                    if (chromeLess && isAuthUrl(u)) {
                         view?.stopLoading()
-                        view?.loadUrl("about:blank")
-                        handOffSignIn()
+                        if (currentUrl.isNotBlank()) view?.loadUrl(currentUrl)
                         return
                     }
-                    if (signingIn && YoutubeSignInActivity.signedIn(u)) {
+                    val low = u.lowercase()
+                    if (low.contains("accounts.google") || low.contains("/signin")) {
+                        signingIn = true
+                    }
+                    if (signingIn && signedIn(u)) {
                         signingIn = false
                         cookies.flush()
                         onSignInFinished(this@FloatingVideoWindow)
@@ -231,17 +228,9 @@ class FloatingVideoWindow(
         elevation = 0f
     }
 
-    fun consumeSignInIfNeeded() {
-        val g = YoutubeSignInActivity.generation
-        if (g != lastSignInGen && g > 0) {
-            lastSignInGen = g
-            CookieManager.getInstance().flush()
-            if (currentUrl.isNotBlank()) load(currentUrl)
-            lowerVolume()
-            signingIn = false
-            onSignInFinished(this)
-        }
-    }
+    fun feedUrl(): String = currentUrl
+
+    fun feedTitle(): String = titleView.text?.toString().orEmpty()
 
     fun load(url: String) {
         currentUrl = url
@@ -280,7 +269,6 @@ class FloatingVideoWindow(
 
     fun resume() {
         web.onResume()
-        consumeSignInIfNeeded()
     }
 
     fun freezeRenderer() {
@@ -324,17 +312,29 @@ class FloatingVideoWindow(
     }
 
     private fun startSignIn() {
-        handOffSignIn()
-    }
-
-    private fun handOffSignIn() {
-        if (signingIn) {
-            YoutubeSignInActivity.start(context)
-            return
-        }
         signingIn = true
         onSignInStarted(this)
-        YoutubeSignInActivity.start(context)
+        web.settings.mediaPlaybackRequiresUserGesture = true
+        web.loadUrl(
+            "https://accounts.google.com/ServiceLogin?service=youtube&continue=" +
+                Uri.encode("https://m.youtube.com")
+        )
+    }
+
+    private fun isAuthUrl(url: String?): Boolean {
+        val u = url.orEmpty().lowercase()
+        if (u.isBlank()) return false
+        return u.contains("accounts.google") ||
+            u.contains("accounts.youtube") ||
+            (u.contains("youtube.com") && u.contains("/signin"))
+    }
+
+    private fun signedIn(url: String?): Boolean {
+        val u = url.orEmpty().lowercase()
+        return u.contains("youtube.com") &&
+            !u.contains("accounts.google") &&
+            !u.contains("accounts.youtube") &&
+            !u.contains("/signin")
     }
 
     private fun openInYoutube() {

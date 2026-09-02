@@ -67,13 +67,6 @@
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
             android:label="VID" />
 
-        <activity
-            android:name=".ui.YoutubeSignInActivity"
-            android:exported="false"
-            android:theme="@style/Theme.RetroCommand"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            android:label="Sign in" />
-
         <!-- Live Wallpaper – free vector skin + interactive surface -->
         <service
             android:name=".wallpaper.RetroCommandWallpaperService"

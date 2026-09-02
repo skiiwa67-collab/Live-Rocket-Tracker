@@ -17,7 +17,12 @@ import androidx.lifecycle.Lifecycle
 /**
  * HUD VID path. Chrome-less WebView only — no SignIN YT − + X bar, no resize handle.
  * Opaque window so Motorola Razr can enter system PiP. YouTube keeps audio.
- * Never requests AUDIOFOCUS_GAIN. If enter fails, finish() — never a fullscreen tap-sink.
+ * Never requests AUDIOFOCUS_GAIN.
+ *
+ * Razr hop Chris uses: Home / leave. setAutoEnterEnabled makes
+ * supportsEnterPipOnTaskSwitch=true. onUserLeaveHint enters if the immediate
+ * enterPictureInPictureMode did not stick. If we cannot PiP at all, finish()
+ * so HUD plates stay tappable.
  */
 class OverlayPipActivity : AppCompatActivity() {
 
@@ -61,17 +66,32 @@ class OverlayPipActivity : AppCompatActivity() {
         lastUrl = url
         win.hideChrome()
         win.lowerVolume()
+        // Arm task-switch PiP BEFORE any leave. Razr dumpsys was
+        // supportsEnterPipOnTaskSwitch=false without this.
+        armAutoEnter(win)
         scheduleEnterPipAfterLayout(win)
     }
 
     override fun onResume() {
         super.onResume()
-        pipWindow?.consumeSignInIfNeeded()
         pipWindow?.hideChrome()
         val win = pipWindow ?: return
+        armAutoEnter(win)
         if (win.width > 0 && win.height > 0) {
-            enterPipFromLaidOutWindow(win)
+            enterPipFromLaidOutWindow(win, fromLeave = false)
         }
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (isFinishing || isInPictureInPictureMode) return
+        val win = pipWindow
+        if (win == null) {
+            if (Build.VERSION.SDK_INT < 26) finish()
+            return
+        }
+        // Home / recents — Chris's Razr hop. Immediate enter often returns false.
+        enterPipFromLaidOutWindow(win, fromLeave = true)
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
@@ -88,7 +108,10 @@ class OverlayPipActivity : AppCompatActivity() {
         pipWindow?.hideChrome()
         if (!isInPictureInPictureMode) {
             pipEnterAttempted = false
-            pipWindow?.let { scheduleEnterPipAfterLayout(it) }
+            pipWindow?.let {
+                armAutoEnter(it)
+                scheduleEnterPipAfterLayout(it)
+            }
         }
     }
 
@@ -97,20 +120,20 @@ class OverlayPipActivity : AppCompatActivity() {
         if (isInPictureInPictureMode) {
             pipStuck = true
             pipWindow?.hideChrome()
-            return
         }
-        if (!isInPictureInPictureMode && isFinishing) return
-        // OEM bounced PiP without ever sticking — do not leave a fullscreen tap-sink.
-        if (pipEnterAttempted && !pipStuck && !isFinishing) {
-            finish()
-        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        finish()
     }
 
     private fun scheduleEnterPipAfterLayout(win: View) {
         val afterLayout = Runnable {
             if (isFinishing) return@Runnable
             if (win.width > 0 && win.height > 0) {
-                enterPipFromLaidOutWindow(win)
+                armAutoEnter(win)
+                enterPipFromLaidOutWindow(win, fromLeave = false)
                 return@Runnable
             }
             val observer = win.viewTreeObserver
@@ -125,46 +148,73 @@ class OverlayPipActivity : AppCompatActivity() {
                     if (live.isAlive) {
                         live.removeOnGlobalLayoutListener(this)
                     }
-                    enterPipFromLaidOutWindow(win)
+                    armAutoEnter(win)
+                    enterPipFromLaidOutWindow(win, fromLeave = false)
                 }
             })
         }
         win.post(afterLayout)
     }
 
-    private fun enterPipFromLaidOutWindow(win: View) {
-        if (pipEnterAttempted || isFinishing || isInPictureInPictureMode) return
-        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+    /** Keeps supportsEnterPipOnTaskSwitch true so Home/leave can hop like MCC. */
+    private fun armAutoEnter(win: View?) {
+        if (Build.VERSION.SDK_INT < 26) return
+        try {
+            setPictureInPictureParams(buildPipParams(win))
+        } catch (_: Exception) {
+        }
+    }
+
+    private fun buildPipParams(win: View?): PictureInPictureParams {
+        val b = PictureInPictureParams.Builder()
+            .setAspectRatio(Rational(16, 9))
+        if (win != null && win.width > 1 && win.height > 1) {
+            val loc = IntArray(2)
+            win.getLocationOnScreen(loc)
+            val hint = Rect(loc[0], loc[1], loc[0] + win.width, loc[1] + win.height)
+            if (hint.width() >= 2 && hint.height() >= 2) {
+                b.setSourceRectHint(hint)
+            }
+        }
+        if (Build.VERSION.SDK_INT >= 31) {
+            b.setAutoEnterEnabled(true)
+            b.setSeamlessResizeEnabled(true)
+        }
+        return b.build()
+    }
+
+    private fun enterPipFromLaidOutWindow(win: View, fromLeave: Boolean) {
+        if (isFinishing || isInPictureInPictureMode) return
         if (Build.VERSION.SDK_INT < 26) {
             finish()
             return
         }
-        pipEnterAttempted = true
+        if (!fromLeave && pipEnterAttempted) return
+        if (!fromLeave && !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+        if (!fromLeave) pipEnterAttempted = true
         val loc = IntArray(2)
         win.getLocationOnScreen(loc)
         val hint = Rect(loc[0], loc[1], loc[0] + win.width, loc[1] + win.height)
         if (hint.width() < 2 || hint.height() < 2) {
-            finish()
+            armAutoEnter(win)
+            if (fromLeave) finish()
             return
         }
         try {
-            val params = PictureInPictureParams.Builder()
-                .setAspectRatio(Rational(16, 9))
-                .setSourceRectHint(hint)
-                .build()
+            val params = buildPipParams(win)
+            setPictureInPictureParams(params)
             val entered = enterPictureInPictureMode(params)
-            if (!entered) {
-                finish()
+            if (entered) {
+                pipStuck = true
                 return
             }
-            // Motorola can return true then never stick. If we stay fullscreen, leave.
-            win.postDelayed({
-                if (!isFinishing && !isInPictureInPictureMode && !pipStuck) {
-                    finish()
-                }
-            }, 1200)
+            // Immediate enter failed (Razr). Keep auto-enter armed for Home/leave.
+            // Only finish on the leave path if that hop also failed — no tap-sink task.
+            if (fromLeave && !pipStuck) {
+                finish()
+            }
         } catch (_: Exception) {
-            finish()
+            if (fromLeave || Build.VERSION.SDK_INT < 26) finish()
         }
     }
 
