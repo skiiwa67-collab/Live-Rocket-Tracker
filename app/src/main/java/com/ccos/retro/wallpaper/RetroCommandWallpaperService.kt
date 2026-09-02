@@ -190,6 +190,8 @@ class RetroCommandWallpaperService : WallpaperService() {
 
         // CMD double-tap (within 400ms) opens Settings / MainActivity
         private var lastCmdTapTime = 0L
+        // AUTO double-tap pins / unpins. Single tap still toggles browse.
+        private var lastAutoTapTime = 0L
         private val doubleTapMs = 400L
 
         // Launcher page tracking — buttons only on command page (left of home)
@@ -653,11 +655,6 @@ class RetroCommandWallpaperService : WallpaperService() {
                             state.registerInteraction()
                             return
                         }
-                        if (lockHit.contains(x, y)) {
-                            telemetryModule.togglePin()
-                            state.registerInteraction()
-                            return
-                        }
                         if (eventSkipHit.contains(x, y)) {
                             telemetryModule.skipEvent(if (y >= eventSkipHit.centerY()) -1 else 1)
                             state.registerInteraction()
@@ -750,6 +747,17 @@ class RetroCommandWallpaperService : WallpaperService() {
                     }
                 }
                 onTel -> {
+                    if (i == 7) {
+                        val now = System.currentTimeMillis()
+                        if (now - lastAutoTapTime <= doubleTapMs) {
+                            lastAutoTapTime = 0L
+                            telemetryModule.togglePin()
+                            showPanel = false
+                            state.registerInteraction()
+                            return
+                        }
+                        lastAutoTapTime = now
+                    }
                     val wasTelPage = telemetryModule.activePage == 2
                     telemetryModule.onModuleButton(i)
                     when (i) {
@@ -838,7 +846,6 @@ class RetroCommandWallpaperService : WallpaperService() {
         // TEL page bottom control strip
         private val telStripAnalog = RectF()
         private val eventSkipHit = RectF()
-        private val lockHit = RectF()
         private val geoHit = RectF()
         private val telStripUnits = RectF()
         private val telStripText = RectF()
@@ -991,7 +998,6 @@ class RetroCommandWallpaperService : WallpaperService() {
         private fun layoutActionChipsBesideStacks() {
             if (stage1Hit.height() < 16f || stage2Hit.height() < 16f) {
                 eventSkipHit.setEmpty()
-                lockHit.setEmpty()
                 telStripAnalog.setEmpty()
                 return
             }
@@ -1000,7 +1006,6 @@ class RetroCommandWallpaperService : WallpaperService() {
             val pairH = cellH * 2f + 3f
             val y1 = stage1Hit.centerY() - pairH * 0.5f
             eventSkipHit.set(stage1Hit.right + 3f, y1, stage1Hit.right + 3f + cellW, y1 + pairH)
-            lockHit.set(eventSkipHit.left, eventSkipHit.bottom + 3f, eventSkipHit.right, eventSkipHit.bottom + 3f + cellH)
             val y2 = stage2Hit.centerY() - pairH * 0.5f
             telStripAnalog.set(stage2Hit.left - 3f - cellW, y2, stage2Hit.left - 3f, y2 + pairH)
         }
@@ -1753,7 +1758,11 @@ class RetroCommandWallpaperService : WallpaperService() {
             drawAgencyButtonChrome(canvas, skin, lamp)
             for (i in 0 until 8) {
                 val r = buttonRects[i]
-                val active = if (i == 7) telemetryModule.autoMode else activeIdx == i
+                val active = when {
+                    i == 7 && prefs.telemetryPinned -> true
+                    i == 7 -> telemetryModule.autoMode
+                    else -> activeIdx == i
+                }
                 when (skin.btnStyle) {
                     TelemetrySkin.ButtonStyle.SPACEX -> drawSpacexBtn(canvas, r, labels[i], active, skin, lamp)
                     TelemetrySkin.ButtonStyle.NASA -> drawNasaBtn(canvas, r, labels[i], active, skin, lamp)
@@ -1762,7 +1771,16 @@ class RetroCommandWallpaperService : WallpaperService() {
                     TelemetrySkin.ButtonStyle.ESA -> drawEsaBtn(canvas, r, labels[i], active, skin, lamp)
                     TelemetrySkin.ButtonStyle.GENERIC -> drawGenericTelBtn(canvas, r, labels[i], active, skin, lamp)
                 }
-
+            }
+            if (prefs.telemetryPinned) {
+                val r = buttonRects[7]
+                if (r.width() > 8f) {
+                    fillPaint.shader = null
+                    fillPaint.style = Paint.Style.FILL
+                    fillPaint.color = withLamp(skin.hold, lamp)
+                    val pip = min(r.width(), r.height()) * 0.10f
+                    canvas.drawCircle(r.right - pip * 1.7f, r.top + pip * 1.7f, pip, fillPaint)
+                }
             }
             hudPaint.textAlign = Paint.Align.LEFT
         }
@@ -2957,7 +2975,6 @@ class RetroCommandWallpaperService : WallpaperService() {
                 hudPaint.textAlign = Paint.Align.CENTER
                 canvas.drawText("NO LAUNCH TRACKED", width / 2f, height * 0.45f, hudPaint)
                 if (eventSkipHit.width() > 4f) drawEventSkipRocker(canvas, eventSkipHit, skin, lamp)
-                if (lockHit.width() > 4f) drawLockChip(canvas, lockHit, skin, lamp)
                 if (telStripAnalog.width() > 4f) drawAnalogDigitalRocker(canvas, telStripAnalog, skin, lamp)
                 return
             }
@@ -3035,7 +3052,6 @@ class RetroCommandWallpaperService : WallpaperService() {
             val gR = fullRight()
             drawFlightGauges(canvas, launch, t, altKm, speedKmh, skin, lamp, gaugeTop, gaugeBot, gL, gR)
             if (eventSkipHit.width() > 4f) drawEventSkipRocker(canvas, eventSkipHit, skin, lamp)
-            if (lockHit.width() > 4f) drawLockChip(canvas, lockHit, skin, lamp)
             if (telStripAnalog.width() > 4f) drawAnalogDigitalRocker(canvas, telStripAnalog, skin, lamp)
             drawEventTimeline(canvas, t, launch, skin, lamp, timeTop, timeBot)
             drawTelReadoutRow(canvas, launch, t, altKm, speedKmh, phase, skin, lamp, readTop, readBot)
@@ -4143,32 +4159,6 @@ class RetroCommandWallpaperService : WallpaperService() {
             }
             half(left, "+")
             half(right, "-")
-        }
-
-        private fun drawLockChip(
-            canvas: Canvas,
-            r: RectF,
-            skin: TelemetrySkin.Tokens,
-            lamp: Float
-        ) {
-            if (r.width() < 8f || r.height() < 8f) return
-            resetHudPaints()
-            val on = prefs.telemetryPinned
-            fillPaint.shader = null
-            fillPaint.style = Paint.Style.FILL
-            fillPaint.color = withLamp(if (on) skin.btnActiveFill else skin.btnIdleFill, lamp)
-            canvas.drawRoundRect(r, 4f, 4f, fillPaint)
-            if (on) {
-                strokePaint.style = Paint.Style.STROKE
-                strokePaint.strokeWidth = 2f
-                strokePaint.color = withLamp(skin.accent, lamp)
-                canvas.drawRoundRect(r, 4f, 4f, strokePaint)
-            }
-            telBold()
-            hudPaint.textAlign = Paint.Align.CENTER
-            hudPaint.color = withLamp(if (on) Color.WHITE else skin.muted, lamp)
-            hudPaint.textSize = telFit("LCK", r.width() * 0.90f, r.height() * 0.62f, 14f)
-            canvas.drawText("LCK", r.centerX(), r.centerY() + r.height() * 0.22f, hudPaint)
         }
 
         private fun drawSpacecraftGauge(

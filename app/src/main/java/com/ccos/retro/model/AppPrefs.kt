@@ -123,7 +123,7 @@ class AppPrefs(context: Context) {
         get() = prefs.getString("tel_launch_id", "") ?: ""
         set(v) = prefs.edit().putString("tel_launch_id", v).apply()
 
-    /** LCK: pin current flight across wallpaper + MCC. Does not expire. */
+    /** AUTO double-tap pin: current flight across wallpaper + MCC. Does not expire. */
     /**
      * One UTC T0 per launch.
      * Live: the book's netMs. Persist so a later empty fetch does not invent a local clock.

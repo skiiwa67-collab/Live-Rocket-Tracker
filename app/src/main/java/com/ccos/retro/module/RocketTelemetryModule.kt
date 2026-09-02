@@ -17,7 +17,7 @@ import com.ccos.retro.model.AppPrefs
  *  4 PAD  → pad + location + weather placeholder
  *  5 VID  → webcast hint / open stream action
  *  6 MSK  → mission overview + agency
- *  7 AUTO → toggle auto-next mode
+ *  7 AUTO → toggle auto-next mode. Double-tap pins / unpins. Lock light when pinned.
  *
  * Selecting a launch (or Auto) reskins the entire surface via agency tokens.
  */
@@ -55,10 +55,10 @@ class RocketTelemetryModule(
     /** Force status overlay e.g. "Scrubbed" for testing. */
     var forceStatus: String? = null
 
-    /** Last snapshot that matched the LCK id. Survives a catalog miss of findById. */
+    /** Last snapshot that matched the AUTO pin. Survives a catalog miss of findById. */
     private var pinnedSnapshot: LaunchSnapshot? = null
 
-    /** Auto mode: always lock to the next upcoming launch. LCK forces this off. */
+    /** Auto mode: always lock to the next upcoming launch. Pin (AUTO double-tap) forces this off. */
     var autoMode: Boolean
         get() = prefs.telemetryAuto && !prefs.telemetryPinned
         set(v) {
@@ -72,7 +72,7 @@ class RocketTelemetryModule(
     override fun onModuleButton(index: Int): Boolean {
         if (index == 7) {
             if (prefs.telemetryPinned) {
-                // LCK wins. AUTO is browse; do not steal the pin or light the lamp.
+                // Pin wins. AUTO is browse; do not steal the pin. Lock light stays on AUTO.
                 prefs.telemetryAuto = false
                 if (activePage == 7) activePage = 2
                 return true
@@ -187,7 +187,7 @@ class RocketTelemetryModule(
     fun resolveTracked(now: Long = System.currentTimeMillis()) {
         val prevId = tracked?.id
         if (prefs.telemetryPinned) {
-            // LCK is a hard pin. AUTO must not run, even if findById misses this tick.
+            // AUTO double-tap pin is hard. Browse must not run, even if findById misses this tick.
             if (prefs.telemetryAuto) prefs.telemetryAuto = false
             val pinId = prefs.telemetryLaunchId.ifBlank { tracked?.id ?: pinnedSnapshot?.id ?: "" }
             if (pinId.isNotBlank() && prefs.telemetryLaunchId.isBlank()) {
