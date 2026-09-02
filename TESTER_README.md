@@ -17,7 +17,7 @@ This stamp is **28** / **1.0.18**. Overlay PiP player well. Not a rebuild of 20�
 - STS / MSK spread big in the well. Published pages only (LL2 info/wiki, or the official Rocket Lab Owl sheet). Taps are ACTION_VIEW like PAD geo.
 - Tape takes a packer share above `dockFloor()` so L/O MAXQ SECO DEPLOY stay readable. Now = wall-clock. After the book, now sits at the right. No invented past marks.
 - ACCEL / ENG labels sit under the analog cans, not at the band floor toward the dock.
-- Clock is still the biggest. T-/T+ is next. A glance word is reserved: **LIVE / HOLD / GO / IN FLIGHT / PAST / SIM**. A Success hours after NET is PAST, not live GO. Every launch — not an Owl AUTO/layout key.
+- Clock is still the biggest. T-/T+ is next. A glance word is reserved from the measured plate well: **LIVE / HOLD / GO / IN FLIGHT / PAST / SIM**. After NET, never GO. A Success hours after NET is PAST even if AUTO still watches. Historic follow / sim / demo still say PAST or SIM. Every launch — not an Owl AUTO/layout key.
 
 ## Overlay PiP (the Razr bug)
 

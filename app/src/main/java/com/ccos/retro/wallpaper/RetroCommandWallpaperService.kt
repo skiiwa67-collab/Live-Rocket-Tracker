@@ -2668,88 +2668,73 @@ class RetroCommandWallpaperService : WallpaperService() {
                 launch?.isReplayable(now) == true
             val word = HudGlance.word(launch, sim, historicFollow)
 
-            val phone = isPhoneDesk()
-            // Wall clock is king. T-/T+ next. Status word is reserved — never dropped.
-            val k = (prefs.textScale / 3.2f).coerceIn(1f, 2.7f)
-            val clockH = height * (if (phone) 0.078f else 0.095f) * k
-            val cdtH = height * (if (phone) 0.022f else 0.028f) * k
-            val wordH = height * (if (phone) 0.018f else 0.022f) * k
-            var clockSize = telFit("00:00", gapW, clockH, (if (phone) 56f else 76f) * k)
-            var cdtSize = telFit("T+52m EST", gapW, cdtH, (if (phone) 16f else 22f) * k)
-            var wordSize = telFit(word, gapW, wordH, (if (phone) 13f else 16f) * k)
-            if (cdtSize > clockSize * 0.42f) cdtSize = clockSize * 0.42f
-            if (wordSize > clockSize * 0.32f) wordSize = clockSize * 0.32f
-            val markCeiling = if (showingAgencyMark()) agencyMarkCy() - agencyMarkR() else height.toFloat()
-            val ceiling = markCeiling - packLead(wordSize)
-            val topPad = packLead(clockSize)
-            var clockTop = topInset
+            // Ceiling is THIS page: status/cutout, side plates, agency mark. Not a guessed Y.
+            var markCeiling = dockFloor()
+            if (buttonRects[1].bottom > 1f) {
+                markCeiling = min(markCeiling, buttonRects[1].bottom)
+            }
+            if (showingAgencyMark()) {
+                markCeiling = min(markCeiling, agencyMarkCy() - agencyMarkR())
+            }
+            val avail = (markCeiling - topInset).coerceAtLeast(packRowH(telSp(14f)) * 3f)
+            val scale01 = ((prefs.textScale - 2.8f) / 6.2f).coerceIn(0f, 1f)
+            // Clock is SIGNED biggest. Word is reserved from THIS well so T-/T+ cannot delete it.
+            var clockSize = telFit("00:00", gapW, avail * 0.50f, 48f + scale01 * 28f)
+            var cdtSize = telFit("T+52m EST", gapW, avail * 0.20f, 16f + scale01 * 10f)
+            var wordSize = telFit(word, gapW, avail * 0.18f, 15f + scale01 * 8f)
+            if (cdtSize > clockSize * 0.45f) cdtSize = clockSize * 0.45f
+            if (wordSize > clockSize * 0.40f) wordSize = clockSize * 0.40f
+            if (wordSize < cdtSize * 0.72f) wordSize = min(cdtSize * 0.88f, clockSize * 0.40f)
             var clockRow = packRowH(clockSize)
             var cdtRow = packRowH(cdtSize)
             var wordRow = packRowH(wordSize)
-            var barH = clockTop + clockRow + cdtRow + wordRow + topPad
-            if (barH > ceiling) {
-                val avail = (ceiling - clockTop).coerceAtLeast(packRowH(telSp(12f)) * 3f)
-                // Reserve the status word first so T-/T+ growth cannot delete it.
-                val wordKeep = min(wordRow, avail * 0.22f).coerceAtLeast(packRowH(telSp(11f)))
-                val cdtKeep = min(cdtRow, avail * 0.28f).coerceAtLeast(packRowH(telSp(12f)))
-                val clockKeep = (avail - wordKeep - cdtKeep).coerceAtLeast(avail * 0.44f)
-                if (wordRow > 1f) wordSize *= (wordKeep / wordRow).coerceIn(0.45f, 1f)
-                if (cdtRow > 1f) cdtSize *= (cdtKeep / cdtRow).coerceIn(0.45f, 1f)
-                if (clockRow > 1f) clockSize *= (clockKeep / clockRow).coerceIn(0.45f, 1f)
+            val lead = packLead(clockSize)
+            var need = clockRow + cdtRow + wordRow + lead
+            if (need > avail) {
+                val wordKeep = min(wordRow, avail * 0.24f).coerceAtLeast(packRowH(telSp(13f)))
+                val cdtKeep = min(cdtRow, avail * 0.26f).coerceAtLeast(packRowH(telSp(12f)))
+                val clockKeep = (avail - wordKeep - cdtKeep - lead).coerceAtLeast(avail * 0.42f)
+                if (clockRow > 1f) clockSize *= (clockKeep / clockRow).coerceIn(0.40f, 1f)
+                if (cdtRow > 1f) cdtSize *= (cdtKeep / cdtRow).coerceIn(0.40f, 1f)
+                if (wordRow > 1f) wordSize *= (wordKeep / wordRow).coerceIn(0.40f, 1f)
+                if (cdtSize > clockSize * 0.45f) cdtSize = clockSize * 0.45f
+                if (wordSize > clockSize * 0.40f) wordSize = clockSize * 0.40f
                 clockRow = packRowH(clockSize)
                 cdtRow = packRowH(cdtSize)
                 wordRow = packRowH(wordSize)
-                barH = (clockTop + clockRow + cdtRow + wordRow + topPad).coerceAtMost(ceiling)
             }
-            telHudBottom = barH
-            val clockBaseline = clockTop + clockSize * 0.86f
-            val cdtBaseline = clockTop + clockRow + cdtSize * 0.86f
-            val wordBaseline = clockTop + clockRow + cdtRow + wordSize * 0.86f
-
+            val tfBold = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            val cdtCol = withLamp(
+                when {
+                    failed -> skin.danger
+                    telemetryModule.forceStatus != null -> skin.hold
+                    tSec in -15f..30f -> skin.go
+                    else -> skin.accent
+                }, lamp
+            )
+            val wordCol = withLamp(
+                when (word) {
+                    "HOLD", "SIM" -> skin.hold
+                    "PAST" -> skin.muted
+                    "GO", "LIVE", "IN FLIGHT" -> skin.go
+                    else -> if (failed) skin.danger else skin.accent
+                }, lamp
+            )
+            var y = topInset
+            val packedBot = y + clockRow + cdtRow + wordRow + lead
+            telHudBottom = packedBot.coerceAtMost(markCeiling)
             canvas.save()
-            canvas.clipRect(gapL, 0f, gapR, barH + 4f)
-
+            canvas.clipRect(gapL, 0f, gapR, telHudBottom)
             fillPaint.color = withLamp(skin.panel, lamp)
-            canvas.drawRect(gapL, topInset - 6f, gapR, barH, fillPaint)
+            canvas.drawRect(gapL, topInset, gapR, telHudBottom, fillPaint)
+            y = packDrawCenter(canvas, timeStr, cx, y, gapW, clockSize, withLamp(Color.WHITE, lamp), tfBold)
+            y = packDrawCenter(canvas, cdt, cx, y, gapW, cdtSize, cdtCol, tfBold)
+            y = packDrawCenter(canvas, word, cx, y, gapW, wordSize, wordCol, tfBold)
+            telHudBottom = (y + lead).coerceAtMost(markCeiling)
             strokePaint.style = Paint.Style.STROKE
             strokePaint.strokeWidth = su(0.004f).coerceIn(2.5f, 4f)
             strokePaint.color = withLamp(skin.accent, lamp)
-            canvas.drawLine(gapL, barH, gapR, barH, strokePaint)
-
-            fun drawHudClockLine(text: String, y: Float, size: Float, color: Int) {
-                hudPaint.textAlign = Paint.Align.CENTER
-                hudPaint.color = color
-                hudPaint.textSize = size
-                hudPaint.style = Paint.Style.FILL_AND_STROKE
-                hudPaint.strokeWidth = (size * 0.055f).coerceIn(1.8f, 4.5f)
-                canvas.drawText(text, cx, y, hudPaint)
-                hudPaint.style = Paint.Style.FILL
-                hudPaint.strokeWidth = 0f
-            }
-
-            drawHudClockLine(timeStr, clockBaseline, clockSize, withLamp(Color.WHITE, lamp))
-            drawHudClockLine(
-                cdt, cdtBaseline, cdtSize,
-                withLamp(
-                    when {
-                        failed -> skin.danger
-                        telemetryModule.forceStatus != null -> skin.hold
-                        tSec in -15f..30f -> skin.go
-                        else -> skin.accent
-                    }, lamp
-                )
-            )
-            drawHudClockLine(
-                word, wordBaseline, wordSize,
-                withLamp(
-                    when (word) {
-                        "HOLD", "SIM" -> skin.hold
-                        "PAST" -> skin.muted
-                        "GO", "LIVE", "IN FLIGHT" -> skin.go
-                        else -> if (failed) skin.danger else skin.accent
-                    }, lamp
-                )
-            )
+            canvas.drawLine(gapL, telHudBottom, gapR, telHudBottom, strokePaint)
             canvas.restore()
         }
 

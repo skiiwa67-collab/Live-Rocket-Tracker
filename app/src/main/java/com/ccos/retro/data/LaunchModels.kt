@@ -429,7 +429,8 @@ object LaunchWindow {
 
 /**
  * Glance status word for every launch. Uses LL2 status + sim/historic follow.
- * The AUTO 6h T+ keep-alive is not LIVE or GO. A Success hours after NET is PAST.
+ * After NET, never GO. A Success hours after NET is PAST even if AUTO still
+ * watches the bird. Not a mission-name rule.
  */
 object HudGlance {
     fun word(launch: LaunchSnapshot?, sim: Boolean, historicFollow: Boolean): String {
@@ -442,9 +443,14 @@ object HudGlance {
         val flying = launch.statusAbbrev.equals("In Flight", ignoreCase = true) ||
             launch.statusName.contains("In Flight", ignoreCase = true)
         if (flying) return "IN FLIGHT"
+        val t = launch.secondsToNet()
+        if (t <= 0L) {
+            // T+. Stale Go / keep-alive is not live GO.
+            if (launch.isReplayable() || t < -LaunchWindow.WATCH_AFTER_NET_SEC) return "PAST"
+            return "IN FLIGHT"
+        }
         if (launch.isGo()) return "GO"
         if (launch.isWebcastLive()) return "LIVE"
-        if (launch.secondsToNet() <= 0L) return "IN FLIGHT"
         return launch.statusAbbrev.uppercase().ifBlank { "GO" }.take(12)
     }
 }
