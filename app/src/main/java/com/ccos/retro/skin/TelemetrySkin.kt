@@ -9,7 +9,7 @@ import com.ccos.retro.data.LaunchSnapshot
  */
 object TelemetrySkin {
 
-    enum class ButtonStyle { SPACEX, NASA, CASC, ROSCOSMOS, ESA, GENERIC }
+    enum class ButtonStyle { SPACEX, NASA, CASC, ROSCOSMOS, ESA, ISRO, GENERIC }
 
     enum class MapStyle { SPACEX, NASA_PETAL, ROSCOSMOS, CASC, ESA, ROCKETLAB, ISRO, JAXA, BLUE, GENERIC }
 
@@ -217,8 +217,8 @@ object TelemetrySkin {
         hold = Color.parseColor("#FF9933"),
         danger = Color.parseColor("#C8102E"),
         grid = Color.parseColor("#1A1410"),
-        label = "ISRO",
-        btnStyle = ButtonStyle.GENERIC,
+        label = "इसरो",
+        btnStyle = ButtonStyle.ISRO,
         mapStyle = MapStyle.ISRO,
         btnIdleFill = Color.parseColor("#14100C"),
         btnActiveFill = Color.parseColor("#241810"),

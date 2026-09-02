@@ -1,6 +1,8 @@
-# Live Rocket Tracker — closed tester notes (stamp 20)
+# Live Rocket Tracker — closed tester notes (stamp 21)
 
 Sideload this APK. This is **not** a Play production upload. Play testers on versionCode 17 stay on 17. Play 17 stays frozen.
+
+Stamp **20** (`stamp-20-debug`) stays the KEEP for units + AUTO pin. This stamp is GISAT look plus the Electron HUD locks from SCREEN 1 at T+52m.
 
 Chris is on a Razr. PrimeTestLab used a Galaxy Note 10+. Any phone or tablet is fine.
 
@@ -13,7 +15,7 @@ This is what testers hunted.
 1. Pick a historic Electron (Command Center / historic list). Owl Around The World is the stamp-20 recapture case.
 2. Open Command Center → tap VID.
 3. Two panes: official (Rocket Lab) and NASASpaceflight.
-4. Historic Electron used to 404 on YouTube channel `/search`. Stamp 20 must **load** a results page or a real watch URL. YouTube 404 is a fail.
+4. Historic Electron used to 404 on YouTube channel `/search`. Stamp 20/21 must **load** a results page or a real watch URL. YouTube 404 is a fail.
 
 **PiP / webcast panes require a Google / YouTube account signed in ON THAT DEVICE** (the phone or tablet you are testing). Sign in inside the VID pane (`SignIN`). Chrome login does not carry over to the app WebView.
 
@@ -21,13 +23,18 @@ Also test a **live** upcoming webcast the same way (VID on a flight that has a w
 
 ## Also test
 
-- **One countdown, with units.** A long T- must read `33h` or `1d 9h`, never a naked `T-02:04` / `T-33:45:01` that could be minutes or hours. Top glance and CDT must not disagree.
+- **Clock is king.** Actual time stays at the top and is bigger than T-/T+. Countdown is secondary and still has units (`1d 8h` / `T+52m`), never a naked H:MM:SS that could be minutes.
+- **One countdown, with units.** A long T- must read `33h` or `1d 9h`, never a naked `T-02:04` / `T-33:45:01`. Top glance and CDT must not disagree.
 - **Live T.** If Launch Library 2 says they already lifted, the HUD shows `T+` or `HOLDING`. A leftover T-minus after liftoff is a fail. Do not invent a T0.
 - **AUTO double-tap** pins the flight. Lock light on AUTO when pinned. Double-tap again unpins. Single tap AUTO still browses. `+` / `-` walk events on the pinned flight. Launch pick is still CMD / MCC. There is no LCK plate.
+- **AUTO showing Electron T+ is not a bug** when Owl (or another live flight) lifted and AUTO ON followed it. GISAT look (Hindi, GSLV Mk II stack, map pad) is for the pinned/selected ISRO launch. Do not force GISAT over live AUTO.
 - **Agency / space-org display icon** stays visible. Mission text uses empty space (under the plates / below the icon) and **wraps the full name** (not “Owl Aroun”). It must not sit on the icon. Do not move home-screen widgets.
 - **Eight plates stay visible:** CMD CDT TEL STS PAD VID MSK AUTO. They are the buttons. A giant CDT slab must not sit on top of them.
-- **TEL event tape:** the selected launch (not an 80s now-window). Acronyms above and below (`L/O`, `MECO`, `SEP`, `SECO`, `FAIR`, `DEPLOY`). Past marks stay after they fly; `+`/`-` walks them. Upcoming marks get fully readable ~2 minutes out. Far-future marks stay compact. After last payload deploy the tape does not go blank.
-- **Dock gap:** nothing draws under Phone / Messages / app drawer / system nav.
+- **STACK silhouettes** stay inside the plate. No overflow.
+- **TEL event tape:** the selected launch (not an 80s now-window). Acronyms above and below (`L/O`, `MECO`, `SEP`, `SECO`, `FAIR`, `DEPLOY`), readable, not a smashed `L/OMECO` pile. Past marks stay after they fly; `+`/`-` walks them. After last payload deploy the tape does not go blank.
+- **HUD TEXT SIZE** default is MD (not SM) so the clock can be king. Clock and T- glance stay unit-labeled (`23m 25s` / `1d 9h`).
+- **GISAT / ISRO (when that launch is selected):** Hindi dual-label on the eight plates (acronyms stay CMD CDT TEL STS PAD VID MSK AUTO). Agency **इसरो**. Map shows published pad name + real lat/lon and short `GSLV Mk II` (not the GISAT-1A mission string). Stack is solid S139 core + 4 L40 Vikas liquid strap-ons + GS2 + CUS + ogive. Solid core is not a liquid bell. No DATA UPDATE REQUIRED on that stack.
+- **Dock gap:** nothing draws under Phone / Messages / app drawer / system nav. Tape stays above that line.
 
 ## Hard locks
 

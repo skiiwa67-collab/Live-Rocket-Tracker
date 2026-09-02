@@ -1801,6 +1801,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                     TelemetrySkin.ButtonStyle.CASC -> drawCascBtn(canvas, r, labels[i], active, skin, lamp)
                     TelemetrySkin.ButtonStyle.ROSCOSMOS -> drawRoscosmosBtn(canvas, r, labels[i], active, skin, lamp)
                     TelemetrySkin.ButtonStyle.ESA -> drawEsaBtn(canvas, r, labels[i], active, skin, lamp)
+                    TelemetrySkin.ButtonStyle.ISRO -> drawIsroBtn(canvas, r, labels[i], active, skin, lamp)
                     TelemetrySkin.ButtonStyle.GENERIC -> drawGenericTelBtn(canvas, r, labels[i], active, skin, lamp)
                 }
             }
@@ -1887,6 +1888,16 @@ class RetroCommandWallpaperService : WallpaperService() {
                     canvas.drawLine(leftX - 20f, topY, leftX - 20f, botY, strokePaint)
                     canvas.drawLine(rightX + 20f, topY, rightX + 20f, botY, strokePaint)
                 }
+                TelemetrySkin.ButtonStyle.ISRO -> {
+                    strokePaint.strokeWidth = 2.2f
+                    strokePaint.color = withLamp(Color.parseColor("#FF9933"), lamp)
+                    canvas.drawLine(leftX - 16f, topY, leftX - 16f, botY, strokePaint)
+                    canvas.drawLine(rightX + 16f, topY, rightX + 16f, botY, strokePaint)
+                    strokePaint.strokeWidth = 1.5f
+                    strokePaint.color = withLamp(Color.parseColor("#138808"), lamp)
+                    canvas.drawLine(leftX - 20f, topY, leftX - 20f, botY, strokePaint)
+                    canvas.drawLine(rightX + 20f, topY, rightX + 20f, botY, strokePaint)
+                }
                 else -> {
                     strokePaint.strokeWidth = 1.5f
                     strokePaint.color = withLamp(skin.accentDim, lamp)
@@ -1905,6 +1916,11 @@ class RetroCommandWallpaperService : WallpaperService() {
         private fun ruFor(label: String): String = when (label) {
             "CMD" -> "КМД"; "CDT" -> "ОТСЧ"; "TEL" -> "ТЕЛ"; "STS" -> "СТАТ"
             "PAD" -> "СТАРТ"; "VID" -> "ВИДЕО"; "MSK" -> "МИСС"; "AUTO" -> "АВТО"; else -> ""
+        }
+
+        private fun hiFor(label: String): String = when (label) {
+            "CMD" -> "कमांड"; "CDT" -> "उलटी"; "TEL" -> "टेली"; "STS" -> "स्थिति"
+            "PAD" -> "पैड"; "VID" -> "वीडियो"; "MSK" -> "मिशन"; "AUTO" -> "ऑटो"; else -> ""
         }
 
         private fun frFor(label: String): String = when (label) {
@@ -2111,6 +2127,25 @@ class RetroCommandWallpaperService : WallpaperService() {
                 canvas, r, label, frFor(label),
                 if (active) Color.WHITE else Color.parseColor("#8A98C0"),
                 if (active) Color.parseColor("#FFD100") else Color.parseColor("#5A6A90"),
+                lamp
+            )
+        }
+
+        private fun drawIsroBtn(canvas: Canvas, r: RectF, label: String, active: Boolean, skin: TelemetrySkin.Tokens, lamp: Float) {
+            val fill = if (active) Color.parseColor("#241810") else Color.parseColor("#14100C")
+            drawBevelPlate(canvas, r, fill, lamp, 4f, if (active) Color.parseColor("#FF9933") else null, active)
+            strokePaint.style = Paint.Style.STROKE
+            strokePaint.strokeWidth = if (active) 2.8f else 1.6f
+            strokePaint.color = withLamp(if (active) Color.parseColor("#FF9933") else Color.parseColor("#4A3820"), lamp)
+            canvas.drawRoundRect(r, 4f, 4f, strokePaint)
+            fillPaint.shader = null
+            fillPaint.color = withLamp(if (active) Color.parseColor("#138808") else Color.parseColor("#1A1810"), lamp)
+            canvas.drawCircle(r.left + 11f, r.top + 11f, 4.2f, fillPaint)
+            drawLedBar(canvas, r, active, Color.parseColor("#138808"), lamp)
+            drawFullFaceLabel(
+                canvas, r, label, hiFor(label),
+                if (active) Color.parseColor("#F5F0E6") else Color.parseColor("#A09070"),
+                if (active) Color.parseColor("#FF9933") else Color.parseColor("#7A7060"),
                 lamp
             )
         }
@@ -2568,27 +2603,31 @@ class RetroCommandWallpaperService : WallpaperService() {
             val failed = hudFailed(launch, tSec)
 
             val phone = isPhoneDesk()
-            // Chris: HUD clock + countdown were too skinny. Stay in the center
-            // lane — do not move plates or sit on the agency mark.
-            val clockH = height * if (phone) 0.055f else 0.068f
-            val cdtH = height * if (phone) 0.062f else 0.076f
-            var clockSize = telFit("00:00", gapW, clockH, if (phone) 44f else 58f)
-            var cdtSize = telFit("T-33h 45m EST", gapW, cdtH, if (phone) 40f else 54f)
+            // Wall clock is king. T-/T+ is secondary. Default text is MD (off SM).
+            val k = (prefs.textScale / 3.2f).coerceIn(1f, 2.7f)
+            val clockH = height * (if (phone) 0.078f else 0.095f) * k
+            val cdtH = height * (if (phone) 0.026f else 0.032f) * k
+            var clockSize = telFit("00:00", gapW, clockH, (if (phone) 56f else 76f) * k)
+            var cdtSize = telFit("T+52m EST", gapW, cdtH, (if (phone) 16f else 22f) * k)
+            if (cdtSize > clockSize * 0.48f) cdtSize = clockSize * 0.48f
             val markCeiling = if (showingAgencyMark()) agencyMarkCy() - agencyMarkR() else height.toFloat()
             val ceiling = markCeiling - 8f
             var clockBaseline = topInset + clockSize * 0.86f
-            var cdtBaseline = clockBaseline + cdtSize * 1.10f
-            var barH = cdtBaseline + 10f
+            var cdtBaseline = clockBaseline + cdtSize * 1.12f
+            var barH = cdtBaseline + 8f
             if (barH > ceiling) {
-                val avail = (ceiling - topInset - 10f).coerceAtLeast(36f)
-                val need = clockSize * 0.86f + cdtSize * 1.10f
-                if (need > avail && need > 1f) {
-                    val k = avail / need
-                    clockSize *= k
-                    cdtSize *= k
+                val avail = (ceiling - topInset - 8f).coerceAtLeast(36f)
+                val cdtNeed = cdtSize * 1.12f
+                val clockNeed = clockSize * 0.86f
+                var room = avail
+                if (clockNeed + cdtNeed > room) {
+                    val cdtKeep = min(cdtNeed, room * 0.28f)
+                    cdtSize *= if (cdtNeed > 1f) cdtKeep / cdtNeed else 1f
+                    room -= cdtKeep
+                    if (clockNeed > room && clockNeed > 1f) clockSize *= room / clockNeed
                     clockBaseline = topInset + clockSize * 0.86f
-                    cdtBaseline = clockBaseline + cdtSize * 1.10f
-                    barH = cdtBaseline + 10f
+                    cdtBaseline = clockBaseline + cdtSize * 1.12f
+                    barH = cdtBaseline + 8f
                 }
                 barH = barH.coerceAtMost(ceiling)
             }
@@ -2892,6 +2931,28 @@ class RetroCommandWallpaperService : WallpaperService() {
                         canvas.drawText("РОСКОСМОС", width / 2f, height * 0.36f, hudPaint)
                     }
                 }
+                TelemetrySkin.ButtonStyle.ISRO -> {
+                    strokePaint.strokeWidth = 1.2f
+                    strokePaint.color = Color.argb((80 * L).toInt(), 80, 50, 20)
+                    val step = 44f
+                    var x = 0f
+                    while (x < width) { canvas.drawLine(x, 0f, x, height.toFloat(), strokePaint); x += step }
+                    var y = 0f
+                    while (y < height) { canvas.drawLine(0f, y, width.toFloat(), y, strokePaint); y += step }
+                    if (showMark) {
+                        val scx = width / 2f
+                        val scy = height * 0.26f
+                        val sr = width * 0.08f
+                        fillPaint.color = Color.argb((160 * L).toInt(), 255, 153, 51)
+                        canvas.drawCircle(scx, scy, sr, fillPaint)
+                        fillPaint.color = Color.argb((170 * L).toInt(), 19, 136, 8)
+                        canvas.drawCircle(scx, scy, sr * 0.55f, fillPaint)
+                        hudPaint.color = Color.argb((70 * L).toInt(), 245, 240, 230)
+                        hudPaint.textSize = width * 0.055f
+                        hudPaint.textAlign = Paint.Align.CENTER
+                        canvas.drawText("इसरो", width / 2f, height * 0.36f, hudPaint)
+                    }
+                }
                 else -> {
                     strokePaint.strokeWidth = 1.1f
                     strokePaint.color = Color.argb((70 * L).toInt(), 0, 60, 100)
@@ -3035,7 +3096,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             val gapL = laneLeft()
             val gapR = laneRight()
             val pad = su(0.008f).coerceIn(4f, 10f)
-            val dock = min(height * 0.838f, dockFloor())
+            val dock = dockFloor()
             val packTop = max(belowButtons(), telHudBottom + pad)
             val packH = (dock - packTop).coerceAtLeast(80f)
             val miss = hudMissionLine(launch, t)
@@ -3043,13 +3104,13 @@ class RetroCommandWallpaperService : WallpaperService() {
             val missH = packRowH(missSz)
             val tfBold = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
             packDrawCenter(canvas, miss, (gapL + gapR) * 0.5f, packTop, gapR - gapL, missSz, withLamp(skin.text, lamp), tfBold)
-            // Intrinsic rows: readout and tape take what they need. Leftover is the flex gap.
-            val readH = min(telSp(26f), packH * 0.10f).coerceAtLeast(20f)
-            val timeH = min(telSp(72f), packH * 0.22f).coerceAtLeast(56f)
-            val readBot = dock
+            // Tape + readout stay above the Android dock. Not telSp(72) that dumps labels into the hotseat.
+            val readH = min(telSp(18f), packH * 0.08f).coerceIn(16f, 28f)
+            val timeH = min(telSp(40f), packH * 0.16f).coerceIn(44f, 72f)
+            val readBot = dock - 2f
             val readTop = readBot - readH
-            val timeBot = readTop - pad
-            val timeTop = timeBot - timeH
+            val timeBot = min(readTop - pad, dock - readH - pad)
+            val timeTop = (timeBot - timeH).coerceAtLeast(packTop + missH + pad)
             val flexTop = packTop + missH + pad
             val flexBot = timeTop - pad
             val flexH = (flexBot - flexTop).coerceAtLeast(40f)
@@ -3104,8 +3165,16 @@ class RetroCommandWallpaperService : WallpaperService() {
             drawFlightGauges(canvas, launch, t, altKm, speedKmh, skin, lamp, gaugeTop, gaugeBot, gL, gR)
             if (eventSkipHit.width() > 4f) drawEventSkipRocker(canvas, eventSkipHit, skin, lamp)
             if (telStripAnalog.width() > 4f) drawAnalogDigitalRocker(canvas, telStripAnalog, skin, lamp)
-            drawEventTimeline(canvas, t, launch, skin, lamp, timeTop, timeBot)
-            drawTelReadoutRow(canvas, launch, t, altKm, speedKmh, phase, skin, lamp, readTop, readBot)
+            val floor = dockFloor()
+            canvas.save()
+            canvas.clipRect(0f, 0f, width.toFloat(), floor)
+            if (timeBot <= floor && timeTop < timeBot) {
+                drawEventTimeline(canvas, t, launch, skin, lamp, timeTop, min(timeBot, floor - 2f))
+            }
+            if (readBot <= floor + 1f && readTop < readBot) {
+                drawTelReadoutRow(canvas, launch, t, altKm, speedKmh, phase, skin, lamp, readTop, min(readBot, floor))
+            }
+            canvas.restore()
         }
 
         private fun drawTelEventClockStrip(
@@ -3372,6 +3441,36 @@ class RetroCommandWallpaperService : WallpaperService() {
             val (vx, vy) = xy(vehLon, vehLat)
             fillPaint.color = withLamp(Color.parseColor("#3D9BFF"), lamp)
             canvas.drawCircle(vx, vy, 7f, fillPaint)
+            canvas.restore()
+            canvas.save()
+            canvas.clipRect(left, top, right, bot)
+            telBold()
+            hudPaint.textAlign = Paint.Align.CENTER
+            val rocket = com.ccos.retro.event.VehicleCatalog.hudRocket(launch)
+            val padLine = PadBook.mapPadLine(launch)
+            val ll = PadBook.lonLat(launch)
+            val geo = if (ll != null) PadBook.fmtLonLat(ll.first, ll.second) else ""
+            val topSz = telFit(rocket, destW * 0.92f, destH * 0.16f, 13f)
+            hudPaint.color = withLamp(skin.text, lamp)
+            hudPaint.textSize = topSz
+            if (rocket.isNotBlank() && rocket != "—") {
+                canvas.drawText(rocket, cx, top + topSz + 4f, hudPaint)
+            }
+            val botSz = telFit(
+                listOf(padLine, geo).filter { it.isNotBlank() }.joinToString("  ").ifBlank { " " },
+                destW * 0.94f, destH * 0.12f, 10f
+            )
+            hudPaint.textSize = botSz
+            hudPaint.color = withLamp(skin.hold, lamp)
+            var by = bot - 6f
+            if (geo.isNotBlank()) {
+                canvas.drawText(geo, cx, by, hudPaint)
+                by -= botSz * 1.15f
+            }
+            if (padLine.isNotBlank()) {
+                hudPaint.color = withLamp(skin.text, lamp)
+                canvas.drawText(padLine, cx, by, hudPaint)
+            }
             canvas.restore()
             strokePaint.strokeWidth = 2.6f
             strokePaint.color = withLamp(skin.accent, lamp)
@@ -4401,44 +4500,48 @@ class RetroCommandWallpaperService : WallpaperService() {
             val minTop = buttonRects[3].bottom + 10f
             val analogCeil = if (mapBot > minTop + 24f) mapBot else minTop + height * 0.16f
             val slot = (analogCeil - minTop).coerceAtLeast(height * 0.14f)
-            val rocketH = min(height * 0.16f, slot * 0.90f)
-            val baseY = minTop + rocketH
             val leftCx = buttonRects[3].centerX()
             val rightCx = buttonRects[7].centerX()
             val separated = tSec >= sepTime(launch)
             val boxW = buttonRects[3].width()
+            val labelH = telSp(14f)
             val top = minTop
-            val bot = (baseY + telSp(16f)).coerceAtMost(analogCeil + telSp(8f))
+            val bot = (minTop + slot).coerceAtMost(analogCeil)
             stage1Hit.set(leftCx - boxW * 0.5f, top, leftCx + boxW * 0.5f, bot)
             stage2Hit.set(rightCx - boxW * 0.5f, top, rightCx + boxW * 0.5f, bot)
+            val plateBot = (bot - labelH).coerceAtLeast(top + 24f)
 
             fun frame(hit: RectF, selected: Boolean) {
                 strokePaint.style = Paint.Style.STROKE
                 strokePaint.strokeWidth = if (selected) 3f else 1.4f
                 strokePaint.color = withLamp(if (selected) skin.accent else skin.muted, lamp * if (selected) 1f else 0.55f)
-                canvas.drawRoundRect(hit.left, hit.top, hit.right, hit.bottom - telSp(14f), 6f, 6f, strokePaint)
+                canvas.drawRoundRect(hit.left, hit.top, hit.right, plateBot, 6f, 6f, strokePaint)
             }
             val leftSel = prefs.trackedStage == 1
             val rightSel = prefs.trackedStage == 2
             frame(stage1Hit, leftSel)
             frame(stage2Hit, rightSel)
 
-            canvas.save()
-            canvas.clipRect(stage1Hit)
-            if (!separated) {
-                drawVehicle(canvas, leftCx, baseY, rocketH, launch, tSec, 1, false, skin, lamp, 1f)
-            } else {
-                drawVehicle(canvas, leftCx, baseY, rocketH * 0.88f, launch, tSec, 1, true, skin, lamp, 1f)
+            fun drawClippedStack(cx: Float, hit: RectF, stg: Int, sep: Boolean, a: Float) {
+                val inset = 5f
+                val plate = RectF(hit.left + inset, hit.top + inset, hit.right - inset, plateBot - inset)
+                if (plate.width() < 8f || plate.height() < 16f) return
+                canvas.save()
+                canvas.clipRect(plate)
+                val innerW = plate.width()
+                val innerH = plate.height()
+                val rocketH = min(innerH * 0.78f, innerW / 0.55f)
+                val baseY = plate.bottom - innerH * 0.10f
+                drawVehicle(canvas, cx, baseY, rocketH, launch, tSec, stg, sep, skin, lamp, a)
+                canvas.restore()
             }
-            canvas.restore()
-            canvas.save()
-            canvas.clipRect(stage2Hit)
             if (!separated) {
-                drawVehicle(canvas, rightCx, baseY, rocketH, launch, tSec, 1, false, skin, lamp, 0.42f)
+                drawClippedStack(leftCx, stage1Hit, 1, false, 1f)
+                drawClippedStack(rightCx, stage2Hit, 1, false, 0.42f)
             } else {
-                drawVehicle(canvas, rightCx, baseY, rocketH * 0.88f, launch, tSec, 2, true, skin, lamp, 1f)
+                drawClippedStack(leftCx, stage1Hit, 1, true, 1f)
+                drawClippedStack(rightCx, stage2Hit, 2, true, 1f)
             }
-            canvas.restore()
 
             telBold()
             hudPaint.textAlign = Paint.Align.CENTER

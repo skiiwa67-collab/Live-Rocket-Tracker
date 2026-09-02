@@ -116,15 +116,15 @@ object EventTape {
         canvas.drawCircle(nowX, lineY, 7f, fillPaint)
 
         val visible = events.sortedBy { it.first }
-        val minGap = (right - left) * minOf(0.12f, 0.70f / maxOf(visible.size, 2).toFloat())
-        val placed = ArrayList<Pair<Float, Boolean>>()
+        val xs = visible.map { (et, _) ->
+            (left + ((et - win0) / span) * (right - left)).coerceIn(left + 10f, right - 10f)
+        }
+        data class Placed(val x: Float, val half: Float, val above: Boolean)
+        val placed = ArrayList<Placed>()
         val clip = canvas.save()
         canvas.clipRect(left, top, right, bot)
         visible.forEachIndexed { i, (et, title) ->
-            val x = (left + ((et - win0) / span) * (right - left)).coerceIn(left + 10f, right - 10f)
-            val above = i % 2 == 0
-            if (placed.any { it.second == above && abs(it.first - x) < minGap }) return@forEachIndexed
-            placed.add(x to above)
+            val x = xs[i]
             val mark = mark(title)
             val read = read01(tSec, et)
             val done = tSec >= et
@@ -136,15 +136,25 @@ object EventTape {
                 else -> accent
             }
             canvas.drawCircle(x, lineY, if (close) 8f else 5.5f, fillPaint)
-            val slot = ((right - left) * (0.14f + 0.16f * read)).coerceAtLeast(28f)
-            val size = (if (above) aboveH else belowH) * (0.42f + 0.58f * read)
+
+            val neighbor = visible.indices.mapNotNull { j ->
+                if (j == i) null else abs(xs[j] - x)
+            }.minOrNull() ?: ((right - left) * 0.18f)
+            val capH = minOf(aboveH, belowH) * (0.38f + 0.28f * read)
+            val size = minOf(capH, neighbor * 0.42f).coerceIn(8f, 16f)
             textPaint.style = Paint.Style.FILL
             textPaint.textAlign = Paint.Align.CENTER
             textPaint.isFakeBoldText = true
-            textPaint.textSize = size.coerceAtLeast(8f)
+            textPaint.textSize = size
             val tw = textPaint.measureText(mark)
-            if (tw > slot && textPaint.textSize > 8f) {
-                textPaint.textSize = (textPaint.textSize * slot / tw).coerceAtLeast(8f)
+            val half = tw * 0.52f
+            val preferAbove = i % 2 == 0
+            fun overlaps(sideAbove: Boolean): Boolean =
+                placed.any { it.above == sideAbove && abs(it.x - x) < it.half + half + 6f }
+            val above = when {
+                !overlaps(preferAbove) -> preferAbove
+                !overlaps(!preferAbove) -> !preferAbove
+                else -> return@forEachIndexed
             }
             val a = (80f + 175f * read).toInt().coerceIn(70, 255)
             val col = when {
@@ -153,13 +163,17 @@ object EventTape {
                 else -> text
             }
             textPaint.color = (col and 0x00FFFFFF) or (a shl 24)
-            val tx = x.coerceIn(left + slot * 0.45f, right - slot * 0.45f)
+            val tx = x.coerceIn(left + half + 2f, right - half - 2f)
+            if (placed.any { it.above == above && abs(it.x - tx) < it.half + half + 6f }) {
+                return@forEachIndexed
+            }
             val baseline = if (above) {
-                lineY - 8f - textPaint.textSize * 0.15f
+                lineY - 6f
             } else {
-                lineY + 8f + textPaint.textSize * 0.85f
+                (lineY + size + 4f).coerceAtMost(bot - 2f)
             }
             canvas.drawText(mark, tx, baseline, textPaint)
+            placed.add(Placed(tx, half, above))
         }
         canvas.restoreToCount(clip)
     }
