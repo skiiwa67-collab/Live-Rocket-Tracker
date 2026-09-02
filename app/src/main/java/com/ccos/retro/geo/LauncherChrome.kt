@@ -70,9 +70,13 @@ object LauncherChrome {
             max(compat.getInsets(mask).bottom, compat.getInsetsIgnoringVisibility(mask).bottom),
             compat.stableInsetBottom
         )
-        if (Build.VERSION.SDK_INT >= 31) {
-            val ov = WindowInsetsCompat.Type.systemOverlays()
-            b = max(b, max(compat.getInsets(ov).bottom, compat.getInsetsIgnoringVisibility(ov).bottom))
+        val raw = compat.toWindowInsets()
+        if (raw != null && Build.VERSION.SDK_INT >= 31) {
+            val ov = WindowInsets.Type.systemOverlays()
+            b = max(
+                b,
+                max(raw.getInsets(ov).bottom, raw.getInsetsIgnoringVisibility(ov).bottom)
+            )
         }
         val cut = compat.displayCutout?.safeInsetBottom ?: 0
         return max(b, cut)
