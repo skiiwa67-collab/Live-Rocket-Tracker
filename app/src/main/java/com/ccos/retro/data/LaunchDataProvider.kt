@@ -91,12 +91,30 @@ class LaunchDataProvider {
         return out
     }
 
+    /**
+     * Live CMD picker: LL2 upcoming + last 48h previous + active watch.
+     * No demo / invented missions. Horizon never shrinks below 14 days.
+     */
+    fun pickerPool(now: Long = System.currentTimeMillis(), horizonDays: Int = 14): List<LaunchSnapshot> {
+        val upcomingHorizonSec = maxOf(
+            horizonDays.toLong() * 24L * 3600L,
+            LaunchWindow.UPCOMING_MIN_SEC
+        )
+        return livePool()
+            .filter { it.inPickerWindow(now, upcomingHorizonSec) }
+            .sortedBy { it.netMs }
+    }
+
+    /**
+     * AUTO: HOLD / Go / in-flight / webcast-live / T+ watch FIRST, closest to now.
+     * Only if none of those exist, soonest future NET.
+     */
     fun getNextAny(now: Long = System.currentTimeMillis()): LaunchSnapshot? {
         val live = livePool()
         val watch = live.filter { it.isActiveWatch(now) }
             .minByOrNull { kotlin.math.abs(it.secondsToNet(now)) }
         if (watch != null) return watch
-        return live.filter { it.isUpcoming(now) }.minByOrNull { it.netMs }
+        return live.filter { it.secondsToNet(now) > 0 }.minByOrNull { it.netMs }
     }
 
     fun findById(id: String): LaunchSnapshot? {
@@ -109,13 +127,13 @@ class LaunchDataProvider {
     private fun enrich(result: LaunchListResult): LaunchListResult =
         result.copy(launches = result.launches.map { PublishedLaunchFacts.apply(it) })
 
-    /** In-flight / HOLD / webcast-live must stay in the live cache even if LL2 moved them to previous. */
+    /** Previous 48h + active watch stay in the live cache even if LL2 moved them to previous. */
     private fun mergeWatch(upcoming: LaunchListResult, previous: LaunchListResult?): LaunchListResult {
         val now = System.currentTimeMillis()
         val seen = upcoming.launches.associateBy { it.id }.toMutableMap()
         for (p in previous?.launches.orEmpty()) {
             if (p.id in seen) continue
-            if (p.isActiveWatch(now) || PublishedLaunchFacts.isOwl(p)) {
+            if (p.isActiveWatch(now) || p.inPickerWindow(now)) {
                 seen[p.id] = p
             }
         }
@@ -152,19 +170,21 @@ class LaunchDataProvider {
                     previous = fetchList(DEV_PREVIOUS, "lldev")
                 }
                 previous?.let { pastCache.set(enrich(it)) }
-                if (upcoming != null && upcoming.launches.isNotEmpty()) {
-                    cache.set(mergeWatch(enrich(upcoming), pastCache.get()))
+                val upcomingList = upcoming ?: LaunchListResult(emptyList(), System.currentTimeMillis(), source)
+                val merged = mergeWatch(enrich(upcomingList), pastCache.get())
+                if (merged.launches.isNotEmpty() || pastCache.get() != null) {
+                    cache.set(merged)
                     lastFetchMs = System.currentTimeMillis()
-                    sharedCount = upcoming.launches.size
+                    sharedCount = merged.launches.size
                     sharedSource = source
-                    sharedError = null
+                    sharedError = if (upcoming == null) lastError else null
                     val pastN = previous?.launches?.size ?: 0
-                    sharedStatus = "OK · ${upcoming.launches.size} upcoming · $pastN past · $source"
+                    sharedStatus = "OK · ${upcomingList.launches.size} upcoming · $pastN past · $source"
                     Log.i(TAG, lastStatus)
-                    onDone?.invoke(upcoming)
+                    onDone?.invoke(merged)
                 } else {
-                    sharedError = lastError ?: "No upcoming from LL2"
-                    sharedStatus = "NO UPCOMING · $lastError · past=${previous?.launches?.size ?: 0}"
+                    sharedError = lastError ?: "No launches from LL2"
+                    sharedStatus = "NO CATALOG · $lastError · past=${previous?.launches?.size ?: 0}"
                     Log.w(TAG, lastStatus)
                     onDone?.invoke(cache.get())
                 }
@@ -181,7 +201,7 @@ class LaunchDataProvider {
                 readTimeout = 12_000
                 requestMethod = "GET"
                 setRequestProperty("Accept", "application/json")
-                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.2 (Android; historic+live+upcoming)")
+                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.17 (Android; upcoming+previous)")
             }
             val code = conn.responseCode
             if (code != 200) {

@@ -438,9 +438,7 @@ object MissionFacts {
             "Not three sats. V3. Twenty of them. First time Starship hauled the big ones.",
             false
         )
-        if (com.ccos.retro.data.PublishedLaunchFacts.isOwl(launch) ||
-            ("owl" in n && ("strix" in n || "synspective" in n))
-        ) {
+        if ("strix" in n || "synspective" in n) {
             return Classified(
                 "STRIX", "SAR SAT", "1",
                 "575 km LEO  38°",
