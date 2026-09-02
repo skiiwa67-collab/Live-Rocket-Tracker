@@ -24,6 +24,7 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
@@ -416,17 +417,44 @@ class CommandCenterActivity : AppCompatActivity() {
                     or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                 )
         }
-        val chrome = findViewById<View>(R.id.chrome) ?: return
-        ViewCompat.setOnApplyWindowInsetsListener(chrome) { v, insets ->
+        val chrome = findViewById<View>(R.id.chrome)
+        if (chrome != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(chrome) { v, insets ->
+                val bars = insets.getInsets(
+                    WindowInsetsCompat.Type.statusBars() or
+                        WindowInsetsCompat.Type.displayCutout() or
+                        WindowInsetsCompat.Type.navigationBars()
+                )
+                v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+                insets
+            }
+            ViewCompat.requestApplyInsets(chrome)
+        }
+        applyVidPipBarInsets()
+    }
+
+    /** PIP chip sits below statusBars / cutout. Not y=0 under signal/battery. */
+    private fun applyVidPipBarInsets() {
+        val bar = if (this::vidPipBar.isInitialized) vidPipBar
+            else findViewById(R.id.vid_pip_bar) ?: return
+        ViewCompat.setOnApplyWindowInsetsListener(bar) { v, insets ->
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.statusBars() or
-                    WindowInsetsCompat.Type.displayCutout() or
-                    WindowInsetsCompat.Type.navigationBars()
+                    WindowInsetsCompat.Type.displayCutout()
             )
-            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            val lp = v.layoutParams
+            if (lp is FrameLayout.LayoutParams) {
+                lp.topMargin = bars.top
+                lp.marginEnd = bars.right
+                lp.marginStart = bars.left
+                v.layoutParams = lp
+            } else {
+                val pad = (8f * resources.displayMetrics.density).toInt()
+                v.setPadding(pad + bars.left, pad + bars.top, pad + bars.right, pad)
+            }
             insets
         }
-        ViewCompat.requestApplyInsets(chrome)
+        ViewCompat.requestApplyInsets(bar)
     }
 
     private fun highlightTabs(screen: Int) {
@@ -490,6 +518,7 @@ class CommandCenterActivity : AppCompatActivity() {
         vidWeb.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 CookieManager.getInstance().flush()
+                if (inPip()) applyPipVideoFill(true)
             }
         }
         vidWeb.webChromeClient = WebChromeClient()
@@ -547,16 +576,36 @@ class CommandCenterActivity : AppCompatActivity() {
 
     private fun applyVidSurface() {
         if (!this::vidWeb.isInitialized || !this::chrome.isInitialized) return
+        val pip = inPip()
+        title = if (pip) "" else getString(R.string.app_name)
         if (vidShowing) {
             vidWeb.visibility = View.VISIBLE
             chrome.visibility = View.GONE
             if (this::vidPipBar.isInitialized) {
-                vidPipBar.visibility = if (inPip()) View.GONE else View.VISIBLE
+                vidPipBar.visibility = if (pip) View.GONE else View.VISIBLE
             }
+            applyPipVideoFill(pip)
         } else {
             vidWeb.visibility = View.GONE
             chrome.visibility = View.VISIBLE
             if (this::vidPipBar.isInitialized) vidPipBar.visibility = View.GONE
+            applyPipVideoFill(false)
+        }
+    }
+
+    /**
+     * In system PiP the WebView is the whole window. Hide YouTube page chrome
+     * (masthead, comments, related) and make the video element cover the
+     * surface. Restore the watch page when leaving PiP. Does not load a
+     * different URL or create a second player.
+     */
+    private fun applyPipVideoFill(fill: Boolean) {
+        if (!this::vidWeb.isInitialized) return
+        vidWeb.setPadding(0, 0, 0, 0)
+        vidWeb.setBackgroundColor(Color.BLACK)
+        try {
+            vidWeb.evaluateJavascript(if (fill) PIP_FILL_JS else PIP_CLEAR_JS, null)
+        } catch (_: Exception) {
         }
     }
 
@@ -594,9 +643,12 @@ class CommandCenterActivity : AppCompatActivity() {
         if (this::vidWeb.isInitialized && vidWeb.width > 0 && vidWeb.height > 0) {
             val loc = IntArray(2)
             vidWeb.getLocationOnScreen(loc)
-            b.setSourceRectHint(
-                Rect(loc[0], loc[1], loc[0] + vidWeb.width, loc[1] + vidWeb.height)
-            )
+            val w = vidWeb.width
+            val h = vidWeb.height
+            // Video surface, not the full MCC activity. Watch-page player is
+            // the top 16:9; in PiP the filled WebView is the surface.
+            val hintH = if (inPip()) h else (w * 9f / 16f).toInt().coerceAtMost(h)
+            b.setSourceRectHint(Rect(loc[0], loc[1], loc[0] + w, loc[1] + hintH))
         }
         if (Build.VERSION.SDK_INT >= 31) {
             b.setAutoEnterEnabled(vidShowing)
@@ -616,5 +668,26 @@ class CommandCenterActivity : AppCompatActivity() {
         const val EXTRA_OPEN_VID = "open_vid"
         const val EXTRA_URL = "url"
         const val EXTRA_TITLE = "title"
+
+        private const val PIP_FILL_JS = """
+(function(){
+  var id='lrt-pip-fill';
+  var s=document.getElementById(id);
+  if(!s){s=document.createElement('style');s.id=id;document.documentElement.appendChild(s);}
+  s.textContent=[
+    'html,body,ytd-app,ytm-app,#content,#page-manager,ytd-watch-flexy,ytm-watch{background:#000!important;margin:0!important;padding:0!important;overflow:hidden!important;width:100%!important;height:100%!important;}',
+    '#masthead-container,ytd-masthead,ytm-mobile-topbar-renderer,ytm-header-bar,#header,header,ytm-pivot-bar-renderer,#guide,#secondary,#related,#comments,ytd-comments,ytm-comment-section-renderer,#below,#meta,#info,#chat,ytd-live-chat-frame,ytd-watch-metadata,ytm-slim-video-metadata-section-renderer,ytm-slim-owner-renderer,ytm-item-section-renderer,ytm-engagement-panel,ytd-engagement-panel-section-list-renderer,#player-ads,.ytp-ce-element,.ytp-pause-overlay,.ytp-endscreen-content,.ytp-chrome-top,.ytp-chrome-bottom,.ytp-gradient-top,.ytp-gradient-bottom,.ytp-title,ytm-chip-cloud-renderer{display:none!important;visibility:hidden!important;height:0!important;}',
+    '#player,#player-container,#player-container-inner,#player-container-outer,#player-theater-container,ytd-player,#ytd-player,#movie_player,.html5-video-player,ytm-player,.player-container,#player-container-id{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;z-index:2147483647!important;background:#000!important;}',
+    '.html5-video-container,video,video.html5-main-video,.html5-main-video{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;object-fit:cover!important;object-position:center!important;background:#000!important;}'
+  ].join('');
+  var v=document.querySelector('video');
+  if(v){v.style.objectFit='cover';v.style.width='100vw';v.style.height='100vh';try{v.play();}catch(e){}}
+})();"""
+
+        private const val PIP_CLEAR_JS = """
+(function(){
+  var s=document.getElementById('lrt-pip-fill');
+  if(s)s.remove();
+})();"""
     }
 }
