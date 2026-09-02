@@ -7,17 +7,22 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Rational
 import android.view.Gravity
+import android.view.View
+import android.view.ViewTreeObserver
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
 
 /**
  * Draggable overlay PiP for HUD VID links. One pane. YouTube keeps audio.
  * Never requests AUDIOFOCUS_GAIN. Volume is lowered in the WebView, not muted.
+ * System PiP is the product on HUD. If enter fails, finish() — never a fullscreen tap-sink.
  */
 class OverlayPipActivity : AppCompatActivity() {
 
     private var window: FloatingVideoWindow? = null
     private var lastUrl: String = ""
+    private var pipEnterAttempted = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,7 +52,15 @@ class OverlayPipActivity : AppCompatActivity() {
         window = win
         lastUrl = url
         win.lowerVolume()
-        enterPip()
+        scheduleEnterPipAfterLayout(win)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val win = window ?: return
+        if (win.width > 0 && win.height > 0) {
+            enterPipFromLaidOutWindow(win)
+        }
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
@@ -61,7 +74,10 @@ class OverlayPipActivity : AppCompatActivity() {
             window?.load(url)
             window?.lowerVolume()
         }
-        enterPip()
+        if (!isInPictureInPictureMode) {
+            pipEnterAttempted = false
+            window?.let { scheduleEnterPipAfterLayout(it) }
+        }
     }
 
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
@@ -69,15 +85,58 @@ class OverlayPipActivity : AppCompatActivity() {
         if (!isInPictureInPictureMode && isFinishing) return
     }
 
-    private fun enterPip() {
-        if (Build.VERSION.SDK_INT < 26) return
+    private fun scheduleEnterPipAfterLayout(win: View) {
+        val afterLayout = Runnable {
+            if (isFinishing) return@Runnable
+            if (win.width > 0 && win.height > 0) {
+                enterPipFromLaidOutWindow(win)
+                return@Runnable
+            }
+            val observer = win.viewTreeObserver
+            if (!observer.isAlive) {
+                finish()
+                return@Runnable
+            }
+            observer.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    if (win.width <= 0 || win.height <= 0) return
+                    val live = win.viewTreeObserver
+                    if (live.isAlive) {
+                        live.removeOnGlobalLayoutListener(this)
+                    }
+                    enterPipFromLaidOutWindow(win)
+                }
+            })
+        }
+        win.post(afterLayout)
+    }
+
+    private fun enterPipFromLaidOutWindow(win: View) {
+        if (pipEnterAttempted || isFinishing || isInPictureInPictureMode) return
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+        if (Build.VERSION.SDK_INT < 26) {
+            finish()
+            return
+        }
+        pipEnterAttempted = true
+        val loc = IntArray(2)
+        win.getLocationOnScreen(loc)
+        val hint = Rect(loc[0], loc[1], loc[0] + win.width, loc[1] + win.height)
+        if (hint.width() < 2 || hint.height() < 2) {
+            finish()
+            return
+        }
         try {
             val params = PictureInPictureParams.Builder()
                 .setAspectRatio(Rational(16, 9))
-                .setSourceRectHint(Rect(0, 0, 16, 9))
+                .setSourceRectHint(hint)
                 .build()
-            enterPictureInPictureMode(params)
+            val entered = enterPictureInPictureMode(params)
+            if (!entered) {
+                finish()
+            }
         } catch (_: Exception) {
+            finish()
         }
     }
 

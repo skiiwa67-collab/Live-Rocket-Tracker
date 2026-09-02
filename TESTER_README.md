@@ -1,13 +1,19 @@
-# Live Rocket Tracker — closed tester notes (stamp 26)
+# Live Rocket Tracker — closed tester notes (stamp 34)
 
 Sideload this APK. This is **not** a Play production upload. Play testers on versionCode 17 stay on 17. Play 17 stays frozen.
+
+This stamp is **34** / **1.0.24**. Same HUD as stamp 26. Overlay PiP enters Android system PiP from the laid-out 280×168 window rect (16:9). If enter fails, OverlayPipActivity finishes — it must not stay fullscreen over plates. Do not overwrite stamp-20 through stamp-33.
+
+---
+
+# Stamp 26 notes (this APK is 26 + PiP enter only)
 
 Stamp **20** (`stamp-20-debug`) stays the KEEP for units + AUTO pin.
 Stamp **21** (`stamp-21-debug`) is the GISAT look + Electron HUD locks.
 Stamp **23** (`stamp-23-debug`) is SIGNED usable WITH the Pixel bar. Do not overwrite it.
 Stamp **25** (`stamp-25-debug`) is SIGNED. Auto packs THIS page. Do not overwrite it.
 
-This stamp is **26** / **1.0.16**. Owl AUTO. Not a rebuild of 25.
+Stamp 26 was **26** / **1.0.16**. Owl AUTO. Not a rebuild of 25. HUD/catalog/tape/packer unchanged in 34.
 
 ## Owl / AUTO
 
