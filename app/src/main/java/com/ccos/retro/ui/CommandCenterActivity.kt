@@ -26,7 +26,9 @@ import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -44,8 +46,8 @@ import com.ccos.retro.geo.PadBook
 /**
  * Full-screen Mission Control Center. Wallpaper stays the home HUD.
  * Status / camera cutout are padded — never drawn under the punch-hole.
- * VID is this activity's full-screen WebView. PiP is this same WebView.
- * OverlayPipActivity is not on this path.
+ * VID is this activity's full-screen WebView. PiP is this same WebView
+ * via enterPictureInPictureMode — not OverlayPip, not a second player.
  */
 class CommandCenterActivity : AppCompatActivity() {
 
@@ -56,8 +58,11 @@ class CommandCenterActivity : AppCompatActivity() {
     private lateinit var vidBtn: Button
     private lateinit var chrome: View
     private lateinit var vidWeb: WebView
+    private lateinit var vidPipBar: View
+    private lateinit var pipBtn: Button
     private var vidShowing = false
     private var lastVidUrl: String = ""
+    private var pipAfterResume = false
     private lateinit var eventBanner: EventBannerView
     private val eventMonitor = FlightEventMonitor()
     private lateinit var kinetic: KineticFx
@@ -104,7 +109,9 @@ class CommandCenterActivity : AppCompatActivity() {
         console.bind(telemetryModule, prefs)
         console.onScreenChanged = { highlightTabs(it) }
 
-        findViewById<Button>(R.id.btn_exit).setOnClickListener { finish() }
+        findViewById<Button>(R.id.btn_exit).setOnClickListener {
+            if (vidShowing) enterVidPip() else finish()
+        }
         analogBtn = findViewById(R.id.btn_analog)
         analogBtn.setOnClickListener {
             prefs.telemetryAnalog = !prefs.telemetryAnalog
@@ -117,7 +124,13 @@ class CommandCenterActivity : AppCompatActivity() {
         eventBanner = findViewById(R.id.event_banner)
         chrome = findViewById(R.id.chrome)
         vidWeb = findViewById(R.id.vid_web)
+        vidPipBar = findViewById(R.id.vid_pip_bar)
+        pipBtn = findViewById(R.id.btn_pip)
         bindVidWeb()
+        pipBtn.setOnClickListener { enterVidPip() }
+        vidWeb.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            if (vidShowing) updatePipParams()
+        }
         findViewById<Button>(R.id.btn_event_prev).setOnClickListener {
             telemetryModule.skipEvent(-1)
             pushFlightEvents()
@@ -131,7 +144,7 @@ class CommandCenterActivity : AppCompatActivity() {
         vidBtn = findViewById(R.id.btn_vid)
         vidBtn.setOnClickListener {
             if (vidShowing) {
-                closeVid()
+                enterVidPip()
             } else {
                 val launch = telemetryModule.tracked
                 val feeds = WebcastResolver.panes(launch)
@@ -141,6 +154,15 @@ class CommandCenterActivity : AppCompatActivity() {
                 )
             }
         }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (vidShowing) {
+                    enterVidPip()
+                } else {
+                    finish()
+                }
+            }
+        })
         consumeVidIntent(intent)
         updateVidButton()
 
@@ -183,6 +205,12 @@ class CommandCenterActivity : AppCompatActivity() {
             findViewById(R.id.btn_event_next),
             0xFF1A3040.toInt(), 0xFF0C1820.toInt(), 0xFF3A5A70.toInt(), Color.WHITE
         )
+        if (this::pipBtn.isInitialized) {
+            metalBtn(
+                pipBtn,
+                0xFF145A28.toInt(), 0xFF063014.toInt(), 0xFF3CFF7A.toInt(), 0xFFB6FFD0.toInt()
+            )
+        }
         val rail = steel(0xFF121820.toInt(), 0xFF070A0E.toInt(), 0xFF1E2A34.toInt(), 0f)
         findViewById<View>(R.id.top_chrome).background = rail
         findViewById<LinearLayout>(R.id.chrome).setBackgroundColor(0xFF070A0E.toInt())
@@ -200,6 +228,10 @@ class CommandCenterActivity : AppCompatActivity() {
         handler.post(tick)
         if (this::vidWeb.isInitialized) vidWeb.onResume()
         updatePipParams()
+        if (pipAfterResume && vidShowing) {
+            pipAfterResume = false
+            vidWeb.post { enterVidPip() }
+        }
     }
 
     override fun onPause() {
@@ -207,6 +239,12 @@ class CommandCenterActivity : AppCompatActivity() {
         handler.removeCallbacks(tick)
         CookieManager.getInstance().flush()
         super.onPause()
+        if (inPip() && this::vidWeb.isInitialized) vidWeb.onResume()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (inPip() && this::vidWeb.isInitialized) vidWeb.onResume()
     }
 
     override fun onDestroy() {
@@ -233,6 +271,7 @@ class CommandCenterActivity : AppCompatActivity() {
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         applyVidSurface()
+        if (isInPictureInPictureMode && this::vidWeb.isInitialized) vidWeb.onResume()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -242,8 +281,8 @@ class CommandCenterActivity : AppCompatActivity() {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (vidShowing && !inPip()) {
-            closeVid()
+        if (vidShowing) {
+            enterVidPip()
             return
         }
         finish()
@@ -458,6 +497,19 @@ class CommandCenterActivity : AppCompatActivity() {
 
     private fun consumeVidIntent(intent: Intent?) {
         if (intent?.getBooleanExtra(EXTRA_OPEN_VID, false) != true) return
+        if (vidShowing && lastVidUrl.isNotBlank()) {
+            applyVidSurface()
+            updateVidButton()
+            updatePipParams()
+            if (!inPip()) {
+                if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                    vidWeb.post { enterVidPip() }
+                } else {
+                    pipAfterResume = true
+                }
+            }
+            return
+        }
         val url = intent.getStringExtra(EXTRA_URL).orEmpty()
         val title = intent.getStringExtra(EXTRA_TITLE).orEmpty()
         val launch = telemetryModule.tracked
@@ -498,18 +550,33 @@ class CommandCenterActivity : AppCompatActivity() {
         if (vidShowing) {
             vidWeb.visibility = View.VISIBLE
             chrome.visibility = View.GONE
+            if (this::vidPipBar.isInitialized) {
+                vidPipBar.visibility = if (inPip()) View.GONE else View.VISIBLE
+            }
         } else {
             vidWeb.visibility = View.GONE
             chrome.visibility = View.VISIBLE
+            if (this::vidPipBar.isInitialized) vidPipBar.visibility = View.GONE
         }
     }
 
     private fun enterVidPip() {
         if (Build.VERSION.SDK_INT < 26 || !vidShowing) return
+        if (inPip()) {
+            applyVidSurface()
+            if (this::vidWeb.isInitialized) vidWeb.onResume()
+            return
+        }
+        updatePipParams()
         try {
-            enterPictureInPictureMode(pipParams())
+            val entered = enterPictureInPictureMode(pipParams())
+            if (!entered) {
+                applyVidSurface()
+                if (this::vidWeb.isInitialized) vidWeb.onResume()
+            }
         } catch (_: Exception) {
-            // Stay in Command Center. HUD plates / MCC stay tappable — no overlay hole.
+            applyVidSurface()
+            if (this::vidWeb.isInitialized) vidWeb.onResume()
         }
     }
 

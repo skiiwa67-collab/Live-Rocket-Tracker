@@ -1,4 +1,4 @@
-# Live Rocket Tracker — closed tester notes (stamp 36)
+# Live Rocket Tracker — closed tester notes (stamp 37)
 
 Sideload this APK. This is **not** a Play production upload. Play testers on versionCode 17 stay on 17. Play 17 stays frozen.
 
@@ -7,16 +7,19 @@ Stamp **21** (`stamp-21-debug`) is the GISAT look + Electron HUD locks.
 Stamp **23** (`stamp-23-debug`) is SIGNED usable WITH the Pixel bar. Do not overwrite it.
 Stamp **25** (`stamp-25-debug`) is SIGNED. Auto packs THIS page. Do not overwrite it.
 Stamp **26** (`stamp-26-debug`) is Owl AUTO / Electron HUD. Do not overwrite it.
+Stamp **36** (`stamp-36-debug`) deleted OverlayPiP. Full-screen MCC WebView + sign-in. Do not overwrite it.
 
-This stamp is **36** / **1.0.26**. Built from stamp 26. OverlayPiP is deleted from the VID path.
+This stamp is **37** / **1.0.27**. Built from stamp 36. OverlayPiP stays deleted.
 
 ## VID (locked cut)
 
-- OverlayPipActivity is gone. HUD VID and MCC VID do not wrap it, hop it, or PiP it.
-- CommandCenterActivity is the player. Manifest has `supportsPictureInPicture=true` on Command Center.
-- MCC VID is a full-screen WebView for Google / YouTube sign-in. Not 280x168. Not FloatingVideoWindow overlay chrome. Password Manager can autofill without collapsing the surface.
-- Home / `onUserLeaveHint` / `setAutoEnterEnabled` PiPs that same Command Center WebView. MCC chrome is hidden in PiP so the video fills the system PiP. If `enterPictureInPictureMode` fails, stay usable (plates / MCC tappable). No fat overlay hole over the HUD.
-- Wallpaper HUD VID starts Command Center VID (same activity / session). Cookies persist (`CookieManager`). No second empty player.
+- OverlayPipActivity stays gone. HUD VID and MCC VID do not wrap it, hop it, or PiP it.
+- CommandCenterActivity is the player (`singleTask`). Manifest has `supportsPictureInPicture=true`.
+- MCC VID is a full-screen WebView for Google / YouTube sign-in. Not 280x168. Not FloatingVideoWindow overlay chrome. Password Manager can autofill. Sign-in YT overlay bar stays gone.
+- MCC VID has an explicit **PIP** chip. One tap calls `enterPictureInPictureMode` on the playing WebView. Do not require Razr recents / taskbar swipe.
+- Back and EXIT while video is up also PiP that same WebView. They do not `finish()` or `closeVid()` the player.
+- HUD VID reuses the same Command Center session. If a video is already playing, do not load a different historic URL. Same YouTube, same `CookieManager` cookies. Existing player is brought forward and PiP'd if needed.
+- PiP is the YouTube frame (16:9 of the WebView). MCC chrome and the PIP chip are hidden in PiP. Source rect is the WebView. If `enterPictureInPictureMode` fails, stay fullscreen MCC with video still playing.
 - No AUDIOFOCUS_GAIN. YouTube wins.
 
 ## Owl / AUTO (from 26)

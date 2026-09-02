@@ -304,4 +304,27 @@
     android:visibility="gone"
     android:importantForAutofill="yes"/>
 
+    <!-- Compact PiP/minimize chip on the playing WebView. Not a sign-in overlay bar. -->
+    <LinearLayout
+        android:id="@+id/vid_pip_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/btn_pip"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:minWidth="88dp"
+            android:text="PIP"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#B6FFD0"
+            android:backgroundTint="#145A28"
+            android:textAllCaps="true"/>
+    </LinearLayout>
+
 </FrameLayout>
