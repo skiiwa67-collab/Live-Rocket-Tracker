@@ -342,15 +342,6 @@ object WebcastResolver {
     private fun watchUrl(id: String): String = "https://www.youtube.com/watch?v=$id"
 
     /**
-     * HUD overlay URL. Embed when we have a video id so YouTube home/search
-     * chrome never lands on the wallpaper. Search URLs stay for MCC only.
-     */
-    fun overlayPlayUrl(url: String): String {
-        val id = youtubeVideoId(url) ?: return url
-        return "https://www.youtube.com/embed/$id?autoplay=1&playsinline=1&rel=0&modestbranding=1&fs=0"
-    }
-
-    /**
      * Wallpaper VID LIVE/REPLAY. Official watch if LL2 has one, else a
      * published related historic (Owl Electron replay). Search is not a target.
      */

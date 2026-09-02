@@ -1,4 +1,4 @@
-# Live Rocket Tracker — closed tester notes (stamp 28)
+# Live Rocket Tracker — closed tester notes (stamp 29)
 
 Sideload this APK. This is **not** a Play production upload. Play testers on versionCode 17 stay on 17. Play 17 stays frozen.
 
@@ -8,32 +8,26 @@ Stamp **23** (`stamp-23-debug`) is SIGNED usable WITH the Pixel bar. Do not over
 Stamp **25** (`stamp-25-debug`) is SIGNED. Auto packs THIS page. Do not overwrite it.
 Stamp **26** (`stamp-26-debug`) is SIGNED. Owl AUTO one-mission hack. Do not overwrite it.
 Stamp **27** (`stamp-27-debug`) is SIGNED. Live LL2 AUTO/picker window. Do not overwrite it.
+Stamp **28** (`stamp-28-debug`) is SIGNED. Do not overwrite it.
 
-This stamp is **28** / **1.0.18**. Overlay PiP player well. Not a rebuild of 20–27.
+This stamp is **29** / **1.0.19**. Restores the stamp 25/26 HUD overlay PiP. Not a rebuild of 20–28.
 
-## HUD look (queued after PiP)
+## Overlay PiP (Razr tap-sink + Error 153)
 
-- VID LIVE / LINKS are real targets (bigger type, Click Me). Official watch if LL2 has one, else related historic Electron replay. Taps switch the **clean overlay PiP**, not a fat YouTube pane.
-- STS / MSK spread big in the well. Published pages only (LL2 info/wiki, or the official Rocket Lab Owl sheet). Taps are ACTION_VIEW like PAD geo.
-- Tape takes a packer share above `dockFloor()` so L/O MAXQ SECO DEPLOY stay readable. Now = wall-clock. After the book, now sits at the right. No invented past marks.
-- ACCEL / ENG labels sit under the analog cans, not at the band floor toward the dock.
-- Clock is still the biggest. T-/T+ is next. A glance word is reserved from the measured plate well: **LIVE / HOLD / GO / IN FLIGHT / PAST / SIM**. After NET, never GO. A Success hours after NET is PAST even if AUTO still watches. Historic follow / sim / demo still say PAST or SIM. Every launch — not an Owl AUTO/layout key.
+Stamp 27/28 glued a fat YouTube window or a dead `/embed` (Error 153) onto the wallpaper and stole every plate tap.
 
-## Overlay PiP (the Razr bug)
-
-Stamp 27 HUD VID was a collapsed title bar (SignIN YT − + X, no player) or a full-screen YouTube pane that stole every plate tap.
-
-- HUD overlay is a **small floating window**: embed player + thin chrome (drag, mute, −, +, X).
-- The activity window **is** the PiP rect. Touches outside go to CMD CDT TEL STS PAD VID MSK AUTO.
-- Not Android system Picture-in-Picture (that cropped the well to zero height).
-- Not the MCC YouTube home/search pane glued to the wallpaper.
-- MCC VID stays one official pane first. Sign-in there. Cookies stay in-process.
-- Minimize / back / exit from MCC leaves this overlay playing on the HUD. No second dead SignIN.
+- HUD overlay is the **stamp 25/26 player**: system Picture-in-Picture over everything, watch URL (not embed), volume lowered in the WebView. Draggable. Mute is JS volume — no AUDIOFOCUS_GAIN.
+- Hit-test is **only the visible PiP / player rect**. Touches outside go to CMD CDT TEL STS PAD VID MSK AUTO.
+- If system PiP does not take, the activity window **is** the player rect (`FLAG_NOT_TOUCH_MODAL`). Never a full-screen touch interceptor. Never a title-bar-only strip.
+- Not the MCC SignIN / YT / search chrome. MCC VID stays one official pane. Sign-in there. Cookies stay in-process.
+- Minimize / back / exit from MCC leaves this overlay playing on the HUD.
+- VID LIVE / LINKS Click Me switch **this** overlay. Same window.
 
 ## Still true
 
 - Clock at the top and T-/T+ under it are SIGNED.
 - Eight plates: **CMD CDT TEL STS PAD VID MSK AUTO**.
-- No AUDIOFOCUS_GAIN. YouTube keeps the speaker. Overlay mute is JS only.
+- No AUDIOFOCUS_GAIN. YouTube keeps the speaker.
 - AUTO / picker is the stamp 27 live LL2 window.
-- LL2: cache upcoming+previous. No refetch on every plate/frame. Throttle backs off minutes and keeps last good cache. lldev only after that backoff.
+- Glance word reserved: **LIVE / HOLD / GO / IN FLIGHT / PAST / SIM**. Every launch — not an Owl AUTO/layout key.
+- LL2: cache upcoming+previous. No refetch on every plate/frame.
