@@ -297,9 +297,11 @@
 
 </LinearLayout>
 
-<com.ccos.retro.ui.VideoFeedOverlay
-    android:id="@+id/video_overlay"
+<WebView
+    android:id="@+id/vid_web"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"/>
+    android:layout_height="match_parent"
+    android:visibility="gone"
+    android:importantForAutofill="yes"/>
 
 </FrameLayout>

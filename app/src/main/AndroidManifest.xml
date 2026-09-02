@@ -52,19 +52,11 @@
             android:exported="true"
             android:theme="@style/Theme.RetroCommand"
             android:screenOrientation="portrait"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            android:label="Command Center" />
-
-        <activity
-            android:name=".ui.OverlayPipActivity"
-            android:exported="false"
-            android:theme="@style/Theme.OverlayPip"
             android:launchMode="singleTop"
+            android:resizeableActivity="true"
             android:supportsPictureInPicture="true"
-            android:excludeFromRecents="true"
-            android:taskAffinity=""
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
-            android:label="VID" />
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden"
+            android:label="Command Center" />
 
         <!-- Live Wallpaper – free vector skin + interactive surface -->
         <service
