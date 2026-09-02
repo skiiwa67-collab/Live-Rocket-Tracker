@@ -487,16 +487,16 @@ class RetroCommandWallpaperService : WallpaperService() {
         }
 
         /**
-         * Top of the whole launcher gap: Google search + Phone/Messages
-         * hotseat + nav. Live wallpaper is fullscreen; nav-only insets are
-         * not that gap. [LauncherChrome] reads WindowInsetsCompat plus the
-         * HOME launcher's own hotseat/QSB dimens. Plates are not moved.
+         * Packer for THIS launcher page. Pixel glues search to page 0 only.
+         * Extra HUD page has no Google bar — Auto takes that well.
+         * Dock / Dock+search stay as overrides. Plates are not moved.
          */
         private fun dockFloor(): Float {
             val gap = LauncherChrome.bottomGap(
                 this@RetroCommandWallpaperService,
                 lastEngineInsets,
-                prefs.bottomGapMode
+                prefs.bottomGapMode,
+                currentLauncherPage
             )
             return (height - gap).coerceAtMost(height.toFloat())
         }

@@ -344,7 +344,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Stock Pixel/Android glues the Google search bar to the dock. You usually cannot delete it. Drag it onto another page if the launcher lets you, or hide it in Nova. Auto clears dock + search + nav (stock). Dock-only gives that search row back after you moved the bar. Dock+search forces the full stock gap."
+            android:text="Pixel glues the Google search bar to the FIRST home page only. You usually cannot delete it. The HUD extra page does not have that bar. Auto measures THIS page: search reserve on page 0, full well on the extra page. Dock-only / Dock+search are overrides. Drag the bar if the launcher lets you. Nova can hide it."
             android:textColor="#C8D8E8"
             android:textSize="14sp"
             android:paddingBottom="8dp"/>

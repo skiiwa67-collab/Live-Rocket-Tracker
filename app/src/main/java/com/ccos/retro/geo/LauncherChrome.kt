@@ -33,27 +33,32 @@ object LauncherChrome {
     )
 
     /**
-     * @param mode auto = stock (search + hotseat + nav). dock = hotseat + nav
-     * after they dragged the glued Google search bar off. dock_search = force
-     * the full stock gap even if insets look small.
+     * Pixel glues the Google search bar to the FIRST home page only.
+     * Extra pages (the HUD product page) do not have that bar.
+     *
+     * auto = insets of THIS page: search row only when [page] is 0.
+     * dock = hotseat + nav override.
+     * dock_search = force search + hotseat + nav (page 0 look) as override.
      */
-    fun bottomGap(ctx: Context, engineInsets: WindowInsets?, mode: String = "auto"): Float {
+    fun bottomGap(
+        ctx: Context,
+        engineInsets: WindowInsets?,
+        mode: String = "auto",
+        page: Int = 0
+    ): Float {
         val chrome = max(packEngine(engineInsets), packWindowMetrics(ctx))
         val nav = navBand(ctx, engineInsets)
         val hotseat = hotseatRow(ctx)
         val search = searchRow(ctx)
-        val full = hotseat + search
+        val dockGap = when {
+            hotseat > 0f && chrome + 1f >= nav + hotseat -> chrome
+            else -> chrome + hotseat
+        }
+        val searchGap = max(dockGap, nav + hotseat + search)
         val gap = when (mode) {
-            "dock" -> {
-                if (hotseat > 0f && chrome + 1f >= nav + hotseat) chrome
-                else chrome + hotseat
-            }
-            "dock_search" -> max(chrome, nav + full)
-            else -> {
-                if (full > 0f && chrome + 1f >= nav + full) chrome
-                else if (full > 0f) chrome + full
-                else chrome
-            }
+            "dock" -> dockGap
+            "dock_search" -> searchGap
+            else -> if (page <= 0) searchGap else dockGap
         }
         return gap.coerceAtLeast(nav)
     }

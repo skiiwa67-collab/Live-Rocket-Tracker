@@ -256,9 +256,9 @@ class AppPrefs(context: Context) {
         set(v) = prefs.edit().putInt("launcher_pages", v.coerceIn(1, 12)).apply()
 
     /**
-     * HUD bottom gap. Auto = stock packer (search + hotseat + nav from insets
-     * and the HOME launcher). Dock-only = they dragged the glued Google
-     * search bar off a page. Dock+search = force the full stock gap.
+     * HUD bottom gap. Auto = this page: search row only on first home
+     * (Pixel glued bar). Extra pages get dock + nav. Dock-only / Dock+search
+     * are overrides.
      */
     var bottomGapMode: String
         get() = when (prefs.getString("bottom_gap_mode", "auto")) {

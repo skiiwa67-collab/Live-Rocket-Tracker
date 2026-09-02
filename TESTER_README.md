@@ -1,19 +1,23 @@
-# Live Rocket Tracker — closed tester notes (stamp 24)
+# Live Rocket Tracker — closed tester notes (stamp 25)
 
 Sideload this APK. This is **not** a Play production upload. Play testers on versionCode 17 stay on 17. Play 17 stays frozen.
 
 Stamp **20** (`stamp-20-debug`) stays the KEEP for units + AUTO pin.
 Stamp **21** (`stamp-21-debug`) is the GISAT look + Electron HUD locks.
-Stamp **23** stays in Downloads for Elon. Do not overwrite it.
+Stamp **23** (`stamp-23-debug`) is SIGNED usable WITH the Pixel bar. Do not overwrite it.
 
-This stamp is **24**: Bottom gap Auto / Dock-only / Dock+search. Stock Pixel/Android **glues** the Google search bar to the dock. Testers usually cannot delete it. Drag it onto another page if the launcher lets you. Nova can hide it. Do not assume the bar is gone. Pixel emu stays the stock look. Nova is optional, not the default.
+This stamp is **25**. Pixel glues the Google search bar to the **first** home page. You cannot drag it off on stock. The HUD lives on the **extra** page — that page has no Google bar. Auto measures the page it is on: search reserve only on first home, full well on the extra HUD page. Do not assume Auto always clears dock+search.
+
+Drag the bar if the launcher lets you. Nova can hide it. Nova is optional, not the default. Pixel emu stays stock.
 
 CMD double-tap → Settings → HOME SCREENS → **BOTTOM GAP**:
-- **AUTO** (default) — packer clears dock + search + nav (the stamp-23 stock gap).
-- **DOCK** — dock + nav only. Use this after you dragged the search bar off a page.
-- **DOCK+SEARCH** — force the full stock gap.
+- **AUTO** (default) — this page. Search row on page 0 only. Extra HUD page takes the well.
+- **DOCK** — dock + nav override.
+- **DOCK+SEARCH** — force search + dock + nav (page-0 look).
 
-Tape-above-dock still has to work **with** the search bar present. 21 GISAT look stays. No AUDIOFOCUS_GAIN. Overlay PiP stays signed.
+TEL tape: letters get bigger as the event slides toward center. Far events stay small. Readable when it matters.
+
+21 GISAT look stays. No AUDIOFOCUS_GAIN. Overlay PiP stays signed. Eight plates are not moved.
 
 Chris is on a Razr. PrimeTestLab used a Galaxy Note 10+. Any phone or tablet is fine.
 

@@ -140,8 +140,11 @@ object EventTape {
             val neighbor = visible.indices.mapNotNull { j ->
                 if (j == i) null else abs(xs[j] - x)
             }.minOrNull() ?: ((right - left) * 0.18f)
-            val capH = minOf(aboveH, belowH) * (0.38f + 0.28f * read)
-            val size = minOf(capH, neighbor * 0.42f).coerceIn(8f, 16f)
+            val halfW = ((right - left) * 0.5f).coerceAtLeast(1f)
+            val towardCenter = (1f - abs(x - nowX) / halfW).coerceIn(0f, 1f)
+            val grow = maxOf(towardCenter, read)
+            val capH = minOf(aboveH, belowH) * (0.26f + 0.62f * grow)
+            val size = minOf(capH, neighbor * 0.48f).coerceAtLeast(7f)
             textPaint.style = Paint.Style.FILL
             textPaint.textAlign = Paint.Align.CENTER
             textPaint.isFakeBoldText = true
