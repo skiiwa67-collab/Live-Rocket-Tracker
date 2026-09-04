@@ -64,7 +64,8 @@ object VehicleDraw {
             "lm5" -> lm(canvas, cx, baseY, h, tSec, stage, separated, true, skin, lamp, alpha, launch)
             "lm" -> lm(canvas, cx, baseY, h, tSec, stage, separated, false, skin, lamp, alpha, launch)
             "h3" -> h3(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
-            "lvm3", "isro" -> lvm3(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
+            "lvm3" -> lvm3(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
+            "gslv2" -> gslv2(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
             "vulcan" -> vulcan(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
             "atlas" -> atlas(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
             "firefly" -> firefly(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
@@ -1110,6 +1111,98 @@ object VehicleDraw {
             ogive(canvas, cx, bot - s2H, bot - s2H - (if (drawS1) h * 0.20f else h * 0.42f), coreW * 0.70f, bodyC, strokeC)
             bell(canvas, cx, bot, coreW * 0.40f, h * 0.048f, lamp, alpha, true)
             if (burning(tSec, launch, 2, sep) && !drawS1) flame(canvas, cx, bot + h * 0.046f, coreW, h * 0.11f, alpha, tSec, flameKind)
+        }
+    }
+
+    /**
+     * GSLV Mk II from isro.gov.in/GSLV_CON: solid S139 core, four L40
+     * liquid strap-ons (one Vikas each), GS2 + CUS, ogive PLF.
+     * Solid core has no liquid bell.
+     */
+    private fun gslv2(
+        canvas: Canvas,
+        cx: Float,
+        baseY: Float,
+        h: Float,
+        tSec: Float,
+        stage: Int,
+        separated: Boolean,
+        skin: TelemetrySkin.Tokens,
+        lamp: Float,
+        alpha: Float,
+        launch: LaunchSnapshot?
+    ) {
+        val white = lampAlpha(Color.parseColor("#E8E4D8"), lamp, alpha)
+        val liquid = lampAlpha(Color.parseColor("#D2C8B4"), lamp, alpha)
+        val band = lampAlpha(Color.parseColor("#C45C26"), lamp, alpha)
+        val strokeC = lampAlpha(skin.accent, lamp, alpha * 0.85f)
+        val sep = FlightProfiles.sepTime(launch)
+        val drawS1 = stage == 1
+        val drawS2 = stage == 2 || (stage == 1 && !separated)
+        val coreW = h * 0.052f
+        val l40W = h * 0.038f
+        val s1H = if (drawS2 && drawS1) h * 0.50f else if (drawS1) h * 0.86f else 0f
+        stroke.style = Paint.Style.STROKE
+        stroke.strokeWidth = 1.5f
+        if (drawS1) {
+            fun l40(x: Float, half: Float, behind: Boolean) {
+                val top = baseY - s1H * if (behind) 0.78f else 0.86f
+                fill.color = liquid
+                canvas.drawRoundRect(x - half, top, x + half, baseY, 3f, 3f, fill)
+                tanks(canvas, x, top, baseY, half, fuelOf(tSec, launch, 1), false, lamp, alpha)
+                fill.color = band
+                canvas.drawRect(
+                    x - half,
+                    top + (baseY - top) * 0.38f,
+                    x + half,
+                    top + (baseY - top) * 0.46f,
+                    fill
+                )
+                stroke.color = strokeC
+                canvas.drawRoundRect(x - half, top, x + half, baseY, 3f, 3f, stroke)
+                ogive(canvas, x, top, top - h * 0.045f, half, liquid, strokeC)
+                bell(canvas, x, baseY, half * 0.72f, h * 0.034f, lamp, alpha, false)
+                if (tSec >= 0f && tSec < sep) flame(canvas, x, baseY, half * 1.8f, h * 0.11f, alpha, tSec, "vikas")
+            }
+            if (!separated) {
+                l40(cx - coreW * 0.55f, l40W * 0.82f, behind = true)
+                l40(cx + coreW * 0.55f, l40W * 0.82f, behind = true)
+            }
+            fill.color = white
+            canvas.drawRoundRect(cx - coreW, baseY - s1H, cx + coreW, baseY, 3f, 3f, fill)
+            tanks(canvas, cx, baseY - s1H, baseY, coreW, fuelOf(tSec, launch, 1), false, lamp, alpha)
+            stroke.color = strokeC
+            canvas.drawRoundRect(cx - coreW, baseY - s1H, cx + coreW, baseY, 3f, 3f, stroke)
+            if (!separated) {
+                val xOff = coreW + l40W + h * 0.006f
+                l40(cx - xOff, l40W, behind = false)
+                l40(cx + xOff, l40W, behind = false)
+            }
+        }
+        if (drawS2) {
+            val bot = if (drawS1) baseY - s1H else baseY
+            val gs2H = if (drawS1) h * 0.16f else h * 0.32f
+            val cusH = if (drawS1) h * 0.12f else h * 0.22f
+            fill.color = liquid
+            canvas.drawRoundRect(cx - coreW * 0.92f, bot - gs2H, cx + coreW * 0.92f, bot, 3f, 3f, fill)
+            tanks(canvas, cx, bot - gs2H, bot, coreW * 0.92f, fuelOf(tSec, launch, 2), false, lamp, alpha)
+            stroke.color = strokeC
+            canvas.drawRoundRect(cx - coreW * 0.92f, bot - gs2H, cx + coreW * 0.92f, bot, 3f, 3f, stroke)
+            val cusBot = bot - gs2H
+            fill.color = white
+            canvas.drawRoundRect(cx - coreW * 0.78f, cusBot - cusH, cx + coreW * 0.78f, cusBot, 3f, 3f, fill)
+            tanks(canvas, cx, cusBot - cusH, cusBot, coreW * 0.78f, fuelOf(tSec, launch, 2), true, lamp, alpha)
+            stroke.color = strokeC
+            canvas.drawRoundRect(cx - coreW * 0.78f, cusBot - cusH, cx + coreW * 0.78f, cusBot, 3f, 3f, stroke)
+            ogive(
+                canvas, cx, cusBot - cusH,
+                cusBot - cusH - (if (drawS1) h * 0.18f else h * 0.36f),
+                coreW * 0.92f, white, strokeC
+            )
+            if (!drawS1) {
+                bell(canvas, cx, bot, coreW * 0.42f, h * 0.048f, lamp, alpha, true)
+                if (burning(tSec, launch, 2, sep)) flame(canvas, cx, bot + h * 0.044f, coreW, h * 0.10f, alpha, tSec, "vikas")
+            }
         }
     }
 

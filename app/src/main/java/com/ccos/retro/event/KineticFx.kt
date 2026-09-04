@@ -2,8 +2,6 @@ package com.ccos.retro.event
 
 import android.content.Context
 import android.media.AudioAttributes
-import android.media.AudioFocusRequest
-import android.media.AudioManager
 import android.media.SoundPool
 import android.os.Build
 import android.os.Handler
@@ -16,7 +14,8 @@ import com.ccos.retro.data.LaunchSnapshot
 
 /**
  * Generic sampled kinetic layer. Same rumbles for every vehicle.
- * Not a SpaceX recording. Ignition hits the chassis. Burn is short, not a loop forever.
+ * Never requests audio focus. YouTube / PiP keeps the speaker.
+ * Cues mix as sonification; if the device will not mix, they stay quiet.
  */
 class KineticFx(context: Context) {
 
@@ -25,7 +24,7 @@ class KineticFx(context: Context) {
         .setMaxStreams(4)
         .setAudioAttributes(
             AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_GAME)
+                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .build()
         )
@@ -38,17 +37,7 @@ class KineticFx(context: Context) {
     private val reentry = pool.load(app, R.raw.fx_reentry, 1)
     private val tick = pool.load(app, R.raw.fx_tick, 1)
 
-    private val audio = app.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-    private var focusReq: AudioFocusRequest? = null
-    private var holding = false
     private val mainHandler = Handler(Looper.getMainLooper())
-    private val releaseCue = Runnable { releaseLiveFocus() }
-    private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
-        if (change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
-            holding = false
-            focusReq = null
-        }
-    }
 
     private val vibrator: Vibrator? = if (Build.VERSION.SDK_INT >= 31) {
         (app.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
@@ -58,7 +47,6 @@ class KineticFx(context: Context) {
     }
 
     fun play(event: FlightEvent) {
-        requestCueFocus()
         val title = event.title.uppercase()
         val detail = event.detail.uppercase()
         val blob = "$title $detail"
@@ -104,7 +92,6 @@ class KineticFx(context: Context) {
                 pool.play(tick, 0.45f, 0.45f, 0, 0, 1f)
             }
         }
-        releaseCueFocusSoon()
     }
 
     /** Wallpaper: only wake the phone for a live stack, not sim theater. */
@@ -116,74 +103,14 @@ class KineticFx(context: Context) {
     }
 
     fun release() {
-        mainHandler.removeCallbacks(releaseCue)
-        releaseLiveFocus()
+        mainHandler.removeCallbacksAndMessages(null)
         try { pool.release() } catch (_: Exception) {}
     }
 
-    /**
-     * LIVE window used to exclusive-gain the speaker for ~90 min. That pauses YouTube PiP
-     * / NASA. Cues now duck briefly and release — see [requestCueFocus].
-     */
-    fun holdLiveFocus() {
-        requestCueFocus()
-        releaseCueFocusSoon()
-    }
+    /** No-op. We never take audio focus. YouTube / PiP keeps the speaker. */
+    fun holdLiveFocus() {}
 
-    /** Duck other audio for one cue. Never exclusive-gain — YouTube PiP must keep the webcast. */
-    private fun requestCueFocus() {
-        if (holding) return
-        try {
-            if (Build.VERSION.SDK_INT >= 26) {
-                val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-                    .setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_GAME)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                            .build()
-                    )
-                    .setWillPauseWhenDucked(false)
-                    .setAcceptsDelayedFocusGain(false)
-                    .setOnAudioFocusChangeListener(focusListener)
-                    .build()
-                focusReq = req
-                val ok = audio.requestAudioFocus(req)
-                holding = ok == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-            } else {
-                @Suppress("DEPRECATION")
-                val ok = audio.requestAudioFocus(
-                    focusListener, AudioManager.STREAM_MUSIC,
-                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
-                )
-                holding = ok == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-            }
-        } catch (_: Exception) {}
-    }
-
-    private fun releaseCueFocusSoon() {
-        mainHandler.removeCallbacks(releaseCue)
-        mainHandler.postDelayed(releaseCue, 2_500)
-    }
-
-    /** After the cue, or engine teardown. Webcast can have the speaker back. */
-    fun releaseLiveFocus() {
-        mainHandler.removeCallbacks(releaseCue)
-        if (!holding && focusReq == null) return
-        holding = false
-        abandonFocus()
-    }
-
-    private fun abandonFocus() {
-        try {
-            if (Build.VERSION.SDK_INT >= 26) {
-                focusReq?.let { audio.abandonAudioFocusRequest(it) }
-                focusReq = null
-            } else {
-                @Suppress("DEPRECATION")
-                audio.abandonAudioFocus(null)
-            }
-        } catch (_: Exception) {}
-    }
+    fun releaseLiveFocus() {}
 
     private fun pulse(ms: Int) {
         val v = vibrator ?: return
@@ -214,18 +141,45 @@ class KineticFx(context: Context) {
 }
 
 object EventClock {
+    /**
+     * Glance clock. Never print H:MM:SS — that reads as minutes on GISAT-class T-33h.
+     * Days → 1d 9h. Hours → 33h 45m. Under an hour → 45m 01s.
+     */
     fun span(sec: Float): String {
         val a = kotlin.math.abs(sec).toInt()
-        val hh = a / 3600
+        val days = a / 86400
+        val hours = (a % 86400) / 3600
         val mm = (a % 3600) / 60
         val ss = a % 60
-        return if (hh > 0) String.format("%02d:%02d:%02d", hh, mm, ss)
-        else String.format("%02d:%02d", mm, ss)
+        return when {
+            days > 0 -> if (hours > 0) "${days}d ${hours}h" else "${days}d"
+            hours > 0 -> if (mm > 0) "${hours}h ${mm}m" else "${hours}h"
+            mm > 0 -> if (ss > 0) String.format("%dm %02ds", mm, ss) else "${mm}m"
+            else -> "${ss}s"
+        }
     }
 
     fun fmt(tSec: Float): String {
         val sign = if (tSec >= 0f) "T+" else "T-"
         return sign + span(tSec)
+    }
+
+    fun fmtEst(tSec: Float, est: Boolean): String {
+        val base = fmt(tSec)
+        return if (est) "$base EST" else base
+    }
+
+    /**
+     * The one HUD clock. Units always. Never invent T- after LL2 says they lifted.
+     */
+    fun glance(launch: LaunchSnapshot?, tSec: Float, est: Boolean): String {
+        if (launch == null) return "NO LOCK"
+        if (launch.netMs <= 0L) return "HOLDING"
+        val blob = "${launch.statusName} ${launch.statusAbbrev} ${launch.holdReason.orEmpty()}".lowercase()
+        val lifted = launch.isInFlight() ||
+            "in flight" in blob || "liftoff" in blob || "success" in blob || "deployed" in blob
+        if (lifted && tSec < 0f) return "HOLDING"
+        return fmtEst(tSec, est)
     }
 
     fun remain(from: Float, to: Float): String = "IN " + span((to - from).coerceAtLeast(0f))

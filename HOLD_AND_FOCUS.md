@@ -3,12 +3,14 @@
 ## The bug
 `RocketTelemetryModule.resolveTracked` in AUTO calls `getNextAny()`, which keeps only `isUpcoming` (T+5 min). An in-flight Falcon is not upcoming. The wallpaper then locks the soonest NET on Earth (Arianespace, etc.).
 
-AUTO = browse. HOLD = watch. LCK = hard pin. Never let AUTO steal a HOLD or a pin.
+AUTO = browse. HOLD = watch. AUTO double-tap = hard pin. Never let AUTO steal a HOLD or a pin.
+There is no LCK plate. The eight plates stay CMD CDT TEL STS PAD VID MSK AUTO.
 
-## LCK
+## Pin (AUTO double-tap)
 - Sticky launch id. Does not expire.
-- AUTO must stay off (lamp included) while pinned.
+- Lock light on the AUTO plate while pinned. Browse lamp stays off.
 - Catalog refresh / missed `findById` keeps the pinned snapshot. Do not fall through to `getNextAny`.
+- Plus/minus still walk events on the pinned launch. Launch pick stays CMD / MCC.
 
 ## HOLD
 - Sticky launch id + `holdUntilMs`.
