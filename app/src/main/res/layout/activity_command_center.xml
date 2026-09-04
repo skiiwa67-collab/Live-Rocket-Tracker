@@ -297,9 +297,34 @@
 
 </LinearLayout>
 
-<com.ccos.retro.ui.VideoFeedOverlay
-    android:id="@+id/video_overlay"
+<WebView
+    android:id="@+id/vid_web"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"/>
+    android:layout_height="match_parent"
+    android:visibility="gone"
+    android:importantForAutofill="yes"/>
+
+    <!-- Compact PiP chip, top-end. Top/end margins come from statusBars + cutout (not y=0). Hidden in system PiP. -->
+    <LinearLayout
+        android:id="@+id/vid_pip_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/btn_pip"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:minWidth="88dp"
+            android:text="PIP"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#B6FFD0"
+            android:backgroundTint="#145A28"
+            android:textAllCaps="true"/>
+    </LinearLayout>
 
 </FrameLayout>

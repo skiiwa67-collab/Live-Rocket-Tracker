@@ -39,6 +39,8 @@ import com.ccos.retro.event.EngineDraw
 import com.ccos.retro.event.VehicleOutline
 import com.ccos.retro.event.VehicleDraw
 import com.ccos.retro.event.EventClock
+import com.ccos.retro.event.EventTape
+import com.ccos.retro.event.FlightEventCatalog
 import com.ccos.retro.event.FlightEvent
 import com.ccos.retro.model.AppPrefs
 import com.ccos.retro.module.RocketTelemetryModule
@@ -495,16 +497,8 @@ class CommandConsoleView @JvmOverloads constructor(
         return stripH + dp(4f)
     }
 
-    private fun formatClock(tSec: Float): String {
-        val sign = if (tSec < 0f) "T-" else "T+"
-        val absSec = abs(tSec).toInt()
-        val hh = absSec / 3600
-        val mm = (absSec % 3600) / 60
-        val ss = absSec % 60
-        val base = if (hh > 0) String.format("%s%02d:%02d:%02d", sign, hh, mm, ss)
-        else String.format("%s%02d:%02d", sign, mm, ss)
-        return if (module?.clockIsEst() == true) "$base EST" else base
-    }
+    private fun formatClock(tSec: Float): String =
+        EventClock.glance(module?.tracked, tSec, module?.clockIsEst() == true)
 
     private fun isMethalox(launch: LaunchSnapshot?): Boolean = VehicleCatalog.spec(launch).methalox
 
@@ -526,8 +520,11 @@ class CommandConsoleView @JvmOverloads constructor(
         val pad = dp(10f)
         val subH = sp(18f)
         var y = pad + subH
-        val name = (launch?.name ?: "NO TRACKED LAUNCH").uppercase().take(36)
-        drawLabel(canvas, name, w * 0.5f, y, withLamp(skin.text), w * 0.92f, subH, sp(16f))
+        val name = (launch?.name ?: "NO TRACKED LAUNCH").uppercase()
+        y += drawWrapped(
+            canvas, name, w * 0.5f, y, withLamp(skin.text),
+            w * 0.92f, subH, Paint.Align.CENTER, 3
+        ) - subH
         y += subH + dp(2f)
         val vehPad = buildString {
             append((launch?.rocketName ?: "—").take(16))
@@ -1593,32 +1590,28 @@ class CommandConsoleView @JvmOverloads constructor(
             )
             row0 = top + sp(52f)
         }
-        val tape = eventTape.takeLast(5)
-        if (tape.isEmpty()) {
+        val launch = module?.tracked
+        val tSec = module?.effectiveSecondsFromNet() ?: 0f
+        val events = if (launch != null) FlightProfiles.events(launch) else emptyList()
+        if (events.isEmpty()) {
             drawLabel(
                 canvas, "NO FLIGHT EVENTS YET", (left + right) * 0.5f, (top + bot) * 0.62f,
                 withLamp(skin.muted), (right - left) * 0.9f, sp(14f), sp(12f)
             )
             return
         }
-        val rowH = ((bot - row0) / 5f).coerceIn(sp(16f), sp(22f))
-        tape.forEachIndexed { i, e ->
-            val y = row0 + rowH * (i + 0.78f)
-            val clock = formatClock(e.tSec)
-            val col = when {
-                e.severity.name == "FAIL" -> skin.danger
-                e.severity.name == "WATCH" -> skin.hold
-                else -> skin.accent
-            }
-            drawLabel(
-                canvas, clock, left + dp(4f), y,
-                withLamp(skin.muted), (right - left) * 0.22f, rowH * 0.9f, sp(12f), Paint.Align.LEFT
-            )
-            drawLabel(
-                canvas, e.title.take(28), left + (right - left) * 0.26f, y,
-                withLamp(col), (right - left) * 0.72f, rowH * 0.9f, sp(13f), Paint.Align.LEFT
-            )
-        }
+        EventTape.draw(
+            canvas, events, tSec,
+            left, row0, right, bot,
+            withLamp(skin.accent),
+            withLamp(skin.go),
+            withLamp(skin.muted),
+            withLamp(skin.text),
+            withLamp(skin.hold),
+            withLamp(skin.danger),
+            failedSystem != null || (launch != null && FlightEventCatalog.failureFromStatus(launch, tSec) != null),
+            textPaint, strokePaint, fillPaint
+        )
     }
 
     private fun drawMapCallout(canvas: Canvas, x: Float, y: Float, text: String, col: Int, dest: RectF) {
@@ -2466,8 +2459,7 @@ class CommandConsoleView @JvmOverloads constructor(
             y += dp(6f)
         }
 
-        val clock = if (tSec >= 0f) String.format("T+%02d:%02d", (tSec / 60).toInt(), (tSec % 60).toInt())
-        else String.format("T-%02d:%02d", (-tSec / 60).toInt(), ((-tSec) % 60).toInt())
+        val clock = EventClock.fmtEst(tSec, module?.clockIsEst() == true)
 
         data class Slot(val pri: Int, val lines: Int, val draw: () -> Unit)
         val slots = ArrayList<Slot>()

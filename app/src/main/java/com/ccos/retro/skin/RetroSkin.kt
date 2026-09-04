@@ -8,7 +8,9 @@ import android.graphics.Color
  */
 object RetroSkin {
     val bg          = Color.parseColor("#060708")
-    val grid        = Color.parseColor("#12161A")
+    // Issue 11: HUD grid a notch brighter so a dark webcast/PiP reads
+    // against wallpaper. Plates / clock / chrome stay on their own paints.
+    val grid        = Color.parseColor("#4E5C6C")
     val cyan        = Color.parseColor("#D8E0E8")   // stencil silver
     val orange      = Color.parseColor("#E8A020")   // amber needle
     val green       = Color.parseColor("#3DCC7A")   // GO lamp
