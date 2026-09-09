@@ -1,5 +1,6 @@
 package com.ccos.retro.data
 
+import com.ccos.retro.model.AppPrefs
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -211,9 +212,7 @@ object LaunchWindow {
     /** T+ watch after NET so AUTO does not jump to the next bird mid-flight. */
     /** Stamp 63: AUTO post-NET active-watch = 60 minutes. */
     const val WATCH_AFTER_NET_SEC = 60L * 60L
-    /** Stamp 63: LCK hard max after NET (6 hours). */
-    /** Stamp 63 backstop: absolute LCK max T+6h (chips 1H|2H|6H expire earlier via duration). */
-    const val PIN_HARD_CEILING_SEC = 6L * 3600L
+    // Stamp 85: no fixed pin ceiling — live LCK lifetime is NET + telemetryHoldDurationMs (1H|2H|48H).
     /** Recent previous that must stay pickable after AUTO leaves. */
     const val PICKER_LOOKBACK_SEC = 48L * 3600L
     /** Fine-tooth upcoming compare: next ~14 days of LL2. */
@@ -233,19 +232,19 @@ object LaunchWindow {
 }
 
 /**
- * Stamp 63 dwell UX — AUTO (T+60m) or LCK (PIN_HARD_CEILING 6h).
+ * Stamp 85 dwell UX — AUTO (T+60m) or LCK (NET + selected chip 1H|2H|48H).
  */
 fun LaunchSnapshot.autoDwellHint(
     now: Long = System.currentTimeMillis(),
     pinned: Boolean = false,
     holdDurationMs: Long = 0L,
 ): String {
-    // Stamp 64: LCK remain = NET + chip (1H/2H/6H). Show chip length in status. No forever pin.
+    // One source of truth: selected hold duration (normalized to 1H|2H|48H).
     if (pinned && holdDurationMs > 0L) {
-        val chip = when (holdDurationMs) {
-            1L * 3600_000L -> "1H"
-            6L * 3600_000L -> "6H"
-            24L * 3600_000L -> "24H"
+        val dur = AppPrefs.normalizeHoldDurationMs(holdDurationMs)
+        val chip = when (dur) {
+            AppPrefs.HOLD_DUR_1H_MS -> "1H"
+            AppPrefs.HOLD_DUR_48H_MS -> "48H"
             else -> "2H"
         }
         val remainSec = ((netMs + holdDurationMs) - now) / 1000L

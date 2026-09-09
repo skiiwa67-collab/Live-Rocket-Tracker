@@ -322,7 +322,7 @@ class RocketTelemetryModule(
         // Stamp 59: restore before resolve
         if (tracked == null) keepTrackedOrLastGood(now)
         val prevId = tracked?.id
-        // Stamp 63: LCK lifetime = NET + telemetryHoldDurationMs (1H|2H|6H). Never forever-pin.
+        // Stamp 85: LCK lifetime = NET + telemetryHoldDurationMs (1H|2H|48H). Never forever-pin.
         if (prefs.telemetryPinned) {
             val expireId = prefs.telemetryLaunchId.ifBlank { tracked?.id ?: pinnedSnapshot?.id ?: "" }
             val expireLaunch = when {
@@ -356,12 +356,10 @@ class RocketTelemetryModule(
                     else -> null
                 }
             if (pinBird != null) {
-                // Stamp 77: historic/demo — pin until togglePin; live keeps NET+duration / ceiling.
+                // Stamp 85: historic/demo pin until togglePin; live expires only on NET+chip (1H|2H|48H).
                 val historicPin = isHistoricOrDemoPin(pinBird, now)
                 val expiredByDur = !historicPin && pinBird.netMs + prefs.telemetryHoldDurationMs <= now
-                val tPin = pinBird.secondsToNet(now)
-                val pastCeiling = !historicPin && tPin <= -LaunchWindow.PIN_HARD_CEILING_SEC
-                if (expiredByDur || pastCeiling) {
+                if (expiredByDur) {
                     prefs.telemetryPinned = false
                     pinnedSnapshot = null
                     releaseHold()
