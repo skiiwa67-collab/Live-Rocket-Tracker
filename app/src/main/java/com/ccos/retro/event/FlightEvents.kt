@@ -1090,10 +1090,16 @@ object FlightProfiles {
         val f13 = MissionFacts.isFlight13(launch)
         val fam = VehicleCatalog.family(launch)
         // Stamp 89: LEO orbital uppers use vis-viva (Soyuz ISS ~400 km ~17k mph).
-        val orbitalCoast = f13 || fam in setOf(
+        // Stamp 93: non-Starship with SECO/insertion also coasts at vis-viva (fixes Falcon ~8317 mph freeze).
+        val leoFamilies = setOf(
             "soyuz", "proton", "f9", "falcon", "fh", "zq", "electron", "atlas", "vulcan",
             "ariane", "h3", "lvm3", "isro", "cz8a", "cz2d", "lm", "lm5", "sls", "glenn"
         )
+        val hasLeoSeco = events(launch).any { e ->
+            val n = e.second.uppercase()
+            "SECO" in n || ("INSERTION" in n && "SUB" !in n)
+        }
+        val orbitalCoast = f13 || fam in leoFamilies || (fam != "starship" && hasLeoSeco)
         val altTarget = when {
             f13 -> 275f
             fam == "soyuz" || fam == "proton" -> 400f
