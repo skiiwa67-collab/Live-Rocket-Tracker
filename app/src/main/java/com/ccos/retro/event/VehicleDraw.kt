@@ -572,7 +572,7 @@ object VehicleDraw {
 
     /**
      * Stamp 92 lean: deplete within [bandTop, bandBot]. Discrete = full dest; combined split uses halves.
-     * Discrete ox/fuel pass upper/lower half; single-window dest uses full dest.
+     * Call sites: discrete ox/fuel omit band args (full dest); combined split passes halves.
      */
     private fun drawTankMaskLevel(
         canvas: Canvas,
