@@ -231,6 +231,9 @@ object VehicleDraw {
         cores: Int,
         wide: Boolean
     ): Boolean {
+        // Stamp 88: post-sep never paint the full-stack bitmap on STG1 and STG2 —
+        // soft-fail to geometric booster (STG1) vs Ship/upper (STG2) so tabs never twin Ship art.
+        if (separated) return false
         val hull = vehicleHullBitmap(artId) ?: return false
         val dest = artDestRect(hull, cx, baseY, h)
         // Stamp 85: FULL hull first, then direct translucent tank overlay (HW-safe).
@@ -245,7 +248,40 @@ object VehicleDraw {
         } catch (t: Throwable) {
             Log.e("LRT82", "overlay tanks (no xfer)", t)
         }
+        // Stamp 88: burn flames on art path when FlightProfiles says lit (ascent / boostback / landing).
+        try {
+            paintArtPathFlames(canvas, cx, baseY, h, tSec, stage, artId, methalox, alpha, launch)
+        } catch (t: Throwable) {
+            Log.e("LRT88", "art-path flames", t)
+        }
         return true
+    }
+
+    /** HW-safe plume under the art hull when enginesLit > 0. Splash/ENG 0 = no flame. */
+    private fun paintArtPathFlames(
+        canvas: Canvas,
+        cx: Float,
+        baseY: Float,
+        h: Float,
+        tSec: Float,
+        stage: Int,
+        artId: String,
+        methalox: Boolean,
+        alpha: Float,
+        launch: LaunchSnapshot?
+    ) {
+        val sep = FlightProfiles.sepTime(launch)
+        if (!burning(tSec, launch, stage, sep)) return
+        val kind = when {
+            artId == "starship" || methalox || artId == "glenn" || artId == "vulcan" -> "raptor"
+            artId == "sls" -> "rs25"
+            artId == "soyuz" || artId == "proton" -> "rd107"
+            artId.contains("lm") || artId == "cz8a" || artId == "cz2d" -> "merlin"
+            else -> "merlin"
+        }
+        val fw = if (stage >= 2) h * 0.085f else h * 0.12f
+        val fh = if (stage >= 2) h * 0.12f else h * 0.16f
+        flame(canvas, cx, baseY, fw, fh, alpha, tSec, kind)
     }
 
     private fun artDestRect(bmp: Bitmap, cx: Float, baseY: Float, h: Float): RectF {

@@ -210,6 +210,7 @@ class RetroCommandWallpaperService : WallpaperService() {
         private val lampRockerRects = arrayOf(RectF(), RectF(), RectF())
         private val textRockerRects = arrayOf(RectF(), RectF(), RectF())
         private val holdRockerRects = arrayOf(RectF(), RectF(), RectF())
+        private val consoleRockerRects = arrayOf(RectF(), RectF(), RectF())
         private val extraRockerHits = mutableListOf<Pair<RectF, () -> Unit>>()
 
         /** Screen-relative size so panels stay readable on phones and tablets. */
@@ -973,21 +974,37 @@ class RetroCommandWallpaperService : WallpaperService() {
             selected: Int,
             accent: Int,
             textColor: Int,
-            muted: Int
+            muted: Int,
+            strongSelected: Boolean = false
         ) {
             for (i in rects.indices) {
                 val r = rects[i]
                 val on = i == selected
-                fillPaint.color = if (on) Color.argb(230, 18, 28, 38) else Color.argb(210, 8, 12, 16)
+                fillPaint.color = when {
+                    on && strongSelected -> Color.argb(255, 48, 72, 96)
+                    on -> Color.argb(230, 18, 28, 38)
+                    else -> Color.argb(210, 8, 12, 16)
+                }
                 canvas.drawRoundRect(r, 8f, 8f, fillPaint)
                 strokePaint.style = Paint.Style.STROKE
-                strokePaint.strokeWidth = if (on) 4.5f else 3.2f
+                strokePaint.strokeWidth = when {
+                    on && strongSelected -> 6.5f
+                    on -> 4.5f
+                    else -> 3.2f
+                }
                 strokePaint.color = if (on) accent else muted
                 canvas.drawRoundRect(r, 8f, 8f, strokePaint)
+                if (on && strongSelected) {
+                    strokePaint.strokeWidth = 2.2f
+                    strokePaint.color = Color.argb(200, Color.red(accent), Color.green(accent), Color.blue(accent))
+                    canvas.drawRoundRect(
+                        r.left + 3f, r.top + 3f, r.right - 3f, r.bottom - 3f, 6f, 6f, strokePaint
+                    )
+                }
                 val lampX = r.left + 16f
                 if (on) {
                     fillPaint.color = accent
-                    canvas.drawCircle(lampX, r.centerY(), 7f, fillPaint)
+                    canvas.drawCircle(lampX, r.centerY(), if (strongSelected) 8.5f else 7f, fillPaint)
                 } else {
                     strokePaint.strokeWidth = 3f
                     canvas.drawCircle(lampX, r.centerY(), 7f, strokePaint)
@@ -2397,14 +2414,68 @@ class RetroCommandWallpaperService : WallpaperService() {
             bottom: Float,
             stroke: Int
         ) {
-            fillPaint.color = Color.parseColor("#F20A1018")
-            canvas.drawRoundRect(left, top, right, bottom, 16f, 16f, fillPaint)
-            fillPaint.color = Color.parseColor("#E6080C12")
-            canvas.drawRoundRect(left + 5f, top + 5f, right - 5f, bottom - 5f, 12f, 12f, fillPaint)
-            strokePaint.style = Paint.Style.STROKE
-            strokePaint.strokeWidth = 4.5f
-            strokePaint.color = stroke
-            canvas.drawRoundRect(left, top, right, bottom, 16f, 16f, strokePaint)
+            // Stamp 88/65: MCC amber / ROS olive+red / CLEAR cyan — COMMAND popout chrome.
+            when (prefs.consoleSkin) {
+                AppPrefs.CONSOLE_SKIN_ROS -> {
+                    fillPaint.style = Paint.Style.FILL
+                    fillPaint.color = Color.parseColor("#F21E2612")
+                    canvas.drawRoundRect(left, top, right, bottom, 10f, 10f, fillPaint)
+                    fillPaint.color = Color.parseColor("#E62A3218")
+                    canvas.drawRoundRect(left + 6f, top + 6f, right - 6f, bottom - 6f, 8f, 8f, fillPaint)
+                    strokePaint.style = Paint.Style.STROKE
+                    strokePaint.strokeWidth = 5f
+                    strokePaint.color = withLamp(Color.parseColor("#6B7A3A"), prefs.lampBrightness)
+                    canvas.drawRoundRect(left, top, right, bottom, 10f, 10f, strokePaint)
+                    strokePaint.strokeWidth = 2.4f
+                    strokePaint.color = withLamp(Color.parseColor("#8B9A4B"), prefs.lampBrightness)
+                    canvas.drawRoundRect(left + 6f, top + 6f, right - 6f, bottom - 6f, 8f, 8f, strokePaint)
+                    strokePaint.strokeWidth = 3.2f
+                    strokePaint.color = withLamp(Color.parseColor("#C8102E"), prefs.lampBrightness)
+                    canvas.drawLine(left + 12f, top + 14f, left + 12f, bottom - 14f, strokePaint)
+                    canvas.drawLine(right - 12f, top + 14f, right - 12f, bottom - 14f, strokePaint)
+                    fun rivet(cx: Float, cy: Float) {
+                        fillPaint.color = withLamp(Color.parseColor("#A8B86A"), prefs.lampBrightness)
+                        canvas.drawCircle(cx, cy, 5.5f, fillPaint)
+                        strokePaint.strokeWidth = 1.4f
+                        strokePaint.color = withLamp(Color.parseColor("#3A4420"), prefs.lampBrightness)
+                        canvas.drawCircle(cx, cy, 5.5f, strokePaint)
+                        fillPaint.color = withLamp(Color.parseColor("#D0E090"), prefs.lampBrightness * 0.85f)
+                        canvas.drawCircle(cx - 1.2f, cy - 1.2f, 1.6f, fillPaint)
+                    }
+                    rivet(left + 14f, top + 14f)
+                    rivet(right - 14f, top + 14f)
+                    rivet(left + 14f, bottom - 14f)
+                    rivet(right - 14f, bottom - 14f)
+                    rivet((left + right) * 0.5f, top + 14f)
+                    rivet((left + right) * 0.5f, bottom - 14f)
+                }
+                AppPrefs.CONSOLE_SKIN_CLEAR -> {
+                    fillPaint.color = Color.parseColor("#F2081018")
+                    canvas.drawRoundRect(left, top, right, bottom, 12f, 12f, fillPaint)
+                    fillPaint.color = Color.parseColor("#E6060C14")
+                    canvas.drawRoundRect(left + 5f, top + 5f, right - 5f, bottom - 5f, 10f, 10f, fillPaint)
+                    strokePaint.style = Paint.Style.STROKE
+                    strokePaint.strokeWidth = 3.5f
+                    strokePaint.color = stroke
+                    canvas.drawRoundRect(left, top, right, bottom, 12f, 12f, strokePaint)
+                    strokePaint.strokeWidth = 2.0f
+                    strokePaint.color = stroke
+                    val clearBarY0 = top + (bottom - top) * 0.18f
+                    val clearBarY1 = top + (bottom - top) * 0.82f
+                    canvas.drawLine(left + 14f, clearBarY0, right - 14f, clearBarY0, strokePaint)
+                    canvas.drawLine(left + 14f, clearBarY1, right - 14f, clearBarY1, strokePaint)
+                }
+                else -> {
+                    fillPaint.color = Color.parseColor("#F20A1018")
+                    canvas.drawRoundRect(left, top, right, bottom, 16f, 16f, fillPaint)
+                    fillPaint.color = Color.parseColor("#E6080C12")
+                    canvas.drawRoundRect(left + 5f, top + 5f, right - 5f, bottom - 5f, 12f, 12f, fillPaint)
+                    strokePaint.style = Paint.Style.STROKE
+                    strokePaint.strokeWidth = 4.5f
+                    strokePaint.color = stroke
+                    canvas.drawRoundRect(left, top, right, bottom, 16f, 16f, strokePaint)
+                }
+            }
         }
 
         private fun drawMiniVu(canvas: Canvas, cx: Float, cy: Float, radius: Float, value: Float, label: String) {
@@ -4439,7 +4510,10 @@ class RetroCommandWallpaperService : WallpaperService() {
         ) {
             val launch = telemetryModule.tracked ?: return
             val h = min(width, height) * 0.22f * scale
-            drawVehicle(canvas, cx, baseY, h, launch, tSec, 1, tSec >= sepTime(launch), skin, lamp, alpha)
+            val sep = tSec >= sepTime(launch)
+            // Stamp 88: after sep follow trackedStage (1=booster, 2=Ship) — never force Ship on STG1.
+            val stg = if (sep) prefs.trackedStage.coerceIn(1, 2) else 1
+            drawVehicle(canvas, cx, baseY, h, launch, tSec, stg, sep, skin, lamp, alpha)
         }
 
         private fun vehicleFamily(launch: com.ccos.retro.data.LaunchSnapshot): String =
@@ -6393,10 +6467,14 @@ class RetroCommandWallpaperService : WallpaperService() {
             var rockerH = panelRockerH()
             if (prefs.extraScreens) rockerH *= 0.86f
             val inset = 16f
+            // Stamp 88: CONSOLE MCC|ROS|CLEAR at TOP of COMMAND popout.
             var y = top + titleSize + su(0.04f)
             y += labelSz + 8f
+            layoutRockerRow(consoleRockerRects, panelLeft + inset, y, panelRight - inset, rockerH)
+            y = consoleRockerRects[0].bottom + su(0.028f)
+            y += labelSz + 8f
             layoutRockerRow(textRockerRects, panelLeft + inset, y, panelRight - inset, rockerH)
-            y = textRockerRects[0].bottom + su(0.04f)
+            y = textRockerRects[0].bottom + su(0.028f)
             y += labelSz + 8f
             layoutRockerRow(lampRockerRects, panelLeft + inset, y, panelRight - inset, rockerH)
 
@@ -6421,7 +6499,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                     "ENG" to { prefs.extraScreenEng = !prefs.extraScreenEng },
                     "PROP" to { prefs.extraScreenProp = !prefs.extraScreenProp }
                 )
-                chipDefs.forEachIndexed { i, (lab, action) ->
+                chipDefs.forEachIndexed { i, (_, action) ->
                     val r = RectF(
                         panelLeft + inset + i * (chipW + gap),
                         chipY,
@@ -6431,15 +6509,22 @@ class RetroCommandWallpaperService : WallpaperService() {
                     extraChipHits.add(r to action)
                 }
                 afterExtra = chipY + chipH
-} else {
-                /* extra chips hidden */
             }
 
             val holdLabelY = afterExtra + su(0.028f)
             val holdTop = holdLabelY + labelSz + 8f
             layoutRockerRow(holdRockerRects, panelLeft + inset, holdTop, panelRight - inset, rockerH)
             extraRockerHits.clear()
-            // Stamp 85: LCK chips 1H|2H|48H only.
+            val consoleHits = listOf(
+                AppPrefs.CONSOLE_SKIN_MCC,
+                AppPrefs.CONSOLE_SKIN_ROS,
+                AppPrefs.CONSOLE_SKIN_CLEAR
+            )
+            consoleHits.forEachIndexed { i, skinId ->
+                extraRockerHits.add(consoleRockerRects[i] to {
+                    prefs.consoleSkin = skinId
+                })
+            }
             val holdMs = AppPrefs.HOLD_DUR_ALLOWED_MS
             for (i in holdRockerRects.indices) {
                 val dur = holdMs[i]
@@ -6451,17 +6536,27 @@ class RetroCommandWallpaperService : WallpaperService() {
             val footerTop = holdRockerRects[0].bottom + su(0.03f)
             val bottom = min(footerTop + labelSz * 2.4f + su(0.04f), height - 8f)
             panelBounds.set(panelLeft - 6f, top - 8f, panelRight + 6f, bottom + 6f)
-            drawConsoleShell(canvas, panelLeft, top, panelRight, bottom, withLamp(skin.accent, lamp))
+            val consoleShellAccent = when (prefs.consoleSkin) {
+                AppPrefs.CONSOLE_SKIN_ROS -> Color.parseColor("#8B9A4B")
+                AppPrefs.CONSOLE_SKIN_CLEAR -> Color.parseColor("#00E5FF")
+                else -> Color.parseColor("#FFB000")
+            }
+            val consolePanelAccent = when (prefs.consoleSkin) {
+                AppPrefs.CONSOLE_SKIN_ROS -> Color.parseColor("#C8102E")
+                AppPrefs.CONSOLE_SKIN_CLEAR -> Color.parseColor("#00E5FF")
+                else -> Color.parseColor("#FFB000")
+            }
+            drawConsoleShell(canvas, panelLeft, top, panelRight, bottom, withLamp(consoleShellAccent, lamp))
             canvas.save()
             canvas.clipRect(panelBounds)
 
-            hudPaint.color = withLamp(skin.accent, lamp)
+            hudPaint.color = withLamp(consolePanelAccent, lamp)
             hudPaint.textSize = titleSize
             hudPaint.textAlign = Paint.Align.CENTER
             canvas.drawText("COMMAND", width / 2f, top + titleSize * 0.85f, hudPaint)
 
-            fun rowLabel(text: String, row: Array<RectF>) {
-                hudPaint.color = withLamp(skin.text, lamp)
+            fun rowLabel(text: String, row: Array<RectF>, col: Int = withLamp(skin.text, lamp)) {
+                hudPaint.color = col
                 hudPaint.textSize = labelSz
                 hudPaint.textAlign = Paint.Align.LEFT
                 val ly = row[0].top - 8f
@@ -6469,6 +6564,17 @@ class RetroCommandWallpaperService : WallpaperService() {
                     canvas.drawText(text, row[0].left, ly, hudPaint)
                 }
             }
+            rowLabel("CONSOLE", consoleRockerRects, withLamp(consolePanelAccent, lamp))
+            val consoleSel = when (prefs.consoleSkin) {
+                AppPrefs.CONSOLE_SKIN_ROS -> 1
+                AppPrefs.CONSOLE_SKIN_CLEAR -> 2
+                else -> 0
+            }
+            drawRockerRow(
+                canvas, consoleRockerRects, AppPrefs.ROCKER_LABELS_CONSOLE, consoleSel,
+                withLamp(consolePanelAccent, lamp), withLamp(skin.text, lamp), withLamp(skin.muted, lamp),
+                strongSelected = true
+            )
             rowLabel("HUD TEXT", textRockerRects)
             drawRockerRow(
                 canvas, textRockerRects, AppPrefs.ROCKER_LABELS_TEXT, prefs.textStepIndex(),
@@ -6482,12 +6588,13 @@ class RetroCommandWallpaperService : WallpaperService() {
             val holdSel = when (prefs.telemetryHoldDurationMs) {
                 AppPrefs.HOLD_DUR_1H_MS -> 0
                 AppPrefs.HOLD_DUR_48H_MS -> 2
-                else -> 1 // 2H default
+                else -> 1
             }
             rowLabel("LCK TIMER", holdRockerRects)
             drawRockerRow(
                 canvas, holdRockerRects, AppPrefs.ROCKER_LABELS_HOLD, holdSel,
-                withLamp(skin.accent, lamp), withLamp(skin.text, lamp), withLamp(skin.muted, lamp)
+                withLamp(skin.accent, lamp), withLamp(skin.text, lamp), withLamp(skin.muted, lamp),
+                strongSelected = true
             )
 
             fun drawToggle(r: RectF, on: Boolean, onLabel: String, offLabel: String) {
@@ -6536,7 +6643,10 @@ class RetroCommandWallpaperService : WallpaperService() {
             canvas.drawText((launch?.name ?: "NO TRACKED LAUNCH").take(28), width / 2f, footerTop + labelSz * 2.05f, hudPaint)
             hudPaint.color = withLamp(skin.muted, lamp)
             hudPaint.textSize = labelSz * 0.72f
-            canvas.drawText("CCOS HUD  ·  CONSOLE = MCC  ·  CMD x2 = SETTINGS", width / 2f, bottom - su(0.018f), hudPaint)
+            canvas.drawText(
+                "CCOS HUD  |  CONSOLE = ${prefs.consoleSkin}  |  CMD x2 = SETTINGS",
+                width / 2f, bottom - su(0.018f), hudPaint
+            )
             canvas.restore()
         }
 
