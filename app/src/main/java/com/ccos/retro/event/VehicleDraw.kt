@@ -362,8 +362,8 @@ object VehicleDraw {
             try {
                 // Stamp 91: LOX blue vs CH4 amber - never twin cyan. Prefer discrete ox/fuel masks.
                 val lvl = fuelOf(tSec, launch, 1)
-                val loxC = Color.argb(200, 28, 110, 220)
-                val ch4C = Color.argb(200, 255, 155, 35)
+                val loxC = Color.argb(240, 60, 190, 255)
+                val ch4C = Color.argb(240, 255, 175, 45)
                 val ox = firstBitmap(
                     "vehicle_${artId}_tank_s1_ox", "vehicle_${artId}_tank_booster_ox", "vehicle_${artId}_booster_tank_ox"
                 )
@@ -371,9 +371,11 @@ object VehicleDraw {
                     "vehicle_${artId}_tank_s1_fuel", "vehicle_${artId}_tank_booster_fuel", "vehicle_${artId}_booster_tank_fuel"
                 )
                 if (ox != null || fuel != null) {
-                    // Stamp 92: discrete mask = one window already — FULL dest deplete, same lvl both (lockstep).
-                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destB, lvl, loxC, tint = false)
-                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destB, lvl, ch4C, tint = false)
+                    // Stamp 92 FAIL fix: SAME lvl both, but deplete inside EACH window band (relative %).
+                    // Absolute full-dest fill Y empties upper LOX while lower CH4 stays full.
+                    val midB = (destB.top + destB.bottom) * 0.5f
+                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destB, lvl, loxC, tint = true, bandTop = destB.top, bandBot = midB)
+                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destB, lvl, ch4C, tint = true, bandTop = midB, bandBot = destB.bottom)
                 } else {
                     val fills = firstBitmap(
                         "vehicle_${artId}_booster_tank_fills", "vehicle_${artId}_s1_tank_fills"
@@ -421,8 +423,8 @@ object VehicleDraw {
             drawBitmapSrcInRect(canvas, upper, null, destU, alpha)
             try {
                 val lvl = fuelOf(tSec, launch, 2)
-                val loxC = Color.argb(200, 28, 110, 220)
-                val ch4C = Color.argb(200, 255, 155, 35)
+                val loxC = Color.argb(240, 60, 190, 255)
+                val ch4C = Color.argb(240, 255, 175, 45)
                 val ox = firstBitmap(
                     "vehicle_${artId}_tank_s2_ox", "vehicle_${artId}_tank_ship_ox", "vehicle_${artId}_ship_tank_ox"
                 )
@@ -430,8 +432,9 @@ object VehicleDraw {
                     "vehicle_${artId}_tank_s2_fuel", "vehicle_${artId}_tank_ship_fuel", "vehicle_${artId}_ship_tank_fuel"
                 )
                 if (ox != null || fuel != null) {
-                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destU, lvl, loxC, tint = false)
-                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destU, lvl, ch4C, tint = false)
+                    val midU = (destU.top + destU.bottom) * 0.5f
+                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destU, lvl, loxC, tint = true, bandTop = destU.top, bandBot = midU)
+                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destU, lvl, ch4C, tint = true, bandTop = midU, bandBot = destU.bottom)
                 } else {
                     val fills = firstBitmap(
                         "vehicle_${artId}_ship_tank_fills", "vehicle_${artId}_s2_tank_fills"
@@ -544,11 +547,11 @@ object VehicleDraw {
         methalox: Boolean,
         alpha: Float
     ): Boolean {
-        val lox = Color.argb((210 * alpha).toInt().coerceIn(0, 255), 28, 110, 220)
+        val lox = Color.argb((245 * alpha).toInt().coerceIn(0, 255), 60, 190, 255)
         val fuelC = if (methalox)
-            Color.argb((210 * alpha).toInt().coerceIn(0, 255), 255, 155, 35)
+            Color.argb((245 * alpha).toInt().coerceIn(0, 255), 255, 175, 45)
         else
-            Color.argb((210 * alpha).toInt().coerceIn(0, 255), 230, 105, 18)
+            Color.argb((245 * alpha).toInt().coerceIn(0, 255), 255, 130, 40)
         val drawS1 = stage == 1
         val drawS2 = stage == 2 || (stage == 1 && !separated)
         val layers = mutableListOf<Triple<String, Float, Int>>()
@@ -561,18 +564,22 @@ object VehicleDraw {
             layers += Triple("tank_s2_fuel", fuel2, fuelC)
         }
         var any = false
+        val mid = (dest.top + dest.bottom) * 0.5f
         for ((suffix, level, color) in layers) {
             val mask = loadVehicleDrawable("vehicle_${artId}_$suffix") ?: continue
             any = true
-            // Discrete one-window masks: FULL dest deplete, same lvl (never dest half-split).
-            drawTankMaskLevel(canvas, mask, hullSrc, dest, level, color)
+            // ox = upper window band; fuel = lower — SAME level (relative lockstep).
+            val upper = suffix.endsWith("_ox")
+            val bTop = if (upper) dest.top else mid
+            val bBot = if (upper) mid else dest.bottom
+            drawTankMaskLevel(canvas, mask, hullSrc, dest, level, color, bandTop = bTop, bandBot = bBot)
         }
         return any
     }
 
     /**
-     * Stamp 92 lean: deplete within [bandTop, bandBot]. Discrete = full dest; combined split uses halves.
-     * Call sites: discrete ox/fuel omit band args (full dest); combined split passes halves.
+     * Stamp 92: deplete within [bandTop, bandBot] at SAME lvl (relative % lockstep).
+     * Discrete ox = upper half dest; fuel = lower half. Combined uses drawTankMaskLevelSplit.
      */
     private fun drawTankMaskLevel(
         canvas: Canvas,
@@ -598,7 +605,7 @@ object VehicleDraw {
             if (tint && color != 0) {
                 colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN)
             }
-            this.alpha = 230
+            this.alpha = 250
         }
         val top = bandTop.coerceAtMost(bandBot)
         val bot = bandBot.coerceAtLeast(top + 1f)
@@ -891,11 +898,11 @@ object VehicleDraw {
         fill.shader = null
         fill.color = Color.argb((240 * alpha).toInt().coerceIn(0, 255), 8, 10, 14)
         canvas.drawRect(innerL, tankTop, innerR, tankBot, fill)
-        val lox = Color.argb((255 * alpha).toInt().coerceIn(0, 255), 28, 110, 220)
+        val lox = Color.argb((255 * alpha).toInt().coerceIn(0, 255), 60, 190, 255)
         val fuelC = if (methalox)
-            Color.argb((255 * alpha).toInt().coerceIn(0, 255), 255, 155, 35)
+            Color.argb((255 * alpha).toInt().coerceIn(0, 255), 255, 175, 45)
         else
-            Color.argb((255 * alpha).toInt().coerceIn(0, 255), 230, 105, 18)
+            Color.argb((255 * alpha).toInt().coerceIn(0, 255), 255, 130, 40)
         val f = fuel.coerceIn(0f, 1f)
         if (f > 0f) {
             fill.color = lox
