@@ -371,16 +371,14 @@ object VehicleDraw {
                     "vehicle_${artId}_tank_s1_fuel", "vehicle_${artId}_tank_booster_fuel", "vehicle_${artId}_booster_tank_fuel"
                 )
                 if (ox != null || fuel != null) {
-                    // Stamp 92 lean: discrete masks = one window each; deplete upper/lower dest half, same lvl.
-                    // Darren baked LOX/CH4 - tint=false.
-                    val midB = (destB.top + destB.bottom) * 0.5f
-                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destB, lvl, loxC, tint = false, bandTop = destB.top, bandBot = midB)
-                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destB, lvl, ch4C, tint = false, bandTop = midB, bandBot = destB.bottom)
+                    // Stamp 92: discrete mask = one window already — FULL dest deplete, same lvl both (lockstep).
+                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destB, lvl, loxC, tint = false)
+                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destB, lvl, ch4C, tint = false)
                 } else {
                     val fills = firstBitmap(
                         "vehicle_${artId}_booster_tank_fills", "vehicle_${artId}_s1_tank_fills"
                     )
-                    // Combined sheet: split dest 50/50, both halves same lvl.
+                    // Combined sheet only: split dest 50/50, same lvl.
                     if (fills != null) drawTankMaskLevelSplit(canvas, fills, null, destB, lvl, 0, tint = false)
                 }
             } catch (_: Throwable) { }
@@ -432,9 +430,8 @@ object VehicleDraw {
                     "vehicle_${artId}_tank_s2_fuel", "vehicle_${artId}_tank_ship_fuel", "vehicle_${artId}_ship_tank_fuel"
                 )
                 if (ox != null || fuel != null) {
-                    val midU = (destU.top + destU.bottom) * 0.5f
-                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destU, lvl, loxC, tint = false, bandTop = destU.top, bandBot = midU)
-                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destU, lvl, ch4C, tint = false, bandTop = midU, bandBot = destU.bottom)
+                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destU, lvl, loxC, tint = false)
+                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destU, lvl, ch4C, tint = false)
                 } else {
                     val fills = firstBitmap(
                         "vehicle_${artId}_ship_tank_fills", "vehicle_${artId}_s2_tank_fills"
@@ -564,21 +561,17 @@ object VehicleDraw {
             layers += Triple("tank_s2_fuel", fuel2, fuelC)
         }
         var any = false
-        val mid = (dest.top + dest.bottom) * 0.5f
         for ((suffix, level, color) in layers) {
             val mask = loadVehicleDrawable("vehicle_${artId}_$suffix") ?: continue
             any = true
-            // ox = upper half dest; fuel = lower half — lockstep lvl, no pixel scan.
-            val upper = suffix.endsWith("_ox")
-            val bTop = if (upper) dest.top else mid
-            val bBot = if (upper) mid else dest.bottom
-            drawTankMaskLevel(canvas, mask, hullSrc, dest, level, color, bandTop = bTop, bandBot = bBot)
+            // Discrete one-window masks: FULL dest deplete, same lvl (never dest half-split).
+            drawTankMaskLevel(canvas, mask, hullSrc, dest, level, color)
         }
         return any
     }
 
     /**
-     * Stamp 92 lean: deplete within [bandTop, bandBot] of dest (dest halves; no bitmap sampling).
+     * Stamp 92 lean: deplete within [bandTop, bandBot]. Discrete = full dest; combined split uses halves.
      * Discrete ox/fuel pass upper/lower half; single-window dest uses full dest.
      */
     private fun drawTankMaskLevel(
