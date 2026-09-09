@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Matrix
 import android.graphics.Path
 import android.graphics.LinearGradient
 import android.graphics.RadialGradient
@@ -2110,6 +2111,8 @@ class CommandConsoleView @JvmOverloads constructor(
 
 
     private var reentryBmpCache: MutableMap<String, Bitmap?> = HashMap()
+    private var reentryMaskClip: Pair<Int, Path>? = null // key=width*10007+height
+
     private fun reentryDrawable(name: String): Bitmap? {
         if (reentryBmpCache.containsKey(name)) return reentryBmpCache[name]
         val rid = resources.getIdentifier(name, "drawable", context.packageName)
@@ -2120,8 +2123,50 @@ class CommandConsoleView @JvmOverloads constructor(
         reentryBmpCache[name] = bmp
         return bmp
     }
-    private fun reentryInvalidateDrawables() {
-        reentryBmpCache.clear()
+
+    /** One-time mask→Path (load only — not on the per-frame draw path). */
+    private fun reentryMaskPath(mask: Bitmap): Path {
+        val key = mask.width * 10007 + mask.height
+        reentryMaskClip?.let { if (it.first == key) return it.second }
+        val w = mask.width
+        val h = mask.height
+        val pixels = IntArray(w * h)
+        mask.getPixels(pixels, 0, w, 0, 0, w, h)
+        val path = Path()
+        val stepY = maxOf(1, h / 96)
+        val stepX = maxOf(1, w / 160)
+        var y = 0
+        while (y < h) {
+            var x = 0
+            while (x < w) {
+                while (x < w && Color.alpha(pixels[y * w + x]) < 40) x += stepX
+                if (x >= w) break
+                val x0 = x
+                while (x < w && Color.alpha(pixels[y * w + x]) >= 40) x += stepX
+                path.addRect(
+                    x0.toFloat(), y.toFloat(),
+                    minOf(x, w).toFloat(), minOf(y + stepY, h).toFloat(),
+                    Path.Direction.CW
+                )
+            }
+            y += stepY
+        }
+        reentryMaskClip = key to path
+        return path
+    }
+
+    private fun fitReentryBmp(bmp: Bitmap?, box: RectF): RectF {
+        if (bmp == null) return RectF(box)
+        val aspect = bmp.width.toFloat() / bmp.height.toFloat().coerceAtLeast(1f)
+        var dw = box.width()
+        var dh = dw / aspect
+        if (dh > box.height()) {
+            dh = box.height()
+            dw = dh * aspect
+        }
+        val l = box.centerX() - dw * 0.5f
+        val t = box.centerY() - dh * 0.5f
+        return RectF(l, t, l + dw, t + dh)
     }
 
     private fun drawReentryCard(
@@ -2145,128 +2190,161 @@ class CommandConsoleView @JvmOverloads constructor(
         val flapT = tps * 0.70f
         val now = SystemClock.uptimeMillis() * 0.001f
         val cx = w * 0.5f
-        val midY = (top + bot) * 0.50f
-        val sW = w * 0.26f
-        val sH = (bot - top) * 0.11f
-        val noseX = cx - sW * 1.05f
-        val aftX = cx + sW * 0.95f
-        val backY = midY - sH * 0.55f
-        val bellyY = midY + sH * 0.62f
         val flick = 0.82f + 0.18f * sin((now * 17.3f).toDouble()).toFloat()
 
-        // Darren clean-base plate first (real flaps + 3+3 engines, no baked plasma).
         fillPaint.shader = null
         fillPaint.colorFilter = null
         fillPaint.alpha = 255
-        val plate = reentryDrawable("reentry_heatshield")
-        val plateH = (bot - top) * 0.52f
-        val plateDest = if (plate != null) {
-            val aspect = plate.width.toFloat() / plate.height.toFloat().coerceAtLeast(1f)
-            var dw = (bot - top) * 0.92f
-            var dh = dw / aspect
-            if (dh > plateH) {
-                dh = plateH
-                dw = dh * aspect
-            }
-            RectF(cx - dw * 0.5f, midY - dh * 0.42f, cx + dw * 0.5f, midY + dh * 0.58f)
-        } else {
-            RectF(noseX, backY, aftX, bellyY)
-        }
 
-        // Subtle aft wake only — kill purple plasma blobs / radial glow circus.
-        if (heat > 0.06f) {
-            val wakeLen = w * (0.10f + 0.22f * heat)
-            val a0 = (70 * heat * flick).toInt().coerceIn(0, 110)
-            val wakeX0 = plateDest.right - plateDest.width() * 0.02f
-            val wakeY = plateDest.centerY()
-            fillPaint.shader = LinearGradient(
-                wakeX0, wakeY, wakeX0 + wakeLen, wakeY,
+        val unwrap = reentryDrawable("reentry_tps_unwrap")
+        val mask = reentryDrawable("reentry_tps_unwrap_mask")
+        val attitude = reentryDrawable("reentry_attitude_inset")
+        val fallbackPlate = if (unwrap == null) reentryDrawable("reentry_heatshield") else null
+
+        val pad = dp(8f)
+        val bannerH = sp(22f)
+        val estH = sp(40f)
+        val mainBox = RectF(pad, top + bannerH, w - pad, bot - estH)
+        val mainDest = fitReentryBmp(unwrap ?: fallbackPlate, mainBox)
+
+        // Massive multi-color plasma around unwrap edges/wake (Ada live; PNG has no baked plasma).
+        if (heat > 0.04f) {
+            val aCore = (90 + 140 * heat * flick).toInt().coerceIn(0, 230)
+            val wakeLen = mainDest.width() * (0.18f + 0.55f * heat)
+            val wakeX0 = mainDest.right - mainDest.width() * 0.04f
+            val wakeY = mainDest.centerY()
+            // Violet/magenta fringe envelope
+            fillPaint.shader = RadialGradient(
+                wakeX0 + wakeLen * 0.25f, wakeY, wakeLen * 0.95f,
                 intArrayOf(
-                    Color.argb(a0, 255, 210, 180),
-                    Color.argb((a0 * 0.45f).toInt(), 255, 130, 70),
+                    Color.argb((aCore * 0.35f).toInt(), 200, 40, 255),
+                    Color.argb((aCore * 0.55f).toInt(), 255, 60, 200),
+                    Color.argb((aCore * 0.25f).toInt(), 80, 40, 255),
                     Color.TRANSPARENT
                 ),
-                floatArrayOf(0f, 0.5f, 1f),
+                floatArrayOf(0f, 0.35f, 0.65f, 1f),
                 Shader.TileMode.CLAMP
             )
             canvas.drawOval(
-                wakeX0 - sW * 0.04f, wakeY - sH * 0.55f,
-                wakeX0 + wakeLen, wakeY + sH * 0.55f, fillPaint
+                wakeX0 - mainDest.height() * 0.15f,
+                wakeY - mainDest.height() * 0.85f,
+                wakeX0 + wakeLen,
+                wakeY + mainDest.height() * 0.85f,
+                fillPaint
+            )
+            // Orange/white core
+            fillPaint.shader = LinearGradient(
+                wakeX0, wakeY, wakeX0 + wakeLen * 0.85f, wakeY,
+                intArrayOf(
+                    Color.argb(aCore, 255, 255, 245),
+                    Color.argb((aCore * 0.85f).toInt(), 255, 180, 60),
+                    Color.argb((aCore * 0.55f).toInt(), 255, 80, 40),
+                    Color.argb((aCore * 0.25f).toInt(), 255, 40, 160),
+                    Color.TRANSPARENT
+                ),
+                floatArrayOf(0f, 0.2f, 0.45f, 0.7f, 1f),
+                Shader.TileMode.CLAMP
+            )
+            canvas.drawOval(
+                wakeX0 - mainDest.height() * 0.08f,
+                wakeY - mainDest.height() * 0.45f,
+                wakeX0 + wakeLen * 0.9f,
+                wakeY + mainDest.height() * 0.45f,
+                fillPaint
+            )
+            fillPaint.shader = null
+            // Windward edge glow under belly (overall reentry glow, not turtle blobs on flaps)
+            val bellyGlow = (50 + 120 * heat * flick).toInt().coerceIn(0, 180)
+            fillPaint.shader = LinearGradient(
+                mainDest.left, mainDest.bottom,
+                mainDest.left, mainDest.bottom + mainDest.height() * 0.35f,
+                intArrayOf(
+                    Color.argb(bellyGlow, 255, 220, 180),
+                    Color.argb((bellyGlow * 0.55f).toInt(), 255, 90, 160),
+                    Color.argb((bellyGlow * 0.2f).toInt(), 120, 40, 255),
+                    Color.TRANSPARENT
+                ),
+                floatArrayOf(0f, 0.35f, 0.7f, 1f),
+                Shader.TileMode.CLAMP
+            )
+            canvas.drawRect(
+                mainDest.left - pad,
+                mainDest.bottom - mainDest.height() * 0.08f,
+                mainDest.right + wakeLen * 0.2f,
+                mainDest.bottom + mainDest.height() * 0.42f,
+                fillPaint
             )
             fillPaint.shader = null
             strokePaint.style = Paint.Style.STROKE
             strokePaint.strokeCap = Paint.Cap.ROUND
-            for (i in 0 until 3) {
-                val wob = sin((now * (3.2f + i * 0.4f) + i).toDouble()).toFloat()
-                val y = wakeY + (i - 1f) * sH * 0.22f + wob * sH * 0.08f
-                val a = (70 * heat * flick * (1f - i * 0.15f)).toInt().coerceIn(0, 100)
-                strokePaint.strokeWidth = sH * 0.06f
-                strokePaint.color = Color.argb(a, 255, 180, 140)
-                canvas.drawLine(wakeX0, y, wakeX0 + wakeLen * 0.85f, y + wob * sH * 0.1f, strokePaint)
+            for (i in 0 until 7) {
+                val wob = sin((now * (3.6f + i * 0.33f) + i * 1.1f).toDouble()).toFloat()
+                val y = wakeY + (i - 3f) * mainDest.height() * 0.09f + wob * mainDest.height() * 0.04f
+                val len = wakeLen * (0.55f + 0.4f * (1f - kotlin.math.abs(i - 3f) / 4f))
+                val a = (130 * heat * flick * (1f - i * 0.05f)).toInt().coerceIn(0, 200)
+                strokePaint.strokeWidth = mainDest.height() * (0.035f + 0.02f * heat)
+                strokePaint.color = when (i % 3) {
+                    0 -> Color.argb(a, 255, 230, 200)
+                    1 -> Color.argb(a, 255, 70, 180)
+                    else -> Color.argb(a, 140, 80, 255)
+                }
+                canvas.drawLine(wakeX0, y, wakeX0 + len, y + wob * mainDest.height() * 0.08f, strokePaint)
             }
         }
 
-        if (plate != null) {
+        // MAIN board: unwrap (fallback old heatshield)
+        val board = unwrap ?: fallbackPlate
+        if (board != null) {
             fillPaint.alpha = 255
-            canvas.drawBitmap(plate, null, plateDest, fillPaint)
+            canvas.drawBitmap(board, null, mainDest, fillPaint)
         }
 
-        // Per-tile heat clipped to windward belly/nose/flap pads ON the hull — never floating full-width rect.
-        if (heat > 0.02f) {
-            val pw = plateDest.width()
-            val ph = plateDest.height()
-            tmpPath.reset()
-            val belly = RectF(
-                plateDest.left + pw * 0.06f,
-                plateDest.top + ph * 0.42f,
-                plateDest.right - pw * 0.11f,
-                plateDest.top + ph * 0.63f
-            )
-            tmpPath.addRoundRect(belly, ph * 0.05f, ph * 0.05f, Path.Direction.CW)
-            tmpPath.addRoundRect(
-                RectF(
-                    plateDest.left + pw * 0.02f,
-                    plateDest.top + ph * 0.38f,
-                    plateDest.left + pw * 0.20f,
-                    plateDest.top + ph * 0.62f
-                ),
-                ph * 0.04f, ph * 0.04f, Path.Direction.CW
-            )
-            // Heat WHERE plate flaps are — no fake triangle flap paths drawn.
-            val fwdFlap = RectF(
-                plateDest.left + pw * 0.17f,
-                plateDest.top + ph * 0.60f,
-                plateDest.left + pw * 0.31f,
-                plateDest.top + ph * 0.76f
-            )
-            val aftFlap = RectF(
-                plateDest.left + pw * 0.63f,
-                plateDest.top + ph * 0.58f,
-                plateDest.left + pw * 0.79f,
-                plateDest.top + ph * 0.80f
-            )
-            tmpPath.addRoundRect(fwdFlap, 3f, 3f, Path.Direction.CW)
-            tmpPath.addRoundRect(aftFlap, 3f, 3f, Path.Direction.CW)
-
+        // Per-tile/zone heat clipped to unwrap MASK (opaque only) — EST pairing.
+        if (heat > 0.02f && board != null) {
             canvas.save()
-            canvas.clipPath(tmpPath)
-            val tile = pw * 0.028f
-            val bounds = RectF()
-            tmpPath.computeBounds(bounds, true)
+            if (mask != null) {
+                val srcPath = reentryMaskPath(mask)
+                val mat = Matrix()
+                mat.setRectToRect(
+                    RectF(0f, 0f, mask.width.toFloat(), mask.height.toFloat()),
+                    mainDest,
+                    Matrix.ScaleToFit.FILL
+                )
+                val clip = Path(srcPath)
+                clip.transform(mat)
+                canvas.clipPath(clip)
+            } else {
+                // Geometric fallback: nose wedge + belly + flap pads (no floating full rect)
+                tmpPath.reset()
+                val pw = mainDest.width()
+                val ph = mainDest.height()
+                tmpPath.addRoundRect(
+                    RectF(
+                        mainDest.left + pw * 0.04f, mainDest.top + ph * 0.32f,
+                        mainDest.right - pw * 0.02f, mainDest.top + ph * 0.68f
+                    ),
+                    ph * 0.04f, ph * 0.04f, Path.Direction.CW
+                )
+                canvas.clipPath(tmpPath)
+            }
+            val pw = mainDest.width()
+            val ph = mainDest.height()
+            val tile = pw * 0.022f
+            val fwdFlapBand = 0.16f..0.32f
+            val aftFlapBand = 0.68f..0.90f
             var col = 0
-            var tx = bounds.left
-            while (tx < bounds.right - tile * 0.2f) {
-                var ty = bounds.top
+            var tx = mainDest.left + pw * 0.02f
+            while (tx < mainDest.right - tile) {
+                var ty = mainDest.top + ph * 0.08f
                 var row = 0
-                val along = ((tx - plateDest.left) / pw.coerceAtLeast(1f)).coerceIn(0f, 1f)
-                while (ty < bounds.bottom - tile * 0.15f) {
-                    val cxT = tx + tile * 0.4f
-                    val cyT = ty + tile * 0.25f
-                    val onFwd = fwdFlap.contains(cxT, cyT)
-                    val onAft = aftFlap.contains(cxT, cyT)
+                val along = ((tx - mainDest.left) / pw.coerceAtLeast(1f)).coerceIn(0f, 1f)
+                while (ty < mainDest.bottom - tile * 0.2f) {
+                    val vFrac = ((ty - mainDest.top) / ph.coerceAtLeast(1f)).coerceIn(0f, 1f)
+                    val onFlap = (vFrac < 0.30f || vFrac > 0.70f) &&
+                        (along in fwdFlapBand || along in aftFlapBand)
                     val regionT = when {
-                        along < 0.20f -> noseT
-                        onFwd || onAft -> flapT
+                        along < 0.18f -> noseT
+                        onFlap -> flapT
                         else -> tps
                     }
                     val seed = ((col * 17 + row * 31) % 11) / 11f
@@ -2276,21 +2354,21 @@ class CommandConsoleView @JvmOverloads constructor(
                     fillPaint.shader = null
                     fillPaint.colorFilter = null
                     fillPaint.color = tileBlackbody(local)
-                    fillPaint.alpha = (140 + (80 * heat).toInt()).coerceIn(0, 220)
+                    fillPaint.alpha = (130 + (90 * heat).toInt()).coerceIn(0, 225)
                     canvas.drawRoundRect(
-                        tx, ty, tx + tile * 0.85f, ty + tile * 0.55f, 1.0f, 1.0f, fillPaint
+                        tx, ty, tx + tile * 0.82f, ty + tile * 0.52f, 0.9f, 0.9f, fillPaint
                     )
                     if (local > 1250f) {
                         fillPaint.color = Color.argb(
-                            ((local - 1250f) / 400f * 80f).toInt().coerceIn(0, 100),
+                            ((local - 1250f) / 400f * 90f).toInt().coerceIn(0, 110),
                             255, 255, 255
                         )
                         canvas.drawRoundRect(
                             tx + tile * 0.1f, ty + tile * 0.08f,
-                            tx + tile * 0.55f, ty + tile * 0.28f, 0.8f, 0.8f, fillPaint
+                            tx + tile * 0.5f, ty + tile * 0.26f, 0.7f, 0.7f, fillPaint
                         )
                     }
-                    ty += tile * 0.58f
+                    ty += tile * 0.55f
                     row++
                 }
                 tx += tile
@@ -2300,19 +2378,38 @@ class CommandConsoleView @JvmOverloads constructor(
             canvas.restore()
         }
 
-        // No fake triangle flaps. No plasma sheath / bow shock. EST pairing kept above.
-
-        val noseLabX = plateDest.left + plateDest.width() * 0.12f
-        val aftLabX = plateDest.right - plateDest.width() * 0.12f
-        val labY = plateDest.top - sp(6f)
-        drawLabel(canvas, "NOSE", noseLabX, labY, withLamp(skin.muted), w * 0.18f, sp(11f), sp(10f))
-        drawLabel(canvas, "AFT", aftLabX, labY, withLamp(skin.muted), w * 0.18f, sp(11f), sp(10f))
-        val banner = when {
-            heat < 0.12f -> "BELLY FLOP  ·  ENTRY INTERFACE"
-            heat < 0.45f -> "BELLY FLOP  ·  PLASMA BUILDING"
-            else -> "BELLY FLOP  ·  HEAT SHIELD LIVE"
+        // SMALL INSET: attitude only (no heat paint)
+        if (attitude != null) {
+            val iw = mainDest.width() * 0.30f
+            val ih = iw * (attitude.height.toFloat() / attitude.width.toFloat().coerceAtLeast(1f))
+            val inset = RectF(
+                mainDest.right - iw - dp(4f),
+                mainDest.bottom - ih - dp(4f),
+                mainDest.right - dp(4f),
+                mainDest.bottom - dp(4f)
+            )
+            fillPaint.color = Color.argb(180, 0, 0, 0)
+            canvas.drawRoundRect(inset.left - dp(3f), inset.top - dp(3f), inset.right + dp(3f), inset.bottom + dp(3f), 6f, 6f, fillPaint)
+            fillPaint.alpha = 255
+            canvas.drawBitmap(attitude, null, inset, fillPaint)
+            strokePaint.style = Paint.Style.STROKE
+            strokePaint.strokeWidth = 1.5f
+            strokePaint.color = withLamp(skin.muted)
+            canvas.drawRoundRect(inset.left - dp(3f), inset.top - dp(3f), inset.right + dp(3f), inset.bottom + dp(3f), 6f, 6f, strokePaint)
+            drawLabel(
+                canvas, "ATTITUDE", inset.centerX(), inset.top - sp(4f),
+                withLamp(skin.muted), iw, sp(10f), sp(9f)
+            )
         }
-        drawLabel(canvas, banner, cx, top + sp(16f), withLamp(skin.hold), w * 0.92f, sp(13f), sp(12f))
+
+        val banner = when {
+            heat < 0.12f -> "REENTRY  -  ENTRY INTERFACE"
+            heat < 0.45f -> "REENTRY  -  PLASMA BUILDING"
+            else -> "REENTRY  -  HEAT SHIELD LIVE"
+        }
+        drawLabel(canvas, banner, cx, top + sp(14f), withLamp(skin.hold), w * 0.92f, sp(13f), sp(12f))
+        drawLabel(canvas, "NOSE", mainDest.left + mainDest.width() * 0.10f, mainDest.top - sp(2f), withLamp(skin.muted), w * 0.18f, sp(11f), sp(10f))
+        drawLabel(canvas, "AFT", mainDest.right - mainDest.width() * 0.08f, mainDest.top - sp(2f), withLamp(skin.muted), w * 0.18f, sp(11f), sp(10f))
 
         val colW = w * 0.28f
         val yLab = bot - sp(28f)
@@ -2327,7 +2424,7 @@ class CommandConsoleView @JvmOverloads constructor(
         tempCol("FLAP EST", flapT, w * 0.80f, if (heat > 0.40f) skin.hold else skin.muted)
     }
 
-        private fun drawFuelTanks(
+    private fun drawFuelTanks(
         canvas: Canvas,
         can: RectF,
         lox: Float,
