@@ -2205,7 +2205,21 @@ class CommandConsoleView @JvmOverloads constructor(
         val pad = dp(8f)
         val bannerH = sp(22f)
         val estH = sp(40f)
-        val mainBox = RectF(pad, top + bannerH, w - pad, bot - estH)
+        // Attitude inset top-right — NEVER overlaps unwrap board (full TPS tiles stay visible).
+        val insetW = w * 0.28f
+        val insetH = if (attitude != null) {
+            insetW * (attitude.height.toFloat() / attitude.width.toFloat().coerceAtLeast(1f))
+        } else {
+            (bot - top) * 0.34f
+        }.coerceAtMost((bot - top) * 0.40f)
+        val insetGap = dp(6f)
+        val inset = RectF(
+            w - pad - insetW,
+            top + bannerH + sp(2f),
+            w - pad,
+            top + bannerH + sp(2f) + insetH
+        )
+        val mainBox = RectF(pad, top + bannerH, inset.left - insetGap, bot - estH)
         val mainDest = fitReentryBmp(unwrap ?: fallbackPlate, mainBox)
 
         // Massive multi-color plasma around unwrap edges/wake (Ada live; PNG has no baked plasma).
@@ -2254,28 +2268,7 @@ class CommandConsoleView @JvmOverloads constructor(
                 fillPaint
             )
             fillPaint.shader = null
-            // Windward edge glow under belly (overall reentry glow, not turtle blobs on flaps)
-            val bellyGlow = (50 + 120 * heat * flick).toInt().coerceIn(0, 180)
-            fillPaint.shader = LinearGradient(
-                mainDest.left, mainDest.bottom,
-                mainDest.left, mainDest.bottom + mainDest.height() * 0.35f,
-                intArrayOf(
-                    Color.argb(bellyGlow, 255, 220, 180),
-                    Color.argb((bellyGlow * 0.55f).toInt(), 255, 90, 160),
-                    Color.argb((bellyGlow * 0.2f).toInt(), 120, 40, 255),
-                    Color.TRANSPARENT
-                ),
-                floatArrayOf(0f, 0.35f, 0.7f, 1f),
-                Shader.TileMode.CLAMP
-            )
-            canvas.drawRect(
-                mainDest.left - pad,
-                mainDest.bottom - mainDest.height() * 0.08f,
-                mainDest.right + wakeLen * 0.2f,
-                mainDest.bottom + mainDest.height() * 0.42f,
-                fillPaint
-            )
-            fillPaint.shader = null
+            // No horizontal glow bar under unwrap (Chris FAIL — unclear strip).
             strokePaint.style = Paint.Style.STROKE
             strokePaint.strokeCap = Paint.Cap.ROUND
             for (i in 0 until 7) {
@@ -2379,27 +2372,25 @@ class CommandConsoleView @JvmOverloads constructor(
             canvas.restore()
         }
 
-        // SMALL INSET: attitude only (no heat paint)
+        // SMALL INSET top-right: attitude only (no heat; does not cover unwrap).
         if (attitude != null) {
-            val iw = mainDest.width() * 0.30f
-            val ih = iw * (attitude.height.toFloat() / attitude.width.toFloat().coerceAtLeast(1f))
-            val inset = RectF(
-                mainDest.right - iw - dp(4f),
-                mainDest.bottom - ih - dp(4f),
-                mainDest.right - dp(4f),
-                mainDest.bottom - dp(4f)
-            )
             fillPaint.color = Color.argb(180, 0, 0, 0)
-            canvas.drawRoundRect(inset.left - dp(3f), inset.top - dp(3f), inset.right + dp(3f), inset.bottom + dp(3f), 6f, 6f, fillPaint)
+            canvas.drawRoundRect(
+                inset.left - dp(3f), inset.top - dp(3f),
+                inset.right + dp(3f), inset.bottom + dp(3f), 6f, 6f, fillPaint
+            )
             fillPaint.alpha = 255
             canvas.drawBitmap(attitude, null, inset, fillPaint)
             strokePaint.style = Paint.Style.STROKE
             strokePaint.strokeWidth = 1.5f
             strokePaint.color = withLamp(skin.muted)
-            canvas.drawRoundRect(inset.left - dp(3f), inset.top - dp(3f), inset.right + dp(3f), inset.bottom + dp(3f), 6f, 6f, strokePaint)
+            canvas.drawRoundRect(
+                inset.left - dp(3f), inset.top - dp(3f),
+                inset.right + dp(3f), inset.bottom + dp(3f), 6f, 6f, strokePaint
+            )
             drawLabel(
                 canvas, "ATTITUDE", inset.centerX(), inset.top - sp(4f),
-                withLamp(skin.muted), iw, sp(10f), sp(9f)
+                withLamp(skin.muted), inset.width(), sp(10f), sp(9f)
             )
         }
 
