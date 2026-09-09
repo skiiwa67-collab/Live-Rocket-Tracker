@@ -187,6 +187,13 @@ class RocketTelemetryModule(
     fun resolveTracked(now: Long = System.currentTimeMillis()) {
         val prevId = tracked?.id
         if (prefs.telemetryPinned) {
+            // Stamp 85: chip expiry releases LCK; while pinned AUTO must not steal.
+            if (prefs.telemetryHoldUntilMs > 0L && prefs.telemetryHoldUntilMs <= now) {
+                prefs.telemetryPinned = false
+                releaseHold()
+            }
+        }
+        if (prefs.telemetryPinned) {
             // LCK is a hard pin. AUTO must not run, even if findById misses this tick.
             if (prefs.telemetryAuto) prefs.telemetryAuto = false
             val pinId = prefs.telemetryLaunchId.ifBlank { tracked?.id ?: pinnedSnapshot?.id ?: "" }
@@ -272,6 +279,7 @@ class RocketTelemetryModule(
         val t = tracked
         if (prefs.telemetryPinned) {
             prefs.telemetryPinned = false
+            releaseHold()
             return
         }
         if (t == null) return
@@ -279,6 +287,8 @@ class RocketTelemetryModule(
         prefs.telemetryPinned = true
         prefs.telemetryAuto = false
         pinnedSnapshot = t
+        // Stamp 85: chip picks hold duration; LCK expires when chip ends.
+        holdFor(prefs.telemetryHoldDurationMs)
     }
 
     fun stepCatalog(dir: Int) {
@@ -328,6 +338,10 @@ class RocketTelemetryModule(
         val anchor = t?.netMs?.let { maxOf(now, it) } ?: now
         prefs.telemetryHoldUntilMs = anchor + durationMs
         autoMode = false
+        // Chip tap while LCK on: refresh expiry; do not clear pin.
+        if (prefs.telemetryPinned) {
+            prefs.telemetryAuto = false
+        }
     }
 
     fun releaseHold() {

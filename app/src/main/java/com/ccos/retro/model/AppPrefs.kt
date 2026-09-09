@@ -30,6 +30,35 @@ class AppPrefs(context: Context) {
         val TEXT_STEPS_TEL = floatArrayOf(3.2f, 5.6f, 8.4f)
         val ROCKER_LABELS_LAMP = arrayOf("DIM", "NORM", "BRIGHT")
         val ROCKER_LABELS_TEXT = arrayOf("SM", "MD", "LG")
+
+        /** Stamp 85: LCK/HOLD chips — 1H|2H|48H only (drop 6H/24H/2D). */
+        const val HOLD_DUR_1H_MS = 1L * 3600_000L
+        const val HOLD_DUR_2H_MS = 2L * 3600_000L
+        const val HOLD_DUR_48H_MS = 48L * 3600_000L
+        val HOLD_DUR_ALLOWED_MS = longArrayOf(HOLD_DUR_1H_MS, HOLD_DUR_2H_MS, HOLD_DUR_48H_MS)
+        val ROCKER_LABELS_HOLD = arrayOf("1H", "2H", "48H")
+
+        fun normalizeHoldDurationMs(raw: Long): Long {
+            val one = HOLD_DUR_1H_MS
+            val two = HOLD_DUR_2H_MS
+            val twoDay = HOLD_DUR_48H_MS
+            // Legacy remaps: 6H→2H, 24H→48H, old 2D(48h already) / 4H→2H
+            return when {
+                raw <= 0L -> two
+                raw in (one - 60_000L)..(one + 60_000L) -> one
+                raw in (two - 60_000L)..(two + 60_000L) -> two
+                raw in (6L * 3600_000L - 60_000L)..(6L * 3600_000L + 60_000L) -> two
+                raw in (24L * 3600_000L - 60_000L)..(24L * 3600_000L + 60_000L) -> twoDay
+                raw in (twoDay - 60_000L)..(twoDay + 60_000L) -> twoDay
+                raw in (4L * 3600_000L - 60_000L)..(4L * 3600_000L + 60_000L) -> two
+                else -> {
+                    // Nearest allowed
+                    HOLD_DUR_ALLOWED_MS.minByOrNull { kotlin.math.abs(it - raw) } ?: two
+                }
+            }
+        }
+
+        fun coerceHoldDurationMs(raw: Long): Long = normalizeHoldDurationMs(raw)
     }
 
     var activeModuleId: String
@@ -123,7 +152,7 @@ class AppPrefs(context: Context) {
         get() = prefs.getString("tel_launch_id", "") ?: ""
         set(v) = prefs.edit().putString("tel_launch_id", v).apply()
 
-    /** LCK: pin current flight across wallpaper + MCC. Does not expire. */
+    /** LCK: pin current flight across wallpaper + MCC. Chip duration (1H|2H|48H) expires the pin. */
     /**
      * One UTC T0 per launch.
      * Live: the book's netMs. Persist so a later empty fetch does not invent a local clock.
@@ -182,10 +211,10 @@ class AppPrefs(context: Context) {
         get() = prefs.getLong("tel_hold_until", 0L)
         set(v) = prefs.edit().putLong("tel_hold_until", v).apply()
 
-    /** HOLD length: 2h default, also 6h / 2d. */
+    /** LCK/HOLD length: 1H|2H|48H only. Default 2H. */
     var telemetryHoldDurationMs: Long
-        get() = prefs.getLong("tel_hold_dur", 2L * 3600_000L).coerceIn(60_000L, 3L * 86400_000L)
-        set(v) = prefs.edit().putLong("tel_hold_dur", v.coerceIn(60_000L, 3L * 86400_000L)).apply()
+        get() = normalizeHoldDurationMs(prefs.getLong("tel_hold_dur", HOLD_DUR_2H_MS))
+        set(v) = prefs.edit().putLong("tel_hold_dur", normalizeHoldDurationMs(v)).apply()
 
     /** true = mph (and mi); false = km/h (and km). Default imperial for US. */
     var useImperial: Boolean

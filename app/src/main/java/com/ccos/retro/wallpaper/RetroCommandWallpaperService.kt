@@ -4118,9 +4118,16 @@ class RetroCommandWallpaperService : WallpaperService() {
             }
             telBold()
             hudPaint.textAlign = Paint.Align.CENTER
+            // Stamp 85: when LCK on, show chip length (1H/2H/48H) so 48H stays readable next to AUTO.
+            val chip = when (prefs.telemetryHoldDurationMs) {
+                AppPrefs.HOLD_DUR_1H_MS -> "1H"
+                AppPrefs.HOLD_DUR_48H_MS -> "48H"
+                else -> "2H"
+            }
+            val lab = if (on) "LCK $chip" else "LCK"
             hudPaint.color = withLamp(if (on) Color.WHITE else skin.muted, lamp)
-            hudPaint.textSize = telFit("LCK", r.width() * 0.90f, r.height() * 0.62f, 14f)
-            canvas.drawText("LCK", r.centerX(), r.centerY() + r.height() * 0.22f, hudPaint)
+            hudPaint.textSize = telFit(lab, r.width() * 0.92f, r.height() * 0.62f, 14f)
+            canvas.drawText(lab, r.centerX(), r.centerY() + r.height() * 0.22f, hudPaint)
         }
 
         private fun drawSpacecraftGauge(
@@ -6347,7 +6354,8 @@ class RetroCommandWallpaperService : WallpaperService() {
             val holdTop = holdLabelY + labelSz + 8f
             layoutRockerRow(holdRockerRects, panelLeft + inset, holdTop, panelRight - inset, rockerH)
             extraRockerHits.clear()
-            val holdMs = longArrayOf(2L * 3600_000L, 6L * 3600_000L, 2L * 86400_000L)
+            // Stamp 85: LCK chips 1H|2H|48H only.
+            val holdMs = AppPrefs.HOLD_DUR_ALLOWED_MS
             for (i in holdRockerRects.indices) {
                 val dur = holdMs[i]
                 extraRockerHits.add(holdRockerRects[i] to {
@@ -6387,13 +6395,13 @@ class RetroCommandWallpaperService : WallpaperService() {
                 withLamp(skin.accent, lamp), withLamp(skin.text, lamp), withLamp(skin.muted, lamp)
             )
             val holdSel = when (prefs.telemetryHoldDurationMs) {
-                6L * 3600_000L -> 1
-                2L * 86400_000L -> 2
-                else -> 0
+                AppPrefs.HOLD_DUR_1H_MS -> 0
+                AppPrefs.HOLD_DUR_48H_MS -> 2
+                else -> 1 // 2H default
             }
-            rowLabel("HOLD", holdRockerRects)
+            rowLabel("LCK TIMER", holdRockerRects)
             drawRockerRow(
-                canvas, holdRockerRects, arrayOf("2H", "6H", "2D"), holdSel,
+                canvas, holdRockerRects, AppPrefs.ROCKER_LABELS_HOLD, holdSel,
                 withLamp(skin.accent, lamp), withLamp(skin.text, lamp), withLamp(skin.muted, lamp)
             )
 
