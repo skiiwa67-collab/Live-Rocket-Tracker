@@ -2122,7 +2122,7 @@ class CommandConsoleView @JvmOverloads constructor(
             BitmapFactory.decodeResource(resources, rid, opts)
         } else null
         reentryBmpCache[name] = bmp
-        if (name.contains("mask") || name.contains("unwrap")) {
+        if (name.contains("mask") || name.contains("unwrap") || name.contains("hinge")) {
             reentryMaskClip = null
         }
         return bmp
@@ -2337,6 +2337,13 @@ class CommandConsoleView @JvmOverloads constructor(
             fillPaint.alpha = 255
             canvas.drawBitmap(board, null, mainDest, fillPaint)
         }
+        // Darren hinge-ghost dashes at neutral (bigger flaps + gap) — same dest as unwrap.
+        val hingeGhost = reentryDrawable("reentry_tps_unwrap_hinge_ghost")
+        if (hingeGhost != null) {
+            fillPaint.alpha = 220
+            canvas.drawBitmap(hingeGhost, null, mainDest, fillPaint)
+            fillPaint.alpha = 255
+        }
 
         // Per-tile/zone heat clipped to unwrap MASK (opaque only) — EST pairing.
         if (heat > 0.02f && board != null) {
@@ -2421,8 +2428,8 @@ class CommandConsoleView @JvmOverloads constructor(
         run {
             val pw = mainDest.width()
             val ph = mainDest.height()
-            val bodyTop = mainDest.top + ph * 0.32f
-            val bodyBot = mainDest.top + ph * 0.68f
+            val bodyTop = mainDest.top + ph * 0.36f
+            val bodyBot = mainDest.top + ph * 0.64f
             val dash = DashPathEffect(floatArrayOf(dp(5f), dp(4f)), now * 8f)
             // Phase command from reentry progress; tiny idle so actuators look alive.
             val cmd = when {
@@ -2441,10 +2448,10 @@ class CommandConsoleView @JvmOverloads constructor(
                 val deg: Float
             )
             val tabs = listOf(
-                Tab("FWD L", mainDest.left + pw * 0.24f, bodyTop, -ph * 0.22f, pw * 0.045f, clampDeg(cmd * 0.90f + idle)),
-                Tab("FWD R", mainDest.left + pw * 0.24f, bodyBot, ph * 0.22f, pw * 0.045f, clampDeg(-(cmd * 0.85f) - idle * 0.7f)),
-                Tab("AFT L", mainDest.left + pw * 0.78f, bodyTop, -ph * 0.28f, pw * 0.055f, clampDeg(cmd * 1.10f + idle * 1.1f)),
-                Tab("AFT R", mainDest.left + pw * 0.78f, bodyBot, ph * 0.28f, pw * 0.055f, clampDeg(-(cmd * 1.05f) - idle))
+                Tab("FWD L", mainDest.left + pw * 0.22f, bodyTop, -ph * 0.30f, pw * 0.055f, clampDeg(cmd * 0.90f + idle)),
+                Tab("FWD R", mainDest.left + pw * 0.22f, bodyBot, ph * 0.30f, pw * 0.055f, clampDeg(-(cmd * 0.85f) - idle * 0.7f)),
+                Tab("AFT L", mainDest.left + pw * 0.80f, bodyTop, -ph * 0.38f, pw * 0.070f, clampDeg(cmd * 1.10f + idle * 1.1f)),
+                Tab("AFT R", mainDest.left + pw * 0.80f, bodyBot, ph * 0.38f, pw * 0.070f, clampDeg(-(cmd * 1.05f) - idle))
             )
             fun drawTab(tab: Tab) {
                 // Ghost neutral (δ=0) dashed outline
