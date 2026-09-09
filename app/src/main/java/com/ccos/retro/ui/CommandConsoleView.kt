@@ -2113,9 +2113,15 @@ class CommandConsoleView @JvmOverloads constructor(
     private fun reentryDrawable(name: String): Bitmap? {
         if (reentryBmpCache.containsKey(name)) return reentryBmpCache[name]
         val rid = resources.getIdentifier(name, "drawable", context.packageName)
-        val bmp = if (rid != 0) BitmapFactory.decodeResource(resources, rid) else null
+        val bmp = if (rid != 0) {
+            val opts = BitmapFactory.Options().apply { inScaled = true }
+            BitmapFactory.decodeResource(resources, rid, opts)
+        } else null
         reentryBmpCache[name] = bmp
         return bmp
+    }
+    private fun reentryInvalidateDrawables() {
+        reentryBmpCache.clear()
     }
 
     private fun drawReentryCard(
@@ -2148,78 +2154,10 @@ class CommandConsoleView @JvmOverloads constructor(
         val bellyY = midY + sH * 0.62f
         val flick = 0.82f + 0.18f * sin((now * 17.3f).toDouble()).toFloat()
 
-        // Ionized wake. Miles of trail. White-magenta core, blue-violet fringe, orange fade.
-        val wakeLen = w * (0.18f + 0.46f * heat)
-        if (heat > 0.04f) {
-            val a0 = (210 * heat * flick).toInt().coerceIn(0, 230)
-            fillPaint.shader = LinearGradient(
-                aftX, midY, aftX + wakeLen, midY,
-                intArrayOf(
-                    Color.argb(a0, 255, 230, 255),
-                    Color.argb((a0 * 0.70f).toInt(), 255, 70, 200),
-                    Color.argb((a0 * 0.45f).toInt(), 90, 70, 255),
-                    Color.argb((a0 * 0.18f).toInt(), 255, 110, 40),
-                    Color.TRANSPARENT
-                ),
-                floatArrayOf(0f, 0.18f, 0.40f, 0.72f, 1f),
-                Shader.TileMode.CLAMP
-            )
-            canvas.drawOval(aftX - sW * 0.08f, midY - sH * 1.35f, aftX + wakeLen, midY + sH * 1.55f, fillPaint)
-            fillPaint.shader = null
-            strokePaint.style = Paint.Style.STROKE
-            strokePaint.strokeCap = Paint.Cap.ROUND
-            for (i in 0 until 9) {
-                val wob = sin((now * (4.2f + i * 0.37f) + i * 1.7f).toDouble()).toFloat()
-                val y = midY + (i - 4f) * sH * 0.28f + wob * sH * 0.18f
-                val len = wakeLen * (0.55f + 0.45f * (1f - abs(i - 4f) / 5f)) *
-                    (0.78f + 0.22f * sin((now * 6.1f + i).toDouble()).toFloat())
-                val a = (150 * heat * flick * (1f - i * 0.06f)).toInt().coerceIn(0, 200)
-                strokePaint.strokeWidth = sH * (0.10f + 0.08f * heat) * (1f - i * 0.05f)
-                strokePaint.color = if (i % 3 == 0)
-                    Color.argb(a, 120, 90, 255)
-                else if (i % 3 == 1)
-                    Color.argb(a, 255, 80, 210)
-                else
-                    Color.argb(a, 255, 200, 240)
-                canvas.drawLine(aftX, y, aftX + len, y + wob * sH * 0.35f, strokePaint)
-            }
-        }
-
-        // Windward plasma sheath. Magenta-white, not a campfire.
-        if (heat > 0.03f) {
-            val a = (40 + 150 * heat * flick).toInt().coerceIn(0, 210)
-            fillPaint.shader = RadialGradient(
-                cx, bellyY + sH * 0.15f, w * 0.42f,
-                intArrayOf(
-                    Color.argb(a, 255, 240, 255),
-                    Color.argb((a * 0.75f).toInt(), 255, 60, 170),
-                    Color.argb((a * 0.35f).toInt(), 80, 40, 255),
-                    Color.TRANSPARENT
-                ),
-                floatArrayOf(0f, 0.35f, 0.70f, 1f),
-                Shader.TileMode.CLAMP
-            )
-            canvas.drawOval(noseX - sW * 0.15f, bellyY - sH * 0.25f, aftX + sW * 0.20f, bellyY + sH * 2.1f, fillPaint)
-            fillPaint.shader = null
-        }
-
-        // Bow shock ahead of the nose. Thin blue-white cap.
-        if (heat > 0.12f) {
-            val a = (90 * heat * flick).toInt().coerceIn(0, 160)
-            fillPaint.shader = RadialGradient(
-                noseX - sW * 0.08f, midY, sW * 0.55f,
-                intArrayOf(Color.argb(a, 200, 230, 255), Color.argb((a * 0.4f).toInt(), 80, 120, 255), Color.TRANSPARENT),
-                floatArrayOf(0f, 0.45f, 1f),
-                Shader.TileMode.CLAMP
-            )
-            canvas.drawOval(noseX - sW * 0.55f, midY - sH * 1.1f, noseX + sW * 0.10f, midY + sH * 1.2f, fillPaint)
-            fillPaint.shader = null
-        }
-
-        // Stamp 92: Darren plate for shape/flaps/engines; per-tile heat from EST temps.
-        // Kill SRC_IN brightening of full heatshield_tiles as the primary heat story.
+        // Darren clean-base plate first (real flaps + 3+3 engines, no baked plasma).
         fillPaint.shader = null
         fillPaint.colorFilter = null
+        fillPaint.alpha = 255
         val plate = reentryDrawable("reentry_heatshield")
         val plateH = (bot - top) * 0.52f
         val plateDest = if (plate != null) {
@@ -2234,34 +2172,102 @@ class CommandConsoleView @JvmOverloads constructor(
         } else {
             RectF(noseX, backY, aftX, bellyY)
         }
+
+        // Subtle aft wake only — kill purple plasma blobs / radial glow circus.
+        if (heat > 0.06f) {
+            val wakeLen = w * (0.10f + 0.22f * heat)
+            val a0 = (70 * heat * flick).toInt().coerceIn(0, 110)
+            val wakeX0 = plateDest.right - plateDest.width() * 0.02f
+            val wakeY = plateDest.centerY()
+            fillPaint.shader = LinearGradient(
+                wakeX0, wakeY, wakeX0 + wakeLen, wakeY,
+                intArrayOf(
+                    Color.argb(a0, 255, 210, 180),
+                    Color.argb((a0 * 0.45f).toInt(), 255, 130, 70),
+                    Color.TRANSPARENT
+                ),
+                floatArrayOf(0f, 0.5f, 1f),
+                Shader.TileMode.CLAMP
+            )
+            canvas.drawOval(
+                wakeX0 - sW * 0.04f, wakeY - sH * 0.55f,
+                wakeX0 + wakeLen, wakeY + sH * 0.55f, fillPaint
+            )
+            fillPaint.shader = null
+            strokePaint.style = Paint.Style.STROKE
+            strokePaint.strokeCap = Paint.Cap.ROUND
+            for (i in 0 until 3) {
+                val wob = sin((now * (3.2f + i * 0.4f) + i).toDouble()).toFloat()
+                val y = wakeY + (i - 1f) * sH * 0.22f + wob * sH * 0.08f
+                val a = (70 * heat * flick * (1f - i * 0.15f)).toInt().coerceIn(0, 100)
+                strokePaint.strokeWidth = sH * 0.06f
+                strokePaint.color = Color.argb(a, 255, 180, 140)
+                canvas.drawLine(wakeX0, y, wakeX0 + wakeLen * 0.85f, y + wob * sH * 0.1f, strokePaint)
+            }
+        }
+
         if (plate != null) {
             fillPaint.alpha = 255
             canvas.drawBitmap(plate, null, plateDest, fillPaint)
         }
 
-        // Per-tile heating (first-physics): each tile uses NOSE EST / TPS EST / FLAP EST.
+        // Per-tile heat clipped to windward belly/nose/flap pads ON the hull — never floating full-width rect.
         if (heat > 0.02f) {
+            val pw = plateDest.width()
+            val ph = plateDest.height()
+            tmpPath.reset()
+            val belly = RectF(
+                plateDest.left + pw * 0.06f,
+                plateDest.top + ph * 0.42f,
+                plateDest.right - pw * 0.11f,
+                plateDest.top + ph * 0.63f
+            )
+            tmpPath.addRoundRect(belly, ph * 0.05f, ph * 0.05f, Path.Direction.CW)
+            tmpPath.addRoundRect(
+                RectF(
+                    plateDest.left + pw * 0.02f,
+                    plateDest.top + ph * 0.38f,
+                    plateDest.left + pw * 0.20f,
+                    plateDest.top + ph * 0.62f
+                ),
+                ph * 0.04f, ph * 0.04f, Path.Direction.CW
+            )
+            // Heat WHERE plate flaps are — no fake triangle flap paths drawn.
+            val fwdFlap = RectF(
+                plateDest.left + pw * 0.17f,
+                plateDest.top + ph * 0.60f,
+                plateDest.left + pw * 0.31f,
+                plateDest.top + ph * 0.76f
+            )
+            val aftFlap = RectF(
+                plateDest.left + pw * 0.63f,
+                plateDest.top + ph * 0.58f,
+                plateDest.left + pw * 0.79f,
+                plateDest.top + ph * 0.80f
+            )
+            tmpPath.addRoundRect(fwdFlap, 3f, 3f, Path.Direction.CW)
+            tmpPath.addRoundRect(aftFlap, 3f, 3f, Path.Direction.CW)
+
             canvas.save()
-            canvas.clipRect(plateDest)
-            val tile = plateDest.width() * 0.052f
-            val tileTop = plateDest.top + plateDest.height() * 0.40f
-            val tileBot = plateDest.bottom - plateDest.height() * 0.06f
+            canvas.clipPath(tmpPath)
+            val tile = pw * 0.028f
+            val bounds = RectF()
+            tmpPath.computeBounds(bounds, true)
             var col = 0
-            var tx = plateDest.left + plateDest.width() * 0.05f
-            while (tx < plateDest.right - plateDest.width() * 0.10f) {
-                var ty = tileTop
+            var tx = bounds.left
+            while (tx < bounds.right - tile * 0.2f) {
+                var ty = bounds.top
                 var row = 0
-                val along = ((tx - plateDest.left) / plateDest.width().coerceAtLeast(1f)).coerceIn(0f, 1f)
-                while (ty < tileBot) {
-                    val span = (tileBot - tileTop).coerceAtLeast(1f)
-                    val vFrac = ((ty - tileTop) / span).coerceIn(0f, 1f)
-                    val nearFwdFlap = along in 0.14f..0.32f && (vFrac < 0.22f || vFrac > 0.78f)
-                    val nearAftFlap = along in 0.62f..0.84f && (vFrac < 0.22f || vFrac > 0.78f)
-                    // Region temps = on-screen EST labels exactly (pairing is the product).
+                val along = ((tx - plateDest.left) / pw.coerceAtLeast(1f)).coerceIn(0f, 1f)
+                while (ty < bounds.bottom - tile * 0.15f) {
+                    val cxT = tx + tile * 0.4f
+                    val cyT = ty + tile * 0.25f
+                    val onFwd = fwdFlap.contains(cxT, cyT)
+                    val onAft = aftFlap.contains(cxT, cyT)
                     val regionT = when {
-                        along < 0.22f -> noseT   // NOSE EST
-                        nearFwdFlap || nearAftFlap -> flapT  // FLAP EST
-                        else -> tps              // TPS EST
+                        along < 0.20f -> noseT
+                        onFwd || onAft -> flapT
+                        else -> tps
                     }
                     val seed = ((col * 17 + row * 31) % 11) / 11f
                     val local = regionT * (0.90f + 0.18f * seed) *
@@ -2270,21 +2276,21 @@ class CommandConsoleView @JvmOverloads constructor(
                     fillPaint.shader = null
                     fillPaint.colorFilter = null
                     fillPaint.color = tileBlackbody(local)
-                    fillPaint.alpha = (150 + (90 * heat).toInt()).coerceIn(0, 235)
+                    fillPaint.alpha = (140 + (80 * heat).toInt()).coerceIn(0, 220)
                     canvas.drawRoundRect(
-                        tx, ty, tx + tile * 0.78f, ty + tile * 0.48f, 1.2f, 1.2f, fillPaint
+                        tx, ty, tx + tile * 0.85f, ty + tile * 0.55f, 1.0f, 1.0f, fillPaint
                     )
                     if (local > 1250f) {
                         fillPaint.color = Color.argb(
-                            ((local - 1250f) / 400f * 90f).toInt().coerceIn(0, 110),
+                            ((local - 1250f) / 400f * 80f).toInt().coerceIn(0, 100),
                             255, 255, 255
                         )
                         canvas.drawRoundRect(
-                            tx + tile * 0.12f, ty + tile * 0.08f,
-                            tx + tile * 0.55f, ty + tile * 0.28f, 1f, 1f, fillPaint
+                            tx + tile * 0.1f, ty + tile * 0.08f,
+                            tx + tile * 0.55f, ty + tile * 0.28f, 0.8f, 0.8f, fillPaint
                         )
                     }
-                    ty += tile * 0.60f
+                    ty += tile * 0.58f
                     row++
                 }
                 tx += tile
@@ -2294,57 +2300,7 @@ class CommandConsoleView @JvmOverloads constructor(
             canvas.restore()
         }
 
-        // Flap SURFACES heat live with FLAP EST (first-physics pairing — not tip dots).
-        fun flap(i: Int, x0: Float, y0: Float, out0: Float, drop0: Float, windward: Boolean) {
-            val hunt = sin((now * (1.55f + i * 0.21f) + i * 1.9f).toDouble()).toFloat()
-            val hunt2 = sin((now * 0.47f + i * 2.4f).toDouble()).toFloat()
-            val k = 1f + 0.16f * hunt + 0.08f * hunt2
-            val out = out0 * k
-            val drop = drop0 * (0.92f + 0.16f * (1f - hunt * 0.5f))
-            val hx = x0 + out * 0.55f
-            val hy = y0 + drop * 0.45f
-            if (heat > 0.08f) {
-                val glow = (50 + 140 * heat * flick).toInt().coerceIn(0, 200)
-                fillPaint.shader = RadialGradient(
-                    hx, hy, sW * 0.55f,
-                    intArrayOf(
-                        Color.argb(glow, 180, 210, 255),
-                        Color.argb((glow * 0.75f).toInt(), 90, 40, 255),
-                        Color.argb((glow * 0.35f).toInt(), 200, 40, 220),
-                        Color.TRANSPARENT
-                    ),
-                    floatArrayOf(0f, 0.40f, 0.72f, 1f),
-                    Shader.TileMode.CLAMP
-                )
-                canvas.drawCircle(hx, hy, sW * 0.48f, fillPaint)
-                fillPaint.shader = null
-            }
-            tmpPath.reset()
-            tmpPath.moveTo(x0, y0)
-            tmpPath.lineTo(x0 + out, y0 + drop * 0.35f)
-            tmpPath.lineTo(x0 + out * 0.15f, y0 + drop)
-            tmpPath.close()
-            // All flaps track FLAP EST; windward runs hotter scatter.
-            val fTemp = flapT * (if (windward) (0.92f + 0.12f * hunt) else (0.82f + 0.08f * hunt))
-            fillPaint.shader = null
-            fillPaint.colorFilter = null
-            fillPaint.alpha = 255
-            fillPaint.color = tileBlackbody(fTemp)
-            canvas.drawPath(tmpPath, fillPaint)
-            strokePaint.style = Paint.Style.STROKE
-            strokePaint.strokeWidth = 1.4f
-            strokePaint.color = Color.argb((80 + 120 * heat).toInt().coerceIn(0, 220), 140, 160, 255)
-            canvas.drawPath(tmpPath, strokePaint)
-        }
-        val pw = plateDest.width()
-        val ph = plateDest.height()
-        // Forward + aft flaps (plate has geometry; live heat surfaces are the product).
-        flap(0, plateDest.left + pw * 0.20f, plateDest.top + ph * 0.30f, -pw * 0.14f, -ph * 0.28f, false)
-        flap(1, plateDest.left + pw * 0.20f, plateDest.bottom - ph * 0.16f, -pw * 0.14f, ph * 0.28f, true)
-        flap(2, plateDest.left + pw * 0.70f, plateDest.top + ph * 0.24f, pw * 0.16f, -ph * 0.34f, false)
-        flap(3, plateDest.left + pw * 0.70f, plateDest.bottom - ph * 0.14f, pw * 0.16f, ph * 0.34f, true)
-
-        // Engines: Darren plate bells for now; wire separate engine pack when he drops.
+        // No fake triangle flaps. No plasma sheath / bow shock. EST pairing kept above.
 
         val noseLabX = plateDest.left + plateDest.width() * 0.12f
         val aftLabX = plateDest.right - plateDest.width() * 0.12f
