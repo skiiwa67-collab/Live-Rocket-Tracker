@@ -2201,27 +2201,14 @@ class CommandConsoleView @JvmOverloads constructor(
 
         val unwrap = reentryDrawable("reentry_tps_unwrap")
         val mask = reentryDrawable("reentry_tps_unwrap_mask")
-        val attitude = reentryDrawable("reentry_attitude_inset")
+        // Attitude inset deleted (Chris) — unwrap reclaim full width.
         val fallbackPlate = if (unwrap == null) reentryDrawable("reentry_heatshield") else null
 
         val pad = dp(8f)
         val bannerH = sp(22f)
         val estH = sp(40f)
-        // Attitude inset top-right — NEVER overlaps unwrap board (full TPS tiles stay visible).
-        val insetW = w * 0.28f
-        val insetH = if (attitude != null) {
-            insetW * (attitude.height.toFloat() / attitude.width.toFloat().coerceAtLeast(1f))
-        } else {
-            (bot - top) * 0.34f
-        }.coerceAtMost((bot - top) * 0.40f)
-        val insetGap = dp(6f)
-        val inset = RectF(
-            w - pad - insetW,
-            top + bannerH + sp(2f),
-            w - pad,
-            top + bannerH + sp(2f) + insetH
-        )
-        val mainBox = RectF(pad, top + bannerH, inset.left - insetGap, bot - estH)
+        // Full-width unwrap board (attitude inset removed).
+        val mainBox = RectF(pad, top + bannerH, w - pad, bot - estH)
         val mainDest = fitReentryBmp(unwrap ?: fallbackPlate, mainBox)
 
         // Bold plasma wake: nose-leading + aft plume (reentry flow L->R). No flat horizontal bar.
@@ -2429,29 +2416,8 @@ class CommandConsoleView @JvmOverloads constructor(
             canvas.restore()
         }
 
-        // SMALL INSET top-right: attitude only (no heat; does not cover unwrap).
-        if (attitude != null) {
-            fillPaint.color = Color.argb(180, 0, 0, 0)
-            canvas.drawRoundRect(
-                inset.left - dp(3f), inset.top - dp(3f),
-                inset.right + dp(3f), inset.bottom + dp(3f), 6f, 6f, fillPaint
-            )
-            fillPaint.alpha = 255
-            canvas.drawBitmap(attitude, null, inset, fillPaint)
-            strokePaint.style = Paint.Style.STROKE
-            strokePaint.strokeWidth = 1.5f
-            strokePaint.color = withLamp(skin.muted)
-            canvas.drawRoundRect(
-                inset.left - dp(3f), inset.top - dp(3f),
-                inset.right + dp(3f), inset.bottom + dp(3f), 6f, 6f, strokePaint
-            )
-            drawLabel(
-                canvas, "ATTITUDE", inset.centerX(), inset.top - sp(4f),
-                withLamp(skin.muted), inset.width(), sp(10f), sp(9f)
-            )
-        }
-
         val banner = when {
+
             heat < 0.12f -> "REENTRY  -  ENTRY INTERFACE"
             heat < 0.45f -> "REENTRY  -  PLASMA BUILDING"
             else -> "REENTRY  -  HEAT SHIELD LIVE"
