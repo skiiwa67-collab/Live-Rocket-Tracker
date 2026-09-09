@@ -20,6 +20,7 @@ import com.ccos.retro.data.LaunchSnapshot
 import com.ccos.retro.skin.TelemetrySkin
 import kotlin.math.cos
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -80,72 +81,72 @@ object VehicleDraw {
             "f9", "zq" -> {
                 val artId = if (fam == "zq") "zq" else "f9"
                 if (!drawArtThenCoreTanks(artId, canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch, cores = 1))
-                    falcon(canvas, cx, baseY, h, tSec, stage, separated, 1, skin, lamp, alpha, launch)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "fh" -> {
                 if (!drawArtThenCoreTanks("fh", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch, cores = 3))
-                    falcon(canvas, cx, baseY, h, tSec, stage, separated, 3, skin, lamp, alpha, launch)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "sls" -> {
                 if (!drawArtThenCoreTanks("sls", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch))
-                    sls(canvas, cx, baseY, h, tSec, stage, separated, launch, skin, lamp, alpha)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "soyuz" -> {
                 if (!drawArtThenCoreTanks("soyuz", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch))
-                    soyuz(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "starship" -> {
                 if (!drawArtThenCoreTanks("starship", canvas, cx, baseY, h, tSec, stage, separated, true, lamp, alpha, launch))
-                    starship(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "electron" -> {
                 if (!drawArtThenCoreTanks("electron", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch))
-                    electron(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "glenn" -> {
                 if (!drawArtThenCoreTanks("glenn", canvas, cx, baseY, h, tSec, stage, separated, true, lamp, alpha, launch))
-                    glenn(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "ariane" -> {
                 if (!drawArtThenCoreTanks("ariane", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch))
-                    ariane(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "lm5" -> {
                 if (!drawArtThenLmTanks("lm5", canvas, cx, baseY, h, tSec, stage, separated, true, lamp, alpha, launch))
-                    lm(canvas, cx, baseY, h, tSec, stage, separated, true, skin, lamp, alpha, launch)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "cz8a" -> cz8a(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
             "lm" -> {
                 if (!drawArtThenLmTanks("lm", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch))
-                    lm(canvas, cx, baseY, h, tSec, stage, separated, false, skin, lamp, alpha, launch)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "h3" -> {
                 if (!drawArtThenCoreTanks("h3", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch))
-                    h3(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "lvm3", "isro" -> {
                 if (!drawArtThenCoreTanks(fam, canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch))
-                    lvm3(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "vulcan" -> {
                 if (!drawArtThenCoreTanks("vulcan", canvas, cx, baseY, h, tSec, stage, separated, true, lamp, alpha, launch))
-                    vulcan(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "atlas" -> {
                 if (!drawArtThenCoreTanks("atlas", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch))
-                    atlas(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "firefly" -> {
                 if (!drawArtThenCoreTanks("firefly", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch))
-                    firefly(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "proton" -> {
                 if (!drawArtThenCoreTanks("proton", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch))
-                    proton(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             else -> {
                 if (!drawArtThenCoreTanks("generic", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch))
-                    generic(canvas, cx, baseY, h, tSec, stage, separated, launch, skin, lamp, alpha)
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
         }
         if (VehicleCatalog.needsUpdate(launch)) {
@@ -171,7 +172,7 @@ object VehicleDraw {
         launch: LaunchSnapshot
     ) {
         if (drawArtThenLmTanks("cz8a", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch)) return
-        lm(canvas, cx, baseY, h, tSec, stage, separated, false, skin, lamp, alpha, launch)
+        cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
     }
 
     private fun drawArtThenLmTanks(
@@ -233,19 +234,26 @@ object VehicleDraw {
         cores: Int,
         wide: Boolean
     ): Boolean {
-        // Stamp 89: KEEP catalog bitmaps post-sep (kill geometric soft-fail).
-        // Prefer stage drawables; else crop full-stack: STG1=booster/core bottom, STG2=upper/Ship top.
-        val stageArt = vehicleStageHullBitmap(artId, stage, separated)
-        val hull = stageArt?.first ?: vehicleHullBitmap(artId) ?: return false
-        val src = stageArt?.second
-        val dest = if (src != null) artDestRectFromSrc(hull, src, cx, baseY, h) else artDestRect(hull, cx, baseY, h)
-        drawBitmapSrcInRect(canvas, hull, src, dest, alpha * 1.0f)
+        // Stamp 90: Darren part packs first. NO full-stack crop-as-sep.
+        if (drawAssembledParts(artId, canvas, cx, baseY, h, tSec, stage, separated, methalox, lamp, alpha, launch)) {
+            try {
+                paintArtPathFlames(canvas, cx, baseY, h, tSec, stage, artId, methalox, alpha, launch)
+            } catch (t: Throwable) {
+                Log.e("LRT88", "art-path flames", t)
+            }
+            return true
+        }
+        // No parts: pre-sep keeps full catalog bitmap. Post-sep without parts → false
+        // (caller uses cleanSilhouette — not geometric sticks, not crop-sep).
+        if (separated) return false
+        val hull = vehicleHullBitmap(artId) ?: return false
+        val dest = artDestRect(hull, cx, baseY, h, maxSlotW = h * 0.55f)
+        drawBitmapSrcInRect(canvas, hull, null, dest, alpha * 1.0f)
         val glassA = (alpha * 0.45f).coerceIn(0.20f, 0.55f)
         try {
-            val fuel1 = fuelOf(tSec, launch, 1)
-            val fuel2 = fuelOf(tSec, launch, 2)
             val usedMasks = drawStageTankMasks(
-                artId, canvas, src, dest, stage, separated, fuel1, fuel2, methalox, glassA
+                artId, canvas, null, dest, stage, separated,
+                fuelOf(tSec, launch, 1), fuelOf(tSec, launch, 2), methalox, glassA
             )
             if (!usedMasks) {
                 val saved = canvas.save()
@@ -268,48 +276,125 @@ object VehicleDraw {
         return true
     }
 
-    private fun upperStackFrac(artId: String): Float = when (artId) {
-        "starship" -> 0.42f
-        "soyuz", "proton" -> 0.36f
-        "f9", "falcon", "fh", "zq" -> 0.30f
-        "sls", "electron", "glenn", "vulcan", "atlas" -> 0.34f
-        "cz8a", "cz2d", "lm", "lm5" -> 0.38f
-        else -> 0.38f
-    }
-
-    private fun vehicleStageHullBitmap(
+    /**
+     * Stamp 90 part assembly API (Darren packs):
+     * vehicle_{id}_booster|_s1|_core , _ship|_s2|_upper , _srb
+     * Pre-sep: stack. Post-sep: STG1 booster/core only; STG2 Ship/upper only.
+     * SRBs omitted after FlightProfiles.srbsGone.
+     */
+    private fun drawAssembledParts(
         artId: String,
+        canvas: Canvas,
+        cx: Float,
+        baseY: Float,
+        h: Float,
+        tSec: Float,
         stage: Int,
-        separated: Boolean
-    ): Pair<Bitmap, Rect?>? {
-        if (!separated) {
-            val full = vehicleHullBitmap(artId) ?: return null
-            return full to null
-        }
-        val prefer = if (stage >= 2) {
-            arrayOf("vehicle_${artId}_s2", "vehicle_${artId}_ship", "vehicle_${artId}_upper")
+        separated: Boolean,
+        methalox: Boolean,
+        lamp: Float,
+        alpha: Float,
+        launch: LaunchSnapshot?
+    ): Boolean {
+        val booster = firstBitmap("vehicle_${artId}_booster", "vehicle_${artId}_s1", "vehicle_${artId}_core")
+        val upper = firstBitmap("vehicle_${artId}_ship", "vehicle_${artId}_s2", "vehicle_${artId}_upper")
+        val srb = firstBitmap("vehicle_${artId}_srb", "vehicle_${artId}_strap")
+        if (booster == null && upper == null) return false
+
+        val wantB = if (separated) stage == 1 else true
+        val wantU = if (separated) stage >= 2 else true
+        val srbGone = FlightProfiles.srbsGone(launch, tSec)
+        val wantSrb = !srbGone && !separated && srb != null
+
+        val ordered = mutableListOf<Pair<Bitmap, Float>>()
+        if (wantB && wantU && booster != null && upper != null) {
+            ordered += booster to 0.58f
+            ordered += upper to 0.42f
+        } else if (wantB && booster != null) {
+            ordered += booster to 1f
+        } else if (wantU && upper != null) {
+            ordered += upper to 1f
         } else {
-            arrayOf("vehicle_${artId}_s1", "vehicle_${artId}_booster", "vehicle_${artId}_core")
+            return false
         }
-        for (name in prefer) {
-            loadVehicleDrawable(name)?.let { return it to null }
+
+        var cursor = baseY
+        for ((bmp, frac) in ordered) {
+            val ph = h * frac
+            val dest = artDestRect(bmp, cx, cursor, ph, maxSlotW = h * 0.55f)
+            drawBitmapSrcInRect(canvas, bmp, null, dest, alpha)
+            cursor -= ph
         }
-        val hull = vehicleHullBitmap(artId) ?: return null
-        val split = upperStackFrac(artId)
-        val y0 = if (stage >= 2) 0f else split
-        val y1 = if (stage >= 2) split else 1f
-        val top = (hull.height * y0).toInt().coerceIn(0, hull.height - 1)
-        val bot = (hull.height * y1).toInt().coerceIn(top + 1, hull.height)
-        return hull to Rect(0, top, hull.width, bot)
+        if (wantSrb && srb != null && booster != null) {
+            val bH = if (wantU && upper != null) h * 0.58f else h
+            val gap = artDestRect(booster, cx, baseY, bH, maxSlotW = h * 0.55f).width() * 0.55f
+            val sH = bH * 0.72f
+            drawBitmapSrcInRect(canvas, srb, null, artDestRect(srb, cx - gap, baseY, sH, maxSlotW = h * 0.28f), alpha * 0.95f)
+            drawBitmapSrcInRect(canvas, srb, null, artDestRect(srb, cx + gap, baseY, sH, maxSlotW = h * 0.28f), alpha * 0.95f)
+        }
+        val envelope = RectF(cx - h * 0.22f, baseY - h, cx + h * 0.22f, baseY)
+        try {
+            drawStageTankMasks(
+                artId, canvas, null, envelope, stage, separated,
+                fuelOf(tSec, launch, 1), fuelOf(tSec, launch, 2), methalox,
+                (alpha * 0.45f).coerceIn(0.20f, 0.55f)
+            )
+        } catch (_: Throwable) { }
+        return true
     }
 
-    private fun artDestRectFromSrc(bmp: Bitmap, src: Rect, cx: Float, baseY: Float, h: Float): RectF {
-        val destH = h.coerceAtLeast(8f)
-        val srcH = src.height().coerceAtLeast(1).toFloat()
-        val scale = destH / srcH
-        val destW = src.width() * scale
+    private fun firstBitmap(vararg names: String): Bitmap? {
+        for (n in names) loadVehicleDrawable(n)?.let { return it }
+        return null
+    }
+
+    /** HW-safe plume under the art hull when enginesLit > 0. Splash/ENG 0 = no flame. */
+    private fun paintArtPathFlames(
+        canvas: Canvas,
+        cx: Float,
+        baseY: Float,
+        h: Float,
+        tSec: Float,
+        stage: Int,
+        artId: String,
+        methalox: Boolean,
+        alpha: Float,
+        launch: LaunchSnapshot?
+    ) {
+        val sep = FlightProfiles.sepTime(launch)
+        if (!burning(tSec, launch, stage, sep)) return
+        val kind = when {
+            artId == "starship" || methalox || artId == "glenn" || artId == "vulcan" -> "raptor"
+            artId == "sls" -> "rs25"
+            artId == "soyuz" || artId == "proton" -> "rd107"
+            artId.contains("lm") || artId == "cz8a" || artId == "cz2d" -> "merlin"
+            else -> "merlin"
+        }
+        val fw = if (stage >= 2) h * 0.085f else h * 0.12f
+        val fh = if (stage >= 2) h * 0.12f else h * 0.16f
+        flame(canvas, cx, baseY, fw, fh, alpha, tSec, kind)
+    }
+
+    private fun artDestRect(bmp: Bitmap, cx: Float, baseY: Float, h: Float, maxSlotW: Float = Float.MAX_VALUE): RectF {
+        // Stamp 90: dynamically shrink to slot width — never fixed px overflow.
+        var destH = h.coerceAtLeast(8f)
+        var scale = destH / bmp.height.toFloat().coerceAtLeast(1f)
+        var destW = bmp.width * scale
+        val cap = maxSlotW.coerceAtLeast(8f)
+        if (destW > cap) {
+            scale = cap / bmp.width.toFloat().coerceAtLeast(1f)
+            destW = cap
+            destH = bmp.height * scale
+        }
         val left = cx - destW / 2f
         return RectF(left, baseY - destH, left + destW, baseY)
+    }
+
+    fun fitHeightForSlot(slotW: Float, slotH: Float, aspectWH: Float = 0.42f): Float {
+        val maxH = slotH.coerceAtLeast(8f) * 0.88f
+        val maxW = slotW.coerceAtLeast(8f) * 0.90f
+        val hFromW = maxW / aspectWH.coerceIn(0.15f, 0.85f)
+        return min(maxH, hFromW)
     }
 
     private fun drawBitmapSrcInRect(canvas: Canvas, bmp: Bitmap, src: Rect?, dest: RectF, alpha: Float) {
@@ -317,6 +402,25 @@ object VehicleDraw {
             this.alpha = (255f * alpha.coerceIn(0.15f, 1f)).toInt().coerceIn(0, 255)
         }
         canvas.drawBitmap(bmp, src, dest, paint)
+    }
+
+    private fun drawBitmapInRect(canvas: Canvas, bmp: Bitmap, dest: RectF, alpha: Float) {
+        drawBitmapSrcInRect(canvas, bmp, null, dest, alpha)
+    }
+
+    private fun vehicleHullBitmap(artId: String): Bitmap? {
+        val names = arrayOf(
+            "vehicle_$artId",
+            "vehicle_${artId}_shell",
+            "vehicle_${artId}_side",
+            "vehicle_${artId}_stack",
+            "vehicle_${artId}_cutaway",
+            "vehicle_${artId}_fuel"
+        )
+        for (name in names) {
+            loadVehicleDrawable(name)?.let { return it }
+        }
+        return null
     }
 
     private fun drawStageTankMasks(
@@ -383,66 +487,6 @@ object VehicleDraw {
         canvas.drawBitmap(mask, mSrc, dest, paint)
         canvas.restoreToCount(saved)
     }
-
-    /** HW-safe plume under the art hull when enginesLit > 0. Splash/ENG 0 = no flame. */
-    private fun paintArtPathFlames(
-        canvas: Canvas,
-        cx: Float,
-        baseY: Float,
-        h: Float,
-        tSec: Float,
-        stage: Int,
-        artId: String,
-        methalox: Boolean,
-        alpha: Float,
-        launch: LaunchSnapshot?
-    ) {
-        val sep = FlightProfiles.sepTime(launch)
-        if (!burning(tSec, launch, stage, sep)) return
-        val kind = when {
-            artId == "starship" || methalox || artId == "glenn" || artId == "vulcan" -> "raptor"
-            artId == "sls" -> "rs25"
-            artId == "soyuz" || artId == "proton" -> "rd107"
-            artId.contains("lm") || artId == "cz8a" || artId == "cz2d" -> "merlin"
-            else -> "merlin"
-        }
-        val fw = if (stage >= 2) h * 0.085f else h * 0.12f
-        val fh = if (stage >= 2) h * 0.12f else h * 0.16f
-        flame(canvas, cx, baseY, fw, fh, alpha, tSec, kind)
-    }
-
-    private fun artDestRect(bmp: Bitmap, cx: Float, baseY: Float, h: Float): RectF {
-        val destH = h.coerceAtLeast(8f)
-        val scale = destH / bmp.height.toFloat()
-        val destW = bmp.width * scale
-        val left = cx - destW / 2f
-        return RectF(left, baseY - destH, left + destW, baseY)
-    }
-
-    private fun drawBitmapInRect(canvas: Canvas, bmp: Bitmap, dest: RectF, alpha: Float) {
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            this.alpha = (255f * alpha.coerceIn(0.15f, 1f)).toInt().coerceIn(0, 255)
-        }
-        canvas.drawBitmap(bmp, null, dest, paint)
-    }
-
-    /** Prefer shell (hull+panels). Avoid full cutaway as sole cover — static inserts hide the rocket. */
-    private fun vehicleHullBitmap(artId: String): Bitmap? {
-        // Full vehicle graphic preferred; shell next; cutaway last (static inserts hide hull).
-        val names = arrayOf(
-            "vehicle_$artId",
-            "vehicle_${artId}_shell",
-            "vehicle_${artId}_side",
-            "vehicle_${artId}_stack",
-            "vehicle_${artId}_cutaway",
-            "vehicle_${artId}_fuel"
-        )
-        for (name in names) {
-            loadVehicleDrawable(name)?.let { return it }
-        }
-        return null
-    }
-
 
     private fun loadVehicleDrawable(name: String): Bitmap? {
         if (name in artTried) return artCache[name]
@@ -536,6 +580,39 @@ object VehicleDraw {
             val bot = if (drawS1) baseY - s1H else baseY
             val s2H = if (drawS1) h * 0.26f else h * 0.55f
             tanks(canvas, cx, bot - s2H, bot, coreW * 0.72f, fuelOf(tSec, launch, 2), methalox, lamp, alpha)
+        }
+    }
+
+    /** Stamp 90: soft body when packs/art missing — NOT blocky geometric twins. */
+    private fun cleanSilhouette(
+        canvas: Canvas,
+        cx: Float,
+        baseY: Float,
+        h: Float,
+        stage: Int,
+        separated: Boolean,
+        skin: TelemetrySkin.Tokens,
+        lamp: Float,
+        alpha: Float
+    ) {
+        val body = lampAlpha(Color.parseColor("#C8D0D8"), lamp, alpha * 0.92f)
+        val edge = lampAlpha(skin.accent, lamp, alpha * 0.55f)
+        val w = h * 0.16f
+        val top = baseY - h
+        fill.color = body
+        canvas.drawRoundRect(cx - w, top + h * 0.06f, cx + w, baseY, w * 0.45f, w * 0.45f, fill)
+        path.reset()
+        path.moveTo(cx, top)
+        path.lineTo(cx - w * 0.85f, top + h * 0.10f)
+        path.lineTo(cx + w * 0.85f, top + h * 0.10f)
+        path.close()
+        canvas.drawPath(path, fill)
+        stroke.color = edge
+        stroke.strokeWidth = max(1.2f, h * 0.012f)
+        canvas.drawRoundRect(cx - w, top + h * 0.06f, cx + w, baseY, w * 0.45f, w * 0.45f, stroke)
+        if (separated && stage >= 2) {
+            canvas.drawLine(cx - w * 1.15f, baseY - h * 0.35f, cx - w, baseY - h * 0.15f, stroke)
+            canvas.drawLine(cx + w * 1.15f, baseY - h * 0.35f, cx + w, baseY - h * 0.15f, stroke)
         }
     }
 

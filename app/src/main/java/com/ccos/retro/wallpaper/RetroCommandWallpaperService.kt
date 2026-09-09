@@ -4578,22 +4578,24 @@ class RetroCommandWallpaperService : WallpaperService() {
                 return
             }
             val minTop = buttonRects[3].bottom + 10f
-            // Stamp 85/75: ~1.75x paperdoll so tanks are readable — still direct paint (no DST_IN).
+            // Stamp 90 HARD: dolls dynamically fit INSIDE slots — never crush DIG/ANLG gauges.
             val analogCeil = if (mapBot > minTop + 24f) mapBot else minTop + height * 0.28f
-            val slot = (analogCeil - minTop).coerceAtLeast(height * 0.24f)
-            val rocketH = min(height * 0.28f, slot * 0.95f)
+            val boxW = buttonRects[3].width()
+            val labPad = telSp(14f)
+            val slotH = (analogCeil - minTop - labPad).coerceAtLeast(telSp(48f))
+            val slotW = boxW * 0.92f
+            val rocketH = com.ccos.retro.event.VehicleDraw.fitHeightForSlot(slotW, slotH, 0.42f)
             val leftCx = buttonRects[3].centerX()
             val rightCx = buttonRects[7].centerX()
             val separated = tSec >= sepTime(launch)
             val leftSel = prefs.trackedStage == 1
             val rightSel = prefs.trackedStage == 2
-            val leftH = if (leftSel) rocketH else rocketH * 0.78f
-            val rightH = if (rightSel) rocketH else rocketH * 0.78f
+            val leftH = if (leftSel) rocketH else rocketH * 0.86f
+            val rightH = if (rightSel) rocketH else rocketH * 0.86f
             val maxTwinH = max(leftH, rightH)
             val baseY = minTop + maxTwinH
-            val boxW = buttonRects[3].width()
             val top = minTop
-            val bot = (baseY + telSp(16f)).coerceAtMost(analogCeil + telSp(8f))
+            val bot = (baseY + labPad).coerceAtMost(analogCeil)
             stage1Hit.set(leftCx - boxW * 0.5f, top, leftCx + boxW * 0.5f, bot)
             stage2Hit.set(rightCx - boxW * 0.5f, top, rightCx + boxW * 0.5f, bot)
 
@@ -4663,6 +4665,8 @@ class RetroCommandWallpaperService : WallpaperService() {
             lamp: Float,
             alpha: Float
         ) {
+            // Stamp 90: wallpaper must bind host or catalog bitmaps never load (geometric sticks).
+            VehicleDraw.bindHost(resources, packageName)
             VehicleDraw.draw(canvas, cx, baseY, h, launch, tSec, stage, separated, skin, lamp, alpha)
         }
 
@@ -7115,9 +7119,15 @@ class RetroCommandWallpaperService : WallpaperService() {
                     hudPaint.color = Color.WHITE
                     hudPaint.textSize = bodySz
                     if (launch != null) {
-                        val vh = (bottom - top) * 0.48f
-                        val baseY = top + titleSz + 28f + vh
-                        drawVehicle(canvas, width / 2f, baseY, vh, launch, tSec, stg, true, skin, lamp, 1f)
+                        // Stamp 90: fit STG page doll into panel slot (dynamic).
+                        val slotTop = top + titleSz + 28f
+                        val slotBot = bottom - bodySz * 3.2f
+                        val slotH = (slotBot - slotTop).coerceAtLeast(telSp(64f))
+                        val slotW = (right - left) * 0.55f
+                        val vh = com.ccos.retro.event.VehicleDraw.fitHeightForSlot(slotW, slotH, 0.40f)
+                        val baseY = slotTop + vh
+                        val sep = tSec >= sepTime(launch)
+                        drawVehicle(canvas, width / 2f, baseY, vh, launch, tSec, stg, sep, skin, lamp, 1f)
                         val n = engineCountForStage(launch, stg)
                         hudPaint.textSize = bodySz
                         canvas.drawText("ENG $n", width / 2f, baseY + bodySz * 1.4f, hudPaint)

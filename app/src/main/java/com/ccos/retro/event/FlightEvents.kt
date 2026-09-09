@@ -599,6 +599,20 @@ object FlightProfiles {
         return 154f
     }
 
+    /** Strap-on / SRB jettison time. */
+    fun srbSepTime(launch: LaunchSnapshot?): Float {
+        val hit = events(launch).firstOrNull { e ->
+            val t = e.second.uppercase()
+            "SRB" in t && "SEP" in t
+        }?.first
+        return hit ?: NO_LAND_T
+    }
+
+    fun srbsGone(launch: LaunchSnapshot?, tSec: Float): Boolean {
+        val t = srbSepTime(launch)
+        return hasLandTime(t) && tSec >= t
+    }
+
     fun boosterLandTime(launch: LaunchSnapshot?): Float {
         val hit = events(launch).firstOrNull { e ->
             val t = e.second.uppercase()
