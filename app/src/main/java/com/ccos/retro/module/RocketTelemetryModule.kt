@@ -247,7 +247,7 @@ class RocketTelemetryModule(
             next = if (prefs.telemetryPinned) -30f else loopAt
         }
         simSecondsFromNet = next
-        val now = System.currentTimeMillis()
+        // reuse now from live-gate above
         if (now - lastCursorWriteMs >= 500L) {
             lastCursorWriteMs = now
             persistEventCursor(next)
