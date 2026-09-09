@@ -9,6 +9,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Matrix
+import android.graphics.DashPathEffect
 import android.graphics.Path
 import android.graphics.LinearGradient
 import android.graphics.RadialGradient
@@ -2414,6 +2415,85 @@ class CommandConsoleView @JvmOverloads constructor(
             }
             fillPaint.alpha = 255
             canvas.restore()
+        }
+
+        // Engineering flap actuation on unwrap — small hinge δ° (NOT bird-wing swing).
+        run {
+            val pw = mainDest.width()
+            val ph = mainDest.height()
+            val bodyTop = mainDest.top + ph * 0.32f
+            val bodyBot = mainDest.top + ph * 0.68f
+            val dash = DashPathEffect(floatArrayOf(dp(5f), dp(4f)), now * 8f)
+            // Phase command from reentry progress; tiny idle so actuators look alive.
+            val cmd = when {
+                heat < 0.12f -> 1.2f
+                heat < 0.45f -> 3.2f + 1.4f * sin((u * Math.PI).toFloat())
+                else -> 2.2f + 2.0f * (1f - u)
+            }
+            val idle = 1.6f * sin(now * 0.55f)
+            fun clampDeg(v: Float) = v.coerceIn(-6.5f, 6.5f)
+            data class Tab(
+                val label: String,
+                val hx: Float,
+                val hy: Float,
+                val out: Float,
+                val halfW: Float,
+                val deg: Float
+            )
+            val tabs = listOf(
+                Tab("FWD L", mainDest.left + pw * 0.24f, bodyTop, -ph * 0.22f, pw * 0.045f, clampDeg(cmd * 0.90f + idle)),
+                Tab("FWD R", mainDest.left + pw * 0.24f, bodyBot, ph * 0.22f, pw * 0.045f, clampDeg(-(cmd * 0.85f) - idle * 0.7f)),
+                Tab("AFT L", mainDest.left + pw * 0.78f, bodyTop, -ph * 0.28f, pw * 0.055f, clampDeg(cmd * 1.10f + idle * 1.1f)),
+                Tab("AFT R", mainDest.left + pw * 0.78f, bodyBot, ph * 0.28f, pw * 0.055f, clampDeg(-(cmd * 1.05f) - idle))
+            )
+            fun drawTab(tab: Tab) {
+                // Ghost neutral (δ=0) dashed outline
+                tmpPath.reset()
+                tmpPath.moveTo(tab.hx - tab.halfW, tab.hy)
+                tmpPath.lineTo(tab.hx + tab.halfW, tab.hy)
+                tmpPath.lineTo(tab.hx + tab.halfW * 0.72f, tab.hy + tab.out)
+                tmpPath.lineTo(tab.hx - tab.halfW * 0.72f, tab.hy + tab.out)
+                tmpPath.close()
+                strokePaint.style = Paint.Style.STROKE
+                strokePaint.strokeWidth = 1.2f
+                strokePaint.pathEffect = dash
+                strokePaint.color = Color.argb(140, 160, 170, 180)
+                canvas.drawPath(tmpPath, strokePaint)
+                strokePaint.pathEffect = null
+
+                // Live deflection — rotate about hinge line (engineering, few degrees)
+                canvas.save()
+                canvas.rotate(tab.deg, tab.hx, tab.hy)
+                tmpPath.reset()
+                tmpPath.moveTo(tab.hx - tab.halfW, tab.hy)
+                tmpPath.lineTo(tab.hx + tab.halfW, tab.hy)
+                tmpPath.lineTo(tab.hx + tab.halfW * 0.72f, tab.hy + tab.out)
+                tmpPath.lineTo(tab.hx - tab.halfW * 0.72f, tab.hy + tab.out)
+                tmpPath.close()
+                strokePaint.strokeWidth = 2.0f
+                strokePaint.color = withLamp(if (kotlin.math.abs(tab.deg) > 3.5f) skin.hold else skin.accent)
+                canvas.drawPath(tmpPath, strokePaint)
+                // Tiny actuator stroke ticks at hinge
+                strokePaint.strokeWidth = 1.4f
+                strokePaint.color = withLamp(skin.muted)
+                val tick = dp(5f)
+                canvas.drawLine(tab.hx - tick, tab.hy, tab.hx + tick, tab.hy, strokePaint)
+                canvas.drawLine(tab.hx, tab.hy - tick * 0.6f, tab.hx, tab.hy + tick * 0.6f, strokePaint)
+                canvas.restore()
+
+                val labY = if (tab.out < 0f) tab.hy + tab.out - sp(6f) else tab.hy + tab.out + sp(12f)
+                drawLabel(
+                    canvas,
+                    String.format("%s δ%+.1f°", tab.label, tab.deg),
+                    tab.hx,
+                    labY,
+                    withLamp(skin.text),
+                    pw * 0.22f,
+                    sp(11f),
+                    sp(10f)
+                )
+            }
+            for (t in tabs) drawTab(t)
         }
 
         val banner = when {
