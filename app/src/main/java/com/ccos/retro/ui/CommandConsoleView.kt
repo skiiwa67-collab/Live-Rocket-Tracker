@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -27,6 +28,7 @@ import android.view.MotionEvent
 import android.view.View
 import com.ccos.retro.BuildConfig
 import com.ccos.retro.data.LaunchSnapshot
+import com.ccos.retro.data.autoDwellHint
 import com.ccos.retro.geo.GeoAtlas
 import com.ccos.retro.geo.PadBook
 import com.ccos.retro.geo.PadGlyph
@@ -131,6 +133,11 @@ class CommandConsoleView @JvmOverloads constructor(
                     try {
                         val intent = Intent(Intent.ACTION_VIEW, PadGlyph.earthUri(lat, lon))
                         context.startActivity(intent)
+                        android.widget.Toast.makeText(
+                            context,
+                            "Some pads show dark in Google Earth (imagery limits). Coords still correct.",
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
                     } catch (_: Exception) { }
                     return true
                 }
@@ -348,6 +355,7 @@ class CommandConsoleView @JvmOverloads constructor(
             propStg1Hit.offset(0f, stripH)
             propStg2Hit.offset(0f, stripH)
         }
+        if (stripH > 0f && !geoHit.isEmpty) geoHit.offset(0f, stripH)
         canvas.restore()
         val dt = SystemClock.uptimeMillis() - t0
         if (dt > 32) Log.w("CCOS.TRAJ", "onDraw ${dt}ms screen=$screen")
@@ -474,7 +482,7 @@ class CommandConsoleView @JvmOverloads constructor(
         val lastStr = last?.let { "LAST  ${it.title.take(18)}  ${EventClock.fmt(it.tSec)}" } ?: "LAST  —"
         val nowStr = if (on != null) "NOW  ${on.title.take(16)}  ${formatClock(tSec)}"
         else "NOW  ${formatClock(tSec)}"
-        val nextStr = next?.let { "NEXT  ${it.title.take(18)}" } ?: "NEXT  —"
+        val nextStr = next?.let { "NEXT  ${it.title.take(18)}" } ?: "NEXT  --"
         val inStr = if (next != null) EventClock.remain(tSec, next.tSec) else ""
         val innerL = left + dp(16f)
         val innerR = right - dp(16f)
@@ -528,6 +536,11 @@ class CommandConsoleView @JvmOverloads constructor(
         val name = (launch?.name ?: "NO TRACKED LAUNCH").uppercase().take(36)
         drawLabel(canvas, name, w * 0.5f, y, withLamp(skin.text), w * 0.92f, subH, sp(16f))
         y += subH + dp(2f)
+        if ((prefs.telemetryAuto || prefs.telemetryPinned) && launch != null) {
+            val dwell = launch.autoDwellHint(System.currentTimeMillis(), prefs.telemetryPinned, prefs.telemetryHoldDurationMs)
+            drawLabel(canvas, dwell, w * 0.5f, y, withLamp(skin.go), w * 0.92f, subH, sp(13f))
+            y += subH + dp(2f)
+        }
         val vehPad = buildString {
             append((launch?.rocketName ?: "—").take(16))
             append(" · ")
@@ -1896,38 +1909,75 @@ class CommandConsoleView @JvmOverloads constructor(
         tSec: Float,
         skin: TelemetrySkin.Tokens
     ) {
-        val stage = prefs?.trackedStage ?: 1
-        val recover = VehicleCatalog.isKnownRecoverable(launch)
-        val sep = if (launch != null) sepTime(launch) else 154f
-        val fuelEarly = fuelRemain(tSec, stage, launch)
-        val expendedEarly = FlightProfiles.isStageSpent(tSec, launch, stage) || fuelEarly <= 0f
+        // Stamp 74: PROP = stack data plate / readable catalog data. Fuel babysit is TEL paperdoll.
+        val spec = VehicleCatalog.spec(launch)
         drawLabel(
-            canvas, if (expendedEarly) "FLIGHT CARD" else "PROPELLANT", w * 0.5f, dp(22f),
+            canvas, "STACK PLATE", w * 0.5f, dp(22f),
             withLamp(skin.accent), w * 0.9f, sp(18f), sp(16f)
         )
         val pillY = dp(40f)
         val pillH = dp(28f)
-        drawStagePills(canvas, w, pillY, pillH, skin, stage)
-        if (!expendedEarly) {
-            val sub = when {
-                stage == 1 && recover && tSec >= sep -> "STAGE 1 · RETURNING"
-                stage == 1 -> "STAGE 1 · LOX / ${fuelName(launch)}"
-                else -> "STAGE 2 · LOX / ${fuelName(launch)}"
-            }
-            drawLabel(
-                canvas, sub, w * 0.5f, pillY + pillH + sp(16f),
-                withLamp(skin.muted), w * 0.9f, sp(14f), sp(12f)
-            )
+        drawStagePills(canvas, w, pillY, pillH, skin, prefs?.trackedStage ?: 1)
+        var y = pillY + pillH + dp(10f)
+        val title = (launch?.rocketName ?: spec.id).uppercase().take(28)
+        drawLabel(canvas, title, w * 0.5f, y, withLamp(skin.text), w * 0.9f, sp(16f), sp(14f))
+        y += sp(22f)
+
+        val plate = consolePlateBitmap(spec.id, VehicleCatalog.family(launch))
+        if (plate != null) {
+            val maxH = h * 0.34f
+            val scale = minOf(maxH / plate.height, (w * 0.88f) / plate.width)
+            val dw = plate.width * scale
+            val dh = plate.height * scale
+            val left = (w - dw) / 2f
+            canvas.drawBitmap(plate, null, RectF(left, y, left + dw, y + dh), Paint(Paint.ANTI_ALIAS_FLAG))
+            y += dh + dp(8f)
         }
-        val fuel = fuelEarly
-        val expended = expendedEarly
-        val bodyTop = if (expended) pillY + pillH + dp(6f) else pillY + pillH + sp(28f)
-        if (expended) {
-            drawFlightCard(canvas, w, h, bodyTop, launch, tSec, stage, skin, fuel)
-        } else {
-            val can = RectF(w * 0.10f, bodyTop, w * 0.90f, h * 0.92f)
-            drawFuelTanks(canvas, can, fuel, fuel, skin, launch, compact = false)
+
+        val rows = listOf(
+            "FAMILY" to spec.family.uppercase(),
+            "HEIGHT" to (if ("50.5" in spec.nerdNote) "~50.5 m" else "—"),
+            "STRAP-ONS" to when (spec.id) {
+                "cz8a" -> "2 liquid"
+                "lm5" -> "4 boosters"
+                else -> "—"
+            },
+            "S1" to "${spec.s1Engines} x ${spec.engineName}",
+            "S1 THRUST" to spec.s1Thrust,
+            "S2" to "${spec.s2Engines} x ${spec.s2EngineName.ifBlank { spec.engineName }}",
+            "S2 THRUST" to spec.s2Thrust,
+            "FUEL/OX" to "${spec.fuelName}/${spec.oxName}",
+            "NOTE" to spec.nerdNote.take(64)
+        )
+        val floor = h - dp(10f)
+        val rowH = ((floor - y) / rows.size).coerceIn(sp(14f), sp(24f))
+        for ((lab, value) in rows) {
+            if (y + rowH > floor) break
+            drawLabel(canvas, lab, dp(12f), y, withLamp(skin.muted), w * 0.28f, rowH * 0.85f, sp(10f), Paint.Align.LEFT)
+            drawLabel(canvas, value, dp(12f) + w * 0.30f, y, withLamp(skin.text), w * 0.62f, rowH * 0.85f, sp(11f), Paint.Align.LEFT)
+            y += rowH
         }
+    }
+
+    private var consolePlateCache: Pair<String, android.graphics.Bitmap?>? = null
+    private fun consolePlateBitmap(vararg ids: String?): android.graphics.Bitmap? {
+        val key = ids.filterNotNull().joinToString("|")
+        consolePlateCache?.let { if (it.first == key) return it.second }
+        val names = ArrayList<String>()
+        for (id in ids.filterNotNull().distinct()) {
+            names += "plate_$id"
+            names += "vehicle_${id}_plate"
+            names += "stack_plate_$id"
+        }
+        var bmp: android.graphics.Bitmap? = null
+        for (name in names) {
+            val rid = resources.getIdentifier(name, "drawable", context.packageName)
+            if (rid == 0) continue
+            bmp = android.graphics.BitmapFactory.decodeResource(resources, rid)
+            if (bmp != null) break
+        }
+        consolePlateCache = key to bmp
+        return bmp
     }
 
     /**
@@ -2167,7 +2217,8 @@ class CommandConsoleView @JvmOverloads constructor(
 
         // Windward tiles. Local temp: nose hotter, aft cooler, tile-to-tile scatter.
         canvas.save()
-        canvas.clipPath(tmpPath)
+        // Stamp 85: HW-safe rectangular clip; hull draw remains the visible boundary.
+        canvas.clipRect(noseX, midY, aftX, bellyY + 2f)
         fillPaint.color = Color.parseColor("#1A1410")
         canvas.drawRect(noseX, midY + sH * 0.06f, aftX, bellyY + 2f, fillPaint)
         val tile = sW * 0.10f
@@ -2396,6 +2447,63 @@ class CommandConsoleView @JvmOverloads constructor(
             )
             y += max(used, lineH)
         }
+        fun siteRow(lab: String, value: String) {
+            if (!can()) return
+            val labW = maxW * 0.20f
+            val valW = maxW * 0.76f
+            val valX = left + dp(12f) + maxW * 0.22f
+            val wish = sp(16f)
+            drawLabel(
+                canvas, lab, left + dp(12f), y, withLamp(skin.text),
+                labW, lineH * 0.92f, sp(14f), Paint.Align.LEFT
+            )
+            val room = floor - y
+            val fit = (room / (wish * 1.12f)).toInt().coerceIn(1, 4)
+            val used = drawWrapped(
+                canvas, value, valX, y - wish * 0.85f, Color.WHITE,
+                valW, wish, Paint.Align.LEFT, fit
+            )
+            y += max(used, lineH)
+        }
+        fun geoLinkRow(geo: String) {
+            if (!can()) return
+            val link = Color.parseColor("#5EB8FF")
+            val click = "Click Me"
+            val labW = maxW * 0.20f
+            val wish = sp(16f)
+            drawLabel(
+                canvas, "GEO", left + dp(12f), y, withLamp(skin.text),
+                labW, lineH * 0.92f, sp(14f), Paint.Align.LEFT
+            )
+            val oldTf = textPaint.typeface
+            val oldAlign = textPaint.textAlign
+            textPaint.typeface = Typeface.DEFAULT_BOLD
+            textPaint.textSize = wish
+            textPaint.color = withLamp(link)
+            textPaint.textAlign = Paint.Align.LEFT
+            val gap = textPaint.measureText("   ")
+            val geoW = textPaint.measureText(geo)
+            val clickW = textPaint.measureText(click)
+            val pair = geoW + gap + clickW
+            val valX = left + dp(12f) + maxW * 0.22f
+            val roomW = (right - dp(8f) - valX).coerceAtLeast(pair)
+            val drawX = if (pair <= roomW) valX else (right - dp(8f) - pair).coerceAtLeast(left)
+            val fm = textPaint.fontMetrics
+            canvas.drawText(geo, drawX, y, textPaint)
+            val clickX = drawX + geoW + gap
+            canvas.drawText(click, clickX, y, textPaint)
+            strokePaint.style = Paint.Style.STROKE
+            strokePaint.strokeWidth = (wish * 0.055f).coerceAtLeast(1.6f)
+            strokePaint.color = withLamp(link)
+            val ulY = y + fm.descent * 0.28f
+            canvas.drawLine(drawX, ulY, drawX + geoW, ulY, strokePaint)
+            canvas.drawLine(clickX, ulY, clickX + clickW, ulY, strokePaint)
+            val box = (fm.descent - fm.ascent) * 1.12f
+            geoHit.set(drawX, y + fm.ascent, clickX + clickW, y + fm.descent)
+            textPaint.typeface = oldTf
+            textPaint.textAlign = oldAlign
+            y += max(box, lineH)
+        }
 
         headline("MISSION", skin.accent, sp(12f))
         wrapHead(m.title, skin.text, sp(15f), 3)
@@ -2450,16 +2558,14 @@ class CommandConsoleView @JvmOverloads constructor(
         m.ship?.let { sh -> slots += Slot(6, 1) { row("SHIP", sh, skin.go) } }
         geoHit.setEmpty()
         slots += Slot(7, 2) {
-            row("SITE", m.site, skin.muted)
+            siteRow("SITE", PadBook.padShoreLine(launch))
             val ll = PadBook.lonLat(launch)
             if (ll != null) {
                 val (lon, lat) = ll
                 val hemiNS = if (lat >= 0f) "N" else "S"
                 val hemiEW = if (lon >= 0f) "E" else "W"
-                val geo = String.format("%.2f°%s  %.2f°%s", abs(lat), hemiNS, abs(lon), hemiEW)
-                val y0 = y
-                row("GEO", geo, skin.accent)
-                geoHit.set(left, y0 - lineH, right, y)
+                val geo = String.format("%.2f\u00B0%s  %.2f\u00B0%s", abs(lat), hemiNS, abs(lon), hemiEW)
+                geoLinkRow(geo)
             }
         }
         if (!launch?.holdReason.isNullOrBlank()) {
@@ -2671,7 +2777,8 @@ class CommandConsoleView @JvmOverloads constructor(
         lamp: Float,
         alpha: Float
     ) {
-        VehicleDraw.draw(canvas, cx, baseY, h, launch, tSec, stage, separated, skin, lamp, alpha)
+        VehicleDraw.bindHost(resources, context.packageName)
+            VehicleDraw.draw(canvas, cx, baseY, h, launch, tSec, stage, separated, skin, lamp, alpha)
     }
 
     private fun drawBookGap(
@@ -3074,7 +3181,7 @@ class CommandConsoleView @JvmOverloads constructor(
                     fillPaint.color = gray
                     canvas.drawPath(p, fillPaint)
                     canvas.save()
-                    canvas.clipPath(p)
+                    canvas.clipRect(x - bW, tip, x + bW, baseY)
                     drawStageTanks(canvas, x, tip, baseY, bW * 0.78f, fuel, methalox = false, lamp, alpha)
                     canvas.restore()
                     strokePaint.color = stroke

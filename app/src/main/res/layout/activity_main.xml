@@ -24,10 +24,95 @@
             android:id="@+id/txt_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Command Center · next launch on your home screen"
+            android:text="Command Center | next launch on your home screen"
             android:textColor="#C8D8E8"
             android:textSize="15sp"
             android:paddingBottom="14dp"/>
+
+        <!-- Stamp 67: CONSOLE inside ScrollView single column, above wallpaper -->
+        <LinearLayout
+            android:id="@+id/section_console_skin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_console_mcc"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/txt_console_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="CONSOLE"
+                android:textColor="#FFB000"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:paddingBottom="4dp"/>
+
+            <TextView
+                android:id="@+id/txt_console_help"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Settings look: MCC amber bay | ROS Soyuz hardware | CLEAR modern. Live preview. Same skin on CMD flyout."
+                android:textColor="#8AA0B0"
+                android:textSize="12sp"
+                android:paddingBottom="8dp"/>
+
+            <LinearLayout
+                android:id="@+id/row_console_skin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <Button
+                    android:id="@+id/btn_console_mcc"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:textSize="14sp"
+                    android:layout_weight="1"
+                    android:text="MCC"
+                    android:textStyle="bold"
+                    android:textColor="#0A0E14"
+                    android:background="@drawable/chip_console_selected_mcc"
+                    android:backgroundTint="@null"
+                    android:maxLines="1"
+                    android:ellipsize="none"
+                    android:paddingLeft="4dp"
+                    android:paddingRight="4dp"
+                    android:layout_marginEnd="4dp"/>
+                <Button
+                    android:id="@+id/btn_console_ros"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:textSize="14sp"
+                    android:layout_weight="1"
+                    android:text="ROS"
+                    android:textStyle="bold"
+                    android:textColor="#6A7850"
+                    android:background="@drawable/chip_console_ros_idle"
+                    android:backgroundTint="@null"
+                    android:maxLines="1"
+                    android:ellipsize="none"
+                    android:paddingLeft="4dp"
+                    android:paddingRight="4dp"
+                    android:layout_marginHorizontal="4dp"/>
+                <Button
+                    android:id="@+id/btn_console_clear"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:textSize="13sp"
+                    android:layout_weight="1"
+                    android:text="CLEAR"
+                    android:textStyle="bold"
+                    android:textColor="#4A5A68"
+                    android:background="@drawable/chip_console_idle"
+                    android:backgroundTint="@null"
+                    android:maxLines="1"
+                    android:ellipsize="none"
+                    android:paddingLeft="2dp"
+                    android:paddingRight="2dp"
+                    android:layout_marginStart="4dp"/>
+            </LinearLayout>
+        </LinearLayout>
 
         <Button
             android:id="@+id/btn_set_wallpaper"
@@ -45,7 +130,8 @@
             android:text="OPEN COMMAND CENTER"
             android:textColor="#F2C14E"
             android:backgroundTint="#2A2208"
-            android:layout_marginBottom="20dp"/>
+            android:layout_marginBottom="12dp"/>
+
 
         <LinearLayout
             android:id="@+id/section_telemetry"
@@ -81,6 +167,9 @@
                     android:layout_width="0dp"
                     android:layout_height="48dp"
                     android:layout_weight="1"
+                    android:textSize="11sp"
+                    android:maxLines="1"
+                    android:ellipsize="none"
                     android:text="CURRENT"
                     android:textColor="#90FFB0"
                     android:backgroundTint="#1A3040"
@@ -90,6 +179,9 @@
                     android:layout_width="0dp"
                     android:layout_height="48dp"
                     android:layout_weight="1"
+                    android:textSize="11sp"
+                    android:maxLines="1"
+                    android:ellipsize="none"
                     android:text="HISTORIC"
                     android:textColor="#90E0FF"
                     android:backgroundTint="#1A1A22"

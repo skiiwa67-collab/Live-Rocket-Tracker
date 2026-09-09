@@ -278,8 +278,16 @@ object TelemetrySkin {
         btnLampOff = Color.parseColor("#1A2830")
     )
 
+    /** Stamp 71: tracked launch drives chrome. Rocket-family checks before soft provider tags. */
     fun forLaunch(launch: LaunchSnapshot?): Tokens = when {
         launch == null -> generic
+        // Hard rocket family first (Soyuz != Falcon even if provider string is messy).
+        launch.rocketName.contains("Soyuz", ignoreCase = true) ||
+            launch.rocketName.contains("Angara", ignoreCase = true) ||
+            launch.rocketName.contains("Proton", ignoreCase = true) -> roscosmos
+        launch.rocketName.contains("Falcon", ignoreCase = true) ||
+            launch.rocketName.contains("Starship", ignoreCase = true) ||
+            launch.rocketName.contains("Super Heavy", ignoreCase = true) -> spacex
         launch.isSpaceX() -> spacex
         launch.isBlueOrigin() -> blueOrigin
         launch.isNasa() -> nasa

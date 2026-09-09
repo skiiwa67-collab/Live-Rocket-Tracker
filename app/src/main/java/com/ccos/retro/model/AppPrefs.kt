@@ -31,18 +31,23 @@ class AppPrefs(context: Context) {
         val ROCKER_LABELS_LAMP = arrayOf("DIM", "NORM", "BRIGHT")
         val ROCKER_LABELS_TEXT = arrayOf("SM", "MD", "LG")
 
-        /** Stamp 85: LCK/HOLD chips — 1H|2H|48H only (drop 6H/24H/2D). */
+        /** Stamp 85: LCK/HOLD chips — 1H|2H|48H only (drop 6H/24H). */
         const val HOLD_DUR_1H_MS = 1L * 3600_000L
         const val HOLD_DUR_2H_MS = 2L * 3600_000L
         const val HOLD_DUR_48H_MS = 48L * 3600_000L
         val HOLD_DUR_ALLOWED_MS = longArrayOf(HOLD_DUR_1H_MS, HOLD_DUR_2H_MS, HOLD_DUR_48H_MS)
         val ROCKER_LABELS_HOLD = arrayOf("1H", "2H", "48H")
+        /** Stamp 65 Batch D: Settings CONSOLE skin chips (panel chrome only). */
+        val ROCKER_LABELS_CONSOLE = arrayOf("MCC", "ROS", "CLEAR")
+        const val CONSOLE_SKIN_MCC = "MCC"
+        const val CONSOLE_SKIN_ROS = "ROS"
+        const val CONSOLE_SKIN_CLEAR = "CLEAR"
 
         fun normalizeHoldDurationMs(raw: Long): Long {
             val one = HOLD_DUR_1H_MS
             val two = HOLD_DUR_2H_MS
             val twoDay = HOLD_DUR_48H_MS
-            // Legacy remaps: 6H→2H, 24H→48H, old 2D(48h already) / 4H→2H
+            // Legacy: 6H→2H, 24H→48H, 4H→2H, old 2D(=48H) stays
             return when {
                 raw <= 0L -> two
                 raw in (one - 60_000L)..(one + 60_000L) -> one
@@ -51,10 +56,7 @@ class AppPrefs(context: Context) {
                 raw in (24L * 3600_000L - 60_000L)..(24L * 3600_000L + 60_000L) -> twoDay
                 raw in (twoDay - 60_000L)..(twoDay + 60_000L) -> twoDay
                 raw in (4L * 3600_000L - 60_000L)..(4L * 3600_000L + 60_000L) -> two
-                else -> {
-                    // Nearest allowed
-                    HOLD_DUR_ALLOWED_MS.minByOrNull { kotlin.math.abs(it - raw) } ?: two
-                }
+                else -> HOLD_DUR_ALLOWED_MS.minByOrNull { kotlin.math.abs(it - raw) } ?: two
             }
         }
 
@@ -111,8 +113,8 @@ class AppPrefs(context: Context) {
     }
 
     /**
-     * Per-module HUD text scale — each module remembers its last setting so
-     * switching Live Tele ↔ System Metrics never inherits a "stupid large" value.
+     * Per-module HUD text scale \u2014 each module remembers its last setting so
+     * switching Live Tele <-> System Metrics never inherits a "stupid large" value.
      */
     var textScale: Float
         get() = when (activeModuleId) {
@@ -152,11 +154,11 @@ class AppPrefs(context: Context) {
         get() = prefs.getString("tel_launch_id", "") ?: ""
         set(v) = prefs.edit().putString("tel_launch_id", v).apply()
 
-    /** LCK: pin current flight across wallpaper + MCC. Chip duration (1H|2H|48H) expires the pin. */
+    /** Pin (AUTO double-tap): LCK until NET+chip (1H|2H|48H); then AUTO next. */
     /**
      * One UTC T0 per launch.
      * Live: the book's netMs. Persist so a later empty fetch does not invent a local clock.
-     * Demo: catalog used to bake now±offset per process — pin the first UTC so this device
+     * Demo: catalog used to bake now+/-offset per process \u2014 pin the first UTC so this device
      * does not start a second T0 when the wallpaper reopens.
      */
     fun pinnedNetMs(launchId: String, incoming: Long): Long {
@@ -182,7 +184,7 @@ class AppPrefs(context: Context) {
         return incoming <= 0L && prefs.getLong("t0_$launchId", 0L) > 0L
     }
 
-    /** Shared event-walk cursor so wallpaper +/− and MCC PREV/NEXT stay on the same mark. */
+    /** Shared event-walk cursor so wallpaper +/- and MCC PREV/NEXT stay on the same mark. */
     fun eventCursorSec(launchId: String): Float? {
         if (launchId.isBlank()) return null
         val key = "evt_cur_$launchId"
@@ -211,7 +213,7 @@ class AppPrefs(context: Context) {
         get() = prefs.getLong("tel_hold_until", 0L)
         set(v) = prefs.edit().putLong("tel_hold_until", v).apply()
 
-    /** LCK/HOLD length: 1H|2H|48H only. Default 2H. */
+    /** Stamp 85 HOLD/LCK length: 1H|2H|48H ONLY. Legacy 6H/24H remapped. */
     var telemetryHoldDurationMs: Long
         get() = normalizeHoldDurationMs(prefs.getLong("tel_hold_dur", HOLD_DUR_2H_MS))
         set(v) = prefs.edit().putLong("tel_hold_dur", normalizeHoldDurationMs(v)).apply()
@@ -288,19 +290,40 @@ class AppPrefs(context: Context) {
     fun isSystem(): Boolean = activeModuleId == MODULE_SYSTEM
     fun isTelemetry(): Boolean = activeModuleId == MODULE_TELEMETRY
 
-    /** Fresh install and this rebuild: live telemetry, Current + Auto. */
+    /** Stamp 65: Settings panel chrome skin - MCC|ROS|CLEAR. Does not replace TelemetrySkin.forLaunch. */
+    var consoleSkin: String
+        get() {
+            val v = prefs.getString("console_skin", CONSOLE_SKIN_MCC) ?: CONSOLE_SKIN_MCC
+            return when (v) {
+                CONSOLE_SKIN_ROS, CONSOLE_SKIN_CLEAR -> v
+                else -> CONSOLE_SKIN_MCC
+            }
+        }
+        set(v) {
+            val norm = when (v) {
+                CONSOLE_SKIN_ROS, CONSOLE_SKIN_CLEAR -> v
+                else -> CONSOLE_SKIN_MCC
+            }
+            prefs.edit().putString("console_skin", norm).apply()
+        }
+
+    /** Fresh install + stamp 56: tracking=CURRENT, follow=AUTO ON. */
     fun ensurePaidAppDefaults() {
-        if (prefs.getBoolean("ccos_first_run_v3", false)) return
+        // v6 one-shot: v5 already spent on some devices still stuck MANUAL.
+        // Do NOT clear tel_launch_id — empty id + first spinner populate called selectLaunch ? MANUAL.
+        if (prefs.getBoolean("ccos_first_run_v6", false)) return
         prefs.edit()
             .putString("module_id", MODULE_TELEMETRY)
             .putString("tel_list_mode", "current")
             .putBoolean("tel_auto", true)
-            .putString("tel_launch_id", "")
             .putBoolean("tel_pinned", false)
             .putLong("tel_hold_until", 0L)
             .putInt("cmd_page", 0)
             .putBoolean("hud_every_screen", true)
             .putBoolean("ccos_first_run_v3", true)
+            .putBoolean("ccos_first_run_v4", true)
+            .putBoolean("ccos_first_run_v5", true)
+            .putBoolean("ccos_first_run_v6", true)
             .apply()
     }
 }

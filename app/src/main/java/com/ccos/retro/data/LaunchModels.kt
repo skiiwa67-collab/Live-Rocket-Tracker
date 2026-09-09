@@ -43,6 +43,7 @@ data class LaunchSnapshot(
     val imageUrl: String? = null,
     val webcastUrl: String? = null,
     val webcasts: List<WebcastRef> = emptyList(),
+    val webcastLive: Boolean = false,
     val probability: Int? = null,    // 0-100 or null
     val holdReason: String? = null,
     val lastUpdatedMs: Long = System.currentTimeMillis()
@@ -108,20 +109,160 @@ data class LaunchSnapshot(
     fun secondsToNet(now: Long = System.currentTimeMillis()): Long =
         (netMs - now) / 1000L
 
-    fun isInFlight(now: Long = System.currentTimeMillis()): Boolean {
-        val t = secondsToNet(now)
-        // Rough: after T-0 and within ~20 min for LEO, or status says In Flight
-        return (t < 0 && t > -1800) || statusAbbrev.equals("In Flight", ignoreCase = true) ||
-                statusName.contains("In Flight", ignoreCase = true)
+    fun isHold(): Boolean {
+        if (!holdReason.isNullOrBlank()) return true
+        val a = statusAbbrev
+        val n = statusName
+        return a.equals("Hold", ignoreCase = true) ||
+            a.equals("In Hold", ignoreCase = true) ||
+            n.contains("Hold", ignoreCase = true)
     }
 
-    fun isUpcoming(now: Long = System.currentTimeMillis()): Boolean =
-        secondsToNet(now) > -300   // still show until a few min after
+    fun isTerminal(): Boolean {
+        val blob = "$statusAbbrev $statusName".lowercase()
+        // Stamp 63: Success / Completed / Failure / Partial Failure eject AUTO immediately.
+        return "success" in blob || "completed" in blob || "failure" in blob ||
+            "partial" in blob || ("fail" in blob && "fairing" !in blob)
+    }
+
+    fun isGo(): Boolean {
+        val a = statusAbbrev.trim()
+        val n = statusName.trim()
+        return a.equals("Go", ignoreCase = true) ||
+            n.equals("Go", ignoreCase = true) ||
+            n.equals("Go for Launch", ignoreCase = true)
+    }
+
+    fun isWebcastLive(): Boolean {
+        // Trust LL2 webcast_live only. Most upcoming birds already have a YouTube
+        // URL; treating URL+Go as live made every Go look LIVE and stuck AUTO.
+        return webcastLive
+    }
+
+    /**
+     * AUTO first bucket: HOLD / Go / in-flight / webcast-live / T+ watch window.
+     * Stamp 63: terminal Success/Completed/Failure eject immediately; In Flight is time-gated.
+     */
+    fun isActiveWatch(now: Long = System.currentTimeMillis()): Boolean {
+        if (isTerminal()) return false
+        val t = secondsToNet(now)
+        val nearNet = t <= LaunchWindow.GO_WATCH_BEFORE_NET_SEC && t > -LaunchWindow.WATCH_AFTER_NET_SEC
+        val holdLive = isHold() && nearNet
+        val flightLive = isInFlightStatus() && nearNet
+        // Webcast only while near NET / early T+ — not forever after Success.
+        val webcastLive = isWebcastLive() && nearNet
+        if (holdLive || flightLive || webcastLive || isTPlusWatch(now)) return true
+        if (!isGo()) return false
+        return nearNet
+    }
+
+    fun isTPlusWatch(now: Long = System.currentTimeMillis()): Boolean {
+        val t = secondsToNet(now)
+        return t <= 0 && t > -LaunchWindow.WATCH_AFTER_NET_SEC
+    }
+
+    /** Bare LL2 In Flight / In-Flight status (no time gate). */
+    fun isInFlightStatus(): Boolean {
+        val a = statusAbbrev
+        val n = statusName
+        return a.equals("In Flight", ignoreCase = true) ||
+            n.contains("In Flight", ignoreCase = true)
+    }
+
+    /**
+     * Stamp 63: In Flight is time-gated like Hold (near-NET / WATCH_AFTER window).
+     * Bare statusAbbrev must NOT keep AUTO forever.
+     */
+    fun isInFlight(now: Long = System.currentTimeMillis()): Boolean {
+        if (isInFlightStatus()) {
+            val t = secondsToNet(now)
+            return t <= LaunchWindow.GO_WATCH_BEFORE_NET_SEC && t > -LaunchWindow.WATCH_AFTER_NET_SEC
+        }
+        return isTPlusWatch(now)
+    }
+
+    fun isUpcoming(now: Long = System.currentTimeMillis()): Boolean {
+        if (isActiveWatch(now)) return true
+        return secondsToNet(now) > 0
+    }
+
+    /** CMD picker: upcoming + last 48h + anything AUTO is still watching. */
+    fun inPickerWindow(now: Long = System.currentTimeMillis(), upcomingHorizonSec: Long = LaunchWindow.UPCOMING_MIN_SEC): Boolean {
+        if (isActiveWatch(now)) return true
+        val t = secondsToNet(now)
+        if (t > 0) return t <= upcomingHorizonSec
+        return t > -LaunchWindow.PICKER_LOOKBACK_SEC
+    }
 
     /** Past flights and demos: CDT jump chips drive a replay clock. Live stays wall-clock. */
     fun isReplayable(now: Long = System.currentTimeMillis()): Boolean {
         if (id.startsWith("demo-")) return true
-        return secondsToNet(now) <= -600
+        if (isActiveWatch(now)) return false
+        return secondsToNet(now) <= -LaunchWindow.WATCH_AFTER_NET_SEC
+    }
+}
+
+/**
+ * Shared AUTO / CMD window constants. LL2 is truth — no mission-name special cases.
+ */
+object LaunchWindow {
+    /** Go counts as active watch only inside this pre-NET window. */
+    const val GO_WATCH_BEFORE_NET_SEC = 2L * 3600L
+    /** T+ watch after NET so AUTO does not jump to the next bird mid-flight. */
+    /** Stamp 63: AUTO post-NET active-watch = 60 minutes. */
+    const val WATCH_AFTER_NET_SEC = 60L * 60L
+    /** Stamp 63: LCK hard max after NET (6 hours). */
+    /** Stamp 63 backstop: absolute LCK max T+6h (chips 1H|2H|6H expire earlier via duration). */
+    const val PIN_HARD_CEILING_SEC = 6L * 3600L
+    /** Recent previous that must stay pickable after AUTO leaves. */
+    const val PICKER_LOOKBACK_SEC = 48L * 3600L
+    /** Fine-tooth upcoming compare: next ~14 days of LL2. */
+    const val UPCOMING_MIN_SEC = 14L * 24L * 3600L
+
+    /** Stamp 63: human dwell remain (matches WATCH_AFTER_NET_SEC). */
+    fun formatDwellRemain(sec: Long): String {
+        val s = sec.coerceAtLeast(0L)
+        val h = s / 3600L
+        val m = (s % 3600L) / 60L
+        return when {
+            h >= 1L -> "${h}h ${m}m"
+            m >= 1L -> "${m}m"
+            else -> "${s}s"
+        }
+    }
+}
+
+/**
+ * Stamp 63 dwell UX — AUTO (T+60m) or LCK (PIN_HARD_CEILING 6h).
+ */
+fun LaunchSnapshot.autoDwellHint(
+    now: Long = System.currentTimeMillis(),
+    pinned: Boolean = false,
+    holdDurationMs: Long = 0L,
+): String {
+    // Stamp 64: LCK remain = NET + chip (1H/2H/6H). Show chip length in status. No forever pin.
+    if (pinned && holdDurationMs > 0L) {
+        val chip = when (holdDurationMs) {
+            1L * 3600_000L -> "1H"
+            6L * 3600_000L -> "6H"
+            24L * 3600_000L -> "24H"
+            else -> "2H"
+        }
+        val remainSec = ((netMs + holdDurationMs) - now) / 1000L
+        return if (remainSec > 0L) {
+            "LCK $chip | REMAIN ${LaunchWindow.formatDwellRemain(remainSec)}"
+        } else {
+            "LCK $chip | ENDING"
+        }
+    }
+    if (!isActiveWatch(now)) return "AUTO | NEXT UPCOMING"
+    val t = secondsToNet(now)
+    if (t > 0L) return "AUTO | HOLD TO T+60m"
+    val remain = LaunchWindow.WATCH_AFTER_NET_SEC + t
+    return if (remain > 0L) {
+        "AUTO | NEXT IN ${LaunchWindow.formatDwellRemain(remain)}"
+    } else {
+        "AUTO | LIVE HOLD"
     }
 }
 

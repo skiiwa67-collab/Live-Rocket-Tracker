@@ -21,9 +21,9 @@ class LaunchDataProvider {
 
     companion object {
         private const val TAG = "CCOS.Launch"
-        private const val DEV_UPCOMING = "https://lldev.thespacedevs.com/2.2.0/launch/upcoming/?limit=20&mode=detailed"
+        private const val DEV_UPCOMING = "https://lldev.thespacedevs.com/2.2.0/launch/upcoming/?limit=50&mode=detailed"
         private const val DEV_PREVIOUS = "https://lldev.thespacedevs.com/2.2.0/launch/previous/?limit=30&mode=detailed"
-        private const val PROD_UPCOMING = "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=20&mode=detailed"
+        private const val PROD_UPCOMING = "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=50&mode=detailed"
         private const val PROD_PREVIOUS = "https://ll.thespacedevs.com/2.2.0/launch/previous/?limit=30&mode=detailed"
 
         private val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
@@ -36,10 +36,10 @@ class LaunchDataProvider {
         private val pastCache = AtomicReference<LaunchListResult?>(null)
         @Volatile private var lastFetchMs = 0L
         private const val minIntervalMs = 2 * 60 * 1000L
-        @Volatile var sharedStatus: String = "Idle — not fetched yet"
+        @Volatile var sharedStatus: String = "Idle  -  not fetched yet"
         @Volatile var sharedFetching: Boolean = false
         @Volatile var sharedError: String? = null
-        @Volatile var sharedSource: String = "—"
+        @Volatile var sharedSource: String = " - "
         @Volatile var sharedCount: Int = 0
     }
 
@@ -80,37 +80,118 @@ class LaunchDataProvider {
             ?.minByOrNull { it.netMs }
             ?: demoCatalog.firstOrNull { it.isSpaceX() }
 
-    fun getNextAny(now: Long = System.currentTimeMillis()): LaunchSnapshot? =
-        cache.get()?.launches
-            ?.filter { !it.id.startsWith("demo-") && it.isUpcoming(now) }
-            ?.minByOrNull { it.netMs }
+    fun livePool(): List<LaunchSnapshot> {
+        val seen = linkedSetOf<String>()
+        val out = mutableListOf<LaunchSnapshot>()
+        for (l in cache.get()?.launches.orEmpty() + pastCache.get()?.launches.orEmpty()) {
+            if (l.id.startsWith("demo-") || l.id in seen) continue
+            seen += l.id
+            out += l
+        }
+        return out
+    }
+
+    /**
+     * CURRENT / CMD live picker (stamp 55): upcoming within horizon +
+     * HOLD / in-flight / webcast / T+ gates only. Past Spectrum -> HISTORIC.
+     */
+    fun pickerPool(now: Long = System.currentTimeMillis(), horizonDays: Int = 14): List<LaunchSnapshot> {
+        val upcomingHorizonSec = maxOf(
+            horizonDays.toLong() * 24L * 3600L,
+            LaunchWindow.UPCOMING_MIN_SEC
+        )
+        return livePool()
+            .filter {
+                if (it.isActiveWatch(now)) return@filter true // stamp 56: no bare isHold — past Spectrum ? HISTORIC
+                val t = it.secondsToNet(now)
+                t > 0 && t <= upcomingHorizonSec
+            }
+            .sortedBy { it.netMs }
+    }
+
+    /**
+     * AUTO: HOLD / Go / in-flight / webcast-live / T+ watch FIRST, closest to now.
+     * Only if none of those exist, soonest future NET.
+     */
+    fun getNextAny(now: Long = System.currentTimeMillis()): LaunchSnapshot? {
+        val live = livePool()
+        // Stamp 57: isActiveWatch Hold gate must NOT empty this path for upcoming birds.
+        // Watch bucket first; else soonest future NET (t>0) — day-out Starlink still wins.
+        val watch = live.filter { it.isActiveWatch(now) }
+            .minByOrNull { kotlin.math.abs(it.secondsToNet(now)) }
+        if (watch != null) return watch
+        val upcoming = live.filter { it.secondsToNet(now) > 0 }.minByOrNull { it.netMs }
+        if (upcoming != null) return upcoming
+        // Stamp 59: cold/empty cache - never starve AUTO.
+        return demoCatalog.firstOrNull()
+    }
 
     fun findById(id: String): LaunchSnapshot? =
         cache.get()?.launches?.firstOrNull { it.id == id }
             ?: pastCache.get()?.launches?.firstOrNull { it.id == id }
             ?: demoCatalog.firstOrNull { it.id == id }
 
+    /**
+     * Stamp 72: once a bird is in the live catalog, NEVER drop on refresh unless
+     * scrubbed / flew / terminal. Upsert fetched fields by id onto PRIOR cache;
+     * do not full-replace with one LL2 upcoming page.
+     */
+    private fun isScrubbedOrTerminal(s: LaunchSnapshot): Boolean {
+        if (s.isTerminal()) return true
+        val blob = "${s.statusAbbrev} ${s.statusName}".lowercase()
+        return "scrub" in blob
+    }
+
+    private fun upsertMergeLive(
+        prior: List<LaunchSnapshot>,
+        fetchedUpcoming: List<LaunchSnapshot>?,
+        previous: List<LaunchSnapshot>?
+    ): List<LaunchSnapshot> {
+        val now = System.currentTimeMillis()
+        val byId = LinkedHashMap<String, LaunchSnapshot>()
+        for (p in prior) {
+            if (!isScrubbedOrTerminal(p)) byId[p.id] = p
+        }
+        for (f in fetchedUpcoming.orEmpty()) {
+            if (isScrubbedOrTerminal(f)) {
+                byId.remove(f.id)
+            } else {
+                byId[f.id] = f
+            }
+        }
+        for (p in previous.orEmpty()) {
+            if (isScrubbedOrTerminal(p)) {
+                byId.remove(p.id)
+                continue
+            }
+            if (p.id in byId) continue
+            // Active watch from previous page can re-enter live.
+            if (p.isActiveWatch(now)) byId[p.id] = p
+        }
+        return byId.values.sortedBy { it.netMs }
+    }
+
     fun refreshIfNeeded(force: Boolean = false, onDone: ((LaunchListResult?) -> Unit)? = null) {
         val now = System.currentTimeMillis()
         if (!force && cache.get() != null && (now - lastFetchMs) < minIntervalMs) {
-            sharedStatus = "Cached · ${lastCount} launches · ${lastSource}"
+            sharedStatus = "Cached | ${lastCount} launches | ${lastSource}"
             onDone?.invoke(cache.get())
             return
         }
         if (isFetching) {
-            sharedStatus = "Fetching…"
+            sharedStatus = "Fetching..."
             onDone?.invoke(cache.get())
             return
         }
         sharedFetching = true
-        sharedStatus = "Fetching Launch Library 2…"
+        sharedStatus = "Fetching Launch Library 2..."
         sharedError = null
         executor.execute {
             try {
                 var source = "ll2"
                 var upcoming = fetchList(PROD_UPCOMING, "ll2")
                 if (upcoming == null) {
-                    sharedStatus = "Prod upcoming throttled — trying lldev…"
+                    sharedStatus = "Prod upcoming throttled  -  trying lldev..."
                     upcoming = fetchList(DEV_UPCOMING, "lldev")
                     if (upcoming != null) source = "lldev"
                 }
@@ -119,22 +200,42 @@ class LaunchDataProvider {
                     previous = fetchList(DEV_PREVIOUS, "lldev")
                 }
                 previous?.let { pastCache.set(it) }
-                if (upcoming != null && upcoming.launches.isNotEmpty()) {
-                    cache.set(upcoming)
-                    lastFetchMs = System.currentTimeMillis()
-                    sharedCount = upcoming.launches.size
-                    sharedSource = source
-                    sharedError = null
-                    val pastN = previous?.launches?.size ?: 0
-                    sharedStatus = "OK · ${upcoming.launches.size} upcoming · $pastN past · $source"
-                    Log.i(TAG, lastStatus)
-                    onDone?.invoke(upcoming)
-                } else {
-                    sharedError = lastError ?: "No upcoming from LL2"
-                    sharedStatus = "NO UPCOMING · $lastError · past=${previous?.launches?.size ?: 0}"
-                    Log.w(TAG, lastStatus)
-                    onDone?.invoke(cache.get())
+                val prior = cache.get()
+                val priorList = prior?.launches.orEmpty()
+                // Stamp 72: upcoming fetch fail/null — KEEP prior cache; never cache.set(empty).
+                if (upcoming == null) {
+                    sharedError = lastError ?: "upcoming fetch failed"
+                    val kept = upsertMergeLive(priorList, null, pastCache.get()?.launches)
+                    if (kept.isNotEmpty()) {
+                        val keptResult = LaunchListResult(
+                            kept,
+                            System.currentTimeMillis(),
+                            prior?.source ?: source
+                        )
+                        cache.set(keptResult)
+                        sharedCount = kept.size
+                        sharedSource = keptResult.source
+                        sharedStatus = "KEEP | prior=${kept.size} | fetch fail | $source"
+                        Log.w(TAG, lastStatus)
+                        onDone?.invoke(keptResult)
+                    } else {
+                        sharedStatus = "KEEP EMPTY | $lastError | past=${previous?.launches?.size ?: 0}"
+                        Log.w(TAG, lastStatus)
+                        onDone?.invoke(cache.get())
+                    }
+                    return@execute
                 }
+                val mergedLaunches = upsertMergeLive(priorList, upcoming.launches, pastCache.get()?.launches)
+                val merged = upcoming.copy(launches = mergedLaunches)
+                cache.set(merged)
+                lastFetchMs = System.currentTimeMillis()
+                sharedCount = merged.launches.size
+                sharedSource = source
+                sharedError = null
+                val pastN = previous?.launches?.size ?: 0
+                sharedStatus = "OK | upsert=${merged.launches.size} fetch=${upcoming.launches.size} past=$pastN | $source"
+                Log.i(TAG, lastStatus)
+                onDone?.invoke(merged)
             } finally {
                 sharedFetching = false
             }
@@ -148,13 +249,13 @@ class LaunchDataProvider {
                 readTimeout = 12_000
                 requestMethod = "GET"
                 setRequestProperty("Accept", "application/json")
-                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.2 (Android; historic+live+upcoming)")
+                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.41 (Android; upcoming+previous)")
             }
             val code = conn.responseCode
             if (code != 200) {
                 val errBody = try { conn.errorStream?.bufferedReader()?.use { it.readText() } } catch (_: Exception) { null }
-                sharedError = "HTTP $code${errBody?.let { " · ${it.take(80)}" } ?: ""}"
-                Log.w(TAG, "HTTP $code from $urlStr · $errBody")
+                sharedError = "HTTP $code${errBody?.let { " | ${it.take(80)}" } ?: ""}"
+                Log.w(TAG, "HTTP $code from $urlStr | $errBody")
                 return null
             }
             val body = conn.inputStream.bufferedReader().use { it.readText() }
@@ -222,6 +323,7 @@ class LaunchDataProvider {
                     imageUrl = strOrNull(o, "image"),
                     webcastUrl = refs.firstOrNull()?.url,
                     webcasts = refs,
+                    webcastLive = o.optBoolean("webcast_live", false),
                     probability = if (o.has("probability") && !o.isNull("probability"))
                         o.optInt("probability") else null,
                     holdReason = strOrNull(o, "holdreason")?.takeIf { it.isNotBlank() },
@@ -286,7 +388,7 @@ class LaunchDataProvider {
         return raw.toFloatOrNull()
     }
 
-    /** Safe JSON string extract — avoids Kotlin Nothing? vs String mismatch on optString(key, null). */
+    /** Safe JSON string extract  -  avoids Kotlin Nothing? vs String mismatch on optString(key, null). */
     private fun strOrNull(o: JSONObject, key: String): String? {
         if (!o.has(key) || o.isNull(key)) return null
         if (o.optJSONObject(key) != null || o.optJSONArray(key) != null) return null
@@ -308,7 +410,7 @@ class LaunchDataProvider {
     private fun buildDemoCatalog(): List<LaunchSnapshot> {
         val now = System.currentTimeMillis()
         return listOf(
-            // SpaceX — upcoming-style (T- ~1h for testing countdown)
+            // SpaceX  -  upcoming-style (T- ~1h for testing countdown)
             LaunchSnapshot(
                 id = "demo-spacex-f9",
                 name = "Falcon 9 Block 5 | Starlink Demo",
@@ -323,13 +425,13 @@ class LaunchDataProvider {
                 pad = "SLC-40",
                 location = "Cape Canaveral SFS, FL, USA"
             ),
-            // SpaceX — already in flight (for metrics / attitude)
+            // SpaceX  -  already in flight (for metrics / attitude)
             LaunchSnapshot(
                 id = "demo-spacex-inflight",
                 name = "Falcon 9 Block 5 | In-Flight Test",
                 statusName = "In Flight",
                 statusAbbrev = "In Flight",
-                netMs = now - 95 * 1000L,   // T+95s → mid ascent
+                netMs = now - 95 * 1000L,   // T+95s -> mid ascent
                 windowStartMs = now - 95 * 1000L,
                 windowEndMs = now + 10 * 60 * 1000L,
                 provider = "SpaceX",

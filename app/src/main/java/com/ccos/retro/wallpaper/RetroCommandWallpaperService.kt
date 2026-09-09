@@ -105,7 +105,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             if (key == trajLandKey || trajLandBusy) return
             trajLandBusy = true
             Thread({
-                val bmp = Bitmap.createBitmap(ww, hh, Bitmap.Config.RGB_565)
+                val bmp = Bitmap.createBitmap(ww, hh, Bitmap.Config.ARGB_8888)
                 val c = Canvas(bmp)
                 val local = RectF(0f, 0f, ww.toFloat(), hh.toFloat())
                 c.drawColor(Color.parseColor("#0A3A58"))
@@ -116,11 +116,10 @@ class RetroCommandWallpaperService : WallpaperService() {
                     Color.parseColor("#0C4A6E")
                 )
                 handler.post {
-                    val old = trajLandBmp
+                    // Stamp 85: swap-only; never recycle a bitmap the draw thread may still hold.
                     trajLandBmp = bmp
                     trajLandKey = key
                     trajLandBusy = false
-                    old?.recycle()
                 }
             }, "ccos-wp-traj").start()
         }
@@ -4380,13 +4379,19 @@ class RetroCommandWallpaperService : WallpaperService() {
                 return
             }
             val minTop = buttonRects[3].bottom + 10f
-            val analogCeil = if (mapBot > minTop + 24f) mapBot else minTop + height * 0.16f
-            val slot = (analogCeil - minTop).coerceAtLeast(height * 0.14f)
-            val rocketH = min(height * 0.16f, slot * 0.90f)
-            val baseY = minTop + rocketH
+            // Stamp 85/75: ~1.75x paperdoll so tanks are readable — still direct paint (no DST_IN).
+            val analogCeil = if (mapBot > minTop + 24f) mapBot else minTop + height * 0.28f
+            val slot = (analogCeil - minTop).coerceAtLeast(height * 0.24f)
+            val rocketH = min(height * 0.28f, slot * 0.95f)
             val leftCx = buttonRects[3].centerX()
             val rightCx = buttonRects[7].centerX()
             val separated = tSec >= sepTime(launch)
+            val leftSel = prefs.trackedStage == 1
+            val rightSel = prefs.trackedStage == 2
+            val leftH = if (leftSel) rocketH else rocketH * 0.78f
+            val rightH = if (rightSel) rocketH else rocketH * 0.78f
+            val maxTwinH = max(leftH, rightH)
+            val baseY = minTop + maxTwinH
             val boxW = buttonRects[3].width()
             val top = minTop
             val bot = (baseY + telSp(16f)).coerceAtMost(analogCeil + telSp(8f))
@@ -4399,25 +4404,23 @@ class RetroCommandWallpaperService : WallpaperService() {
                 strokePaint.color = withLamp(if (selected) skin.accent else skin.muted, lamp * if (selected) 1f else 0.55f)
                 canvas.drawRoundRect(hit.left, hit.top, hit.right, hit.bottom - telSp(14f), 6f, 6f, strokePaint)
             }
-            val leftSel = prefs.trackedStage == 1
-            val rightSel = prefs.trackedStage == 2
             frame(stage1Hit, leftSel)
             frame(stage2Hit, rightSel)
 
             canvas.save()
             canvas.clipRect(stage1Hit)
             if (!separated) {
-                drawVehicle(canvas, leftCx, baseY, rocketH, launch, tSec, 1, false, skin, lamp, 1f)
+                drawVehicle(canvas, leftCx, baseY, leftH, launch, tSec, 1, false, skin, lamp, 1f)
             } else {
-                drawVehicle(canvas, leftCx, baseY, rocketH * 0.88f, launch, tSec, 1, true, skin, lamp, 1f)
+                drawVehicle(canvas, leftCx, baseY, leftH * 0.88f, launch, tSec, 1, true, skin, lamp, 1f)
             }
             canvas.restore()
             canvas.save()
             canvas.clipRect(stage2Hit)
             if (!separated) {
-                drawVehicle(canvas, rightCx, baseY, rocketH, launch, tSec, 1, false, skin, lamp, 0.42f)
+                drawVehicle(canvas, rightCx, baseY, rightH, launch, tSec, 1, false, skin, lamp, 0.42f)
             } else {
-                drawVehicle(canvas, rightCx, baseY, rocketH * 0.88f, launch, tSec, 2, true, skin, lamp, 1f)
+                drawVehicle(canvas, rightCx, baseY, rightH * 0.88f, launch, tSec, 2, true, skin, lamp, 1f)
             }
             canvas.restore()
 
@@ -4856,7 +4859,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                         fillPaint.color = gray
                         canvas.drawPath(p, fillPaint)
                         canvas.save()
-                        canvas.clipPath(p)
+                        canvas.clipRect(x - bW, tip, x + bW, baseY)
                         drawStageTanks(canvas, x, tip, baseY, bW * 0.78f, fuel, methalox = false, lamp, alpha)
                         canvas.restore()
                         strokePaint.color = stroke
@@ -6007,9 +6010,8 @@ class RetroCommandWallpaperService : WallpaperService() {
             }
 
             canvas.save()
-            val path = Path()
-            path.addCircle(cx, cy, radius, Path.Direction.CW)
-            canvas.clipPath(path)
+            // Stamp 85: HW-safe clipRect; no clipPath in TEL draw path.
+            canvas.clipRect(cx - radius, cy - radius, cx + radius, cy + radius)
 
             val pitchOffset = (90f - pitchDeg) / 90f * radius * 1.55f
             canvas.rotate(rollDeg, cx, cy)

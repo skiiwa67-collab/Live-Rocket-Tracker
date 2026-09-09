@@ -3,6 +3,8 @@ package com.ccos.retro.ui
 import android.app.WallpaperManager
 import android.content.ComponentName
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -19,7 +21,10 @@ import androidx.appcompat.app.AppCompatActivity
 import com.ccos.retro.R
 import com.ccos.retro.data.LaunchDataProvider
 import com.ccos.retro.data.LaunchSnapshot
+import com.ccos.retro.data.autoDwellHint
+import com.ccos.retro.data.LaunchWindow
 import com.ccos.retro.model.AppPrefs
+import com.ccos.retro.module.RocketTelemetryModule
 import com.ccos.retro.wallpaper.RetroCommandWallpaperService
 
 /**
@@ -30,6 +35,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var prefs: AppPrefs
     private lateinit var launchProvider: LaunchDataProvider
+    private lateinit var telemetryModule: RocketTelemetryModule
     private var launchList: List<LaunchSnapshot> = emptyList()
     private var suppressLaunchSelect = false
     private var historicQuery: String = ""
@@ -46,6 +52,26 @@ class MainActivity : AppCompatActivity() {
         }
         setContentView(R.layout.activity_main)
         launchProvider = LaunchDataProvider()
+                telemetryModule = RocketTelemetryModule(prefs, launchProvider)
+        // Stamp 63 A: onCreate ensureData -> forceRefresh if null -> resolveTracked -> keepTrackedOrLastGood
+        telemetryModule.ensureData()
+        if (telemetryModule.tracked == null) {
+            telemetryModule.forceRefresh {
+                runOnUiThread {
+                    telemetryModule.resolveTracked()
+                    telemetryModule.keepTrackedOrLastGood()
+                    populateLaunchSpinner()
+                    refreshTrackingUi()
+                }
+            }
+        } else {
+            telemetryModule.resolveTracked()
+            telemetryModule.keepTrackedOrLastGood()
+        }
+
+
+
+        wireConsoleSkin()
 
         findViewById<Button>(R.id.btn_set_wallpaper).setOnClickListener {
             val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).apply {
@@ -62,7 +88,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.btn_auto_on).setOnClickListener {
+            // Stamp 55: AUTO ON re-locks live CURRENT window (drop HOLD/historic trap).
             prefs.telemetryAuto = true
+            prefs.telemetryListMode = "current"
+            prefs.telemetryPinned = false
+            telemetryModule.releaseHold()
+            telemetryModule.clearSim()
+            telemetryModule.resolveTracked()
+            populateLaunchSpinner()
             refreshTrackingUi()
         }
         findViewById<Button>(R.id.btn_auto_off).setOnClickListener {
@@ -71,8 +104,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.btn_list_current).setOnClickListener {
+            // Stamp 55: CURRENT tab forces follow=AUTO and re-locks live window.
             prefs.telemetryListMode = "current"
             prefs.telemetryAuto = true
+            prefs.telemetryPinned = false
+            telemetryModule.releaseHold()
+            telemetryModule.clearSim()
+            telemetryModule.resolveTracked()
             populateLaunchSpinner()
             refreshTrackingUi()
         }
@@ -119,14 +157,14 @@ class MainActivity : AppCompatActivity() {
 
         val launchSpinner = findViewById<Spinner>(R.id.spinner_launch)
         launchSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                        override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 if (suppressLaunchSelect) return
                 if (position in launchList.indices) {
                     val launch = launchList[position]
-                    prefs.telemetryLaunchId = launch.id
-                    if (prefs.telemetryListMode == "historical") {
-                        prefs.telemetryAuto = false
-                    }
+                    // Stamp 60: real USER id change always selectLaunch (AUTO off + stick THAT bird).
+                    // Programmatic populate still blocked by suppressLaunchSelect.
+                    if (launch.id == prefs.telemetryLaunchId && launch.id == telemetryModule.tracked?.id) return
+                    telemetryModule.selectLaunch(launch.id)
                     refreshTrackingUi()
                 }
             }
@@ -171,7 +209,7 @@ class MainActivity : AppCompatActivity() {
         refreshPageLabels()
 
         findViewById<Button>(R.id.btn_refresh_launches).setOnClickListener {
-            updateLaunchStatus("Fetching…")
+            updateLaunchStatus("Fetching...")
             launchProvider.refreshIfNeeded(force = true) {
                 runOnUiThread {
                     populateLaunchSpinner()
@@ -181,12 +219,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         populateLaunchSpinner()
-        updateLaunchStatus("Fetching…")
+        updateLaunchStatus("Fetching...")
         launchProvider.refreshIfNeeded(force = true) {
             runOnUiThread {
+                // Stamp 57: catalog landed - resolve AUTO now (onCreate resolve was pre-fetch null).
+                telemetryModule.resolveTracked()
                 populateLaunchSpinner()
                 updateLaunchStatus(launchProvider.lastStatus)
                 refreshStatusLine()
+                refreshTrackingUi()
             }
         }
 
@@ -208,6 +249,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Stamp 57: never force AUTO on resume  -  MANUAL pick must stick (Soyuz stay Soyuz).
         refreshTrackingUi()
         populateLaunchSpinner()
         updateLaunchStatus(launchProvider.lastStatus)
@@ -226,9 +268,8 @@ class MainActivity : AppCompatActivity() {
     private fun populateLaunchSpinner() {
         val now = System.currentTimeMillis()
         val all = launchProvider.allSelectable()
-        val liveOnly = launchProvider.getCached()?.launches.orEmpty()
-            .filter { !it.id.startsWith("demo-") && it.isUpcoming(now) }
-        val horizonMs = prefs.telemetryHorizonDays * 24L * 3600L * 1000L
+        // Window catalog: upcoming + previous/active watch  -  just-flew / HOLD stay selectable.
+        val liveOnly = launchProvider.pickerPool(now, prefs.telemetryHorizonDays)
         val historic = prefs.telemetryListMode == "historical"
 
         launchList = if (historic) {
@@ -238,33 +279,44 @@ class MainActivity : AppCompatActivity() {
             val filtered = pool.filter { matchesHistoric(it, historicQuery) }
             if (historicQuery.isNotBlank()) filtered.take(80) else filtered.take(40)
         } else {
-            liveOnly.filter { it.netMs <= now + horizonMs }
-                .sortedBy { it.netMs }
-                .take(10)
+            val keepId = prefs.telemetryLaunchId
+            // Stamp 55: CURRENT keep only HOLD/in-flight/webcast/T+/upcoming  -  past -> HISTORIC.
+            val keep = liveOnly.firstOrNull { it.id == keepId }
+                ?: launchProvider.findById(keepId)?.takeIf {
+                    it.isActiveWatch(now) || it.isHold() || it.secondsToNet(now) > 0
+                }
+                ?: telemetryModule.tracked?.takeIf {
+                    it.id == keepId && (it.isActiveWatch(now) || it.isHold() || it.secondsToNet(now) > 0)
+                }
+            val base = liveOnly.toMutableList()
+            if (keep != null && base.none { it.id == keep.id }) base.add(0, keep)
+            base.sortedBy { it.netMs }.take(20)
         }
 
         val labels = launchList.map { l ->
             val secs = l.secondsToNet(now)
             val tag = when {
                 l.id.startsWith("demo-") -> "[DEMO] "
-                secs < -300 -> "[PAST] "
-                secs < 0 -> "[LIVE] "
+                l.isHold() -> "[HOLD] "
+                l.isActiveWatch(now) && secs <= 0 -> "[LIVE] "
+                secs < -LaunchWindow.PICKER_LOOKBACK_SEC -> "[PAST] "
+                secs < 0 -> "[T+] "
                 secs < 86400 -> "[${secs / 3600}h] "
                 else -> "[${secs / 86400}d] "
             }
-            "$tag${l.name.take(36)} · ${l.provider.take(12)}"
+            "$tag${l.name.take(36)} | ${l.provider.take(12)}"
         }
         val spinner = findViewById<Spinner>(R.id.spinner_launch)
         suppressLaunchSelect = true
         val emptyMsg = when {
-            launchProvider.isFetching -> "Fetching launches…"
-            historic && historicQuery.isNotBlank() -> "No historic match for “${historicQuery.take(18)}”"
+            launchProvider.isFetching -> "Fetching..."
+            historic && historicQuery.isNotBlank() -> "No historic match: " + historicQuery.take(18)
             historic -> "No historic entries yet"
             liveOnly.isEmpty() && launchProvider.lastError != null ->
-                "0 live · ${launchProvider.lastError}"
+                "0 live | ${launchProvider.lastError}"
             liveOnly.isEmpty() ->
-                "0 live in cache · ${launchProvider.lastStatus}"
-            else -> "0 in window (live cache=${liveOnly.size}) · try 1 MO / 6 MO"
+                "0 live in cache | ${launchProvider.lastStatus}"
+            else -> "0 in window (live cache=${liveOnly.size}) | try 1 MO / 6 MO"
         }
         spinner.adapter = ArrayAdapter(
             this,
@@ -273,12 +325,13 @@ class MainActivity : AppCompatActivity() {
         )
         val idx = launchList.indexOfFirst { it.id == prefs.telemetryLaunchId }
         if (idx >= 0) spinner.setSelection(idx, false)
-        suppressLaunchSelect = false
+        // Stamp 55: onItemSelected often fires after this frame  -  hold suppress until post.
+        spinner.post { spinner.post { suppressLaunchSelect = false } }
 
         val extra = if (!historic) {
-            " · ${launchList.size} shown · ${liveOnly.size} upcoming"
+            " | ${launchList.size} shown | ${liveOnly.size} in window"
         } else {
-            " · ${launchList.size} historic"
+            " | ${launchList.size} historic"
         }
         updateLaunchStatus(launchProvider.lastStatus + extra)
         refreshStatusLine()
@@ -287,6 +340,12 @@ class MainActivity : AppCompatActivity() {
     private fun refreshStatusLine() {
         val tv = findViewById<TextView>(R.id.txt_status) ?: return
         val now = System.currentTimeMillis()
+        val tracked = telemetryModule.tracked
+        if ((prefs.telemetryAuto || prefs.telemetryPinned) && tracked != null) {
+            tv.text = "${tracked.autoDwellHint(now, pinned = prefs.telemetryPinned, holdDurationMs = prefs.telemetryHoldDurationMs)} | ${tracked.name.take(22)}"
+            tv.setTextColor(0xFF90FFB0.toInt())
+            return
+        }
         val next = launchProvider.getNextAny(now)
         tv.text = when {
             next != null && next.secondsToNet(now) > -1800 -> {
@@ -297,12 +356,12 @@ class MainActivity : AppCompatActivity() {
                     s < 86400 -> "T-${s / 3600}h"
                     else -> "T-${s / 86400}d"
                 }
-                "Next  ·  ${next.name.take(28)}  ·  $whenStr"
+                "Next | ${next.name.take(28)} | $whenStr"
             }
-            else -> "Command Center · set wallpaper, then you’re on the next launch"
+            else -> "Command Center - set wallpaper, then you are on the next launch"
         }
+        tv.setTextColor(0xFFFFFFFF.toInt())
     }
-
     private fun refreshTrackingUi() {
         val historic = prefs.telemetryListMode == "historical"
         findViewById<View>(R.id.row_horizon)?.visibility = if (historic) View.GONE else View.VISIBLE
@@ -344,9 +403,9 @@ class MainActivity : AppCompatActivity() {
             val isCommand = page == prefs.commandPageIndex
             val title = TextView(this).apply {
                 text = if (isCommand) {
-                    "PAGE $page  ·  COMMAND (HUD lives here)"
+                    "PAGE $page  |  COMMAND (HUD lives here)"
                 } else {
-                    "PAGE $page  ·  look-only fill"
+                    "PAGE $page  |  look-only fill"
                 }
                 setTextColor(0xFFFFFFFF.toInt())
                 textSize = 15f
@@ -405,4 +464,101 @@ class MainActivity : AppCompatActivity() {
             b.setTextColor(0xFFD0DCE8.toInt())
         }
     }
+
+
+        private fun styleConsoleChip(b: Button?, selected: Boolean, selectedBg: Int, idleBg: Int, selectedText: Int, idleText: Int) {
+            if (b == null) return
+            try {
+                b.backgroundTintList = null
+            } catch (_: Throwable) {}
+            try {
+                // AppCompat / Material support tint
+                val m = b.javaClass.methods.firstOrNull { it.name == "setSupportBackgroundTintList" && it.parameterTypes.size == 1 }
+                m?.invoke(b, null)
+            } catch (_: Throwable) {}
+            b.setBackgroundResource(if (selected) selectedBg else idleBg)
+            b.setTextColor(if (selected) selectedText else idleText)
+            b.isAllCaps = false
+            b.textSize = 15f
+        }
+
+        private fun applyConsoleSkin() {
+        val section = findViewById<LinearLayout>(R.id.section_console_skin) ?: return
+        val title = findViewById<TextView>(R.id.txt_console_title)
+        val help = findViewById<TextView>(R.id.txt_console_help)
+        val mcc = findViewById<Button>(R.id.btn_console_mcc)
+        val ros = findViewById<Button>(R.id.btn_console_ros)
+        val clear = findViewById<Button>(R.id.btn_console_clear)
+        val skin = prefs.consoleSkin
+        // Stamp 70: selected = BRIGHT fill + BRIGHT text; idle = dark + dim. Clear Material tints.
+        mcc?.text = "MCC"
+        ros?.text = "ROS"
+        clear?.text = "CLEAR"
+        when (skin) {
+            AppPrefs.CONSOLE_SKIN_ROS -> {
+                section.setBackgroundResource(R.drawable.bg_console_ros)
+                title?.visibility = View.VISIBLE
+                title?.text = "\u041D\u0410\u0421\u0422\u0420\u041E\u0419\u041A\u0418 / SETTINGS"
+                title?.setTextColor(0xFFE8F0D8.toInt())
+                help?.text = "Selected LIT bright text | idle dim | shared CMD flyout"
+                help?.setTextColor(0xFFB8C890.toInt())
+                styleConsoleChip(mcc, false, R.drawable.chip_console_selected_ros, R.drawable.chip_console_ros_idle, 0xFFFFFFF0.toInt(), 0xFF6A7A58.toInt())
+                styleConsoleChip(ros, true, R.drawable.chip_console_selected_ros, R.drawable.chip_console_ros_idle, 0xFFFFFFF0.toInt(), 0xFF6A7A58.toInt())
+                styleConsoleChip(clear, false, R.drawable.chip_console_selected_ros, R.drawable.chip_console_ros_idle, 0xFFFFFFF0.toInt(), 0xFF6A7A58.toInt())
+                findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF0A0C08.toInt())
+            }
+            AppPrefs.CONSOLE_SKIN_CLEAR -> {
+                title?.visibility = View.VISIBLE
+                section.setBackgroundResource(R.drawable.bg_console_clear)
+                title?.text = "CONSOLE"
+                title?.setTextColor(0xFF00E5FF.toInt())
+                help?.text = "Selected LIT bright text | idle dim | shared CMD flyout"
+                help?.setTextColor(0xFF8AA0B0.toInt())
+                styleConsoleChip(mcc, false, R.drawable.chip_console_selected_clear, R.drawable.chip_console_idle, 0xFFFFFFF0.toInt(), 0xFF5A6878.toInt())
+                styleConsoleChip(ros, false, R.drawable.chip_console_selected_clear, R.drawable.chip_console_idle, 0xFFFFFFF0.toInt(), 0xFF5A6878.toInt())
+                styleConsoleChip(clear, true, R.drawable.chip_console_selected_clear, R.drawable.chip_console_idle, 0xFFFFFFF0.toInt(), 0xFF5A6878.toInt())
+                findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF060C12.toInt())
+            }
+            else -> {
+                title?.visibility = View.VISIBLE
+                section.setBackgroundResource(R.drawable.bg_console_mcc)
+                title?.text = "CONSOLE"
+                title?.setTextColor(0xFFFFB000.toInt())
+                help?.text = "Selected LIT bright text | idle dim | shared CMD flyout"
+                help?.setTextColor(0xFF8AA0B0.toInt())
+                // HARD: never 0xFF1A1000 on MCC selected — bright cream/white on lit amber
+                styleConsoleChip(mcc, true, R.drawable.chip_console_selected_mcc, R.drawable.chip_console_idle, 0xFFFFFFF0.toInt(), 0xFF5A6878.toInt())
+                styleConsoleChip(ros, false, R.drawable.chip_console_selected_mcc, R.drawable.chip_console_idle, 0xFFFFFFF0.toInt(), 0xFF5A6878.toInt())
+                styleConsoleChip(clear, false, R.drawable.chip_console_selected_mcc, R.drawable.chip_console_idle, 0xFFFFFFF0.toInt(), 0xFF5A6878.toInt())
+                findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF0A0E14.toInt())
+            }
+        }
+        findViewById<View>(R.id.section_telemetry)?.let { tel ->
+            when (skin) {
+                AppPrefs.CONSOLE_SKIN_ROS -> tel.setBackgroundResource(R.drawable.bg_console_ros)
+                AppPrefs.CONSOLE_SKIN_CLEAR -> tel.setBackgroundResource(R.drawable.bg_console_clear)
+                else -> tel.setBackgroundResource(R.drawable.panel_console)
+            }
+        }
+        (findViewById<View>(android.R.id.content) as? android.view.ViewGroup)?.getChildAt(0)?.setBackgroundColor(
+            when (skin) {
+                AppPrefs.CONSOLE_SKIN_ROS -> 0xFF1A2010.toInt()
+                AppPrefs.CONSOLE_SKIN_CLEAR -> 0xFF060C12.toInt()
+                else -> 0xFF0A0E14.toInt()
+            }
+        )
+    }
+
+private fun wireConsoleSkin() {
+        fun pick(id: String) {
+            prefs.consoleSkin = id
+            applyConsoleSkin()
+        }
+        findViewById<Button>(R.id.btn_console_mcc)?.setOnClickListener { pick(AppPrefs.CONSOLE_SKIN_MCC) }
+        findViewById<Button>(R.id.btn_console_ros)?.setOnClickListener { pick(AppPrefs.CONSOLE_SKIN_ROS) }
+        findViewById<Button>(R.id.btn_console_clear)?.setOnClickListener { pick(AppPrefs.CONSOLE_SKIN_CLEAR) }
+        applyConsoleSkin()
+    }
+
+
 }

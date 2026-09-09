@@ -289,17 +289,25 @@
         android:layout_height="wrap_content"
         android:visibility="gone"/>
 
-    <com.ccos.retro.ui.CommandConsoleView
-        android:id="@+id/console_view"
+    <FrameLayout
+        android:id="@+id/vid_well"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_weight="1">
+
+        <com.ccos.retro.ui.CommandConsoleView
+            android:id="@+id/console_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <android.webkit.WebView
+            android:id="@+id/vid_web"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:importantForAutofill="yes"/>
+    </FrameLayout>
 
 </LinearLayout>
-
-<com.ccos.retro.ui.VideoFeedOverlay
-    android:id="@+id/video_overlay"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"/>
 
 </FrameLayout>
