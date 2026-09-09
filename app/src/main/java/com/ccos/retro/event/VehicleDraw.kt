@@ -248,8 +248,8 @@ object VehicleDraw {
         if (separated) return false
         val hull = vehicleHullBitmap(artId) ?: return false
         val dest = artDestRect(hull, cx, baseY, h, maxSlotW = h * 0.55f)
-        drawBitmapSrcInRect(canvas, hull, null, dest, alpha * 1.0f)
         val glassA = (alpha * 0.45f).coerceIn(0.20f, 0.55f)
+        // Stamp 92: fills behind catalog hull (cutout windows); never loose blocks on top.
         try {
             val usedMasks = drawStageTankMasks(
                 artId, canvas, null, dest, stage, separated,
@@ -268,6 +268,7 @@ object VehicleDraw {
         } catch (t: Throwable) {
             Log.e("LRT89", "overlay tanks", t)
         }
+        drawBitmapSrcInRect(canvas, hull, null, dest, alpha * 1.0f)
         try {
             paintArtPathFlames(canvas, cx, baseY, h, tSec, stage, artId, methalox, alpha, launch)
         } catch (t: Throwable) {
@@ -332,9 +333,12 @@ object VehicleDraw {
         val uFrac = if (wantB && wantU && booster != null && upper != null) 0.42f else 1f
         if ((!wantB || booster == null) && (!wantU || upper == null)) return false
 
-        // Engines first (under hull), then hulls bottom-up.
+        // Stamp 92 COMPOSITE: engines → tank fills BEHIND → hull ON TOP (cutout windows show fuel).
+        // Never draw fills after hull (loose color blocks / bleed outside silhouette).
+        var drewStageTanks = false
         if (wantB && booster != null) {
             val bH = h * bFrac
+            val destB = artDestRect(booster, cx, baseY, bH, maxSlotW = h * 0.55f)
             if (engRing != null) {
                 val eH = bH * 0.14f
                 drawBitmapSrcInRect(
@@ -343,9 +347,35 @@ object VehicleDraw {
                     alpha
                 )
             }
-            val destB = artDestRect(booster, cx, baseY, bH, maxSlotW = h * 0.55f)
+            // Fills FIRST (behind hull).
+            try {
+                val lvl = fuelOf(tSec, launch, 1)
+                val loxC = Color.argb(240, 60, 190, 255)
+                val ch4C = Color.argb(240, 255, 175, 45)
+                val ox = firstBitmap(
+                    "vehicle_${artId}_tank_s1_ox", "vehicle_${artId}_tank_booster_ox", "vehicle_${artId}_booster_tank_ox"
+                )
+                val fuel = firstBitmap(
+                    "vehicle_${artId}_tank_s1_fuel", "vehicle_${artId}_tank_booster_fuel", "vehicle_${artId}_booster_tank_fuel"
+                )
+                if (ox != null || fuel != null) {
+                    // SAME lvl; ox = upper window band, fuel = lower (relative lockstep).
+                    val midB = (destB.top + destB.bottom) * 0.5f
+                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destB, lvl, loxC, tint = true, bandTop = destB.top, bandBot = midB)
+                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destB, lvl, ch4C, tint = true, bandTop = midB, bandBot = destB.bottom)
+                    drewStageTanks = true
+                } else {
+                    val fills = firstBitmap(
+                        "vehicle_${artId}_booster_tank_fills", "vehicle_${artId}_s1_tank_fills"
+                    )
+                    if (fills != null) {
+                        drawTankMaskLevelSplit(canvas, fills, null, destB, lvl, 0, tint = false)
+                        drewStageTanks = true
+                    }
+                }
+            } catch (_: Throwable) { }
+            // Hull ON TOP — transparent cutouts reveal fills.
             drawBitmapSrcInRect(canvas, booster, null, destB, alpha)
-            // Stamp 91: grid fins when Darren drops vehicle_*_grid_fins / _fins / _booster_fins.
             val finsBmp = firstBitmap(
                 "vehicle_${artId}_grid_fins", "vehicle_${artId}_fins", "vehicle_${artId}_booster_fins"
             )
@@ -358,40 +388,12 @@ object VehicleDraw {
                     alpha
                 )
             }
-            // Stage tank fills for booster when present
-            try {
-                // Stamp 91: LOX blue vs CH4 amber - never twin cyan. Prefer discrete ox/fuel masks.
-                val lvl = fuelOf(tSec, launch, 1)
-                val loxC = Color.argb(240, 60, 190, 255)
-                val ch4C = Color.argb(240, 255, 175, 45)
-                val ox = firstBitmap(
-                    "vehicle_${artId}_tank_s1_ox", "vehicle_${artId}_tank_booster_ox", "vehicle_${artId}_booster_tank_ox"
-                )
-                val fuel = firstBitmap(
-                    "vehicle_${artId}_tank_s1_fuel", "vehicle_${artId}_tank_booster_fuel", "vehicle_${artId}_booster_tank_fuel"
-                )
-                if (ox != null || fuel != null) {
-                    // Stamp 92 FAIL fix: SAME lvl both, but deplete inside EACH window band (relative %).
-                    // Absolute full-dest fill Y empties upper LOX while lower CH4 stays full.
-                    val midB = (destB.top + destB.bottom) * 0.5f
-                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destB, lvl, loxC, tint = true, bandTop = destB.top, bandBot = midB)
-                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destB, lvl, ch4C, tint = true, bandTop = midB, bandBot = destB.bottom)
-                } else {
-                    val fills = firstBitmap(
-                        "vehicle_${artId}_booster_tank_fills", "vehicle_${artId}_s1_tank_fills"
-                    )
-                    // Combined sheet only: split dest 50/50, same lvl.
-                    if (fills != null) drawTankMaskLevelSplit(canvas, fills, null, destB, lvl, 0, tint = false)
-                }
-            } catch (_: Throwable) { }
             if (wantSrb && srb != null) {
-                // Stamp 90 tip: Soyuz/Proton Korolev cross = 4 strap-ons; others 2.
                 val four = artId == "soyuz" || artId == "proton"
                 val gap = destB.width() * 0.55f
                 val sH = bH * 0.72f
                 val maxW = h * 0.28f
                 if (four) {
-                    // Near/far pair each side (2D side-view of 4 boosters).
                     for (side in listOf(-1f, 1f)) {
                         for (k in listOf(0.55f, 1.08f)) {
                             val x = cx + side * gap * k
@@ -411,6 +413,7 @@ object VehicleDraw {
         if (wantU && upper != null) {
             val uH = h * uFrac
             val uBase = if (wantB && booster != null) baseY - h * bFrac else baseY
+            val destU = artDestRect(upper, cx, uBase, uH, maxSlotW = h * 0.50f)
             if (engShip != null) {
                 val eH = uH * 0.16f
                 drawBitmapSrcInRect(
@@ -419,8 +422,7 @@ object VehicleDraw {
                     alpha
                 )
             }
-            val destU = artDestRect(upper, cx, uBase, uH, maxSlotW = h * 0.50f)
-            drawBitmapSrcInRect(canvas, upper, null, destU, alpha)
+            // Fills FIRST (behind ship hull).
             try {
                 val lvl = fuelOf(tSec, launch, 2)
                 val loxC = Color.argb(240, 60, 190, 255)
@@ -435,23 +437,32 @@ object VehicleDraw {
                     val midU = (destU.top + destU.bottom) * 0.5f
                     if (ox != null) drawTankMaskLevel(canvas, ox, null, destU, lvl, loxC, tint = true, bandTop = destU.top, bandBot = midU)
                     if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destU, lvl, ch4C, tint = true, bandTop = midU, bandBot = destU.bottom)
+                    drewStageTanks = true
                 } else {
                     val fills = firstBitmap(
                         "vehicle_${artId}_ship_tank_fills", "vehicle_${artId}_s2_tank_fills"
                     )
-                    if (fills != null) drawTankMaskLevelSplit(canvas, fills, null, destU, lvl, 0, tint = false)
+                    if (fills != null) {
+                        drawTankMaskLevelSplit(canvas, fills, null, destU, lvl, 0, tint = false)
+                        drewStageTanks = true
+                    }
                 }
             } catch (_: Throwable) { }
+            // Ship hull ON TOP.
+            drawBitmapSrcInRect(canvas, upper, null, destU, alpha)
         }
-        // Fallback shared tank_s1/s2 masks if stage fills missing
-        val envelope = RectF(cx - h * 0.22f, baseY - h, cx + h * 0.22f, baseY)
-        try {
-            drawStageTankMasks(
-                artId, canvas, null, envelope, stage, separated,
-                fuelOf(tSec, launch, 1), fuelOf(tSec, launch, 2), methalox,
-                (alpha * 0.35f).coerceIn(0.15f, 0.45f)
-            )
-        } catch (_: Throwable) { }
+        // Fallback masks only when assembly drew no stage fills — still behind nothing here,
+        // so skip if we already composited fills under hull (avoids on-top bleed).
+        if (!drewStageTanks) {
+            val envelope = RectF(cx - h * 0.22f, baseY - h, cx + h * 0.22f, baseY)
+            try {
+                drawStageTankMasks(
+                    artId, canvas, null, envelope, stage, separated,
+                    fuelOf(tSec, launch, 1), fuelOf(tSec, launch, 2), methalox,
+                    (alpha * 0.35f).coerceIn(0.15f, 0.45f)
+                )
+            } catch (_: Throwable) { }
+        }
         return true
     }
 
