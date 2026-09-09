@@ -7161,11 +7161,21 @@ class RetroCommandWallpaperService : WallpaperService() {
                     }
                 }
                 AppPrefs.DATA_PROP -> {
+                    // Stamp 92: one prop read — LOX + fuel share stage remain (not a missing-data twin).
                     val lamp = prefs.lampBrightness
                     val tSec = telemetryModule.effectiveSecondsFromNet(now)
-                    val fuel = fuelRemain(tSec, hudStage(telemetryModule.tracked, tSec))
-                    val can = RectF(left + 48f, top + titleSz + 36f, right - 48f, bottom - 80f)
+                    val launch = telemetryModule.tracked
+                    val stg = hudStage(launch, tSec)
+                    val fuel = fuelRemain(tSec, stg, launch)
+                    val can = RectF(left + 48f, top + titleSz + 36f, right - 48f, bottom - 100f)
                     drawFuelTanks(canvas, can, fuel, fuel, skin, lamp)
+                    val spec = com.ccos.retro.event.VehicleCatalog.spec(launch)
+                    telBold()
+                    hudPaint.textAlign = Paint.Align.CENTER
+                    hudPaint.color = withLamp(skin.text, lamp)
+                    val line = "STG$stg  ${spec.prop(stg)}  /  ${String.format("%.0f%%", fuel * 100f)} LEFT"
+                    hudPaint.textSize = telFit(line, (right - left) * 0.90f, bodySz * 1.2f, 14f)
+                    canvas.drawText(line, width / 2f, bottom - bodySz * 1.2f, hudPaint)
                 }
                 AppPrefs.DATA_SYSTEM -> {
                     val t = lastTele

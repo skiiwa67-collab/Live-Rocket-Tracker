@@ -1139,33 +1139,80 @@ object FlightProfiles {
         }
     }
 
-    /**
-     * EST remaining propellant, 0..1. Residual film is NOT a drawable load.
-     * Spent stage returns 0. Historic and live share this.
-     */
     fun isStageSpent(tSec: Float, launch: LaunchSnapshot?, stage: Int): Boolean {
         if (tSec < 0f) return false
-        if (stage >= 2) return tSec >= secoTime(launch)
+        if (stage >= 2) {
+            // Stamp 92: spent only after ship land/splash — NOT at SECO (relight/landing burn still have prop).
+            val land = shipLandTime(launch)
+            return if (hasLandTime(land)) tSec >= land else tSec >= secoTime(launch)
+        }
         val land = boosterLandTime(launch)
         val sep = sepTime(launch)
         return if (hasLandTime(land)) tSec >= land else tSec >= sep
     }
 
+    /**
+     * EST remaining propellant, 0..1.
+     * Stamp 92: landing burn / ship relight still show prop while stage is burning.
+     * Splash / spent after cutoff may be empty. Residual film is NOT a drawable load.
+     */
     fun fuelRemain(tSec: Float, launch: LaunchSnapshot?, stage: Int): Float {
         if (tSec < 0f) return 1f
-        if (isStageSpent(tSec, launch, stage)) return 0f
         val sep = sepTime(launch)
+        val spec = VehicleCatalog.spec(launch)
+        val reserve = spec.residual.coerceIn(0.06f, 0.22f)
+
         if (stage >= 2) {
-            if (tSec < sep) return 1f
             val seco = secoTime(launch)
-            val u = ((tSec - sep) / (seco - sep).coerceAtLeast(1f)).coerceIn(0f, 1f)
-            return (1f - u).coerceAtLeast(0f)
+            val land = shipLandTime(launch)
+            if (hasLandTime(land) && tSec >= land) return 0f
+            if (tSec < sep) return 1f
+            // Ascent: drain 1 to reserve by SECO (keep landing/relight prop).
+            if (tSec < seco) {
+                val u = ((tSec - sep) / (seco - sep).coerceAtLeast(1f)).coerceIn(0f, 1f)
+                return (1f - u * (1f - reserve)).coerceIn(reserve, 1f)
+            }
+            val relight = events(launch).firstOrNull { "RELIGHT" in it.second.uppercase() }?.first
+            val flip = events(launch).firstOrNull { "FLIP" in it.second.uppercase() }?.first
+                ?: if (hasLandTime(land)) land - 40f else null
+            if (relight != null && tSec >= relight && tSec < relight + 40f) {
+                val u = ((tSec - relight) / 40f).coerceIn(0f, 1f)
+                return (reserve * (1f - 0.30f * u)).coerceAtLeast(reserve * 0.55f)
+            }
+            if (flip != null && hasLandTime(land) && tSec >= flip) {
+                val u = ((tSec - flip) / (land - flip).coerceAtLeast(1f)).coerceIn(0f, 1f)
+                return (reserve * 0.70f * (1f - u)).coerceAtLeast(0f)
+            }
+            // Coast after SECO before landing sequence: hold residual (not dry).
+            if (hasLandTime(land) && tSec < land) return reserve * 0.75f
+            // Expendable / no land mark: empty after cutoff.
+            return 0f
         }
+
+        // Stage 1 — booster
+        val land = boosterLandTime(launch)
+        if (hasLandTime(land) && tSec >= land) return 0f
         if (!hasLandTime(sep) && VehicleCatalog.needsUpdate(launch)) {
             return (1f - tSec / 180f).coerceIn(0f, 1f)
         }
-        if (tSec >= sep) return 0f
-        val u = (tSec / sep.coerceAtLeast(1f)).coerceIn(0f, 1f)
-        return (1f - u).coerceAtLeast(0f)
+        if (tSec < sep) {
+            val u = (tSec / sep.coerceAtLeast(1f)).coerceIn(0f, 1f)
+            return (1f - u * (1f - reserve)).coerceIn(reserve, 1f)
+        }
+        // Expendable / no return: empty after sep.
+        if (!hasLandTime(land)) return 0f
+        val boostEnd = sep + spec.boostbackSec
+        val landStart = (land - spec.landingBurnSec).coerceAtLeast(boostEnd + 8f)
+        return when {
+            tSec < boostEnd -> {
+                val u = ((tSec - sep) / (boostEnd - sep).coerceAtLeast(1f)).coerceIn(0f, 1f)
+                (reserve * (1f - 0.25f * u)).coerceAtLeast(reserve * 0.70f)
+            }
+            tSec < landStart -> reserve * 0.72f
+            else -> {
+                val u = ((tSec - landStart) / (land - landStart).coerceAtLeast(1f)).coerceIn(0f, 1f)
+                (reserve * 0.72f * (1f - u)).coerceAtLeast(0f)
+            }
+        }
     }
 }

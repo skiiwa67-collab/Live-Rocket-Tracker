@@ -1934,21 +1934,26 @@ class CommandConsoleView @JvmOverloads constructor(
             y += dh + dp(8f)
         }
 
-        val rows = listOf(
-            "FAMILY" to spec.family.uppercase(),
-            "HEIGHT" to (if ("50.5" in spec.nerdNote) "~50.5 m" else "—"),
-            "STRAP-ONS" to when (spec.id) {
-                "cz8a" -> "2 liquid"
-                "lm5" -> "4 boosters"
-                else -> "—"
-            },
-            "S1" to "${spec.s1Engines} x ${spec.engineName}",
-            "S1 THRUST" to spec.s1Thrust,
-            "S2" to "${spec.s2Engines} x ${spec.s2EngineName.ifBlank { spec.engineName }}",
-            "S2 THRUST" to spec.s2Thrust,
-            "FUEL/OX" to "${spec.fuelName}/${spec.oxName}",
-            "NOTE" to spec.nerdNote.take(64)
-        )
+        // Stamp 92: one real catalog plate — no missing-data duplicate placeholders.
+        val stage = trackedOr(prefs)
+        val rows = buildList {
+            add("FAMILY" to spec.family.uppercase())
+            add("FUEL/OX" to "${spec.fuelName}/${spec.oxName}")
+            add("S1 ENG" to "${spec.s1Engines} x ${spec.engineName}")
+            add("S1 THRUST" to spec.s1Thrust)
+            add("S1 PROP" to spec.prop(1))
+            add("S1 DRY" to spec.dry(1))
+            add("S2 ENG" to "${spec.s2Engines} x ${spec.s2EngineName.ifBlank { spec.engineName }}")
+            add("S2 THRUST" to spec.s2Thrust)
+            val s2p = spec.prop(2)
+            if (s2p.isNotBlank() && s2p != "—" && s2p != "-") add("S2 PROP" to s2p)
+            val s2d = spec.dry(2)
+            if (s2d.isNotBlank() && s2d != "—" && s2d != "-") add("S2 DRY" to s2d)
+            add("RESIDUAL" to String.format("%.0f%%", FlightProfiles.fuelRemain(tSec, launch, stage) * 100f))
+            val note = spec.nerdNote.take(72)
+            if (note.isNotBlank()) add("NOTE" to note)
+        }
+
         val floor = h - dp(10f)
         val rowH = ((floor - y) / rows.size).coerceIn(sp(14f), sp(24f))
         for ((lab, value) in rows) {
