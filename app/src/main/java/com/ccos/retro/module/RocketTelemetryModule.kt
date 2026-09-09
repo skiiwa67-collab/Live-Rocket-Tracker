@@ -263,7 +263,7 @@ class RocketTelemetryModule(
     private fun isHistoricOrDemoPin(launch: LaunchSnapshot?, now: Long = System.currentTimeMillis()): Boolean {
         if (launch == null) return false
         if (launch.id.startsWith("demo-")) return true
-        // Historical list mode + any in-theater sim: never wall-clock kill LCK (pastCeiling is always true for past NET).
+        // Historical list mode + any in-theater sim: never wall-clock kill LCK (past NET would false-expire).
         if (prefs.telemetryListMode == "historical") return true
         if (loopReplay || simSecondsFromNet != null) return true
         return launch.isReplayable(now)

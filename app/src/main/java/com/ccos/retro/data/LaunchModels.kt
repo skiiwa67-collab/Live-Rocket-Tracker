@@ -247,7 +247,7 @@ fun LaunchSnapshot.autoDwellHint(
             AppPrefs.HOLD_DUR_48H_MS -> "48H"
             else -> "2H"
         }
-        val remainSec = ((netMs + holdDurationMs) - now) / 1000L
+        val remainSec = ((netMs + dur) - now) / 1000L
         return if (remainSec > 0L) {
             "LCK $chip | REMAIN ${LaunchWindow.formatDwellRemain(remainSec)}"
         } else {
