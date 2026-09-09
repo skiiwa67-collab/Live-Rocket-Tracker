@@ -364,11 +364,16 @@ object VehicleDraw {
                 val lvl = fuelOf(tSec, launch, 1)
                 val loxC = Color.argb(200, 28, 110, 220)
                 val ch4C = Color.argb(200, 255, 155, 35)
-                val ox = firstBitmap("vehicle_${artId}_tank_s1_ox")
-                val fuel = firstBitmap("vehicle_${artId}_tank_s1_fuel")
+                val ox = firstBitmap(
+                    "vehicle_${artId}_tank_s1_ox", "vehicle_${artId}_tank_booster_ox", "vehicle_${artId}_booster_tank_ox"
+                )
+                val fuel = firstBitmap(
+                    "vehicle_${artId}_tank_s1_fuel", "vehicle_${artId}_tank_booster_fuel", "vehicle_${artId}_booster_tank_fuel"
+                )
                 if (ox != null || fuel != null) {
-                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destB, lvl, loxC)
-                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destB, lvl, ch4C)
+                    // Darren baked LOX blue / CH4 amber - tint=false keeps distinct colors (no twin cyan).
+                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destB, lvl, loxC, tint = false)
+                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destB, lvl, ch4C, tint = false)
                 } else {
                     val fills = firstBitmap(
                         "vehicle_${artId}_booster_tank_fills", "vehicle_${artId}_s1_tank_fills"
@@ -417,11 +422,15 @@ object VehicleDraw {
                 val lvl = fuelOf(tSec, launch, 2)
                 val loxC = Color.argb(200, 28, 110, 220)
                 val ch4C = Color.argb(200, 255, 155, 35)
-                val ox = firstBitmap("vehicle_${artId}_tank_s2_ox")
-                val fuel = firstBitmap("vehicle_${artId}_tank_s2_fuel")
+                val ox = firstBitmap(
+                    "vehicle_${artId}_tank_s2_ox", "vehicle_${artId}_tank_ship_ox", "vehicle_${artId}_ship_tank_ox"
+                )
+                val fuel = firstBitmap(
+                    "vehicle_${artId}_tank_s2_fuel", "vehicle_${artId}_tank_ship_fuel", "vehicle_${artId}_ship_tank_fuel"
+                )
                 if (ox != null || fuel != null) {
-                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destU, lvl, loxC)
-                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destU, lvl, ch4C)
+                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destU, lvl, loxC, tint = false)
+                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destU, lvl, ch4C, tint = false)
                 } else {
                     val fills = firstBitmap(
                         "vehicle_${artId}_ship_tank_fills", "vehicle_${artId}_s2_tank_fills"
