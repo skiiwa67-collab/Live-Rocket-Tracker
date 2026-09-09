@@ -568,6 +568,14 @@ object VehicleDraw {
         return any
     }
 
+    /** Opaque Y band cache for tank masks — key = identityHash + wh. */
+    private val tankBandCache = HashMap<Int, Pair<Int, Int>>()
+
+    /**
+     * Stamp 92: deplete within THIS mask's opaque band so LOX (upper) and fuel (lower)
+     * both animate from the same stage fuelRemain. Never clip against the full hull —
+     * that emptied only the top tank while the bottom looked stuck full.
+     */
     private fun drawTankMaskLevel(
         canvas: Canvas,
         mask: Bitmap,
@@ -593,12 +601,85 @@ object VehicleDraw {
             }
             this.alpha = 230
         }
+        val (bandTopPx, bandBotPx) = tankMaskOpaqueBand(mask, mSrc)
+        val srcH = mSrc.height().toFloat().coerceAtLeast(1f)
+        val bandTopD = dest.top + (bandTopPx - mSrc.top) / srcH * dest.height()
+        val bandBotD = dest.top + (bandBotPx - mSrc.top) / srcH * dest.height()
+        val bandH = (bandBotD - bandTopD).coerceAtLeast(1f)
+        // Combined ox+fuel sheet: split mid-band and deplete BOTH halves with the same lvl.
+        if (bandH > dest.height() * 0.55f) {
+            val mid = (bandTopD + bandBotD) * 0.5f
+            drawTankBandClipped(canvas, mask, mSrc, dest, paint, bandTopD, mid, lvl)
+            drawTankBandClipped(canvas, mask, mSrc, dest, paint, mid, bandBotD, lvl)
+        } else {
+            drawTankBandClipped(canvas, mask, mSrc, dest, paint, bandTopD, bandBotD, lvl)
+        }
+    }
+
+    private fun drawTankBandClipped(
+        canvas: Canvas,
+        mask: Bitmap,
+        mSrc: Rect,
+        dest: RectF,
+        paint: Paint,
+        bandTop: Float,
+        bandBot: Float,
+        lvl: Float
+    ) {
+        val bandH = (bandBot - bandTop).coerceAtLeast(1f)
+        val fillTop = bandBot - bandH * lvl
         val saved = canvas.save()
-        val fillTop = dest.bottom - dest.height() * lvl
-        canvas.clipRect(dest.left, fillTop, dest.right, dest.bottom)
+        canvas.clipRect(
+            dest.left,
+            fillTop.coerceIn(dest.top, dest.bottom),
+            dest.right,
+            bandBot.coerceIn(dest.top, dest.bottom)
+        )
         canvas.drawBitmap(mask, mSrc, dest, paint)
         canvas.restoreToCount(saved)
     }
+
+    /** Sample opaque rows in [src] (no getPixels). Returns y range in bitmap space. */
+    private fun tankMaskOpaqueBand(mask: Bitmap, src: Rect): Pair<Int, Int> {
+        val key = System.identityHashCode(mask) xor (mask.width shl 16) xor mask.height xor (src.top shl 8) xor src.bottom
+        tankBandCache[key]?.let { return it }
+        var top = src.bottom
+        var bot = src.top
+        val yStep = (src.height() / 160).coerceAtLeast(1)
+        val xStep = (src.width() / 48).coerceAtLeast(1)
+        val maxX = (src.right - 1).coerceAtLeast(src.left)
+        val maxY = (src.bottom - 1).coerceAtLeast(src.top)
+        var y = src.top
+        while (y <= maxY) {
+            var x = src.left
+            var hit = false
+            while (x <= maxX) {
+                if (android.graphics.Color.alpha(
+                        mask.getPixel(x.coerceIn(0, mask.width - 1), y.coerceIn(0, mask.height - 1))
+                    ) > 40
+                ) {
+                    hit = true
+                    break
+                }
+                x += xStep
+            }
+            if (hit) {
+                if (y < top) top = y
+                if (y > bot) bot = y
+            }
+            y += yStep
+        }
+        if (bot <= top) {
+            top = src.top
+            bot = src.bottom
+        } else {
+            bot = (bot + yStep).coerceAtMost(src.bottom)
+        }
+        val band = top to bot
+        tankBandCache[key] = band
+        return band
+    }
+
 
     private fun loadVehicleDrawable(name: String): Bitmap? {
         if (name in artTried) return artCache[name]
