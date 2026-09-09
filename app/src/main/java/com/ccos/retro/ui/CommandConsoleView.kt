@@ -2121,7 +2121,9 @@ class CommandConsoleView @JvmOverloads constructor(
             BitmapFactory.decodeResource(resources, rid, opts)
         } else null
         reentryBmpCache[name] = bmp
-        if (name.contains("mask")) reentryMaskClip = null
+        if (name.contains("mask") || name.contains("unwrap")) {
+            reentryMaskClip = null
+        }
         return bmp
     }
 
@@ -2222,67 +2224,122 @@ class CommandConsoleView @JvmOverloads constructor(
         val mainBox = RectF(pad, top + bannerH, inset.left - insetGap, bot - estH)
         val mainDest = fitReentryBmp(unwrap ?: fallbackPlate, mainBox)
 
-        // Massive multi-color plasma around unwrap edges/wake (Ada live; PNG has no baked plasma).
-        if (heat > 0.04f) {
-            val aCore = (90 + 140 * heat * flick).toInt().coerceIn(0, 230)
-            val wakeLen = mainDest.width() * (0.18f + 0.55f * heat)
-            val wakeX0 = mainDest.right - mainDest.width() * 0.04f
-            val wakeY = mainDest.centerY()
-            // Violet/magenta fringe envelope
+        // Bold plasma wake: nose-leading + aft plume (reentry flow L->R). No flat horizontal bar.
+        if (heat > 0.03f) {
+            val aCore = (110 + 145 * heat * flick).toInt().coerceIn(0, 245)
+            val pw = mainDest.width()
+            val ph = mainDest.height()
+            val midY = mainDest.centerY()
+            val noseX = mainDest.left + pw * 0.02f
+            val aftX = mainDest.right - pw * 0.02f
+            val wakeLen = pw * (0.28f + 0.62f * heat)
+
+            // Nose-leading bow sheath — white/orange core, magenta/violet fringe streaming aft.
             fillPaint.shader = RadialGradient(
-                wakeX0 + wakeLen * 0.25f, wakeY, wakeLen * 0.95f,
+                noseX + pw * 0.06f, midY, ph * (0.85f + 0.55f * heat),
                 intArrayOf(
-                    Color.argb((aCore * 0.35f).toInt(), 200, 40, 255),
-                    Color.argb((aCore * 0.55f).toInt(), 255, 60, 200),
-                    Color.argb((aCore * 0.25f).toInt(), 80, 40, 255),
+                    Color.argb(aCore, 255, 255, 250),
+                    Color.argb((aCore * 0.75f).toInt(), 255, 170, 50),
+                    Color.argb((aCore * 0.45f).toInt(), 255, 50, 170),
+                    Color.argb((aCore * 0.2f).toInt(), 110, 40, 255),
+                    Color.TRANSPARENT
+                ),
+                floatArrayOf(0f, 0.22f, 0.48f, 0.72f, 1f),
+                Shader.TileMode.CLAMP
+            )
+            canvas.drawOval(
+                noseX - pw * 0.08f,
+                midY - ph * 0.72f,
+                noseX + pw * 0.28f,
+                midY + ph * 0.72f,
+                fillPaint
+            )
+            // Windward stream along lower/upper edges (flow aft — not a flat bar under board).
+            fillPaint.shader = LinearGradient(
+                noseX, midY + ph * 0.28f,
+                aftX, midY + ph * 0.28f,
+                intArrayOf(
+                    Color.argb((aCore * 0.55f).toInt(), 255, 230, 200),
+                    Color.argb((aCore * 0.4f).toInt(), 255, 90, 160),
+                    Color.argb((aCore * 0.22f).toInt(), 140, 50, 255),
+                    Color.TRANSPARENT
+                ),
+                floatArrayOf(0f, 0.35f, 0.7f, 1f),
+                Shader.TileMode.CLAMP
+            )
+            canvas.drawOval(
+                noseX, midY + ph * 0.05f,
+                aftX + wakeLen * 0.15f, midY + ph * 0.95f,
+                fillPaint
+            )
+            fillPaint.shader = LinearGradient(
+                noseX, midY - ph * 0.28f,
+                aftX, midY - ph * 0.28f,
+                intArrayOf(
+                    Color.argb((aCore * 0.4f).toInt(), 255, 200, 220),
+                    Color.argb((aCore * 0.3f).toInt(), 200, 60, 255),
+                    Color.TRANSPARENT
+                ),
+                floatArrayOf(0f, 0.5f, 1f),
+                Shader.TileMode.CLAMP
+            )
+            canvas.drawOval(
+                noseX + pw * 0.05f, midY - ph * 0.95f,
+                aftX + wakeLen * 0.1f, midY - ph * 0.05f,
+                fillPaint
+            )
+
+            // Massive aft wake plume off unwrap (orange/white core + magenta/violet fringe).
+            fillPaint.shader = RadialGradient(
+                aftX + wakeLen * 0.28f, midY, wakeLen * 1.05f,
+                intArrayOf(
+                    Color.argb((aCore * 0.4f).toInt(), 200, 40, 255),
+                    Color.argb((aCore * 0.65f).toInt(), 255, 50, 190),
+                    Color.argb((aCore * 0.3f).toInt(), 90, 40, 255),
                     Color.TRANSPARENT
                 ),
                 floatArrayOf(0f, 0.35f, 0.65f, 1f),
                 Shader.TileMode.CLAMP
             )
             canvas.drawOval(
-                wakeX0 - mainDest.height() * 0.15f,
-                wakeY - mainDest.height() * 0.85f,
-                wakeX0 + wakeLen,
-                wakeY + mainDest.height() * 0.85f,
+                aftX - ph * 0.1f, midY - ph * 1.05f,
+                aftX + wakeLen, midY + ph * 1.05f,
                 fillPaint
             )
-            // Orange/white core
             fillPaint.shader = LinearGradient(
-                wakeX0, wakeY, wakeX0 + wakeLen * 0.85f, wakeY,
+                aftX, midY, aftX + wakeLen, midY,
                 intArrayOf(
                     Color.argb(aCore, 255, 255, 245),
-                    Color.argb((aCore * 0.85f).toInt(), 255, 180, 60),
-                    Color.argb((aCore * 0.55f).toInt(), 255, 80, 40),
-                    Color.argb((aCore * 0.25f).toInt(), 255, 40, 160),
+                    Color.argb((aCore * 0.9f).toInt(), 255, 190, 70),
+                    Color.argb((aCore * 0.65f).toInt(), 255, 90, 50),
+                    Color.argb((aCore * 0.4f).toInt(), 255, 40, 170),
+                    Color.argb((aCore * 0.15f).toInt(), 120, 40, 255),
                     Color.TRANSPARENT
                 ),
-                floatArrayOf(0f, 0.2f, 0.45f, 0.7f, 1f),
+                floatArrayOf(0f, 0.15f, 0.35f, 0.55f, 0.78f, 1f),
                 Shader.TileMode.CLAMP
             )
             canvas.drawOval(
-                wakeX0 - mainDest.height() * 0.08f,
-                wakeY - mainDest.height() * 0.45f,
-                wakeX0 + wakeLen * 0.9f,
-                wakeY + mainDest.height() * 0.45f,
+                aftX - ph * 0.05f, midY - ph * 0.55f,
+                aftX + wakeLen * 0.95f, midY + ph * 0.55f,
                 fillPaint
             )
             fillPaint.shader = null
-            // No horizontal glow bar under unwrap (Chris FAIL — unclear strip).
             strokePaint.style = Paint.Style.STROKE
             strokePaint.strokeCap = Paint.Cap.ROUND
-            for (i in 0 until 7) {
-                val wob = sin((now * (3.6f + i * 0.33f) + i * 1.1f).toDouble()).toFloat()
-                val y = wakeY + (i - 3f) * mainDest.height() * 0.09f + wob * mainDest.height() * 0.04f
-                val len = wakeLen * (0.55f + 0.4f * (1f - kotlin.math.abs(i - 3f) / 4f))
-                val a = (130 * heat * flick * (1f - i * 0.05f)).toInt().coerceIn(0, 200)
-                strokePaint.strokeWidth = mainDest.height() * (0.035f + 0.02f * heat)
+            for (i in 0 until 9) {
+                val wob = sin((now * (3.8f + i * 0.31f) + i * 1.2f).toDouble()).toFloat()
+                val y = midY + (i - 4f) * ph * 0.10f + wob * ph * 0.05f
+                val len = wakeLen * (0.5f + 0.45f * (1f - kotlin.math.abs(i - 4f) / 5f)) *
+                    (0.8f + 0.2f * sin((now * 5.2f + i).toDouble()).toFloat())
+                val a = (150 * heat * flick * (1f - i * 0.04f)).toInt().coerceIn(0, 220)
+                strokePaint.strokeWidth = ph * (0.04f + 0.03f * heat) * (1f - i * 0.04f)
                 strokePaint.color = when (i % 3) {
-                    0 -> Color.argb(a, 255, 230, 200)
+                    0 -> Color.argb(a, 255, 240, 210)
                     1 -> Color.argb(a, 255, 70, 180)
-                    else -> Color.argb(a, 140, 80, 255)
+                    else -> Color.argb(a, 150, 80, 255)
                 }
-                canvas.drawLine(wakeX0, y, wakeX0 + len, y + wob * mainDest.height() * 0.08f, strokePaint)
+                canvas.drawLine(aftX, y, aftX + len, y + wob * ph * 0.1f, strokePaint)
             }
         }
 
