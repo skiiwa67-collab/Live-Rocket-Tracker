@@ -8,6 +8,8 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.graphics.Path
 import android.graphics.LinearGradient
 import android.graphics.RadialGradient
@@ -2108,6 +2110,16 @@ class CommandConsoleView @JvmOverloads constructor(
         return Color.rgb(r.coerceIn(0, 255), g.coerceIn(0, 255), b.coerceIn(0, 255))
     }
 
+
+    private var reentryBmpCache: MutableMap<String, Bitmap?> = HashMap()
+    private fun reentryDrawable(name: String): Bitmap? {
+        if (reentryBmpCache.containsKey(name)) return reentryBmpCache[name]
+        val rid = resources.getIdentifier(name, "drawable", context.packageName)
+        val bmp = if (rid != 0) BitmapFactory.decodeResource(resources, rid) else null
+        reentryBmpCache[name] = bmp
+        return bmp
+    }
+
     private fun drawReentryCard(
         canvas: Canvas,
         w: Float,
@@ -2206,106 +2218,44 @@ class CommandConsoleView @JvmOverloads constructor(
             fillPaint.shader = null
         }
 
-        // Hull: nose left, aft right, belly down
-        tmpPath.reset()
-        tmpPath.moveTo(noseX, midY)
-        tmpPath.quadTo(noseX + sW * 0.22f, backY, cx - sW * 0.15f, backY)
-        tmpPath.lineTo(aftX - sW * 0.16f, backY + sH * 0.10f)
-        tmpPath.lineTo(aftX, midY + sH * 0.05f)
-        tmpPath.lineTo(aftX - sW * 0.10f, bellyY)
-        tmpPath.lineTo(cx - sW * 0.10f, bellyY)
-        tmpPath.quadTo(noseX + sW * 0.28f, bellyY - sH * 0.05f, noseX, midY)
-        tmpPath.close()
+        // Stamp 92: Darren reentry heatshield plate - kill flat LED tile scoreboard.
         fillPaint.shader = null
-        fillPaint.color = Color.parseColor("#C6CACF")
-        canvas.drawPath(tmpPath, fillPaint)
-
-        // Windward tiles. Local temp: nose hotter, aft cooler, tile-to-tile scatter.
-        canvas.save()
-        // Stamp 85: HW-safe rectangular clip; hull draw remains the visible boundary.
-        canvas.clipRect(noseX, midY, aftX, bellyY + 2f)
-        fillPaint.color = Color.parseColor("#1A1410")
-        canvas.drawRect(noseX, midY + sH * 0.06f, aftX, bellyY + 2f, fillPaint)
-        val tile = sW * 0.10f
-        var tx = cx - sW + tile
-        var col = 0
-        while (tx < aftX - tile * 0.4f) {
-            var ty = midY + sH * 0.12f
-            var row = 0
-            val along = ((tx - noseX) / (aftX - noseX).coerceAtLeast(1f)).coerceIn(0f, 1f)
-            val spanHot = 1.10f - 0.28f * along
-            while (ty < bellyY - tile * 0.25f) {
-                val seed = ((col * 17 + row * 31) % 11) / 11f
-                val local = tps * spanHot * (0.90f + 0.18f * seed) * (1f + 0.04f * sin((now * 3.1f + col + row).toDouble()).toFloat())
-                fillPaint.color = tileBlackbody(local)
-                canvas.drawRoundRect(tx, ty, tx + tile * 0.78f, ty + tile * 0.48f, 1.2f, 1.2f, fillPaint)
-                if (local > 1250f) {
-                    fillPaint.color = Color.argb(((local - 1250f) / 400f * 90f).toInt().coerceIn(0, 110), 255, 255, 255)
-                    canvas.drawRoundRect(tx + tile * 0.12f, ty + tile * 0.08f, tx + tile * 0.55f, ty + tile * 0.28f, 1f, 1f, fillPaint)
-                }
-                ty += tile * 0.60f
-                row++
+        fillPaint.colorFilter = null
+        val plate = reentryDrawable("reentry_heatshield")
+        val tiles = reentryDrawable("reentry_heatshield_tiles")
+        val plateH = (bot - top) * 0.52f
+        val plateDest = if (plate != null) {
+            val aspect = plate.width.toFloat() / plate.height.toFloat().coerceAtLeast(1f)
+            var dw = (bot - top) * 0.92f
+            var dh = dw / aspect
+            if (dh > plateH) {
+                dh = plateH
+                dw = dh * aspect
             }
-            tx += tile
-            col++
+            RectF(cx - dw * 0.5f, midY - dh * 0.42f, cx + dw * 0.5f, midY + dh * 0.58f)
+        } else {
+            RectF(noseX, backY, aftX, bellyY)
         }
-        canvas.restore()
-
-        strokePaint.style = Paint.Style.STROKE
-        strokePaint.strokeWidth = 2.0f
-        strokePaint.color = Color.parseColor("#8A9098")
-        canvas.drawPath(tmpPath, strokePaint)
-
-        // Flaps hunt. Ionized N2 around the fins is blue-violet.
-        fun flap(i: Int, x0: Float, y0: Float, out0: Float, drop0: Float, windward: Boolean) {
-            val hunt = sin((now * (1.55f + i * 0.21f) + i * 1.9f).toDouble()).toFloat()
-            val hunt2 = sin((now * 0.47f + i * 2.4f).toDouble()).toFloat()
-            val k = 1f + 0.16f * hunt + 0.08f * hunt2
-            val out = out0 * k
-            val drop = drop0 * (0.92f + 0.16f * (1f - hunt * 0.5f))
-            val hx = x0 + out * 0.55f
-            val hy = y0 + drop * 0.45f
-            if (heat > 0.08f) {
-                val glow = (50 + 140 * heat * flick).toInt().coerceIn(0, 200)
-                fillPaint.shader = RadialGradient(
-                    hx, hy, sW * 0.55f,
-                    intArrayOf(
-                        Color.argb(glow, 180, 210, 255),
-                        Color.argb((glow * 0.75f).toInt(), 90, 40, 255),
-                        Color.argb((glow * 0.35f).toInt(), 200, 40, 220),
-                        Color.TRANSPARENT
-                    ),
-                    floatArrayOf(0f, 0.40f, 0.72f, 1f),
-                    Shader.TileMode.CLAMP
-                )
-                canvas.drawCircle(hx, hy, sW * 0.48f, fillPaint)
-                fillPaint.shader = null
-            }
-            tmpPath.reset()
-            tmpPath.moveTo(x0, y0)
-            tmpPath.lineTo(x0 + out, y0 + drop * 0.35f)
-            tmpPath.lineTo(x0 + out * 0.15f, y0 + drop)
-            tmpPath.close()
-            fillPaint.color = if (windward) tileBlackbody(flapT * (0.88f + 0.10f * hunt)) else Color.parseColor("#8B9198")
-            canvas.drawPath(tmpPath, fillPaint)
-            strokePaint.strokeWidth = 1.4f
-            strokePaint.color = Color.argb((80 + 120 * heat).toInt().coerceIn(0, 220), 140, 160, 255)
-            canvas.drawPath(tmpPath, strokePaint)
+        if (plate != null) {
+            fillPaint.alpha = 255
+            canvas.drawBitmap(plate, null, plateDest, fillPaint)
         }
-        flap(0, cx - sW * 0.55f, backY + sH * 0.04f, -sW * 0.38f, sH * 0.55f, false)
-        flap(1, cx - sW * 0.55f, bellyY - sH * 0.04f, -sW * 0.38f, -sH * 0.55f, true)
-        flap(2, cx + sW * 0.35f, backY + sH * 0.12f, sW * 0.42f, sH * 0.70f, false)
-        flap(3, cx + sW * 0.35f, bellyY - sH * 0.08f, sW * 0.42f, -sH * 0.70f, true)
+        // Optional tiles intensity tint from TPS temp (ColorFilter only - no Xfermode/getPixel).
+        if (tiles != null && heat > 0.02f) {
+            val tint = tileBlackbody(tps)
+            val a = (40 + 200 * heat * flick).toInt().coerceIn(0, 230)
+            fillPaint.alpha = a
+            fillPaint.colorFilter = PorterDuffColorFilter(tint, PorterDuff.Mode.SRC_IN)
+            canvas.drawBitmap(tiles, null, plateDest, fillPaint)
+            fillPaint.colorFilter = null
+            fillPaint.alpha = 255
+        }
 
-        fillPaint.shader = null
-        fillPaint.color = Color.parseColor("#4A3220")
-        val bellR = sH * 0.18f
-        canvas.drawCircle(aftX + dp(2f), midY - sH * 0.22f, bellR, fillPaint)
-        canvas.drawCircle(aftX + dp(2f), midY, bellR, fillPaint)
-        canvas.drawCircle(aftX + dp(2f), midY + sH * 0.22f, bellR, fillPaint)
-
-        drawLabel(canvas, "NOSE", noseX, backY - sp(8f), withLamp(skin.muted), w * 0.18f, sp(11f), sp(10f))
-        drawLabel(canvas, "AFT", aftX, backY - sp(8f), withLamp(skin.muted), w * 0.18f, sp(11f), sp(10f))
+        val noseLabX = plateDest.left + plateDest.width() * 0.12f
+        val aftLabX = plateDest.right - plateDest.width() * 0.12f
+        val labY = plateDest.top - sp(6f)
+        drawLabel(canvas, "NOSE", noseLabX, labY, withLamp(skin.muted), w * 0.18f, sp(11f), sp(10f))
+        drawLabel(canvas, "AFT", aftLabX, labY, withLamp(skin.muted), w * 0.18f, sp(11f), sp(10f))
         val banner = when {
             heat < 0.12f -> "BELLY FLOP  ·  ENTRY INTERFACE"
             heat < 0.45f -> "BELLY FLOP  ·  PLASMA BUILDING"
