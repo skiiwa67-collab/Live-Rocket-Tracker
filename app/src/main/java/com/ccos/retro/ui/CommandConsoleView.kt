@@ -2421,8 +2421,8 @@ class CommandConsoleView @JvmOverloads constructor(
         run {
             val pw = mainDest.width()
             val ph = mainDest.height()
-            val bodyTop = mainDest.top + ph * 0.288f
-            val bodyBot = mainDest.top + ph * 0.712f
+            val bodyTop = mainDest.top + ph * 0.304f
+            val bodyBot = mainDest.top + ph * 0.696f
             val dash = DashPathEffect(floatArrayOf(dp(5f), dp(4f)), now * 8f)
             // Phase command from reentry progress; tiny idle so actuators look alive.
             val cmd = when {
@@ -2441,10 +2441,10 @@ class CommandConsoleView @JvmOverloads constructor(
                 val deg: Float
             )
             val tabs = listOf(
-                Tab("FWD L", mainDest.left + pw * 0.28f, bodyTop, -ph * 0.065f, pw * 0.036f, clampDeg(cmd * 0.90f + idle)),
-                Tab("FWD R", mainDest.left + pw * 0.28f, bodyBot, ph * 0.065f, pw * 0.036f, clampDeg(-(cmd * 0.85f) - idle * 0.7f)),
-                Tab("AFT L", mainDest.left + pw * 0.82f, bodyTop, -ph * 0.080f, pw * 0.060f, clampDeg(cmd * 1.10f + idle * 1.1f)),
-                Tab("AFT R", mainDest.left + pw * 0.82f, bodyBot, ph * 0.080f, pw * 0.060f, clampDeg(-(cmd * 1.05f) - idle))
+                Tab("FWD L", mainDest.left + pw * 0.285f, bodyTop, -ph * 0.066f, pw * 0.045f, clampDeg(cmd * 0.90f + idle)),
+                Tab("FWD R", mainDest.left + pw * 0.285f, bodyBot, ph * 0.066f, pw * 0.045f, clampDeg(-(cmd * 0.85f) - idle * 0.7f)),
+                Tab("AFT L", mainDest.left + pw * 0.836f, bodyTop, -ph * 0.076f, pw * 0.075f, clampDeg(cmd * 1.10f + idle * 1.1f)),
+                Tab("AFT R", mainDest.left + pw * 0.836f, bodyBot, ph * 0.076f, pw * 0.075f, clampDeg(-(cmd * 1.05f) - idle))
             )
             fun drawTab(tab: Tab) {
                 // Ghost neutral (δ=0) dashed outline
