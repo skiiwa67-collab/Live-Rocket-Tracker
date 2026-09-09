@@ -178,12 +178,36 @@ class RocketTelemetryModule(
     }
 
     /** Effective seconds from NET for display/metrics (sim or real). */
+    
+    /** Stamp 86: CURRENT live/upcoming birds stay on wall-clock — never sim/cursor theater. */
+    private fun isLiveWallClockBird(launch: LaunchSnapshot, now: Long): Boolean {
+        if (launch.id.startsWith("demo-")) return false
+        if (prefs.telemetryListMode == "historical") return false
+        // Active watch OR not yet past the live window (upcoming / early flight).
+        return launch.isActiveWatch(now) || !launch.isReplayable(now)
+    }
+
+    private fun scrubLiveSim(launch: LaunchSnapshot) {
+        if (simSecondsFromNet == null && !loopReplay && prefs.eventCursorSec(launch.id) == null) return
+        simSecondsFromNet = null
+        forceStatus = null
+        loopReplay = false
+        prefs.setEventCursorSec(launch.id, null)
+        lastCursorWriteMs = System.currentTimeMillis()
+    }
+
     fun effectiveSecondsFromNet(now: Long = System.currentTimeMillis()): Float {
         val launch = tracked ?: return 0f
-        // Memory sim first. Prefs cursor only for historic/demo replay — never theater a live bird.
+        // Stamp 86: live CURRENT/AUTO watch = wall-clock only (fixes T+165h sim stick on Soyuz).
+        if (isLiveWallClockBird(launch, now)) {
+            scrubLiveSim(launch)
+            val t0 = prefs.pinnedNetMs(launch.id, launch.netMs)
+            return (now - t0) / 1000f
+        }
+        // HISTORICAL / demo theater — sim memory, then prefs cursor, then wall-clock.
         val mem = simSecondsFromNet
         if (mem != null) return mem
-        if (launch.isReplayable(now)) {
+        if (launch.isReplayable(now) || launch.id.startsWith("demo-")) {
             val cur = prefs.eventCursorSec(launch.id)
             if (cur != null) return cur
         }
@@ -193,8 +217,10 @@ class RocketTelemetryModule(
 
     fun clockIsEst(): Boolean {
         val launch = tracked ?: return false
+        val now = System.currentTimeMillis()
+        if (isLiveWallClockBird(launch, now)) return false
         if (simSecondsFromNet != null) return true
-        if (launch.isReplayable() && prefs.eventCursorSec(launch.id) != null) return true
+        if (launch.isReplayable(now) && prefs.eventCursorSec(launch.id) != null) return true
         if (prefs.usingFallbackT0(launch.id, launch.netMs)) return true
         return provider.catalogStale()
     }
@@ -204,6 +230,12 @@ class RocketTelemetryModule(
      * Loops back to T-30 after ~10 min post-liftoff so demos keep running.
      */
     fun tickSim(deltaSec: Float) {
+        val launch = tracked
+        val now = System.currentTimeMillis()
+        if (launch != null && isLiveWallClockBird(launch, now)) {
+            scrubLiveSim(launch)
+            return
+        }
         val s = simSecondsFromNet ?: return
         if (!loopReplay) return
         var next = s + deltaSec.coerceIn(0f, 0.25f)
@@ -263,9 +295,9 @@ class RocketTelemetryModule(
     private fun isHistoricOrDemoPin(launch: LaunchSnapshot?, now: Long = System.currentTimeMillis()): Boolean {
         if (launch == null) return false
         if (launch.id.startsWith("demo-")) return true
-        // Historical list mode + any in-theater sim: never wall-clock kill LCK (past NET would false-expire).
+        // Historical list mode: never wall-clock kill LCK.
         if (prefs.telemetryListMode == "historical") return true
-        if (loopReplay || simSecondsFromNet != null) return true
+        // Stamp 86: leftover sim must NOT classify a live CURRENT bird as historic.
         return launch.isReplayable(now)
     }
 
@@ -805,9 +837,15 @@ class RocketTelemetryModule(
     }
 
     private fun restoreEventCursor() {
+        val launch = tracked ?: return
+        val now = System.currentTimeMillis()
+        // Stamp 86: never apply cursor onto a live CURRENT/AUTO bird.
+        if (isLiveWallClockBird(launch, now)) {
+            scrubLiveSim(launch)
+            return
+        }
         if (simSecondsFromNet != null) return
-        val id = tracked?.id ?: return
-        val cur = prefs.eventCursorSec(id) ?: return
+        val cur = prefs.eventCursorSec(launch.id) ?: return
         simSecondsFromNet = cur
         loopReplay = true
     }
