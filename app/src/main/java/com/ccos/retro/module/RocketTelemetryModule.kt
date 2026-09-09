@@ -311,7 +311,7 @@ class RocketTelemetryModule(
         val tSec = effectiveSecondsFromNet(now)
         val limitSec = (prefs.telemetryHoldDurationMs / 1000L).toFloat()
         if (tSec < limitSec) return
-        val pool = provider.allSelectable().filter {
+        val pool = provider.historicPool(now).filter { // Stamp 93: no live upcoming
             it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) < -60
         }.sortedBy { it.netMs }
         if (pool.isEmpty()) return
@@ -341,7 +341,7 @@ class RocketTelemetryModule(
             ?: if (id.isNotBlank()) provider.findById(id) else null
             ?: provider.getNextAny(now)
             ?: provider.getNextSpaceX(now)
-            ?: provider.demoCatalog.firstOrNull()
+            ?: if (prefs.telemetryListMode == "historical") provider.demoCatalog.firstOrNull() else null
         if (keep != null) {
             tracked = keep
             lastGoodSnapshot = keep
@@ -443,16 +443,15 @@ class RocketTelemetryModule(
                     .minByOrNull { kotlin.math.abs(it.secondsToNet(now)) }
                 val liveNext = watch ?: provider.getNextAny(now)
                 fun lastGoodOk(s: LaunchSnapshot) =
-                    s.isActiveWatch(now) || s.secondsToNet(now) > 0
+                    !s.id.startsWith("demo-") && (s.isActiveWatch(now) || s.secondsToNet(now) > 0)
                 val next = liveNext
                     ?: lastGoodSnapshot?.takeIf { lastGoodOk(it) }
                     ?: sharedLastGood?.takeIf { lastGoodOk(it) }
                     ?: provider.getNextSpaceX(now)
                     ?: provider.getCached()?.launches
-                        ?.filter { it.isUpcoming(now) }
+                        ?.filter { it.isUpcoming(now) && !it.id.startsWith("demo-") }
                         ?.minByOrNull { it.netMs }
-                    ?: provider.demoCatalog.firstOrNull { it.secondsToNet(now) > 0 }
-                    ?: provider.demoCatalog.firstOrNull()
+                    ?: if (prefs.telemetryListMode == "historical") provider.demoCatalog.firstOrNull() else null
                 if (next != null) {
                     rememberTracked(next)
                     if (prefs.telemetryLaunchId != next.id) {
@@ -524,14 +523,19 @@ class RocketTelemetryModule(
                     ?: tracked?.takeIf { it.isReplayable(now) || it.id.startsWith("demo-") }
                     ?: lastGoodSnapshot?.takeIf { it.isReplayable(now) || it.id.startsWith("demo-") }
                     ?: sharedLastGood?.takeIf { it.isReplayable(now) || it.id.startsWith("demo-") }
-                    ?: provider.allSelectable().filter { it.isReplayable(now) || it.id.startsWith("demo-") }
+                    ?: provider.historicPool(now).filter { it.isReplayable(now) || it.id.startsWith("demo-") }
                         .maxByOrNull { it.netMs }
-                    ?: provider.demoCatalog.firstOrNull()
+                    ?: if (prefs.telemetryListMode == "historical") provider.demoCatalog.firstOrNull() else null
                 if (keep != null) {
                     rememberTracked(keep)
                     if (prefs.telemetryLaunchId != keep.id) prefs.telemetryLaunchId = keep.id
                 }
             } else {
+            // Stamp 93: scrub sticky demo residue from CURRENT.
+            if (prefs.telemetryLaunchId.startsWith("demo-")) {
+                prefs.telemetryLaunchId = ""
+                clearSim()
+            }
             // Stamp 55: CURRENT+AUTO locks live/next (HOLD/in-flight/webcast/T+ gates).
             // Never stay on a historic pick; never null tracked on a brief cache gap.
             // Stamp 59: do not force listMode every AUTO tick (CURRENT button still can).
@@ -540,7 +544,7 @@ class RocketTelemetryModule(
                 .minByOrNull { kotlin.math.abs(it.secondsToNet(now)) }
             // Stamp 72: sticky lastGood across one refresh miss before getNextAny retarget.
             fun lastGoodOk(s: LaunchSnapshot) =
-                !s.isTerminal() && (s.isActiveWatch(now) || s.secondsToNet(now) > 0)
+                !s.id.startsWith("demo-") && !s.isTerminal() && (s.isActiveWatch(now) || s.secondsToNet(now) > 0)
             val stickyMiss = listOfNotNull(tracked, lastGoodSnapshot, sharedLastGood)
                 .firstOrNull { lastGoodOk(it) && provider.findById(it.id) == null }
             val liveNext = watch ?: stickyMiss ?: provider.getNextAny(now)
@@ -549,10 +553,9 @@ class RocketTelemetryModule(
                 ?: sharedLastGood?.takeIf { lastGoodOk(it) }
                 ?: provider.getNextSpaceX(now)
                 ?: provider.getCached()?.launches
-                    ?.filter { it.isUpcoming(now) }
+                    ?.filter { it.isUpcoming(now) && !it.id.startsWith("demo-") }
                     ?.minByOrNull { it.netMs }
-                ?: provider.demoCatalog.firstOrNull { it.secondsToNet(now) > 0 }
-                ?: provider.demoCatalog.firstOrNull()
+                ?: if (prefs.telemetryListMode == "historical") provider.demoCatalog.firstOrNull() else null
             if (next != null) {
                 rememberTracked(next)
                 if (prefs.telemetryLaunchId != next.id) {
@@ -578,7 +581,7 @@ class RocketTelemetryModule(
                 if (tracked == null) {
                     rememberTracked(
                         provider.getNextSpaceX(now)
-                            ?: provider.demoCatalog.firstOrNull()
+                            ?: if (prefs.telemetryListMode == "historical") provider.demoCatalog.firstOrNull() else null
                     )
                 }
                 if (tracked == null && !provider.isFetching) {
@@ -613,9 +616,9 @@ class RocketTelemetryModule(
                                         provider.getNextAny(now2)
                                             ?: provider.getNextSpaceX(now2)
                                             ?: provider.getCached()?.launches
-                                                ?.filter { it.isUpcoming(now2) }
+                                                ?.filter { it.isUpcoming(now2) && !it.id.startsWith("demo-") }
                                                 ?.minByOrNull { it.netMs }
-                                            ?: provider.demoCatalog.firstOrNull()
+                                            ?: if (prefs.telemetryListMode == "historical") provider.demoCatalog.firstOrNull() else null
                                     )
                                 }
                                 resolveTracked()
@@ -628,9 +631,9 @@ class RocketTelemetryModule(
                         provider.getNextAny(now)
                             ?: provider.getNextSpaceX(now)
                             ?: provider.getCached()?.launches
-                                ?.filter { it.isUpcoming(now) }
+                                ?.filter { it.isUpcoming(now) && !it.id.startsWith("demo-") }
                                 ?.minByOrNull { it.netMs }
-                            ?: provider.demoCatalog.firstOrNull()
+                            ?: if (prefs.telemetryListMode == "historical") provider.demoCatalog.firstOrNull() else null
                     )
                 }
             } else {
@@ -638,9 +641,9 @@ class RocketTelemetryModule(
                     provider.getNextAny(now)
                         ?: provider.getNextSpaceX(now)
                         ?: provider.getCached()?.launches
-                            ?.filter { it.isUpcoming(now) }
+                            ?.filter { it.isUpcoming(now) && !it.id.startsWith("demo-") }
                             ?.minByOrNull { it.netMs }
-                        ?: provider.demoCatalog.firstOrNull()
+                        ?: if (prefs.telemetryListMode == "historical") provider.demoCatalog.firstOrNull() else null
                 )
             }
         }

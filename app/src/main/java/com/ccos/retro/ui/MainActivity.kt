@@ -267,13 +267,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun populateLaunchSpinner() {
         val now = System.currentTimeMillis()
-        val all = launchProvider.allSelectable()
-        // Window catalog: upcoming + previous/active watch  -  just-flew / HOLD stay selectable.
+        // Stamp 93: CURRENT = pickerPool (live only); HISTORICAL = historicPool (no live upcoming).
         val liveOnly = launchProvider.pickerPool(now, prefs.telemetryHorizonDays)
         val historic = prefs.telemetryListMode == "historical"
 
         launchList = if (historic) {
-            val pool = all.filter {
+            val pool = launchProvider.historicPool(now).filter {
                 it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) < -60
             }
             val filtered = pool.filter { matchesHistoric(it, historicQuery) }

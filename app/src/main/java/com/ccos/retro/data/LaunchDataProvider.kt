@@ -60,13 +60,14 @@ class LaunchDataProvider {
 
     fun getPast(): LaunchListResult? = pastCache.get()
 
+    /** Full book (settings / find). Prefer historicPool / pickerPool for UI lists. */
     fun allSelectable(): List<LaunchSnapshot> {
-        val live = cache.get()?.launches.orEmpty()
-        val past = pastCache.get()?.launches.orEmpty()
-        val demoIds = demoCatalog.map { it.id }.toSet()
-        val seen = demoIds.toMutableSet()
-        val out = demoCatalog.toMutableList()
-        for (l in live + past) {
+        val live = cache.get()?.launches.orEmpty().filter { !it.id.startsWith("demo-") }
+        val past = pastCache.get()?.launches.orEmpty().filter { !it.id.startsWith("demo-") }
+        val seen = linkedSetOf<String>()
+        val out = mutableListOf<LaunchSnapshot>()
+        // Stamp 93: demos first for HISTORICAL tooling, then past, then live (callers filter).
+        for (l in demoCatalog + past + live) {
             if (l.id in seen) continue
             seen += l.id
             out += l
@@ -76,15 +77,28 @@ class LaunchDataProvider {
 
     fun getNextSpaceX(now: Long = System.currentTimeMillis()): LaunchSnapshot? =
         cache.get()?.launches
-            ?.filter { it.isSpaceX() && it.isUpcoming(now) }
+            ?.filter { it.isSpaceX() && it.isUpcoming(now) && !it.id.startsWith("demo-") }
             ?.minByOrNull { it.netMs }
-            ?: demoCatalog.firstOrNull { it.isSpaceX() }
 
+    /** Stamp 93: live upcoming cache ONLY — never pastCache, never demos. */
     fun livePool(): List<LaunchSnapshot> {
         val seen = linkedSetOf<String>()
         val out = mutableListOf<LaunchSnapshot>()
-        for (l in cache.get()?.launches.orEmpty() + pastCache.get()?.launches.orEmpty()) {
+        for (l in cache.get()?.launches.orEmpty()) {
             if (l.id.startsWith("demo-") || l.id in seen) continue
+            seen += l.id
+            out += l
+        }
+        return out
+    }
+
+    /** Stamp 93: demos + previous only — never live upcoming birds. */
+    fun historicPool(now: Long = System.currentTimeMillis()): List<LaunchSnapshot> {
+        val seen = linkedSetOf<String>()
+        val out = mutableListOf<LaunchSnapshot>()
+        for (l in demoCatalog + pastCache.get()?.launches.orEmpty()) {
+            if (l.id in seen) continue
+            if (!l.id.startsWith("demo-") && l.secondsToNet(now) > 0 && !l.isReplayable(now)) continue
             seen += l.id
             out += l
         }
@@ -122,8 +136,8 @@ class LaunchDataProvider {
         if (watch != null) return watch
         val upcoming = live.filter { it.secondsToNet(now) > 0 }.minByOrNull { it.netMs }
         if (upcoming != null) return upcoming
-        // Stamp 59: cold/empty cache - never starve AUTO.
-        return demoCatalog.firstOrNull()
+        // Stamp 93: CURRENT/AUTO never falls back to demos — await live fetch.
+        return null
     }
 
     fun findById(id: String): LaunchSnapshot? =
