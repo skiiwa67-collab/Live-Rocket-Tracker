@@ -231,8 +231,9 @@ object VehicleDraw {
         cores: Int,
         wide: Boolean
     ): Boolean {
-        // Stamp 88: post-sep never paint the full-stack bitmap on STG1 and STG2 —
-        // soft-fail to geometric booster (STG1) vs Ship/upper (STG2) so tabs never twin Ship art.
+        // Stamp 88 FLEET-WIDE: after sep never paint full-stack catalog art on either tab.
+        // Soft-fail to geometric for EVERY family: STG1=booster/core, STG2=upper (Falcon/Soyuz/Starship/...).
+        // No per-vehicle versionCode / Starship-only special case.
         if (separated) return false
         val hull = vehicleHullBitmap(artId) ?: return false
         val dest = artDestRect(hull, cx, baseY, h)

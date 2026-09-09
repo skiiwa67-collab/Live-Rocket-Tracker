@@ -535,15 +535,23 @@ class RetroCommandWallpaperService : WallpaperService() {
                         trackingSwipe = false
                         // Hard MODE switch chips
                         if (modeChipAnalog.contains(x, y)) {
-                            prefs.systemAnalog = true
+                            if (prefs.isTelemetry()) {
+                                prefs.telemetryAnalog = true
+                            } else {
+                                prefs.systemAnalog = true
+                                rebuildSliders()
+                            }
                             state.registerInteraction()
-                            rebuildSliders()
                             return
                         }
                         if (modeChipDigital.contains(x, y)) {
-                            prefs.systemAnalog = false
+                            if (prefs.isTelemetry()) {
+                                prefs.telemetryAnalog = false
+                            } else {
+                                prefs.systemAnalog = false
+                                rebuildSliders()
+                            }
                             state.registerInteraction()
-                            rebuildSliders()
                             return
                         }
                         // Theme color chips
@@ -2284,6 +2292,17 @@ class RetroCommandWallpaperService : WallpaperService() {
             // Previous builds drew the border first, so LAMP / analog sat outside the box.
             var y = panelTop + titleSz + su(0.022f)
             if (state.activeModule == 0) {
+                // Stamp 88: CONSOLE MCC|ROS|CLEAR on wallpaper COMMAND flyout (same prefs as Settings).
+                y += labelSz + 8f
+                layoutRockerRow(consoleRockerRects, panelLeft, y, panelRight, rockerH)
+                listOf(
+                    AppPrefs.CONSOLE_SKIN_MCC,
+                    AppPrefs.CONSOLE_SKIN_ROS,
+                    AppPrefs.CONSOLE_SKIN_CLEAR
+                ).forEachIndexed { i, skinId ->
+                    extraRockerHits.add(consoleRockerRects[i] to { prefs.consoleSkin = skinId })
+                }
+                y = consoleRockerRects[0].bottom + sectionGap
                 y += labelSz + 8f
                 layoutRockerRow(textRockerRects, panelLeft, y, panelRight, rockerH)
                 y = textRockerRects[0].bottom + sectionGap
@@ -2321,13 +2340,20 @@ class RetroCommandWallpaperService : WallpaperService() {
 
             val panelBottom = y + su(0.018f)
             panelBounds.set(panelLeft - 16f, panelTop - 28f, panelRight + 16f, panelBottom + 8f)
+            val cmdShellAccent = if (state.activeModule == 0) {
+                when (prefs.consoleSkin) {
+                    AppPrefs.CONSOLE_SKIN_ROS -> Color.parseColor("#8B9A4B")
+                    AppPrefs.CONSOLE_SKIN_CLEAR -> Color.parseColor("#00E5FF")
+                    else -> Color.parseColor("#FFB000")
+                }
+            } else RetroSkin.cyan
             drawConsoleShell(
                 canvas,
                 panelLeft - 12f, panelTop - 20f, panelRight + 12f, panelBottom,
-                RetroSkin.cyan
+                cmdShellAccent
             )
 
-            hudPaint.color = RetroSkin.cyan
+            hudPaint.color = cmdShellAccent
             hudPaint.textSize = titleSz
             hudPaint.textAlign = Paint.Align.CENTER
             val title = when (state.activeModule) {
@@ -2345,9 +2371,25 @@ class RetroCommandWallpaperService : WallpaperService() {
             hudPaint.textAlign = Paint.Align.LEFT
 
             if (state.activeModule == 0) {
+                val consoleSel = when (prefs.consoleSkin) {
+                    AppPrefs.CONSOLE_SKIN_ROS -> 1
+                    AppPrefs.CONSOLE_SKIN_CLEAR -> 2
+                    else -> 0
+                }
+                val consoleAccent = when (prefs.consoleSkin) {
+                    AppPrefs.CONSOLE_SKIN_ROS -> Color.parseColor("#C8102E")
+                    AppPrefs.CONSOLE_SKIN_CLEAR -> Color.parseColor("#00E5FF")
+                    else -> Color.parseColor("#FFB000")
+                }
                 labelPaint.color = Color.parseColor("#F0F6FC")
                 labelPaint.textSize = labelSz
                 labelPaint.textAlign = Paint.Align.LEFT
+                canvas.drawText("CONSOLE", panelLeft, consoleRockerRects[0].top - 10f, labelPaint)
+                drawRockerRow(
+                    canvas, consoleRockerRects, AppPrefs.ROCKER_LABELS_CONSOLE, consoleSel,
+                    consoleAccent, Color.WHITE, RetroSkin.labelMuted,
+                    strongSelected = true
+                )
                 canvas.drawText("HUD TEXT", panelLeft, textRockerRects[0].top - 10f, labelPaint)
                 drawRockerRow(
                     canvas, textRockerRects, AppPrefs.ROCKER_LABELS_TEXT, prefs.textStepIndex(),
@@ -4511,7 +4553,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             val launch = telemetryModule.tracked ?: return
             val h = min(width, height) * 0.22f * scale
             val sep = tSec >= sepTime(launch)
-            // Stamp 88: after sep follow trackedStage (1=booster, 2=Ship) — never force Ship on STG1.
+            // Stamp 88 FLEET-WIDE: after sep follow trackedStage (1=booster/core, 2=upper) for any family.
             val stg = if (sep) prefs.trackedStage.coerceIn(1, 2) else 1
             drawVehicle(canvas, cx, baseY, h, launch, tSec, stg, sep, skin, lamp, alpha)
         }
@@ -6481,7 +6523,11 @@ class RetroCommandWallpaperService : WallpaperService() {
             val toggleH = panelToggleH() * (if (prefs.extraScreens) 0.90f else 1f)
             val toggleY = lampRockerRects[0].bottom + su(0.028f)
             val half = (panelRight - panelLeft - 36f) / 2f
-            panelToggleAnalog.set(panelLeft + inset, toggleY, panelLeft + inset + half - 6f, toggleY + toggleH)
+            // Stamp 88: ANALOG|DIGITAL dual chips (visible selection) + UNITS on next row left.
+            val analogMid = panelLeft + inset + half - 6f
+            modeChipAnalog.set(panelLeft + inset, toggleY, (panelLeft + inset + analogMid) / 2f - 4f, toggleY + toggleH)
+            modeChipDigital.set((panelLeft + inset + analogMid) / 2f + 4f, toggleY, analogMid, toggleY + toggleH)
+            panelToggleAnalog.setEmpty()
             panelToggleUnits.set(panelLeft + inset + half + 6f, toggleY, panelRight - inset, toggleY + toggleH)
 
             val extraY = toggleY + toggleH + su(0.016f)
@@ -6609,7 +6655,20 @@ class RetroCommandWallpaperService : WallpaperService() {
                 hudPaint.textSize = telFit(lab, r.width() * 0.92f, r.height() * 0.50f, 14f)
                 canvas.drawText(lab, r.centerX(), r.centerY() + hudPaint.textSize * 0.35f, hudPaint)
             }
-            drawToggle(panelToggleAnalog, prefs.telemetryAnalog, "ANALOG", "DIGITAL")
+            fun drawModeChip(r: RectF, label: String, on: Boolean) {
+                if (r.isEmpty) return
+                fillPaint.color = withLamp(if (on) skin.btnActiveFill else skin.btnIdleFill, lamp)
+                canvas.drawRoundRect(r, 10f, 10f, fillPaint)
+                strokePaint.strokeWidth = if (on) 4.5f else 2.5f
+                strokePaint.color = withLamp(if (on) skin.accent else skin.muted, lamp)
+                canvas.drawRoundRect(r, 10f, 10f, strokePaint)
+                hudPaint.color = withLamp(if (on) skin.text else Color.WHITE, lamp)
+                hudPaint.textAlign = Paint.Align.CENTER
+                hudPaint.textSize = telFit(label, r.width() * 0.92f, r.height() * 0.50f, 14f)
+                canvas.drawText(label, r.centerX(), r.centerY() + hudPaint.textSize * 0.35f, hudPaint)
+            }
+            drawModeChip(modeChipAnalog, "ANALOG", prefs.telemetryAnalog)
+            drawModeChip(modeChipDigital, "DIGITAL", !prefs.telemetryAnalog)
             drawToggle(panelToggleUnits, prefs.useImperial, "MPH / MI", "KM/H")
             drawToggle(panelToggleExtra, prefs.extraScreens, "EXTRA PAGES ON", "EXTRA PAGES OFF")
             drawToggle(panelToggleConsole, true, "ENTER CONSOLE", "ENTER CONSOLE")
