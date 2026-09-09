@@ -2121,6 +2121,7 @@ class CommandConsoleView @JvmOverloads constructor(
             BitmapFactory.decodeResource(resources, rid, opts)
         } else null
         reentryBmpCache[name] = bmp
+        if (name.contains("mask")) reentryMaskClip = null
         return bmp
     }
 
