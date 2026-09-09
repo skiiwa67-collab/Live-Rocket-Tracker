@@ -371,14 +371,17 @@ object VehicleDraw {
                     "vehicle_${artId}_tank_s1_fuel", "vehicle_${artId}_tank_booster_fuel", "vehicle_${artId}_booster_tank_fuel"
                 )
                 if (ox != null || fuel != null) {
-                    // Darren baked LOX blue / CH4 amber - tint=false keeps distinct colors (no twin cyan).
-                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destB, lvl, loxC, tint = false)
-                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destB, lvl, ch4C, tint = false)
+                    // Stamp 92 lean: discrete masks = one window each; deplete upper/lower dest half, same lvl.
+                    // Darren baked LOX/CH4 - tint=false.
+                    val midB = (destB.top + destB.bottom) * 0.5f
+                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destB, lvl, loxC, tint = false, bandTop = destB.top, bandBot = midB)
+                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destB, lvl, ch4C, tint = false, bandTop = midB, bandBot = destB.bottom)
                 } else {
                     val fills = firstBitmap(
                         "vehicle_${artId}_booster_tank_fills", "vehicle_${artId}_s1_tank_fills"
                     )
-                    if (fills != null) drawTankMaskLevel(canvas, fills, null, destB, lvl, 0, tint = false)
+                    // Combined sheet: split dest 50/50, both halves same lvl.
+                    if (fills != null) drawTankMaskLevelSplit(canvas, fills, null, destB, lvl, 0, tint = false)
                 }
             } catch (_: Throwable) { }
             if (wantSrb && srb != null) {
@@ -429,13 +432,14 @@ object VehicleDraw {
                     "vehicle_${artId}_tank_s2_fuel", "vehicle_${artId}_tank_ship_fuel", "vehicle_${artId}_ship_tank_fuel"
                 )
                 if (ox != null || fuel != null) {
-                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destU, lvl, loxC, tint = false)
-                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destU, lvl, ch4C, tint = false)
+                    val midU = (destU.top + destU.bottom) * 0.5f
+                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destU, lvl, loxC, tint = false, bandTop = destU.top, bandBot = midU)
+                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destU, lvl, ch4C, tint = false, bandTop = midU, bandBot = destU.bottom)
                 } else {
                     val fills = firstBitmap(
                         "vehicle_${artId}_ship_tank_fills", "vehicle_${artId}_s2_tank_fills"
                     )
-                    if (fills != null) drawTankMaskLevel(canvas, fills, null, destU, lvl, 0, tint = false)
+                    if (fills != null) drawTankMaskLevelSplit(canvas, fills, null, destU, lvl, 0, tint = false)
                 }
             } catch (_: Throwable) { }
         }
@@ -560,21 +564,22 @@ object VehicleDraw {
             layers += Triple("tank_s2_fuel", fuel2, fuelC)
         }
         var any = false
+        val mid = (dest.top + dest.bottom) * 0.5f
         for ((suffix, level, color) in layers) {
             val mask = loadVehicleDrawable("vehicle_${artId}_$suffix") ?: continue
             any = true
-            drawTankMaskLevel(canvas, mask, hullSrc, dest, level, color)
+            // ox = upper half dest; fuel = lower half — lockstep lvl, no pixel scan.
+            val upper = suffix.endsWith("_ox")
+            val bTop = if (upper) dest.top else mid
+            val bBot = if (upper) mid else dest.bottom
+            drawTankMaskLevel(canvas, mask, hullSrc, dest, level, color, bandTop = bTop, bandBot = bBot)
         }
         return any
     }
 
-    /** Opaque Y band cache for tank masks — key = identityHash + wh. */
-    private val tankBandCache = HashMap<Int, Pair<Int, Int>>()
-
     /**
-     * Stamp 92: deplete within THIS mask's opaque band so LOX (upper) and fuel (lower)
-     * both animate from the same stage fuelRemain. Never clip against the full hull —
-     * that emptied only the top tank while the bottom looked stuck full.
+     * Stamp 92 lean: deplete within [bandTop, bandBot] of dest (dest halves; no bitmap sampling).
+     * Discrete ox/fuel pass upper/lower half; single-window dest uses full dest.
      */
     private fun drawTankMaskLevel(
         canvas: Canvas,
@@ -583,7 +588,9 @@ object VehicleDraw {
         dest: RectF,
         level: Float,
         color: Int,
-        tint: Boolean = true
+        tint: Boolean = true,
+        bandTop: Float = dest.top,
+        bandBot: Float = dest.bottom
     ) {
         val lvl = level.coerceIn(0f, 1f)
         if (lvl <= 0.001f) return
@@ -595,89 +602,39 @@ object VehicleDraw {
             Rect(0, 0, mask.width, mask.height)
         }
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            // Stamp 91: tint=false keeps Darren baked LOX/CH4 colors (no twin SRC_IN).
             if (tint && color != 0) {
                 colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN)
             }
             this.alpha = 230
         }
-        val (bandTopPx, bandBotPx) = tankMaskOpaqueBand(mask, mSrc)
-        val srcH = mSrc.height().toFloat().coerceAtLeast(1f)
-        val bandTopD = dest.top + (bandTopPx - mSrc.top) / srcH * dest.height()
-        val bandBotD = dest.top + (bandBotPx - mSrc.top) / srcH * dest.height()
-        val bandH = (bandBotD - bandTopD).coerceAtLeast(1f)
-        // Combined ox+fuel sheet: split mid-band and deplete BOTH halves with the same lvl.
-        if (bandH > dest.height() * 0.55f) {
-            val mid = (bandTopD + bandBotD) * 0.5f
-            drawTankBandClipped(canvas, mask, mSrc, dest, paint, bandTopD, mid, lvl)
-            drawTankBandClipped(canvas, mask, mSrc, dest, paint, mid, bandBotD, lvl)
-        } else {
-            drawTankBandClipped(canvas, mask, mSrc, dest, paint, bandTopD, bandBotD, lvl)
-        }
-    }
-
-    private fun drawTankBandClipped(
-        canvas: Canvas,
-        mask: Bitmap,
-        mSrc: Rect,
-        dest: RectF,
-        paint: Paint,
-        bandTop: Float,
-        bandBot: Float,
-        lvl: Float
-    ) {
-        val bandH = (bandBot - bandTop).coerceAtLeast(1f)
-        val fillTop = bandBot - bandH * lvl
+        val top = bandTop.coerceAtMost(bandBot)
+        val bot = bandBot.coerceAtLeast(top + 1f)
+        val bandH = (bot - top).coerceAtLeast(1f)
+        val fillTop = bot - bandH * lvl
         val saved = canvas.save()
         canvas.clipRect(
             dest.left,
             fillTop.coerceIn(dest.top, dest.bottom),
             dest.right,
-            bandBot.coerceIn(dest.top, dest.bottom)
+            bot.coerceIn(dest.top, dest.bottom)
         )
         canvas.drawBitmap(mask, mSrc, dest, paint)
         canvas.restoreToCount(saved)
     }
 
-    /** Sample opaque rows in [src] (no getPixels). Returns y range in bitmap space. */
-    private fun tankMaskOpaqueBand(mask: Bitmap, src: Rect): Pair<Int, Int> {
-        val key = System.identityHashCode(mask) xor (mask.width shl 16) xor mask.height xor (src.top shl 8) xor src.bottom
-        tankBandCache[key]?.let { return it }
-        var top = src.bottom
-        var bot = src.top
-        val yStep = (src.height() / 160).coerceAtLeast(1)
-        val xStep = (src.width() / 48).coerceAtLeast(1)
-        val maxX = (src.right - 1).coerceAtLeast(src.left)
-        val maxY = (src.bottom - 1).coerceAtLeast(src.top)
-        var y = src.top
-        while (y <= maxY) {
-            var x = src.left
-            var hit = false
-            while (x <= maxX) {
-                if (android.graphics.Color.alpha(
-                        mask.getPixel(x.coerceIn(0, mask.width - 1), y.coerceIn(0, mask.height - 1))
-                    ) > 40
-                ) {
-                    hit = true
-                    break
-                }
-                x += xStep
-            }
-            if (hit) {
-                if (y < top) top = y
-                if (y > bot) bot = y
-            }
-            y += yStep
-        }
-        if (bot <= top) {
-            top = src.top
-            bot = src.bottom
-        } else {
-            bot = (bot + yStep).coerceAtMost(src.bottom)
-        }
-        val band = top to bot
-        tankBandCache[key] = band
-        return band
+    /** Combined *_tank_fills: split dest height 50/50, same lvl both halves. */
+    private fun drawTankMaskLevelSplit(
+        canvas: Canvas,
+        mask: Bitmap,
+        hullSrc: Rect?,
+        dest: RectF,
+        level: Float,
+        color: Int,
+        tint: Boolean = true
+    ) {
+        val mid = (dest.top + dest.bottom) * 0.5f
+        drawTankMaskLevel(canvas, mask, hullSrc, dest, level, color, tint, bandTop = dest.top, bandBot = mid)
+        drawTankMaskLevel(canvas, mask, hullSrc, dest, level, color, tint, bandTop = mid, bandBot = dest.bottom)
     }
 
 
