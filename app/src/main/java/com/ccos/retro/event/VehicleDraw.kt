@@ -345,12 +345,35 @@ object VehicleDraw {
             }
             val destB = artDestRect(booster, cx, baseY, bH, maxSlotW = h * 0.55f)
             drawBitmapSrcInRect(canvas, booster, null, destB, alpha)
+            // Stamp 91: grid fins when Darren drops vehicle_*_grid_fins / _fins / _booster_fins.
+            val finsBmp = firstBitmap(
+                "vehicle_${artId}_grid_fins", "vehicle_${artId}_fins", "vehicle_${artId}_booster_fins"
+            )
+            if (finsBmp != null) {
+                val fH = bH * 0.22f
+                val fY = baseY - bH * 0.72f
+                drawBitmapSrcInRect(
+                    canvas, finsBmp, null,
+                    artDestRect(finsBmp, cx, fY + fH, fH, maxSlotW = destB.width() * 1.35f),
+                    alpha
+                )
+            }
             // Stage tank fills for booster when present
             try {
-                val fills = firstBitmap("vehicle_${artId}_booster_tank_fills", "vehicle_${artId}_s1_tank_fills")
-                if (fills != null) {
-                    val lvl = fuelOf(tSec, launch, 1)
-                    drawTankMaskLevel(canvas, fills, null, destB, lvl, Color.argb(160, 28, 110, 220))
+                // Stamp 91: LOX blue vs CH4 amber - never twin cyan. Prefer discrete ox/fuel masks.
+                val lvl = fuelOf(tSec, launch, 1)
+                val loxC = Color.argb(200, 28, 110, 220)
+                val ch4C = Color.argb(200, 255, 155, 35)
+                val ox = firstBitmap("vehicle_${artId}_tank_s1_ox")
+                val fuel = firstBitmap("vehicle_${artId}_tank_s1_fuel")
+                if (ox != null || fuel != null) {
+                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destB, lvl, loxC)
+                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destB, lvl, ch4C)
+                } else {
+                    val fills = firstBitmap(
+                        "vehicle_${artId}_booster_tank_fills", "vehicle_${artId}_s1_tank_fills"
+                    )
+                    if (fills != null) drawTankMaskLevel(canvas, fills, null, destB, lvl, 0, tint = false)
                 }
             } catch (_: Throwable) { }
             if (wantSrb && srb != null) {
@@ -391,10 +414,19 @@ object VehicleDraw {
             val destU = artDestRect(upper, cx, uBase, uH, maxSlotW = h * 0.50f)
             drawBitmapSrcInRect(canvas, upper, null, destU, alpha)
             try {
-                val fills = firstBitmap("vehicle_${artId}_ship_tank_fills", "vehicle_${artId}_s2_tank_fills")
-                if (fills != null) {
-                    val lvl = fuelOf(tSec, launch, 2)
-                    drawTankMaskLevel(canvas, fills, null, destU, lvl, Color.argb(160, 16, 205, 190))
+                val lvl = fuelOf(tSec, launch, 2)
+                val loxC = Color.argb(200, 28, 110, 220)
+                val ch4C = Color.argb(200, 255, 155, 35)
+                val ox = firstBitmap("vehicle_${artId}_tank_s2_ox")
+                val fuel = firstBitmap("vehicle_${artId}_tank_s2_fuel")
+                if (ox != null || fuel != null) {
+                    if (ox != null) drawTankMaskLevel(canvas, ox, null, destU, lvl, loxC)
+                    if (fuel != null) drawTankMaskLevel(canvas, fuel, null, destU, lvl, ch4C)
+                } else {
+                    val fills = firstBitmap(
+                        "vehicle_${artId}_ship_tank_fills", "vehicle_${artId}_s2_tank_fills"
+                    )
+                    if (fills != null) drawTankMaskLevel(canvas, fills, null, destU, lvl, 0, tint = false)
                 }
             } catch (_: Throwable) { }
         }
@@ -504,7 +536,7 @@ object VehicleDraw {
     ): Boolean {
         val lox = Color.argb((210 * alpha).toInt().coerceIn(0, 255), 28, 110, 220)
         val fuelC = if (methalox)
-            Color.argb((210 * alpha).toInt().coerceIn(0, 255), 16, 205, 190)
+            Color.argb((210 * alpha).toInt().coerceIn(0, 255), 255, 155, 35)
         else
             Color.argb((210 * alpha).toInt().coerceIn(0, 255), 230, 105, 18)
         val drawS1 = stage == 1
@@ -533,7 +565,8 @@ object VehicleDraw {
         hullSrc: Rect?,
         dest: RectF,
         level: Float,
-        color: Int
+        color: Int,
+        tint: Boolean = true
     ) {
         val lvl = level.coerceIn(0f, 1f)
         if (lvl <= 0.001f) return
@@ -545,7 +578,10 @@ object VehicleDraw {
             Rect(0, 0, mask.width, mask.height)
         }
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN)
+            // Stamp 91: tint=false keeps Darren baked LOX/CH4 colors (no twin SRC_IN).
+            if (tint && color != 0) {
+                colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN)
+            }
             this.alpha = 230
         }
         val saved = canvas.save()
@@ -817,7 +853,7 @@ object VehicleDraw {
         canvas.drawRect(innerL, tankTop, innerR, tankBot, fill)
         val lox = Color.argb((255 * alpha).toInt().coerceIn(0, 255), 28, 110, 220)
         val fuelC = if (methalox)
-            Color.argb((255 * alpha).toInt().coerceIn(0, 255), 16, 205, 190)
+            Color.argb((255 * alpha).toInt().coerceIn(0, 255), 255, 155, 35)
         else
             Color.argb((255 * alpha).toInt().coerceIn(0, 255), 230, 105, 18)
         val f = fuel.coerceIn(0f, 1f)
