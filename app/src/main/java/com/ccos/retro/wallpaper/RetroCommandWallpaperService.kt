@@ -328,6 +328,73 @@ class RetroCommandWallpaperService : WallpaperService() {
             return y
         }
 
+        private fun packRowH(size: Float): Float {
+            hudPaint.textSize = size
+            val fm = hudPaint.fontMetrics
+            return (fm.descent - fm.ascent) * 1.12f
+        }
+
+        private fun packLead(size: Float): Float = packRowH(size) * 0.18f
+
+        private fun packWrapLines(text: String, maxW: Float, size: Float): List<String> {
+            if (text.isBlank() || maxW < 8f) return emptyList()
+            hudPaint.textSize = size
+            val words = text.split(' ')
+            val out = ArrayList<String>()
+            var line = StringBuilder()
+            for (w in words) {
+                val trial = if (line.isEmpty()) w else "$line $w"
+                if (hudPaint.measureText(trial) > maxW && line.isNotEmpty()) {
+                    out.add(line.toString())
+                    line = StringBuilder(w)
+                } else {
+                    if (line.isEmpty()) line.append(w) else line.append(' ').append(w)
+                }
+            }
+            if (line.isNotEmpty()) out.add(line.toString())
+            return out
+        }
+
+        private fun packWrapH(text: String, maxW: Float, size: Float): Float =
+            packWrapLines(text, maxW, size).size * packRowH(size)
+
+        /** Packer draw: [startTop] is the top of the slot, not a baseline. */
+        private fun packDrawCenter(
+            canvas: Canvas, text: String, cx: Float, startTop: Float,
+            maxW: Float, size: Float, color: Int, tf: Typeface
+        ): Float {
+            val oldTf = hudPaint.typeface
+            hudPaint.typeface = tf
+            hudPaint.textSize = size
+            hudPaint.color = color
+            hudPaint.textAlign = Paint.Align.CENTER
+            val fm = hudPaint.fontMetrics
+            val row = packRowH(size)
+            var top = startTop
+            for (line in packWrapLines(text, maxW, size)) {
+                canvas.drawText(line, cx, top - fm.ascent, hudPaint)
+                top += row
+            }
+            hudPaint.typeface = oldTf
+            return top
+        }
+
+        private fun formatCountdownUnits(absSecs: Long): String {
+            val s = absSecs.coerceAtLeast(0L)
+            val days = s / 86400L
+            val hoursTotal = s / 3600L
+            val hours = (s % 86400L) / 3600L
+            val mins = (s % 3600L) / 60L
+            val secs = s % 60L
+            return when {
+                days >= 1L -> if (hours > 0L) "${days}d ${hours}h" else "${days}d"
+                hoursTotal >= 1L -> if (mins > 0L && hoursTotal < 48L) "${hoursTotal}h ${mins}m" else "${hoursTotal}h"
+                mins >= 1L -> if (secs > 0L && mins < 10L) "${mins}m ${secs}s" else "${mins}m"
+                else -> "${secs}s"
+            }
+        }
+
+
         private val drawRunnable = object : Runnable {
             override fun run() {
                 if (!visible) return
@@ -576,6 +643,16 @@ class RetroCommandWallpaperService : WallpaperService() {
                         state.registerInteraction()
                         return
                     }
+                    if (onCommandPage && prefs.isTelemetry() && telemetryModule.activePage == 5) {
+                        for ((r, url) in vidLinkHits) {
+                            if (r.contains(x, y)) {
+                                trackingSwipe = false
+                                openWebcast(url)
+                                state.registerInteraction()
+                                return
+                            }
+                        }
+                    }
                     // CDT jump chips (time scrub for demos / historical)
                     if (onCommandPage && prefs.isTelemetry() && telemetryModule.activePage == 1) {
                         for (i in jumpChipRects.indices) {
@@ -756,12 +833,16 @@ class RetroCommandWallpaperService : WallpaperService() {
             } catch (_: Exception) { }
         }
 
-        private fun openWebcast() {
+        private fun openWebcast(preferredUrl: String? = null) {
             telemetryModule.resolveTracked()
             val launch = telemetryModule.tracked
             // Prefer fresh cache entry (webcast often appears only close to NET)
             val fresh = launch?.id?.let { telemetryModule.selectableLaunches().firstOrNull { s -> s.id == it } } ?: launch
-            val url = WebcastResolver.panes(fresh).official.url
+            val panes = WebcastResolver.panes(fresh)
+            val url = preferredUrl?.takeIf { it.isNotBlank() }
+                ?: panes.official.url.takeIf { it.isNotBlank() }
+                ?: panes.nsf.url.takeIf { it.isNotBlank() }
+                ?: "https://m.youtube.com"
             try {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -784,6 +865,7 @@ class RetroCommandWallpaperService : WallpaperService() {
         private val eventSkipHit = RectF()
         private val lockHit = RectF()
         private val geoHit = RectF()
+        private val vidLinkHits = mutableListOf<Pair<RectF, String>>()
         private val telStripUnits = RectF()
         private val telStripText = RectF()
         private val telStripColorRects = mutableListOf<Pair<Int, RectF>>()
@@ -2955,7 +3037,8 @@ class RetroCommandWallpaperService : WallpaperService() {
                 cx = (mapLeft + mapRight) * 0.50f
                 cy = (mapTop + mapBot) * 0.50f
                 mapR = min((mapRight - mapLeft) * 0.40f, stampH * 0.40f)
-                val stackNeed = min(max(flexH * 0.32f, telSp(88f)), flexH * 0.42f)
+                // Stamp 87/75: larger STACK band so glass tanks are readable on phone.
+                val stackNeed = min(max(flexH * 0.50f, telSp(150f)), flexH * 0.58f)
                 gaugeTop = flexTop + stackNeed + pad
                 gaugeBot = flexBot
             } else {
@@ -6481,32 +6564,32 @@ class RetroCommandWallpaperService : WallpaperService() {
         private fun drawTelStatus(canvas: Canvas, launch: com.ccos.retro.data.LaunchSnapshot?, skin: TelemetrySkin.Tokens, ts: Float) {
             val lamp = prefs.lampBrightness
             val cx = width / 2f
-            val maxW = width * 0.72f
-            val titleSz = pageBodyTs(18f)
-            val bodySz = pageBodyTs(22f)
-            val subSz = pageBodyTs(14f)
-            val top = (telHudBottom + height * 0.03f).coerceAtLeast(height * 0.26f)
+            val maxW = width * 0.78f
+            // Stamp 87/54: STS data BIGGER + fill available space under HUD.
+            val titleSz = pageBodyTs(22f)
+            val bodySz = pageBodyTs(34f)
+            val subSz = pageBodyTs(26f)
+            val top = (telHudBottom + height * 0.04f).coerceAtLeast(height * 0.42f)
             hudPaint.textAlign = Paint.Align.CENTER
             var y = top
             y = drawWrappedCenter(canvas, "STATUS BOARD", cx, y, maxW, titleSz, withLamp(skin.accent, lamp))
             if (launch == null) {
-                drawWrappedCenter(canvas, "AWAITING DATA", cx, y, maxW, bodySz, withLamp(skin.muted, lamp))
+                drawWrappedCenter(canvas, telemetryModule.noTrackLabel("AWAITING DATA"), cx, y, maxW, bodySz, withLamp(skin.muted, lamp))
                 return
             }
             val tSec = telemetryModule.effectiveSecondsFromNet()
             val goCol = if (hudFailed(launch, tSec)) skin.danger else if (!launch.holdReason.isNullOrBlank()) skin.hold else skin.go
             y = drawWrappedCenter(canvas, launch.statusName.uppercase(), cx, y, maxW, bodySz, withLamp(goCol, lamp))
             y = drawWrappedCenter(canvas, launch.name, cx, y, maxW, subSz, withLamp(skin.text, lamp))
-            y = drawWrappedCenter(canvas, "${launch.rocketName}  ·  ${launch.provider}", cx, y, maxW, subSz, withLamp(skin.muted, lamp))
+            y = drawWrappedCenter(canvas, "${launch.rocketName}   |   ${launch.provider}", cx, y, maxW, subSz, withLamp(skin.muted, lamp))
             if (!launch.holdReason.isNullOrBlank()) {
                 y = drawWrappedCenter(canvas, "HOLD  ${launch.holdReason}", cx, y, maxW, subSz, withLamp(skin.hold, lamp))
             }
             launch.probability?.let {
                 y = drawWrappedCenter(canvas, "WEATHER  $it%", cx, y, maxW, subSz, withLamp(skin.text, lamp))
             }
-            val absSecs = kotlin.math.abs(tSec).toLong()
             val sign = if (tSec <= 0f) "T-" else "T+"
-            val clock = String.format("%s%02d:%02d:%02d", sign, absSecs / 3600, (absSecs % 3600) / 60, absSecs % 60)
+            val clock = "$sign${formatCountdownUnits(kotlin.math.abs(tSec).toLong())}"
             drawWrappedCenter(canvas, clock, cx, y, maxW, bodySz, withLamp(skin.accent, lamp))
         }
 
@@ -6515,143 +6598,223 @@ class RetroCommandWallpaperService : WallpaperService() {
             layoutButtons()
             val lamp = prefs.lampBrightness
             val titleSz = pageBodyTs(22f)
-            val bodySz = pageBodyTs(26f)
-            val geoSz = pageBodyTs(28f)
+            val typeSz = pageBodyTs(26f)
+            val bodySz = pageBodyTs(34f)
+            val locSz = pageBodyTs(32f)
+            val geoSz = pageBodyTs(38f)
             val left = laneLeft()
             val right = laneRight()
             val cx = (left + right) * 0.5f
             val maxW = (right - left) * 0.94f
-            val gap = su(0.008f)
-            hudPaint.textAlign = Paint.Align.CENTER
-            var y = telHudBottom + gap
-            y = drawWrappedCenter(canvas, "PAD / SITE", cx, y, maxW, titleSz, withLamp(skin.accent, lamp))
+            val tfBold = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+            val linkCol = Color.parseColor("#5EB8FF")
             val kind = PadGlyph.kind(launch)
-            y = drawWrappedCenter(canvas, PadGlyph.label(kind), cx, y, maxW, bodySz, Color.WHITE)
-
-            val padLine = launch?.pad?.ifBlank { "—" } ?: "NO LOCK"
-            val locLine = launch?.location?.ifBlank { "—" } ?: ""
+            val typeLabel = PadGlyph.label(kind)
+            val padLine = if (launch == null) telemetryModule.noTrackLabel("NO LOCK") else PadBook.padShoreLine(launch)
+            val locLine = launch?.location?.ifBlank { "" } ?: ""
             val ll = PadBook.lonLat(launch)
             val geoLine = if (ll != null) {
                 val (lon, lat) = ll
                 val hemiNS = if (lat >= 0f) "N" else "S"
                 val hemiEW = if (lon >= 0f) "E" else "W"
-                String.format("%.2f°%s  %.2f°%s", abs(lat), hemiNS, abs(lon), hemiEW)
+                String.format("%.2f\u00B0%s  %.2f\u00B0%s", abs(lat), hemiNS, abs(lon), hemiEW)
             } else ""
-            val seaLine = if (launch == null) "" else if (PadBook.isSea(launch)) "SEA / BARGE" else "LAND"
-            val vehLine = if (launch == null) "" else "${launch.rocketName}  ·  ${launch.provider}"
-
-            fun lineH(sz: Float) = sz * 1.28f
-            var foot = gap
-            foot += lineH(bodySz)
-            if (locLine.isNotBlank()) foot += lineH(bodySz)
-            if (geoLine.isNotBlank()) foot += lineH(geoSz)
-            if (seaLine.isNotBlank()) foot += lineH(bodySz)
-            if (vehLine.isNotBlank()) foot += lineH(bodySz)
+            val vehLine = if (launch == null) "" else "${launch.rocketName}   |   ${launch.provider}"
 
             val floor = dockFloor()
-            val glyphTop = y + gap
-            val glyphBot = (floor - foot).coerceAtLeast(glyphTop + su(0.12f))
-            val leftoverH = (glyphBot - glyphTop).coerceAtLeast(8f)
-            val plate = buttonRects[4]
-            val aspect = if (plate.height() > 4f) plate.width() / plate.height() else 0.90f
-            var gw = leftoverH * aspect
-            val glyphMaxW = (right - left) * 1.08f
-            if (gw > glyphMaxW) gw = glyphMaxW
-            val gx = cx - gw * 0.5f
-            val glyph = RectF(gx, glyphTop, gx + gw, glyphBot)
-            PadGlyph.draw(canvas, glyph, Color.WHITE, kind, strokePaint)
-            y = glyph.bottom + gap
+            canvas.save()
+            canvas.clipRect(0f, 0f, width.toFloat(), floor)
+
+            var y = telHudBottom + packLead(titleSz)
+            y = packDrawCenter(canvas, "PAD / SITE", cx, y, maxW, titleSz, withLamp(skin.accent, lamp), tfBold)
+            y += packLead(titleSz)
+            y = packDrawCenter(canvas, typeLabel, cx, y, maxW, typeSz, Color.WHITE, tfBold)
+
+            var foot = packLead(bodySz)
+            if (launch == null) {
+                foot += packWrapH(telemetryModule.noTrackLabel("NO LOCK"), maxW, bodySz)
+            } else {
+                foot += packWrapH(padLine, maxW, bodySz)
+                if (locLine.isNotBlank()) foot += packWrapH(locLine, maxW, locSz)
+                if (geoLine.isNotBlank()) foot += packRowH(geoSz)
+                if (vehLine.isNotBlank()) foot += packWrapH(vehLine, maxW, bodySz)
+            }
+
+            val glyphTop = y + packLead(typeSz)
+            var glyphBot = floor - foot
+            if (glyphBot < glyphTop) glyphBot = glyphTop
+            val leftoverH = (glyphBot - glyphTop).coerceAtLeast(0f)
+            if (leftoverH > 8f) {
+                val plate = buttonRects[4]
+                val aspect = if (plate.height() > 4f) plate.width() / plate.height() else 0.90f
+                var gw = leftoverH * aspect
+                val glyphMaxW = (right - left) * 1.08f
+                if (gw > glyphMaxW) gw = glyphMaxW
+                val gx = cx - gw * 0.5f
+                val glyph = RectF(gx, glyphTop, gx + gw, glyphBot)
+                PadGlyph.draw(canvas, glyph, Color.WHITE, kind, strokePaint)
+            }
+            y = glyphBot + packLead(bodySz)
 
             if (launch == null) {
-                drawWrappedCenter(canvas, "NO LOCK", cx, y, maxW, bodySz, withLamp(skin.muted, lamp))
+                packDrawCenter(canvas, "NO LOCK", cx, y, maxW, bodySz, withLamp(skin.text, lamp), tfBold)
+                canvas.restore()
                 return
             }
-            y = drawWrappedCenter(canvas, padLine, cx, y, maxW, bodySz, withLamp(skin.text, lamp))
+            y = packDrawCenter(canvas, padLine, cx, y, maxW, bodySz, withLamp(skin.text, lamp), tfBold)
             if (locLine.isNotBlank()) {
-                y = drawWrappedCenter(canvas, locLine, cx, y, maxW, bodySz, withLamp(skin.muted, lamp))
+                y = packDrawCenter(canvas, locLine, cx, y, maxW, locSz, Color.WHITE, tfBold)
             }
             if (geoLine.isNotBlank()) {
-                val y0 = y
-                y = drawWrappedCenter(canvas, geoLine, cx, y, maxW, geoSz, Color.WHITE)
-                geoHit.set(left, y0 - geoSz, right, y)
-            }
-            if (seaLine.isNotBlank()) {
-                y = drawWrappedCenter(canvas, seaLine, cx, y, maxW, bodySz, withLamp(skin.muted, lamp))
+                y = packDrawGeoRow(canvas, geoLine, cx, y, geoSz, withLamp(linkCol, lamp), tfBold)
             }
             if (vehLine.isNotBlank()) {
-                drawWrappedCenter(canvas, vehLine, cx, y, maxW, bodySz, withLamp(skin.text, lamp))
+                packDrawCenter(canvas, vehLine, cx, y, maxW, bodySz, withLamp(skin.text, lamp), tfBold)
             }
+            canvas.restore()
+        }
+
+        /** Coords + "Click Me" on one row. Width is free; height is one packer slot. */
+        private fun packDrawGeoRow(
+            canvas: Canvas,
+            geo: String,
+            cx: Float,
+            startTop: Float,
+            size: Float,
+            color: Int,
+            tf: Typeface
+        ): Float {
+            val oldTf = hudPaint.typeface
+            val oldAlign = hudPaint.textAlign
+            hudPaint.typeface = tf
+            hudPaint.textSize = size
+            hudPaint.color = color
+            hudPaint.textAlign = Paint.Align.LEFT
+            val fm = hudPaint.fontMetrics
+            val row = packRowH(size)
+            val click = "Click Me"
+            val gap = hudPaint.measureText("   ")
+            val geoW = hudPaint.measureText(geo)
+            val clickW = hudPaint.measureText(click)
+            val total = geoW + gap + clickW
+            val screenL = fullLeft()
+            val screenR = fullRight()
+            var x = cx - total * 0.5f
+            if (x < screenL) x = screenL
+            if (x + total > screenR) x = (screenR - total).coerceAtLeast(screenL)
+            val baseline = startTop - fm.ascent
+            canvas.drawText(geo, x, baseline, hudPaint)
+            val clickX = x + geoW + gap
+            canvas.drawText(click, clickX, baseline, hudPaint)
+            strokePaint.style = Paint.Style.STROKE
+            strokePaint.strokeWidth = (size * 0.055f).coerceAtLeast(1.6f)
+            strokePaint.color = color
+            val ulY = baseline + fm.descent * 0.28f
+            canvas.drawLine(x, ulY, x + geoW, ulY, strokePaint)
+            canvas.drawLine(clickX, ulY, clickX + clickW, ulY, strokePaint)
+            geoHit.set(x, startTop, x + total, startTop + row)
+            hudPaint.typeface = oldTf
+            hudPaint.textAlign = oldAlign
+            return startTop + row
         }
 
         private fun drawTelVideo(canvas: Canvas, launch: com.ccos.retro.data.LaunchSnapshot?, skin: TelemetrySkin.Tokens, ts: Float) {
+            // Stamp 87/53: LARGE cyan Click-Me webcast links; always include plain YT search/home.
+            vidLinkHits.clear()
             val lamp = prefs.lampBrightness
-            hudPaint.color = withLamp(skin.accent, lamp)
-            hudPaint.textSize = pageBodyTs(18f)
+            val titleSz = pageBodyTs(22f)
+            val bodySz = pageBodyTs(28f)
+            val clickSz = pageBodyTs(42f)
+            val top = (telHudBottom + height * 0.03f).coerceAtLeast(height * 0.26f)
+            val floor = dockFloor()
+            val cx = width / 2f
+            val maxW = width * 0.86f
+            val cyan = Color.parseColor("#00D4FF")
             hudPaint.textAlign = Paint.Align.CENTER
-            canvas.drawText("WEBCAST", width / 2f, height * 0.28f, hudPaint)
-            // Fake embed frame
-            strokePaint.style = Paint.Style.STROKE
-            strokePaint.strokeWidth = 2f
-            strokePaint.color = withLamp(skin.accent, lamp * 0.7f)
-            val fx = width * 0.18f
-            val fy = height * 0.34f
-            val fw = width * 0.64f
-            val fh = height * 0.22f
-            canvas.drawRoundRect(fx, fy, fx + fw, fy + fh, 10f, 10f, strokePaint)
-            fillPaint.color = withLamp(Color.parseColor("#18000000"), lamp)
-            canvas.drawRoundRect(fx, fy, fx + fw, fy + fh, 10f, 10f, fillPaint)
-            // Play triangle
-            fillPaint.color = withLamp(skin.accent, lamp)
-            val path = Path()
-            val pcx = width / 2f
-            val pcy = fy + fh / 2f
-            path.moveTo(pcx - 18f, pcy - 22f)
-            path.lineTo(pcx - 18f, pcy + 22f)
-            path.lineTo(pcx + 26f, pcy)
-            path.close()
-            canvas.drawPath(path, fillPaint)
-            hudPaint.color = withLamp(skin.text, lamp)
-            hudPaint.textSize = 14f * ts
-            hudPaint.color = withLamp(skin.text, lamp)
-            hudPaint.textSize = pageBodyTs(14f)
-            canvas.drawText("TAP TO OPEN LIVE FOR THIS LAUNCH", width / 2f, fy + fh + 28f, hudPaint)
-            if (launch != null) {
-                drawWrappedCenter(
-                    canvas, launch.name, width / 2f, fy + fh + 52f,
-                    width * 0.72f, pageBodyTs(16f), withLamp(skin.accent, lamp)
-                )
-                hudPaint.color = withLamp(skin.muted, lamp)
-                hudPaint.textSize = pageBodyTs(13f)
-                canvas.drawText(launch.provider.take(24), width / 2f, fy + fh + 100f, hudPaint)
+            val panes = WebcastResolver.panes(launch)
+            val rows = mutableListOf<Triple<String, String, Int>>()
+            rows += Triple("WEBCAST", "", withLamp(skin.accent, lamp))
+            if (launch == null) {
+                rows += Triple("NO LOCK", "", withLamp(skin.muted, lamp))
+            } else {
+                val live = launch.isWebcastLive()
+                val offLabel = when {
+                    live -> "LIVE"
+                    else -> panes.official.title.ifBlank { "OFFICIAL" }
+                }
+                if (panes.official.url.isNotBlank()) {
+                    rows += Triple("$offLabel   |   Click Me", panes.official.url, withLamp(cyan, lamp))
+                }
+                if (panes.nsf.url.isNotBlank() && panes.nsf.url != panes.official.url) {
+                    val alt = panes.nsf.title.ifBlank { "ALT" }
+                    rows += Triple("$alt   |   Click Me", panes.nsf.url, withLamp(cyan, lamp * 0.85f))
+                }
+                val shown = mutableSetOf(panes.official.url, panes.nsf.url)
+                for (ref in launch.allWebcasts()) {
+                    val id = WebcastResolver.youtubeVideoId(ref.url) ?: continue
+                    val watch = "https://www.youtube.com/watch?v=$id"
+                    if (watch in shown || ref.url in shown) continue
+                    shown += watch
+                    val label = (ref.title ?: ref.publisher ?: "WEBCAST").uppercase().take(22).ifBlank { "WEBCAST" }
+                    rows += Triple("$label   |   Click Me", watch, withLamp(cyan, lamp * 0.75f))
+                }
+            }
+            // HARD: plain YouTube search + home so private webcast never blocks search.
+            val q = if (launch != null) WebcastResolver.missionQuery(launch) else "rocket launch"
+            val searchUrl = "https://www.youtube.com/results?search_query=" +
+                java.net.URLEncoder.encode(q, java.nio.charset.StandardCharsets.UTF_8.name())
+            rows += Triple("YOUTUBE SEARCH   |   Click Me", searchUrl, withLamp(cyan, lamp * 0.70f))
+            rows += Triple("YOUTUBE HOME   |   Click Me", "https://m.youtube.com", withLamp(cyan, lamp * 0.60f))
+            val well = (floor - top).coerceAtLeast(96f)
+            val step = well / (rows.size + 1).toFloat()
+            rows.forEachIndexed { i, (label, url, color) ->
+                val y = top + step * (i + 1f)
+                val sz = when {
+                    i == 0 -> titleSz
+                    url.isNotBlank() -> clickSz
+                    else -> bodySz
+                }
+                drawWrappedCenter(canvas, label, cx, y, maxW, sz, color)
+                if (url.isNotBlank()) {
+                    hudPaint.textSize = sz
+                    val tw = hudPaint.measureText(label).coerceAtMost(maxW)
+                    strokePaint.style = Paint.Style.STROKE
+                    strokePaint.strokeWidth = (sz * 0.07f).coerceAtLeast(2.4f)
+                    strokePaint.color = color
+                    val ulY = y + packRowH(sz) * 0.55f
+                    canvas.drawLine(cx - tw * 0.5f, ulY, cx + tw * 0.5f, ulY, strokePaint)
+                    val h = packRowH(sz) + 24f
+                    vidLinkHits += RectF(laneLeft(), y - 16f, laneRight(), y + h) to url
+                }
             }
         }
-
-
 
         private fun drawTelMission(canvas: Canvas, launch: com.ccos.retro.data.LaunchSnapshot?, skin: TelemetrySkin.Tokens, ts: Float) {
             val lamp = prefs.lampBrightness
             val cx = width / 2f
-            val maxW = width * 0.72f
-            val titleSz = pageBodyTs(18f)
-            val bodySz = pageBodyTs(16f)
-            val subSz = pageBodyTs(13f)
-            val top = (telHudBottom + height * 0.03f).coerceAtLeast(height * 0.26f)
+            val maxW = width * 0.88f
+            // Stamp 87/54: MSK fill available space — wider lane, bigger data.
+            val titleSz = pageBodyTs(22f)
+            val bodySz = pageBodyTs(30f)
+            val subSz = pageBodyTs(22f)
+            val top = (telHudBottom + height * 0.02f).coerceAtLeast(height * 0.38f)
+            val gap = 1.48f
             hudPaint.textAlign = Paint.Align.CENTER
             var y = top
-            y = drawWrappedCenter(canvas, "MISSION", cx, y, maxW, titleSz, withLamp(skin.accent, lamp))
+            y = drawWrappedCenter(canvas, "MISSION", cx, y, maxW, titleSz, withLamp(skin.accent, lamp), gap)
             if (launch == null) {
-                drawWrappedCenter(canvas, "NO LOCK", cx, y, maxW, bodySz, withLamp(skin.muted, lamp))
+                drawWrappedCenter(canvas, "NO LOCK", cx, y, maxW, bodySz, withLamp(skin.muted, lamp), gap)
                 return
             }
             val m = MissionFacts.brief(launch, telemetryModule.effectiveSecondsFromNet())
-            y = drawWrappedCenter(canvas, m.title, cx, y, maxW, bodySz, withLamp(skin.text, lamp))
-            y = drawWrappedCenter(canvas, MissionFacts.goalLine(launch), cx, y, maxW, subSz, withLamp(skin.hold, lamp))
-            y = drawWrappedCenter(canvas, m.vehicle, cx, y, maxW, subSz, withLamp(skin.muted, lamp))
-            y = drawWrappedCenter(canvas, m.objective, cx, y, maxW, bodySz, withLamp(skin.text, lamp))
+            y = drawWrappedCenter(canvas, m.title, cx, y, maxW, bodySz, withLamp(skin.text, lamp), gap)
+            y = drawWrappedCenter(canvas, MissionFacts.goalLine(launch), cx, y, maxW, subSz, withLamp(skin.hold, lamp), gap)
+            y = drawWrappedCenter(canvas, m.vehicle, cx, y, maxW, subSz, withLamp(skin.muted, lamp), gap)
+            y = drawWrappedCenter(canvas, m.objective, cx, y, maxW, bodySz, withLamp(skin.text, lamp), gap)
             if (m.note.isNotBlank()) {
-                y = drawWrappedCenter(canvas, m.note, cx, y, maxW, subSz, withLamp(if (m.classified) skin.hold else skin.muted, lamp))
+                y = drawWrappedCenter(canvas, m.note, cx, y, maxW, subSz, withLamp(if (m.classified) skin.hold else skin.muted, lamp), gap)
             }
-            drawWrappedCenter(canvas, "${m.payloadName}  ·  ${m.payloadState}", cx, y, maxW, subSz, withLamp(skin.go, lamp))
+            drawWrappedCenter(canvas, "${m.payloadName}   |   ${m.payloadState}", cx, y, maxW, subSz, withLamp(skin.go, lamp), gap)
         }
 
         private fun drawOffPageDataWall(canvas: Canvas, now: Long) {
