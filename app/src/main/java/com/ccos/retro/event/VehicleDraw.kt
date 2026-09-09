@@ -296,9 +296,20 @@ object VehicleDraw {
         alpha: Float,
         launch: LaunchSnapshot?
     ): Boolean {
-        val booster = firstBitmap("vehicle_${artId}_booster", "vehicle_${artId}_s1", "vehicle_${artId}_core")
-        val upper = firstBitmap("vehicle_${artId}_ship", "vehicle_${artId}_s2", "vehicle_${artId}_upper")
+        // Prefer shell hulls when Darren ships them; else plain part; else _s1/_s2 aliases.
+        val booster = firstBitmap(
+            "vehicle_${artId}_booster_shell", "vehicle_${artId}_booster",
+            "vehicle_${artId}_s1", "vehicle_${artId}_core"
+        )
+        val upper = firstBitmap(
+            "vehicle_${artId}_ship_shell", "vehicle_${artId}_ship",
+            "vehicle_${artId}_s2", "vehicle_${artId}_upper"
+        )
         val srb = firstBitmap("vehicle_${artId}_srb", "vehicle_${artId}_strap")
+        val engRing = firstBitmap("vehicle_${artId}_engine_ring", "vehicle_${artId}_engine_booster")
+        val engShip = firstBitmap(
+            "vehicle_${artId}_engine_ship", "vehicle_${artId}_engine_raptors", "vehicle_${artId}_engine_upper"
+        )
         if (booster == null && upper == null) return false
 
         val wantB = if (separated) stage == 1 else true
@@ -306,38 +317,66 @@ object VehicleDraw {
         val srbGone = FlightProfiles.srbsGone(launch, tSec)
         val wantSrb = !srbGone && !separated && srb != null
 
-        val ordered = mutableListOf<Pair<Bitmap, Float>>()
-        if (wantB && wantU && booster != null && upper != null) {
-            ordered += booster to 0.58f
-            ordered += upper to 0.42f
-        } else if (wantB && booster != null) {
-            ordered += booster to 1f
-        } else if (wantU && upper != null) {
-            ordered += upper to 1f
-        } else {
-            return false
-        }
+        val bFrac = if (wantB && wantU && booster != null && upper != null) 0.58f else 1f
+        val uFrac = if (wantB && wantU && booster != null && upper != null) 0.42f else 1f
+        if ((!wantB || booster == null) && (!wantU || upper == null)) return false
 
-        var cursor = baseY
-        for ((bmp, frac) in ordered) {
-            val ph = h * frac
-            val dest = artDestRect(bmp, cx, cursor, ph, maxSlotW = h * 0.55f)
-            drawBitmapSrcInRect(canvas, bmp, null, dest, alpha)
-            cursor -= ph
+        // Engines first (under hull), then hulls bottom-up.
+        if (wantB && booster != null) {
+            val bH = h * bFrac
+            if (engRing != null) {
+                val eH = bH * 0.14f
+                drawBitmapSrcInRect(
+                    canvas, engRing, null,
+                    artDestRect(engRing, cx, baseY + eH * 0.15f, eH, maxSlotW = h * 0.50f),
+                    alpha
+                )
+            }
+            val destB = artDestRect(booster, cx, baseY, bH, maxSlotW = h * 0.55f)
+            drawBitmapSrcInRect(canvas, booster, null, destB, alpha)
+            // Stage tank fills for booster when present
+            try {
+                val fills = firstBitmap("vehicle_${artId}_booster_tank_fills", "vehicle_${artId}_s1_tank_fills")
+                if (fills != null) {
+                    val lvl = fuelOf(tSec, launch, 1)
+                    drawTankMaskLevel(canvas, fills, null, destB, lvl, Color.argb(160, 28, 110, 220))
+                }
+            } catch (_: Throwable) { }
+            if (wantSrb && srb != null) {
+                val gap = destB.width() * 0.55f
+                val sH = bH * 0.72f
+                drawBitmapSrcInRect(canvas, srb, null, artDestRect(srb, cx - gap, baseY, sH, maxSlotW = h * 0.28f), alpha * 0.95f)
+                drawBitmapSrcInRect(canvas, srb, null, artDestRect(srb, cx + gap, baseY, sH, maxSlotW = h * 0.28f), alpha * 0.95f)
+            }
         }
-        if (wantSrb && srb != null && booster != null) {
-            val bH = if (wantU && upper != null) h * 0.58f else h
-            val gap = artDestRect(booster, cx, baseY, bH, maxSlotW = h * 0.55f).width() * 0.55f
-            val sH = bH * 0.72f
-            drawBitmapSrcInRect(canvas, srb, null, artDestRect(srb, cx - gap, baseY, sH, maxSlotW = h * 0.28f), alpha * 0.95f)
-            drawBitmapSrcInRect(canvas, srb, null, artDestRect(srb, cx + gap, baseY, sH, maxSlotW = h * 0.28f), alpha * 0.95f)
+        if (wantU && upper != null) {
+            val uH = h * uFrac
+            val uBase = if (wantB && booster != null) baseY - h * bFrac else baseY
+            if (engShip != null) {
+                val eH = uH * 0.16f
+                drawBitmapSrcInRect(
+                    canvas, engShip, null,
+                    artDestRect(engShip, cx, uBase + eH * 0.12f, eH, maxSlotW = h * 0.42f),
+                    alpha
+                )
+            }
+            val destU = artDestRect(upper, cx, uBase, uH, maxSlotW = h * 0.50f)
+            drawBitmapSrcInRect(canvas, upper, null, destU, alpha)
+            try {
+                val fills = firstBitmap("vehicle_${artId}_ship_tank_fills", "vehicle_${artId}_s2_tank_fills")
+                if (fills != null) {
+                    val lvl = fuelOf(tSec, launch, 2)
+                    drawTankMaskLevel(canvas, fills, null, destU, lvl, Color.argb(160, 16, 205, 190))
+                }
+            } catch (_: Throwable) { }
         }
+        // Fallback shared tank_s1/s2 masks if stage fills missing
         val envelope = RectF(cx - h * 0.22f, baseY - h, cx + h * 0.22f, baseY)
         try {
             drawStageTankMasks(
                 artId, canvas, null, envelope, stage, separated,
                 fuelOf(tSec, launch, 1), fuelOf(tSec, launch, 2), methalox,
-                (alpha * 0.45f).coerceIn(0.20f, 0.55f)
+                (alpha * 0.35f).coerceIn(0.15f, 0.45f)
             )
         } catch (_: Throwable) { }
         return true
