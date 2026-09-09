@@ -2421,8 +2421,8 @@ class CommandConsoleView @JvmOverloads constructor(
         run {
             val pw = mainDest.width()
             val ph = mainDest.height()
-            val bodyTop = mainDest.top + ph * 0.314f
-            val bodyBot = mainDest.top + ph * 0.686f
+            val bodyTop = mainDest.top + ph * 0.305f
+            val bodyBot = mainDest.top + ph * 0.695f
             val dash = DashPathEffect(floatArrayOf(dp(5f), dp(4f)), now * 8f)
             // Phase command from reentry progress; tiny idle so actuators look alive.
             val cmd = when {
@@ -2441,18 +2441,18 @@ class CommandConsoleView @JvmOverloads constructor(
                 val deg: Float
             )
             val tabs = listOf(
-                Tab("FWD L", mainDest.left + pw * 0.279f, bodyTop, -ph * 0.081f, pw * 0.053f, clampDeg(cmd * 0.90f + idle)),
-                Tab("FWD R", mainDest.left + pw * 0.279f, bodyBot, ph * 0.081f, pw * 0.053f, clampDeg(-(cmd * 0.85f) - idle * 0.7f)),
-                Tab("AFT L", mainDest.left + pw * 0.818f, bodyTop, -ph * 0.097f, pw * 0.085f, clampDeg(cmd * 1.10f + idle * 1.1f)),
-                Tab("AFT R", mainDest.left + pw * 0.818f, bodyBot, ph * 0.097f, pw * 0.085f, clampDeg(-(cmd * 1.05f) - idle))
+                Tab("FWD L", mainDest.left + pw * 0.279f, bodyTop, -ph * 0.078f, pw * 0.044f, clampDeg(cmd * 0.90f + idle)),
+                Tab("FWD R", mainDest.left + pw * 0.279f, bodyBot, ph * 0.078f, pw * 0.044f, clampDeg(-(cmd * 0.85f) - idle * 0.7f)),
+                Tab("AFT L", mainDest.left + pw * 0.818f, bodyTop, -ph * 0.088f, pw * 0.074f, clampDeg(cmd * 1.10f + idle * 1.1f)),
+                Tab("AFT R", mainDest.left + pw * 0.818f, bodyBot, ph * 0.088f, pw * 0.074f, clampDeg(-(cmd * 1.05f) - idle))
             )
             fun drawTab(tab: Tab) {
                 // Ghost neutral (δ=0) dashed outline
                 tmpPath.reset()
                 tmpPath.moveTo(tab.hx - tab.halfW, tab.hy)
                 tmpPath.lineTo(tab.hx + tab.halfW, tab.hy)
-                tmpPath.lineTo(tab.hx + tab.halfW * 0.72f, tab.hy + tab.out)
-                tmpPath.lineTo(tab.hx - tab.halfW * 0.72f, tab.hy + tab.out)
+                tmpPath.lineTo(tab.hx + tab.halfW * 0.35f, tab.hy + tab.out)
+                tmpPath.lineTo(tab.hx - tab.halfW * 0.35f, tab.hy + tab.out)
                 tmpPath.close()
                 strokePaint.style = Paint.Style.STROKE
                 strokePaint.strokeWidth = 1.2f
@@ -2467,8 +2467,8 @@ class CommandConsoleView @JvmOverloads constructor(
                 tmpPath.reset()
                 tmpPath.moveTo(tab.hx - tab.halfW, tab.hy)
                 tmpPath.lineTo(tab.hx + tab.halfW, tab.hy)
-                tmpPath.lineTo(tab.hx + tab.halfW * 0.72f, tab.hy + tab.out)
-                tmpPath.lineTo(tab.hx - tab.halfW * 0.72f, tab.hy + tab.out)
+                tmpPath.lineTo(tab.hx + tab.halfW * 0.35f, tab.hy + tab.out)
+                tmpPath.lineTo(tab.hx - tab.halfW * 0.35f, tab.hy + tab.out)
                 tmpPath.close()
                 strokePaint.strokeWidth = 2.0f
                 strokePaint.color = withLamp(if (kotlin.math.abs(tab.deg) > 3.5f) skin.hold else skin.accent)
