@@ -8,8 +8,6 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
 import android.graphics.Path
 import android.graphics.LinearGradient
 import android.graphics.RadialGradient
@@ -2218,11 +2216,11 @@ class CommandConsoleView @JvmOverloads constructor(
             fillPaint.shader = null
         }
 
-        // Stamp 92: Darren reentry heatshield plate - kill flat LED tile scoreboard.
+        // Stamp 92: Darren plate for shape/flaps/engines; per-tile heat from EST temps.
+        // Kill SRC_IN brightening of full heatshield_tiles as the primary heat story.
         fillPaint.shader = null
         fillPaint.colorFilter = null
         val plate = reentryDrawable("reentry_heatshield")
-        val tiles = reentryDrawable("reentry_heatshield_tiles")
         val plateH = (bot - top) * 0.52f
         val plateDest = if (plate != null) {
             val aspect = plate.width.toFloat() / plate.height.toFloat().coerceAtLeast(1f)
@@ -2240,16 +2238,97 @@ class CommandConsoleView @JvmOverloads constructor(
             fillPaint.alpha = 255
             canvas.drawBitmap(plate, null, plateDest, fillPaint)
         }
-        // Optional tiles intensity tint from TPS temp (ColorFilter only - no Xfermode/getPixel).
-        if (tiles != null && heat > 0.02f) {
-            val tint = tileBlackbody(tps)
-            val a = (40 + 200 * heat * flick).toInt().coerceIn(0, 230)
-            fillPaint.alpha = a
-            fillPaint.colorFilter = PorterDuffColorFilter(tint, PorterDuff.Mode.SRC_IN)
-            canvas.drawBitmap(tiles, null, plateDest, fillPaint)
-            fillPaint.colorFilter = null
+
+        // Per-tile heating (first-physics): each tile uses NOSE EST / TPS EST / FLAP EST.
+        if (heat > 0.02f) {
+            canvas.save()
+            canvas.clipRect(plateDest)
+            val tile = plateDest.width() * 0.052f
+            val tileTop = plateDest.top + plateDest.height() * 0.40f
+            val tileBot = plateDest.bottom - plateDest.height() * 0.06f
+            var col = 0
+            var tx = plateDest.left + plateDest.width() * 0.05f
+            while (tx < plateDest.right - plateDest.width() * 0.10f) {
+                var ty = tileTop
+                var row = 0
+                val along = ((tx - plateDest.left) / plateDest.width().coerceAtLeast(1f)).coerceIn(0f, 1f)
+                while (ty < tileBot) {
+                    val span = (tileBot - tileTop).coerceAtLeast(1f)
+                    val vFrac = ((ty - tileTop) / span).coerceIn(0f, 1f)
+                    val nearFwdFlap = along in 0.14f..0.32f && (vFrac < 0.22f || vFrac > 0.78f)
+                    val nearAftFlap = along in 0.62f..0.84f && (vFrac < 0.22f || vFrac > 0.78f)
+                    // Region temps = on-screen EST labels (noseT / tps / flapT).
+                    val regionT = when {
+                        along < 0.20f -> noseT
+                        nearFwdFlap || nearAftFlap -> flapT
+                        else -> tps * (1f - 0.10f * along)
+                    }
+                    val seed = ((col * 17 + row * 31) % 11) / 11f
+                    val local = regionT * (0.90f + 0.18f * seed) *
+                        (1f + 0.04f * sin((now * 3.1f + col + row).toDouble()).toFloat()) *
+                        (0.92f + 0.08f * flick)
+                    fillPaint.shader = null
+                    fillPaint.colorFilter = null
+                    fillPaint.color = tileBlackbody(local)
+                    fillPaint.alpha = (120 + (110 * heat).toInt()).coerceIn(0, 220)
+                    canvas.drawRoundRect(
+                        tx, ty, tx + tile * 0.78f, ty + tile * 0.48f, 1.2f, 1.2f, fillPaint
+                    )
+                    if (local > 1250f) {
+                        fillPaint.color = Color.argb(
+                            ((local - 1250f) / 400f * 90f).toInt().coerceIn(0, 110),
+                            255, 255, 255
+                        )
+                        canvas.drawRoundRect(
+                            tx + tile * 0.12f, ty + tile * 0.08f,
+                            tx + tile * 0.55f, ty + tile * 0.28f, 1f, 1f, fillPaint
+                        )
+                    }
+                    ty += tile * 0.60f
+                    row++
+                }
+                tx += tile
+                col++
+            }
+            fillPaint.alpha = 255
+            canvas.restore()
+        }
+
+        // Flap tip heat + hunt (FLAP EST) - plate already has flap geometry from Darren.
+        fun flapGlow(i: Int, x0: Float, y0: Float, out0: Float, drop0: Float) {
+            val hunt = sin((now * (1.55f + i * 0.21f) + i * 1.9f).toDouble()).toFloat()
+            val hunt2 = sin((now * 0.47f + i * 2.4f).toDouble()).toFloat()
+            val k = 1f + 0.16f * hunt + 0.08f * hunt2
+            val hx = x0 + out0 * 0.55f * k
+            val hy = y0 + drop0 * 0.45f
+            if (heat > 0.08f) {
+                val glow = (50 + 140 * heat * flick).toInt().coerceIn(0, 200)
+                fillPaint.shader = RadialGradient(
+                    hx, hy, plateDest.width() * 0.12f,
+                    intArrayOf(
+                        Color.argb(glow, 180, 210, 255),
+                        Color.argb((glow * 0.55f).toInt(), 90, 40, 255),
+                        Color.TRANSPARENT
+                    ),
+                    floatArrayOf(0f, 0.55f, 1f),
+                    Shader.TileMode.CLAMP
+                )
+                canvas.drawCircle(hx, hy, plateDest.width() * 0.11f, fillPaint)
+                fillPaint.shader = null
+            }
+            fillPaint.color = tileBlackbody(flapT * (0.88f + 0.10f * hunt))
+            fillPaint.alpha = (90 + (120 * heat).toInt()).coerceIn(0, 200)
+            canvas.drawCircle(hx, hy, plateDest.width() * 0.035f, fillPaint)
             fillPaint.alpha = 255
         }
+        val pw = plateDest.width()
+        val ph = plateDest.height()
+        flapGlow(0, plateDest.left + pw * 0.22f, plateDest.top + ph * 0.28f, -pw * 0.08f, -ph * 0.18f)
+        flapGlow(1, plateDest.left + pw * 0.22f, plateDest.bottom - ph * 0.18f, -pw * 0.08f, ph * 0.18f)
+        flapGlow(2, plateDest.left + pw * 0.72f, plateDest.top + ph * 0.22f, pw * 0.10f, -ph * 0.22f)
+        flapGlow(3, plateDest.left + pw * 0.72f, plateDest.bottom - ph * 0.16f, pw * 0.10f, ph * 0.22f)
+
+        // Engines+flaps geometry: Darren reentry_heatshield plate (no separate engine_ship overlay).
 
         val noseLabX = plateDest.left + plateDest.width() * 0.12f
         val aftLabX = plateDest.right - plateDest.width() * 0.12f
