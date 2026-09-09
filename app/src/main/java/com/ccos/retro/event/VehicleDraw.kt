@@ -8,6 +8,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Path
@@ -231,31 +233,155 @@ object VehicleDraw {
         cores: Int,
         wide: Boolean
     ): Boolean {
-        // Stamp 88 FLEET-WIDE: after sep never paint full-stack catalog art on either tab.
-        // Soft-fail to geometric for EVERY family: STG1=booster/core, STG2=upper (Falcon/Soyuz/Starship/...).
-        // No per-vehicle versionCode / Starship-only special case.
-        if (separated) return false
-        val hull = vehicleHullBitmap(artId) ?: return false
-        val dest = artDestRect(hull, cx, baseY, h)
-        // Stamp 85: FULL hull first, then direct translucent tank overlay (HW-safe).
-        drawBitmapInRect(canvas, hull, dest, alpha * 1.0f)
+        // Stamp 89: KEEP catalog bitmaps post-sep (kill geometric soft-fail).
+        // Prefer stage drawables; else crop full-stack: STG1=booster/core bottom, STG2=upper/Ship top.
+        val stageArt = vehicleStageHullBitmap(artId, stage, separated)
+        val hull = stageArt?.first ?: vehicleHullBitmap(artId) ?: return false
+        val src = stageArt?.second
+        val dest = if (src != null) artDestRectFromSrc(hull, src, cx, baseY, h) else artDestRect(hull, cx, baseY, h)
+        drawBitmapSrcInRect(canvas, hull, src, dest, alpha * 1.0f)
         val glassA = (alpha * 0.45f).coerceIn(0.20f, 0.55f)
         try {
-            if (wide || artId == "cz8a" || artId == "lm" || artId == "lm5") {
-                overlayLmTanks(canvas, cx, baseY, h, tSec, stage, separated, wide || artId == "lm5", lamp, glassA, launch)
-            } else {
-                overlayCoreTanks(canvas, cx, baseY, h, tSec, stage, separated, methalox, lamp, glassA, launch, cores)
+            val fuel1 = fuelOf(tSec, launch, 1)
+            val fuel2 = fuelOf(tSec, launch, 2)
+            val usedMasks = drawStageTankMasks(
+                artId, canvas, src, dest, stage, separated, fuel1, fuel2, methalox, glassA
+            )
+            if (!usedMasks) {
+                val saved = canvas.save()
+                canvas.clipRect(dest)
+                if (wide || artId == "cz8a" || artId == "lm" || artId == "lm5") {
+                    overlayLmTanks(canvas, cx, baseY, h, tSec, stage, separated, wide || artId == "lm5", lamp, glassA, launch)
+                } else {
+                    overlayCoreTanks(canvas, cx, baseY, h, tSec, stage, separated, methalox, lamp, glassA, launch, cores)
+                }
+                canvas.restoreToCount(saved)
             }
         } catch (t: Throwable) {
-            Log.e("LRT82", "overlay tanks (no xfer)", t)
+            Log.e("LRT89", "overlay tanks", t)
         }
-        // Stamp 88: burn flames on art path when FlightProfiles says lit (ascent / boostback / landing).
         try {
             paintArtPathFlames(canvas, cx, baseY, h, tSec, stage, artId, methalox, alpha, launch)
         } catch (t: Throwable) {
             Log.e("LRT88", "art-path flames", t)
         }
         return true
+    }
+
+    private fun upperStackFrac(artId: String): Float = when (artId) {
+        "starship" -> 0.42f
+        "soyuz", "proton" -> 0.36f
+        "f9", "falcon", "fh", "zq" -> 0.30f
+        "sls", "electron", "glenn", "vulcan", "atlas" -> 0.34f
+        "cz8a", "cz2d", "lm", "lm5" -> 0.38f
+        else -> 0.38f
+    }
+
+    private fun vehicleStageHullBitmap(
+        artId: String,
+        stage: Int,
+        separated: Boolean
+    ): Pair<Bitmap, Rect?>? {
+        if (!separated) {
+            val full = vehicleHullBitmap(artId) ?: return null
+            return full to null
+        }
+        val prefer = if (stage >= 2) {
+            arrayOf("vehicle_${artId}_s2", "vehicle_${artId}_ship", "vehicle_${artId}_upper")
+        } else {
+            arrayOf("vehicle_${artId}_s1", "vehicle_${artId}_booster", "vehicle_${artId}_core")
+        }
+        for (name in prefer) {
+            loadVehicleDrawable(name)?.let { return it to null }
+        }
+        val hull = vehicleHullBitmap(artId) ?: return null
+        val split = upperStackFrac(artId)
+        val y0 = if (stage >= 2) 0f else split
+        val y1 = if (stage >= 2) split else 1f
+        val top = (hull.height * y0).toInt().coerceIn(0, hull.height - 1)
+        val bot = (hull.height * y1).toInt().coerceIn(top + 1, hull.height)
+        return hull to Rect(0, top, hull.width, bot)
+    }
+
+    private fun artDestRectFromSrc(bmp: Bitmap, src: Rect, cx: Float, baseY: Float, h: Float): RectF {
+        val destH = h.coerceAtLeast(8f)
+        val srcH = src.height().coerceAtLeast(1).toFloat()
+        val scale = destH / srcH
+        val destW = src.width() * scale
+        val left = cx - destW / 2f
+        return RectF(left, baseY - destH, left + destW, baseY)
+    }
+
+    private fun drawBitmapSrcInRect(canvas: Canvas, bmp: Bitmap, src: Rect?, dest: RectF, alpha: Float) {
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            this.alpha = (255f * alpha.coerceIn(0.15f, 1f)).toInt().coerceIn(0, 255)
+        }
+        canvas.drawBitmap(bmp, src, dest, paint)
+    }
+
+    private fun drawStageTankMasks(
+        artId: String,
+        canvas: Canvas,
+        hullSrc: Rect?,
+        dest: RectF,
+        stage: Int,
+        separated: Boolean,
+        fuel1: Float,
+        fuel2: Float,
+        methalox: Boolean,
+        alpha: Float
+    ): Boolean {
+        val lox = Color.argb((210 * alpha).toInt().coerceIn(0, 255), 28, 110, 220)
+        val fuelC = if (methalox)
+            Color.argb((210 * alpha).toInt().coerceIn(0, 255), 16, 205, 190)
+        else
+            Color.argb((210 * alpha).toInt().coerceIn(0, 255), 230, 105, 18)
+        val drawS1 = stage == 1
+        val drawS2 = stage == 2 || (stage == 1 && !separated)
+        val layers = mutableListOf<Triple<String, Float, Int>>()
+        if (drawS1) {
+            layers += Triple("tank_s1_ox", fuel1, lox)
+            layers += Triple("tank_s1_fuel", fuel1, fuelC)
+        }
+        if (drawS2) {
+            layers += Triple("tank_s2_ox", fuel2, lox)
+            layers += Triple("tank_s2_fuel", fuel2, fuelC)
+        }
+        var any = false
+        for ((suffix, level, color) in layers) {
+            val mask = loadVehicleDrawable("vehicle_${artId}_$suffix") ?: continue
+            any = true
+            drawTankMaskLevel(canvas, mask, hullSrc, dest, level, color)
+        }
+        return any
+    }
+
+    private fun drawTankMaskLevel(
+        canvas: Canvas,
+        mask: Bitmap,
+        hullSrc: Rect?,
+        dest: RectF,
+        level: Float,
+        color: Int
+    ) {
+        val lvl = level.coerceIn(0f, 1f)
+        if (lvl <= 0.001f) return
+        val mSrc = if (hullSrc != null) {
+            val t = hullSrc.top.coerceIn(0, (mask.height - 1).coerceAtLeast(0))
+            val b = hullSrc.bottom.coerceIn(t + 1, mask.height.coerceAtLeast(t + 1))
+            Rect(0, t, mask.width.coerceAtLeast(1), b)
+        } else {
+            Rect(0, 0, mask.width, mask.height)
+        }
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN)
+            this.alpha = 230
+        }
+        val saved = canvas.save()
+        val fillTop = dest.bottom - dest.height() * lvl
+        canvas.clipRect(dest.left, fillTop, dest.right, dest.bottom)
+        canvas.drawBitmap(mask, mSrc, dest, paint)
+        canvas.restoreToCount(saved)
     }
 
     /** HW-safe plume under the art hull when enginesLit > 0. Splash/ENG 0 = no flame. */

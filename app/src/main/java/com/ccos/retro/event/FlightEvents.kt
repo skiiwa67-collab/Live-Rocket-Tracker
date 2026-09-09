@@ -215,11 +215,11 @@ object FlightEventCatalog {
     )
 
     private fun soyuz() = listOf(
-        ev("sz_lift", 0f, "ПУСК / LIFTOFF", "Soyuz cleared the pad"),
+        ev("sz_lift", 0f, "LIFTOFF", "Soyuz cleared the pad"),
         ev("sz_maxq", 70f, "MAX-Q", "Peak aerodynamic pressure"),
-        ev("sz_sep", 118f, "BOOSTER SEP", "Strap-ons jettison"),
-        ev("sz_core", 287f, "CORE CUTOFF", "Core stage done"),
-        ev("sz_orbit", 530f, "ORBIT", "Insertion")
+        ev("sz_strap", 118f, "SRB SEP", "Strap-ons jettison"),
+        ev("sz_sep", 287f, "STAGE SEP", "Core stage discarded"),
+        ev("sz_seco", 530f, "SECO", "Insertion")
     )
 
     private fun electron() = listOf(
@@ -899,10 +899,14 @@ object FlightProfiles {
 
     fun secoTime(launch: LaunchSnapshot?): Float {
         val sep = sepTime(launch)
-        return events(launch).firstOrNull { e ->
+        // Stamp 89: real second-stage cutoff / insertion — never CORE CUTOFF / MECO / first-stage.
+        val hit = events(launch).firstOrNull { e ->
             val t = e.second.uppercase()
-            "CUTOFF" in t || "SECO" in t
-        }?.first ?: (sep + 380f)
+            if ("CORE" in t || "MECO" in t || "FIRST" in t || "SRB" in t) return@firstOrNull false
+            "SECO" in t || "SHIP CUTOFF" in t || "INSERTION" in t ||
+                (t == "ORBIT" || t.startsWith("ORBIT "))
+        }?.first
+        return hit ?: (sep + 380f)
     }
 
 
@@ -1070,8 +1074,22 @@ object FlightProfiles {
         val uBurn = ((tSec.coerceAtMost(cutoff) - sep).coerceAtLeast(0f) / burn).coerceIn(0f, 1f)
         // F13 TRAJ lock: orbital ~275 km. Cutoff is vis-viva, not leftover 18 km/h-s ascent.
         val f13 = MissionFacts.isFlight13(launch)
-        val altTarget = if (f13) 275f else altSep + burn * 0.85f
-        val spdTarget = if (f13) visVivaCircKmh(275f) else (spdSep + burn * 18f).coerceAtMost(27500f)
+        val fam = VehicleCatalog.family(launch)
+        // Stamp 89: LEO orbital uppers use vis-viva (Soyuz ISS ~400 km ~17k mph).
+        val orbitalCoast = f13 || fam in setOf(
+            "soyuz", "proton", "f9", "falcon", "fh", "zq", "electron", "atlas", "vulcan",
+            "ariane", "h3", "lvm3", "isro", "cz8a", "cz2d", "lm", "lm5", "sls", "glenn"
+        )
+        val altTarget = when {
+            f13 -> 275f
+            fam == "soyuz" || fam == "proton" -> 400f
+            orbitalCoast -> (altSep + burn * 0.85f).coerceIn(200f, 550f)
+            else -> altSep + burn * 0.85f
+        }
+        val spdTarget = when {
+            orbitalCoast -> visVivaCircKmh(altTarget)
+            else -> (spdSep + burn * 18f).coerceAtMost(27500f)
+        }
         val altAscent = altSep + (altTarget - altSep) * uBurn
         val spdAscent = spdSep + (spdTarget - spdSep) * uBurn
         if (tSec < cutoff) return Triple(altAscent, spdAscent, "SHIP ASCENT")
@@ -1101,7 +1119,8 @@ object FlightProfiles {
             }
             else -> {
                 val u = ((tSec - flip) / (land - flip).coerceAtLeast(1f)).coerceIn(0f, 1f)
-                Triple((8f * (1f - u)).coerceAtLeast(0f), (4000f * (1f - u)).coerceAtLeast(0f), "LANDING FLIP")
+                // Stamp 89: landing-burn / flip start ~900 km/h class, not 4000.
+                Triple((8f * (1f - u)).coerceAtLeast(0f), (900f * (1f - u)).coerceAtLeast(0f), "LANDING FLIP")
             }
         }
     }
