@@ -297,16 +297,27 @@ object VehicleDraw {
         launch: LaunchSnapshot?
     ): Boolean {
         // Prefer shell hulls when Darren ships them; else plain part; else _s1/_s2 aliases.
-        val booster = firstBitmap(
-            "vehicle_${artId}_booster_shell", "vehicle_${artId}_booster",
-            "vehicle_${artId}_s1", "vehicle_${artId}_core"
-        )
+        val booster = if (artId == "soyuz" || artId == "proton") {
+            firstBitmap(
+                "vehicle_${artId}_core", "vehicle_${artId}_booster_shell", "vehicle_${artId}_booster",
+                "vehicle_${artId}_s1"
+            )
+        } else {
+            firstBitmap(
+                "vehicle_${artId}_booster_shell", "vehicle_${artId}_booster",
+                "vehicle_${artId}_s1", "vehicle_${artId}_core"
+            )
+        }
         val upper = firstBitmap(
             "vehicle_${artId}_ship_shell", "vehicle_${artId}_ship",
-            "vehicle_${artId}_s2", "vehicle_${artId}_upper"
+            "vehicle_${artId}_upper", "vehicle_${artId}_s2"
         )
         val srb = firstBitmap("vehicle_${artId}_srb", "vehicle_${artId}_strap")
-        val engRing = firstBitmap("vehicle_${artId}_engine_ring", "vehicle_${artId}_engine_booster")
+        val engRing = firstBitmap(
+            "vehicle_${artId}_engine_ring",
+            "vehicle_${artId}_engine_octaweb",
+            "vehicle_${artId}_engine_booster"
+        )
         val engShip = firstBitmap(
             "vehicle_${artId}_engine_ship", "vehicle_${artId}_engine_raptors", "vehicle_${artId}_engine_upper"
         )
@@ -343,10 +354,27 @@ object VehicleDraw {
                 }
             } catch (_: Throwable) { }
             if (wantSrb && srb != null) {
+                // Stamp 90 tip: Soyuz/Proton Korolev cross = 4 strap-ons; others 2.
+                val four = artId == "soyuz" || artId == "proton"
                 val gap = destB.width() * 0.55f
                 val sH = bH * 0.72f
-                drawBitmapSrcInRect(canvas, srb, null, artDestRect(srb, cx - gap, baseY, sH, maxSlotW = h * 0.28f), alpha * 0.95f)
-                drawBitmapSrcInRect(canvas, srb, null, artDestRect(srb, cx + gap, baseY, sH, maxSlotW = h * 0.28f), alpha * 0.95f)
+                val maxW = h * 0.28f
+                if (four) {
+                    // Near/far pair each side (2D side-view of 4 boosters).
+                    for (side in listOf(-1f, 1f)) {
+                        for (k in listOf(0.55f, 1.08f)) {
+                            val x = cx + side * gap * k
+                            drawBitmapSrcInRect(
+                                canvas, srb, null,
+                                artDestRect(srb, x, baseY, sH * (0.92f + 0.08f * k), maxSlotW = maxW * (0.85f + 0.1f * k)),
+                                alpha * 0.95f
+                            )
+                        }
+                    }
+                } else {
+                    drawBitmapSrcInRect(canvas, srb, null, artDestRect(srb, cx - gap, baseY, sH, maxSlotW = maxW), alpha * 0.95f)
+                    drawBitmapSrcInRect(canvas, srb, null, artDestRect(srb, cx + gap, baseY, sH, maxSlotW = maxW), alpha * 0.95f)
+                }
             }
         }
         if (wantU && upper != null) {
