@@ -630,12 +630,29 @@ object VehicleDraw {
             val fbb = alphaBBoxCached(fName, bmp)
             val hull = hullDest
             if (hull != null && hullSrc != null && hullSrc.height() > 0) {
-                // Content-bbox hull: place flame CONTENT under hull bottom (S1 y~0.90 / Vac under MVac).
-                val overlap = hull.height() * 0.02f
-                val scale = hull.height() / hullSrc.height().toFloat()
-                val fw = (fbb.width() * scale * 1.35f).coerceAtLeast(hull.width() * 0.85f)
-                val fh = (fbb.height() * scale * 1.25f * flick).coerceAtLeast(hull.height() * 0.10f)
-                val dest = RectF(cx - fw * 0.5f, hull.bottom - overlap, cx + fw * 0.5f, hull.bottom - overlap + fh)
+                // Stamp 100: continuous hullSrc→dest map so plume top == bell exit (zero gap).
+                // Same scale as hull content-bbox fill; Darren LARGE Vac width kept.
+                val scaleY = hull.height() / hullSrc.height().toFloat()
+                val scaleX = hull.width() / hullSrc.width().toFloat()
+                val naturalW = fbb.width() * scaleX
+                val naturalH = fbb.height() * scaleY
+                val fw = if (stage >= 2) {
+                    (naturalW * 1.55f).coerceAtLeast(hull.width() * 1.15f)
+                } else {
+                    (naturalW * 1.35f).coerceAtLeast(hull.width() * 0.85f)
+                }
+                val fh = (naturalH * (if (stage >= 2) 1.35f else 1.25f) * flick)
+                    .coerceAtLeast(hull.height() * (if (stage >= 2) 0.18f else 0.10f))
+                // Map flame content top through hullSrc; clamp so STG2 sits flush under MVac exit.
+                val mappedTop = hull.top + (fbb.top - hullSrc.top) * scaleY
+                val plumeTop = if (stage >= 2) {
+                    // Flush under MVac: prefer mapped top, never below hull.bottom (gap FAIL).
+                    mappedTop.coerceAtMost(hull.bottom)
+                } else {
+                    // S1 lock: content under hull bottom (octaweb ~y0.90).
+                    min(mappedTop, hull.bottom - hull.height() * 0.02f)
+                }
+                val dest = RectF(cx - fw * 0.5f, plumeTop, cx + fw * 0.5f, plumeTop + fh)
                 drawBitmapSrcInRect(canvas, bmp, fbb, dest, (alpha * flick).coerceIn(0.70f, 1f))
             } else if (hull != null) {
                 // Same dest as hull (full-frame aligned); extend slightly below for exhaust past baseY.
@@ -694,45 +711,67 @@ object VehicleDraw {
     }
 
     /**
-     * Stamp 99 ELON: CONTENT alpha-bbox src (not full 424x1200 pad). STACK+STG1+STG2.
-     * Modest pad only — scale content island to fill plate. Letterbox > chop.
+     * Stamp 100 soft: CONTENT alpha-bbox src. STACK full; STG1 booster-only Y-band;
+     * STG2 upper-only ending at MVac exit (no botPad into booster cyan/structure).
+     * Letterbox > chop. Do not regress stamp 99 content-fill / BLACK empty / S1 flame lock.
      */
     private fun stageHullSrcRect(artId: String, hull: Bitmap, stage: Int, separated: Boolean): Rect {
-        val (probeName, probeBmp) = if (!separated) {
-            // STACK: content bbox of the continuous hull itself.
-            "vehicle_${artId}_stack_content" to hull
+        val stackBb = alphaBBoxCached("vehicle_${artId}_stack_content", hull)
+        val s2Part = firstBitmap(
+            "vehicle_${artId}_s2", "vehicle_${artId}_ship", "vehicle_${artId}_upper"
+        )
+        val s1Part = firstBitmap(
+            "vehicle_${artId}_s1", "vehicle_${artId}_booster", "vehicle_${artId}_core"
+        )
+        val s2Bb = if (s2Part != null && s2Part.width == hull.width && s2Part.height == hull.height) {
+            alphaBBoxCached("vehicle_${artId}_s2", s2Part)
+        } else null
+        val s1Bb = if (s1Part != null && s1Part.width == hull.width && s1Part.height == hull.height) {
+            alphaBBoxCached("vehicle_${artId}_s1", s1Part)
+        } else null
+
+        val bb: Rect = if (!separated) {
+            // Pre-sep FULL STACK continuous content.
+            stackBb
         } else if (stage >= 2) {
-            val p = firstBitmap(
-                "vehicle_${artId}_s2", "vehicle_${artId}_ship", "vehicle_${artId}_upper"
+            // Upper-only (ship/upper/s2). Bottom = MVac exit — never extend into S1.
+            s2Bb ?: Rect(
+                stackBb.left,
+                stackBb.top,
+                stackBb.right,
+                (stackBb.top + (stackBb.height() * 0.36f).toInt()).coerceAtMost(stackBb.bottom)
             )
-            val n = when {
-                p == null -> "vehicle_${artId}_stack_content"
-                else -> "vehicle_${artId}_s2"
-            }
-            n to (p ?: hull)
         } else {
-            val p = firstBitmap(
-                "vehicle_${artId}_s1", "vehicle_${artId}_booster", "vehicle_${artId}_core"
+            // Booster-only: cut at S2/MVac exit. s1/booster alpha top still has MVac glued — reject it.
+            // Interstage sliver OK above cut. Fairing/S2/MVac must NOT appear on STG1 plate.
+            val cut = (s2Bb?.bottom ?: (s1Bb?.top ?: (stackBb.top + (stackBb.height() * 0.30f).toInt())))
+            val inter = max(2, ((s1Bb?.height() ?: stackBb.height()) * 0.012f).toInt())
+            val top = (cut - inter).coerceAtLeast(stackBb.top)
+            val bot = (s1Bb?.bottom ?: stackBb.bottom).coerceAtMost(hull.height)
+            Rect(
+                (s1Bb?.left ?: stackBb.left),
+                top,
+                (s1Bb?.right ?: stackBb.right),
+                bot.coerceAtLeast(top + 1)
             )
-            val n = when {
-                p == null -> "vehicle_${artId}_stack_content"
-                else -> "vehicle_${artId}_s1"
-            }
-            n to (p ?: hull)
         }
-        val bb = if (probeBmp.width == hull.width && probeBmp.height == hull.height) {
-            alphaBBoxCached(probeName, probeBmp)
-        } else {
-            alphaBBoxCached("vehicle_${artId}_stack_content", hull)
-        }
+
         val padX = max(2, (bb.width() * 0.10f).toInt())
         val padY = max(2, (bb.height() * 0.03f).toInt())
-        // STG2: small pad below for MVac skirt still inside ship art.
-        val botPad = if (separated && stage >= 2) max(6, (bb.height() * 0.10f).toInt()) else padY
         val left = (bb.left - padX).coerceAtLeast(0)
-        val top = (bb.top - padY).coerceAtLeast(0)
+        // STG1: never pad upward past S2/MVac cut (would re-glue upperstage).
+        val top = if (separated && stage == 1) {
+            bb.top.coerceAtLeast(0)
+        } else {
+            (bb.top - padY).coerceAtLeast(0)
+        }
         val right = (bb.right + padX).coerceAtMost(hull.width)
-        val bot = (bb.bottom + botPad).coerceAtMost(hull.height)
+        // STG2: bot = MVac exit exactly (no pad into booster). STG1/STACK: modest padY.
+        val bot = if (separated && stage >= 2) {
+            bb.bottom.coerceAtMost(hull.height)
+        } else {
+            (bb.bottom + padY).coerceAtMost(hull.height)
+        }
         return Rect(left, top, right.coerceAtLeast(left + 1), bot.coerceAtLeast(top + 1))
     }
 
@@ -831,8 +870,13 @@ object VehicleDraw {
             val bTop = dest.top + (bbox.top - srcTop) / srcH * destH
             val bBot = dest.top + (bbox.bottom - srcTop) / srcH * destH
             val lvl = layer.level.coerceIn(0f, 1f)
+            // Stamp 100: STG2 tanks/empty stop ABOVE MVac bell (no cyan rect under bell).
+            val bellCeil = if (separated && stage >= 2) {
+                dest.top + destH * 0.78f
+            } else dest.bottom
             val top = bTop.coerceAtMost(bBot)
-            val bot = bBot.coerceAtLeast(top + 1f)
+            val bot = bBot.coerceAtLeast(top + 1f).coerceAtMost(bellCeil)
+            if (bot <= top + 0.5f) continue
             val bandH = (bot - top).coerceAtLeast(1f)
             val fillTop = bot - bandH * lvl
             // Emptied region [top, fillTop] → pure BLACK over hull (kills baked prop tint).
@@ -906,7 +950,13 @@ object VehicleDraw {
             val srcTop = (hullSrc?.top ?: 0).toFloat()
             val srcH = (hullSrc?.height() ?: mask.height).toFloat().coerceAtLeast(1f)
             val bTop = dest.top + (bbox.top - srcTop) / srcH * destH
-            val bBot = dest.top + (bbox.bottom - srcTop) / srcH * destH
+            var bBot = dest.top + (bbox.bottom - srcTop) / srcH * destH
+            // Stamp 100: STG2 — exclude lower ~bell fraction (no LOX/tank under MVac).
+            if (separated && stage >= 2) {
+                val bellCeil = dest.top + destH * 0.78f
+                bBot = bBot.coerceAtMost(bellCeil)
+                if (bBot <= bTop + 0.5f) continue
+            }
             // Dark empty FULL band, then colored remaining level only (emptied stays dark).
             drawTankMaskLevel(canvas, mask, hullSrc, dest, 1f, empty, bandTop = bTop, bandBot = bBot)
             drawTankMaskLevel(canvas, mask, hullSrc, dest, level, color, bandTop = bTop, bandBot = bBot)
