@@ -614,9 +614,11 @@ object FlightProfiles {
     }
 
     fun boosterLandTime(launch: LaunchSnapshot?): Float {
+        // Stamp 102: never match APPROACHING BOOSTER LANDING / LANDING BURN as touchdown.
         val hit = events(launch).firstOrNull { e ->
             val t = e.second.uppercase()
             if ("SHIP" in t || "STARSHIP" in t) return@firstOrNull false
+            if ("APPROACH" in t || "BURN" in t) return@firstOrNull false
             "HARD SPLASH" in t ||
                 (("BOOSTER" in t) && ("LAND" in t || "CATCH" in t || "TOUCH" in t || "SPLASH" in t))
         }
@@ -1045,7 +1047,15 @@ object FlightProfiles {
         }
         if (tSec >= land) return Triple(0f, 0f, "TOUCHDOWN")
         val burnDur = spec.landingBurnSec.coerceAtLeast(8f)
-        val burnStart = (land - burnDur).coerceAtLeast(sep + 8f)
+        // Stamp 102: sync burnStart with LANDING BURN tape like boosterReturnLit (not only land-dur).
+        val tapeLb = events(launch).firstOrNull { e ->
+            val u = e.second.uppercase()
+            if ("SHIP" in u || "STARSHIP" in u) return@firstOrNull false
+            "LANDING BURN" in u
+        }?.first
+        val burnStart = (
+            tapeLb ?: (land - burnDur)
+        ).coerceAtMost(land - 4f).coerceAtLeast(sep + 8f)
         val boostEnd = (sep + spec.boostbackSec).coerceAtMost(burnStart - 4f)
         val alt = when {
             tSec < boostEnd -> {
@@ -1057,8 +1067,9 @@ object FlightProfiles {
                 (altPeak + (12f - altPeak) * uC).coerceAtLeast(12f)
             }
             else -> {
+                // Floor while LANDING BURN live — ALT0 only at touchdown.
                 val uL = ((tSec - burnStart) / (land - burnStart).coerceAtLeast(1f)).coerceIn(0f, 1f)
-                (12f * (1f - uL)).coerceAtLeast(0f)
+                (12f * (1f - uL)).coerceAtLeast(0.12f)
             }
         }
         val spd = when {
@@ -1068,8 +1079,9 @@ object FlightProfiles {
                 (spdSep * 0.70f * (1f - 0.45f * uC)).coerceAtLeast(1800f)
             }
             else -> {
+                // Floor while LANDING BURN live — SPD0 only at touchdown.
                 val uL = ((tSec - burnStart) / (land - burnStart).coerceAtLeast(1f)).coerceIn(0f, 1f)
-                (1600f * (1f - uL)).coerceAtLeast(0f)
+                (1600f * (1f - uL)).coerceAtLeast(8f)
             }
         }
         val phase = when {
@@ -1187,27 +1199,29 @@ object FlightProfiles {
             val seco = secoTime(launch)
             val land = shipLandTime(launch)
             if (hasLandTime(land) && tSec >= land) return 0f
+            // Stamp 102: after SECO never flash-full. Cap at residual fringe (0 for expendable coast).
+            if (tSec >= seco) {
+                val relight = events(launch).firstOrNull { "RELIGHT" in it.second.uppercase() }?.first
+                val flip = events(launch).firstOrNull { "FLIP" in it.second.uppercase() }?.first
+                    ?: if (hasLandTime(land)) land - 40f else null
+                val post = when {
+                    relight != null && tSec >= relight && tSec < relight + 40f -> {
+                        val u = ((tSec - relight) / 40f).coerceIn(0f, 1f)
+                        (reserve * (1f - 0.30f * u)).coerceAtLeast(reserve * 0.55f)
+                    }
+                    flip != null && hasLandTime(land) && tSec >= flip -> {
+                        val u = ((tSec - flip) / (land - flip).coerceAtLeast(1f)).coerceIn(0f, 1f)
+                        (reserve * 0.70f * (1f - u)).coerceAtLeast(0f)
+                    }
+                    hasLandTime(land) && tSec < land -> reserve * 0.75f
+                    else -> 0f // expendable / no land mark: empty after cutoff
+                }
+                return post.coerceIn(0f, reserve)
+            }
             if (tSec < sep) return 1f
             // Ascent: drain 1 to reserve by SECO (keep landing/relight prop).
-            if (tSec < seco) {
-                val u = ((tSec - sep) / (seco - sep).coerceAtLeast(1f)).coerceIn(0f, 1f)
-                return (1f - u * (1f - reserve)).coerceIn(reserve, 1f)
-            }
-            val relight = events(launch).firstOrNull { "RELIGHT" in it.second.uppercase() }?.first
-            val flip = events(launch).firstOrNull { "FLIP" in it.second.uppercase() }?.first
-                ?: if (hasLandTime(land)) land - 40f else null
-            if (relight != null && tSec >= relight && tSec < relight + 40f) {
-                val u = ((tSec - relight) / 40f).coerceIn(0f, 1f)
-                return (reserve * (1f - 0.30f * u)).coerceAtLeast(reserve * 0.55f)
-            }
-            if (flip != null && hasLandTime(land) && tSec >= flip) {
-                val u = ((tSec - flip) / (land - flip).coerceAtLeast(1f)).coerceIn(0f, 1f)
-                return (reserve * 0.70f * (1f - u)).coerceAtLeast(0f)
-            }
-            // Coast after SECO before landing sequence: hold residual (not dry).
-            if (hasLandTime(land) && tSec < land) return reserve * 0.75f
-            // Expendable / no land mark: empty after cutoff.
-            return 0f
+            val u = ((tSec - sep) / (seco - sep).coerceAtLeast(1f)).coerceIn(0f, 1f)
+            return (1f - u * (1f - reserve)).coerceIn(reserve, 1f)
         }
 
         // Stage 1 — booster

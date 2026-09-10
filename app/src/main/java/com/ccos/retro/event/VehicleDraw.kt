@@ -672,6 +672,22 @@ object VehicleDraw {
                 val dest = RectF(cx - fw * 0.5f, baseY - fh * 0.05f, cx + fw * 0.5f, baseY + fh * flick)
                 drawBitmapSrcInRect(canvas, bmp, fbb, dest, (alpha * flick).coerceIn(0.70f, 1f))
             }
+            // Stamp 102 hardwire: China/SRB flame_* may bake side plumes only.
+            // Lit core => center plume. Never double-stack on F9/FH (stamp 101 lock).
+            if (stage <= 1 && artId != "f9" && artId != "fh") {
+                val tot = VehicleCatalog.spec(launch).s1Engines
+                val litN = FlightProfiles.enginesLit(tSec, launch, 1, tot)
+                if (litN > 0) {
+                    val kindCore = when {
+                        artId == "starship" || methalox || artId == "glenn" || artId == "vulcan" -> "raptor"
+                        artId == "sls" -> "rs25"
+                        artId == "soyuz" || artId == "proton" -> "rd107"
+                        else -> "merlin"
+                    }
+                    val plumeY = hullDest?.bottom ?: baseY
+                    flame(canvas, cx, plumeY, h * 0.22f, h * 0.28f, alpha, tSec, kindCore)
+                }
+            }
             return
         }
         val kind = when {
