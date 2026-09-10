@@ -274,6 +274,11 @@ object VehicleDraw {
         } catch (t: Throwable) {
             Log.e("LRT88", "art-path flames", t)
         }
+        try {
+            paintPayloadDeploy(canvas, artId, cx, baseY, h, tSec, stage, separated, alpha, launch)
+        } catch (t: Throwable) {
+            Log.e("LRT95", "payload deploy", t)
+        }
         return true
     }
 
@@ -466,12 +471,79 @@ object VehicleDraw {
                 )
             } catch (_: Throwable) { }
         }
+        // Stamp 95: payload/fairing deploy motion from existing pieces + f9_dep timing.
+        try {
+            paintPayloadDeploy(canvas, artId, cx, baseY, h, tSec, stage, separated, alpha, launch)
+        } catch (t: Throwable) {
+            Log.e("LRT95", "payload deploy", t)
+        }
         return true
     }
 
     private fun firstBitmap(vararg names: String): Bitmap? {
         for (n in names) loadVehicleDrawable(n)?.let { return it }
         return null
+    }
+
+    /**
+     * Stamp 95: simple deploy motion using EXISTING fairing/payload drawables.
+     * Keyed off FlightProfiles tape PAYLOAD DEPLOYMENT (f9_dep etc). No fantasy ships.
+     */
+    private fun paintPayloadDeploy(
+        canvas: Canvas,
+        artId: String,
+        cx: Float,
+        baseY: Float,
+        h: Float,
+        tSec: Float,
+        stage: Int,
+        separated: Boolean,
+        alpha: Float,
+        launch: LaunchSnapshot?
+    ) {
+        if (!separated || stage < 2) return
+        val deploy = FlightProfiles.events(launch).firstOrNull { e ->
+            val t = e.second.uppercase()
+            "APPROACHING" !in t && (
+                "PAYLOAD DEPLOYMENT" in t ||
+                    (("DEPLOY" in t) && ("LEGS" !in t) && ("DOOR" !in t) && ("GRID" !in t))
+            )
+        }?.first ?: return
+        val fairing = firstBitmap("vehicle_${artId}_fairing")
+        val payload = firstBitmap("vehicle_${artId}_payload")
+        if (fairing == null && payload == null) return
+        val window = 90f
+        if (tSec < deploy - 8f || tSec > deploy + window) return
+        val u = when {
+            tSec < deploy -> 0f
+            else -> ((tSec - deploy) / window).coerceIn(0f, 1f)
+        }
+        val noseBase = baseY - h * 0.78f
+        val pieceH = h * 0.20f
+        if (fairing != null) {
+            val split = u * h * 0.16f
+            val drop = u * h * 0.10f
+            val a = (alpha * (1f - u * 0.65f)).coerceIn(0.15f, 1f)
+            drawBitmapSrcInRect(
+                canvas, fairing, null,
+                artDestRect(fairing, cx - split, noseBase + drop + pieceH, pieceH, maxSlotW = h * 0.18f),
+                a
+            )
+            drawBitmapSrcInRect(
+                canvas, fairing, null,
+                artDestRect(fairing, cx + split, noseBase + drop + pieceH, pieceH, maxSlotW = h * 0.18f),
+                a
+            )
+        }
+        if (payload != null && tSec >= deploy) {
+            val drift = u * h * 0.32f
+            val a = (alpha * (1f - u * 0.45f)).coerceIn(0.20f, 1f)
+            drawBitmapSrcInRect(
+                canvas, payload, null,
+                artDestRect(payload, cx, noseBase - drift + pieceH * 0.55f, pieceH * 0.65f, maxSlotW = h * 0.12f),
+                a
+            )
+        }
     }
 
     /** HW-safe plume under the art hull when enginesLit > 0. Splash/ENG 0 = no flame. */
@@ -489,6 +561,28 @@ object VehicleDraw {
     ) {
         val sep = FlightProfiles.sepTime(launch)
         if (!burning(tSec, launch, stage, sep)) return
+        // Stamp 95: prefer on-disk flame/exhaust bitmaps; geometric fallback only.
+        val bmp = if (stage >= 2) {
+            firstBitmap(
+                "vehicle_${artId}_flame_s2",
+                "vehicle_${artId}_flame_ship",
+                "vehicle_${artId}_exhaust_ship"
+            )
+        } else {
+            firstBitmap(
+                "vehicle_${artId}_flame_s1",
+                "vehicle_${artId}_flame_booster",
+                "vehicle_${artId}_exhaust_booster"
+            )
+        }
+        if (bmp != null) {
+            val flick = 0.82f + 0.18f * sin((tSec * 33f + cx * 0.07f).toDouble()).toFloat()
+            val fw = if (stage >= 2) h * 0.20f else h * 0.26f
+            val fh = if (stage >= 2) h * 0.16f else h * 0.20f
+            val dest = RectF(cx - fw * 0.5f, baseY, cx + fw * 0.5f, baseY + fh * flick)
+            drawBitmapSrcInRect(canvas, bmp, null, dest, (alpha * flick).coerceIn(0.25f, 1f))
+            return
+        }
         val kind = when {
             artId == "starship" || methalox || artId == "glenn" || artId == "vulcan" -> "raptor"
             artId == "sls" -> "rs25"
@@ -517,8 +611,9 @@ object VehicleDraw {
     }
 
     fun fitHeightForSlot(slotW: Float, slotH: Float, aspectWH: Float = 0.42f): Float {
-        val maxH = slotH.coerceAtLeast(8f) * 0.88f
-        val maxW = slotW.coerceAtLeast(8f) * 0.90f
+        // Stamp 95: fill STACK plate more aggressively (was 0.88 — paperdoll tiny).
+        val maxH = slotH.coerceAtLeast(8f) * 0.96f
+        val maxW = slotW.coerceAtLeast(8f) * 0.94f
         val hFromW = maxW / aspectWH.coerceIn(0.15f, 0.85f)
         return min(maxH, hFromW)
     }

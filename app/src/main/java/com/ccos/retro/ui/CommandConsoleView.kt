@@ -1792,13 +1792,22 @@ class CommandConsoleView @JvmOverloads constructor(
         metric("SPD EST", spdStr, w * 0.5f, skin.text)
         metric("ENG", "$lit/$engines", w - colW * 0.5f, skin.go)
 
-        val rocketTop = stripTop + stripH + dp(10f)
+        val rocketTop = stripTop + stripH + dp(8f)
         val footerY = h - dp(22f)
-        val rocketH = (footerY - rocketTop - dp(24f)).coerceAtLeast(h * 0.38f)
-        val baseY = footerY - dp(22f)
+        // Stamp 95: content rect ABOVE STACK label; clip hull+flames inside white box.
+        val labelReserve = dp(28f)
+        val contentBot = footerY - labelReserve
+        val contentTop = rocketTop
+        val slotH = (contentBot - contentTop).coerceAtLeast(h * 0.42f)
+        val plumePad = slotH * 0.10f
+        val rocketH = (slotH - plumePad).coerceAtLeast(h * 0.48f)
+        val baseY = contentBot - plumePad
         val cx = w * 0.5f
         if (stage == 1) {
+            val saved = canvas.save()
+            canvas.clipRect(0f, contentTop, w, contentBot)
             drawVehicle(canvas, cx, baseY, rocketH, launch, tSec, 1, separated, skin, lamp(), 1f)
+            canvas.restoreToCount(saved)
             val recovers = VehicleCatalog.isKnownRecoverable(launch)
             val land = FlightProfiles.boosterLandTime(launch)
             val hasLand = FlightProfiles.hasLandTime(land)
@@ -1816,7 +1825,10 @@ class CommandConsoleView @JvmOverloads constructor(
             drawLabel(canvas, lab, cx, footerY, withLamp(if (!separated) skin.text else if (recovers) skin.hold else skin.muted), w * 0.92f, sp(16f), sp(13f))
         } else {
             if (!separated) {
+                val saved = canvas.save()
+                canvas.clipRect(0f, contentTop, w, contentBot)
                 drawVehicle(canvas, cx, baseY, rocketH, launch, tSec, 1, false, skin, lamp(), 0.32f)
+                canvas.restoreToCount(saved)
                 drawLabel(
                     canvas, "AWAITING SEP", cx, rocketTop + sp(18f),
                     withLamp(skin.hold), w * 0.9f, sp(18f), sp(16f)
@@ -1825,9 +1837,12 @@ class CommandConsoleView @JvmOverloads constructor(
                 val entry = FlightProfiles.events(launch).firstOrNull { "REENTRY" in it.second.uppercase() }?.first
                 val flip = FlightProfiles.events(launch).firstOrNull { "FLIP" in it.second.uppercase() }?.first
                 if (entry != null && flip != null && tSec >= entry && tSec < flip && vehicleFamily(launch) == "starship") {
-                    drawReentryCard(canvas, w, rocketTop, footerY - dp(8f), launch, tSec, skin)
+                    drawReentryCard(canvas, w, rocketTop, contentBot, launch, tSec, skin)
                 } else {
-                    drawVehicle(canvas, cx, baseY, rocketH * 0.92f, launch, tSec, 2, true, skin, lamp(), 1f)
+                    val saved = canvas.save()
+                    canvas.clipRect(0f, contentTop, w, contentBot)
+                    drawVehicle(canvas, cx, baseY, rocketH * 0.95f, launch, tSec, 2, true, skin, lamp(), 1f)
+                    canvas.restoreToCount(saved)
                 }
             }
             val entryT = FlightProfiles.events(launch).firstOrNull { "REENTRY" in it.second.uppercase() }?.first

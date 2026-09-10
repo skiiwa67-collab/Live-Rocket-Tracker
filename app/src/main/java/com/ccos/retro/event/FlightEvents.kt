@@ -897,11 +897,26 @@ object FlightProfiles {
         val landStart = (land - spec.landingBurnSec).coerceAtLeast(boostEnd + 8f)
         val inner = if (spec.boostbackLit > 0) spec.boostbackLit else 0
         val landingN = VehicleCatalog.landingLitFor(launch)
-        return when {
-            tSec < boostEnd -> inner.coerceAtMost(total)
-            tSec >= landStart -> landingN.coerceAtMost(total)
-            else -> 0
+        // Stamp 95: schedule windows first.
+        when {
+            tSec < boostEnd -> return inner.coerceAtMost(total)
+            tSec >= landStart -> return landingN.coerceAtMost(total)
         }
+        // Stamp 95: tape ENTRY BURN / LANDING BURN close the coast gap (F9 ENTRY @400).
+        val entryN = (if (inner > 0) inner else landingN).coerceAtMost(total).coerceAtLeast(1)
+        for ((t, title) in events(launch)) {
+            val u = title.uppercase()
+            if ("SHIP" in u || "STARSHIP" in u) continue
+            val isEntry = "ENTRY BURN" in u || (("ENTRY" in u) && ("BURN" in u) && ("REENTRY" !in u))
+            val isLandBurn = "LANDING BURN" in u
+            if (!isEntry && !isLandBurn) continue
+            val dur = if (isLandBurn) spec.landingBurnSec else 28f
+            val end = (t + dur).coerceAtMost(land)
+            if (tSec >= t && tSec < end) {
+                return if (isLandBurn) landingN.coerceAtMost(total) else entryN
+            }
+        }
+        return 0
     }
 
 

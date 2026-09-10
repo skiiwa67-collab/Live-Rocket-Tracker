@@ -4582,20 +4582,22 @@ class RetroCommandWallpaperService : WallpaperService() {
             val analogCeil = if (mapBot > minTop + 24f) mapBot else minTop + height * 0.28f
             val boxW = buttonRects[3].width()
             val labPad = telSp(14f)
-            val slotH = (analogCeil - minTop - labPad).coerceAtLeast(telSp(48f))
-            val slotW = boxW * 0.92f
-            val rocketH = com.ccos.retro.event.VehicleDraw.fitHeightForSlot(slotW, slotH, 0.42f)
+            // Stamp 95: larger STACK content slot; plume pad kept inside box above label.
+            val slotH = (analogCeil - minTop - labPad).coerceAtLeast(telSp(56f))
+            val slotW = boxW * 0.96f
+            val rocketH = com.ccos.retro.event.VehicleDraw.fitHeightForSlot(slotW, slotH * 0.90f, 0.38f)
             val leftCx = buttonRects[3].centerX()
             val rightCx = buttonRects[7].centerX()
             val separated = tSec >= sepTime(launch)
             val leftSel = prefs.trackedStage == 1
             val rightSel = prefs.trackedStage == 2
-            val leftH = if (leftSel) rocketH else rocketH * 0.86f
-            val rightH = if (rightSel) rocketH else rocketH * 0.86f
+            val leftH = if (leftSel) rocketH else rocketH * 0.90f
+            val rightH = if (rightSel) rocketH else rocketH * 0.90f
             val maxTwinH = max(leftH, rightH)
+            val plumePad = slotH * 0.08f
             val baseY = minTop + maxTwinH
             val top = minTop
-            val bot = (baseY + labPad).coerceAtMost(analogCeil)
+            val bot = (baseY + plumePad + labPad).coerceAtMost(analogCeil)
             stage1Hit.set(leftCx - boxW * 0.5f, top, leftCx + boxW * 0.5f, bot)
             stage2Hit.set(rightCx - boxW * 0.5f, top, rightCx + boxW * 0.5f, bot)
 
@@ -4608,8 +4610,10 @@ class RetroCommandWallpaperService : WallpaperService() {
             frame(stage1Hit, leftSel)
             frame(stage2Hit, rightSel)
 
+            // Stamp 95: clip to white STACK box ABOVE label — never leak onto STACK text.
+            val boxBot = bot - labPad
             canvas.save()
-            canvas.clipRect(stage1Hit)
+            canvas.clipRect(stage1Hit.left, stage1Hit.top, stage1Hit.right, boxBot)
             if (!separated) {
                 drawVehicle(canvas, leftCx, baseY, leftH, launch, tSec, 1, false, skin, lamp, 1f)
             } else {
@@ -4617,7 +4621,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             }
             canvas.restore()
             canvas.save()
-            canvas.clipRect(stage2Hit)
+            canvas.clipRect(stage2Hit.left, stage2Hit.top, stage2Hit.right, boxBot)
             if (!separated) {
                 drawVehicle(canvas, rightCx, baseY, rightH, launch, tSec, 1, false, skin, lamp, 0.42f)
             } else {
