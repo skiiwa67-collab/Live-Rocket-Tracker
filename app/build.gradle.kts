@@ -11,8 +11,8 @@ android {
         applicationId = "com.liverockettracker"
         minSdk = 24
         targetSdk = 35
-        versionCode = 97
-        versionName = "1.0.87"
+        versionCode = 98
+        versionName = "1.0.88"
     }
 
     buildTypes {
