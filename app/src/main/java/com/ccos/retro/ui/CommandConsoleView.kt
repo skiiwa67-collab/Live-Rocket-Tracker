@@ -1794,13 +1794,14 @@ class CommandConsoleView @JvmOverloads constructor(
 
         val rocketTop = stripTop + stripH + dp(8f)
         val footerY = h - dp(22f)
-        // Stamp 95: content rect ABOVE STACK label; clip hull+flames inside white box.
+        // Stamp 96: content rect ABOVE STACK label; plumePad large enough that flame RectF fits INSIDE clip.
         val labelReserve = dp(28f)
         val contentBot = footerY - labelReserve
         val contentTop = rocketTop
         val slotH = (contentBot - contentTop).coerceAtLeast(h * 0.42f)
-        val plumePad = slotH * 0.10f
-        val rocketH = (slotH - plumePad).coerceAtLeast(h * 0.48f)
+        // Proven root cause: plumePad=0.10 + fh~0.20*rocketH exceeded contentBot -> clip killed all flames.
+        val plumePad = (slotH * 0.28f).coerceAtLeast(dp(36f))
+        val rocketH = ((slotH - plumePad) * 0.90f).coerceAtLeast(h * 0.42f)
         val baseY = contentBot - plumePad
         val cx = w * 0.5f
         if (stage == 1) {
@@ -1841,7 +1842,7 @@ class CommandConsoleView @JvmOverloads constructor(
                 } else {
                     val saved = canvas.save()
                     canvas.clipRect(0f, contentTop, w, contentBot)
-                    drawVehicle(canvas, cx, baseY, rocketH * 0.95f, launch, tSec, 2, true, skin, lamp(), 1f)
+                    drawVehicle(canvas, cx, baseY, rocketH, launch, tSec, 2, true, skin, lamp(), 1f)
                     canvas.restoreToCount(saved)
                 }
             }

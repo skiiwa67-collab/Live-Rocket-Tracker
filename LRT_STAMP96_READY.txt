@@ -1,0 +1,31 @@
+# LRT Stamp 96 - burn viz + scale (FIX 1+2 only)
+
+**Branch:** stamp-85
+**Parent bump:** 3592d0a (versionCode 96 / versionName 1.0.86)
+**Version:** 96 / 1.0.86
+**Commit subject:** stamp 96: burn viz plumePad+flame size + STACK scale (Ada / ada@local)
+**Tip:** run `git rev-parse HEAD` on stamp-85 (deliver tip reported separately)
+
+## Proven root cause
+CommandConsoleView clipped to contentBot; baseY = contentBot - plumePad; paintArtPathFlames drew flame RectF from baseY DOWNWARD.
+With plumePad=slotH*0.10 and fh~rocketH*0.20, flame bottom exceeded contentBot -> clip KILLED ALL FLAMES while ENG still lit.
+
+## FIX 2 — BURN VIZ
+- CommandConsoleView.drawStage plumePad @1803: max(0.28*slotH, 36dp); clip contentTop..contentBot
+- VehicleDraw.paintArtPathFlames @581-582: S1 fw=h*0.34 fh=h*0.28; S2 fw=h*0.28 fh=h*0.24
+- Wallpaper drawSideStageRockets plumePad @4588: 0.28*slotH; clip above STACK label
+
+## FIX 1 — SCALE
+- Console rocketH @1804 = 0.90*(slotH-plumePad); STG2 @1845 full rocketH
+- VehicleDraw.fitHeightForSlot @615-616: 0.98 H / 0.96 W
+- Wallpaper hullSlot = slotH-plumePad; slotW 0.98; post-sep no *0.88
+
+## FIX 3 — HOLD (STG2 Merlin vac)
+vehicle_f9_engine_ship / engine_upper / engine_raptors = MISSING on disk
+engShip hook drawAssembledParts @329-331 already ready — do NOT invent art
+
+## Sync path
+D:\Downloads\LiveRocketTracker-vc96-debug.apk
+
+## Out of scope
+China/FH, flaps, AUTO-complete, geo invent, flame art invent, wink-killers, TEL blanking

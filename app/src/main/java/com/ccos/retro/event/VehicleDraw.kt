@@ -577,8 +577,9 @@ object VehicleDraw {
         }
         if (bmp != null) {
             val flick = 0.82f + 0.18f * sin((tSec * 33f + cx * 0.07f).toDouble()).toFloat()
-            val fw = if (stage >= 2) h * 0.20f else h * 0.26f
-            val fh = if (stage >= 2) h * 0.16f else h * 0.20f
+            // Stamp 96: enlarge flame bitmap draw so burn viz is clearly visible with ENG lit.
+            val fw = if (stage >= 2) h * 0.28f else h * 0.34f
+            val fh = if (stage >= 2) h * 0.24f else h * 0.28f
             val dest = RectF(cx - fw * 0.5f, baseY, cx + fw * 0.5f, baseY + fh * flick)
             drawBitmapSrcInRect(canvas, bmp, null, dest, (alpha * flick).coerceIn(0.25f, 1f))
             return
@@ -590,8 +591,8 @@ object VehicleDraw {
             artId.contains("lm") || artId == "cz8a" || artId == "cz2d" -> "merlin"
             else -> "merlin"
         }
-        val fw = if (stage >= 2) h * 0.085f else h * 0.12f
-        val fh = if (stage >= 2) h * 0.12f else h * 0.16f
+        val fw = if (stage >= 2) h * 0.16f else h * 0.22f
+        val fh = if (stage >= 2) h * 0.20f else h * 0.26f
         flame(canvas, cx, baseY, fw, fh, alpha, tSec, kind)
     }
 
@@ -611,9 +612,9 @@ object VehicleDraw {
     }
 
     fun fitHeightForSlot(slotW: Float, slotH: Float, aspectWH: Float = 0.42f): Float {
-        // Stamp 95: fill STACK plate more aggressively (was 0.88 — paperdoll tiny).
-        val maxH = slotH.coerceAtLeast(8f) * 0.96f
-        val maxW = slotW.coerceAtLeast(8f) * 0.94f
+        // Stamp 96: fill STACK plate near-full (0.98 H / 0.96 W); caller must leave plumePad for flames.
+        val maxH = slotH.coerceAtLeast(8f) * 0.98f
+        val maxW = slotW.coerceAtLeast(8f) * 0.96f
         val hFromW = maxW / aspectWH.coerceIn(0.15f, 0.85f)
         return min(maxH, hFromW)
     }
