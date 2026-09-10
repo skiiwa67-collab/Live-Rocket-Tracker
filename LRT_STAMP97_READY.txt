@@ -1,25 +1,25 @@
 ﻿# LRT Stamp 97 READY
 
 **Branch:** stamp-85
-**Bump parent:** 53d85fa (versionCode 97 / versionName 1.0.87)
-**Tip:** run `git rev-parse HEAD` after follow-up
+**Bump:** 53d85fa (versionCode 97 / versionName 1.0.87)
+**Tip:** 0bbc46bb4378fad4f78d176420b320f2b7d7e0c9
+**Chain:** d5f5c60 deplete+MVac -> 5b370f2 fleet fill+flame -> 0bbc46b polish2 Vac/flame
 **Version:** 97 / 1.0.87
 
 ## Root cause (one-liner)
 drawStageTankMasks mid-split full-stack dest clipped full-frame tank alpha islands (esp. S2 fuel) to ZERO visible fill while fuelRemain drained.
 
-## What fixed
-- VehicleDraw.kt alphaBBoxCached / drawStageTankMasks: bandTop/bandBot from mask alpha bbox mapped into dest (not mid-split)
-- Hull order: stack/cutaway/side before opaque shell; brighter glassA fills-behind
-- CommandConsoleView + Wallpaper + fitHeightForSlot: fleet-wide bigger plates, shorter plumePad
-- F9 engShip overlay skipped (MVac baked into ship/upper/s2); flame_* = plume when ENG lit only
-- Darren STG2 MVac pack + flame_s2/flame_ship/exhaust_ship polish folded
+## Fixed (file:line)
+- VehicleDraw.kt alphaBBoxCached/drawStageTankMasks ~653-720: bbox bands into dest; no mid-split; brighter fills; hull stack/cutaway/side before shell; f9 skip engShip
+- CommandConsoleView.kt plumePad/rocketH ~1802-1803: plate fill, short plume
+- RetroCommandWallpaperService.kt plumePad/hullSlot ~4585-4590 + fitHeightForSlot 1.00H/0.98W fleet-wide
+- Darren STG2 MVac + polish2 s2/ship/upper + flame_s2/ship/exhaust_ship folded
 
-## F9 fills look on plates (proof)
-tank_s1_ox ~32-50% stack H; tank_s1_fuel ~54-76%; tank_s2_ox ~14-19%; tank_s2_fuel ~20-24% — bbox bands map these into dest; mid-split would kill S2 fuel.
+## F9 fills on plates (proof)
+s1_ox 32-50% stack H; s1_fuel 54-76%; s2_ox 14-19%; s2_fuel 20-24% — bbox bands map these (mid-split killed s2_fuel).
 
-## Sync path
-D:\Downloads\LiveRocketTracker-vc97-debug.apk
+## Sync
+D:\Downloads\LiveRocketTracker-vc97-debug.apk (54251573 bytes)
 
 ## HOLD
 No China/FH. No invented engine_ship. No per-frame getPixel on draw.
