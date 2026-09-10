@@ -539,12 +539,15 @@ class RocketTelemetryModule(
             // Stamp 55: CURRENT+AUTO locks live/next (HOLD/in-flight/webcast/T+ gates).
             // Never stay on a historic pick; never null tracked on a brief cache gap.
             // Stamp 59: do not force listMode every AUTO tick (CURRENT button still can).
+            // Stamp 103: CURRENT+AUTO only — eject when FlightEventCatalog tape has no upcoming marks
+            // (independent of 60m WATCH_AFTER). HISTORICAL+AUTO branch above untouched; isActiveWatch unchanged.
             val live = provider.livePool()
-            val watch = live.filter { it.isActiveWatch(now) }
+            val watch = live.filter { it.isActiveWatch(now) && !it.isEventTapeExhausted(now) }
                 .minByOrNull { kotlin.math.abs(it.secondsToNet(now)) }
             // Stamp 72: sticky lastGood across one refresh miss before getNextAny retarget.
             fun lastGoodOk(s: LaunchSnapshot) =
-                !s.id.startsWith("demo-") && !s.isTerminal() && (s.isActiveWatch(now) || s.secondsToNet(now) > 0)
+                !s.id.startsWith("demo-") && !s.isTerminal() && !s.isEventTapeExhausted(now) &&
+                    (s.isActiveWatch(now) || s.secondsToNet(now) > 0)
             val stickyMiss = listOfNotNull(tracked, lastGoodSnapshot, sharedLastGood)
                 .firstOrNull { lastGoodOk(it) && provider.findById(it.id) == null }
             val liveNext = watch ?: stickyMiss ?: provider.getNextAny(now)
@@ -576,7 +579,7 @@ class RocketTelemetryModule(
             } else {
                 // Stamp 63: NEVER null on cache gap — but dead lastGood must not stick AUTO.
                 val fallback = listOfNotNull(tracked, lastGoodSnapshot, sharedLastGood)
-                    .firstOrNull { it.isActiveWatch(now) || it.secondsToNet(now) > 0 }
+                    .firstOrNull { !it.isEventTapeExhausted(now) && (it.isActiveWatch(now) || it.secondsToNet(now) > 0) }
                 rememberTracked(fallback)
                 if (tracked == null) {
                     rememberTracked(

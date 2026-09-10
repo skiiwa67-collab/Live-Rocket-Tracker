@@ -126,6 +126,16 @@ data class LaunchSnapshot(
             "partial" in blob || ("fail" in blob && "fairing" !in blob)
     }
 
+
+    /** Stamp 103: our catalog tape has no upcoming marks left (independent of 60m WATCH_AFTER). */
+    fun isEventTapeExhausted(now: Long = System.currentTimeMillis()): Boolean {
+        if (secondsToNet(now) > 0) return false // pre-NET always has upcoming tape
+        val tSec = -secondsToNet(now).toFloat()
+        val tape = com.ccos.retro.event.FlightEventCatalog.timeline(this)
+        if (tape.isEmpty()) return false // unknown empty tape — do not false-eject; keep 60m string
+        return tape.none { it.tSec > tSec + 0.5f }
+    }
+
     fun isGo(): Boolean {
         val a = statusAbbrev.trim()
         val n = statusName.trim()
