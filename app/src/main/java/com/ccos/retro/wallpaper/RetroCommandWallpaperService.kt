@@ -4585,7 +4585,8 @@ class RetroCommandWallpaperService : WallpaperService() {
             // Stamp 97: stages BIGGER; plumePad shrink (plume secondary). Clip still above STACK label.
             val slotH = (analogCeil - minTop - labPad).coerceAtLeast(telSp(56f))
             val slotW = boxW * 0.98f
-            val plumePad = (slotH * 0.14f).coerceAtLeast(telSp(18f))
+            // Stamp 97 HARD: dolls fill STG1/STG2 plates fleet-wide; plumePad short.
+            val plumePad = (slotH * 0.10f).coerceAtLeast(telSp(14f))
             val hullSlot = (slotH - plumePad).coerceAtLeast(telSp(40f))
             val rocketH = com.ccos.retro.event.VehicleDraw.fitHeightForSlot(slotW, hullSlot, 0.38f)
             val leftCx = buttonRects[3].centerX()

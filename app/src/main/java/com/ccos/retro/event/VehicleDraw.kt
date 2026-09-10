@@ -647,9 +647,9 @@ object VehicleDraw {
     }
 
     fun fitHeightForSlot(slotW: Float, slotH: Float, aspectWH: Float = 0.42f): Float {
-        // Stamp 97: stages BIGGER (0.99 H / 0.97 W); plume secondary — caller shrinks plumePad.
-        val maxH = slotH.coerceAtLeast(8f) * 0.99f
-        val maxW = slotW.coerceAtLeast(8f) * 0.97f
+        // Stamp 97 HARD fleet-wide: near-fill slot (1.00 H / 0.98 W) so paperdolls fill plates.
+        val maxH = slotH.coerceAtLeast(8f) * 1.00f
+        val maxW = slotW.coerceAtLeast(8f) * 0.98f
         val hFromW = maxW / aspectWH.coerceIn(0.15f, 0.85f)
         return min(maxH, hFromW)
     }

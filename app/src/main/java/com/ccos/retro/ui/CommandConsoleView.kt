@@ -1799,8 +1799,9 @@ class CommandConsoleView @JvmOverloads constructor(
         val contentBot = footerY - labelReserve
         val contentTop = rocketTop
         val slotH = (contentBot - contentTop).coerceAtLeast(h * 0.42f)
-        val plumePad = (slotH * 0.14f).coerceAtLeast(dp(22f))
-        val rocketH = ((slotH - plumePad) * 0.96f).coerceAtLeast(h * 0.48f)
+        // Stamp 97 HARD: fill STACK plate; plume secondary (short pad, still inside clip).
+        val plumePad = (slotH * 0.10f).coerceAtLeast(dp(18f))
+        val rocketH = ((slotH - plumePad) * 0.99f).coerceAtLeast(h * 0.52f)
         val baseY = contentBot - plumePad
         val cx = w * 0.5f
         if (stage == 1) {
