@@ -1794,19 +1794,22 @@ class CommandConsoleView @JvmOverloads constructor(
 
         val rocketTop = stripTop + stripH + dp(8f)
         val footerY = h - dp(22f)
-        // Stamp 98: stages fill plate HARD; short plumePad (flame nests under MVac — never shrink rocket for plume).
+        // Stamp 99 ELON: content-bbox fill; short plumePad; equal inset clip — never right hack.
         val labelReserve = dp(28f)
         val contentBot = footerY - labelReserve
         val contentTop = rocketTop
         val slotH = (contentBot - contentTop).coerceAtLeast(h * 0.42f)
-        // Prefer stage size; plume secondary. Clip full width so hull not half-cut.
-        val plumePad = (slotH * 0.10f).coerceAtLeast(dp(18f))
-        val rocketH = ((slotH - plumePad) * 1.00f).coerceAtLeast(h * 0.55f)
+        val slotW = w * 0.92f
+        // Prefer stage size; flame nests under engines inside pad.
+        val plumePad = (slotH * 0.08f).coerceAtLeast(dp(14f))
+        val hullSlot = (slotH - plumePad).coerceAtLeast(h * 0.50f)
+        // Content aspect ~0.10–0.29 (NOT 0.40 padded frame).
+        val rocketH = com.ccos.retro.event.VehicleDraw.fitHeightForSlot(slotW, hullSlot, 0.20f)
         val baseY = contentBot - plumePad
         val cx = w * 0.5f
         if (stage == 1) {
             val saved = canvas.save()
-            canvas.clipRect(0f, contentTop, w, contentBot)
+            canvas.clipRect(w * 0.04f, contentTop, w * 0.96f, contentBot)
             drawVehicle(canvas, cx, baseY, rocketH, launch, tSec, 1, separated, skin, lamp(), 1f)
             canvas.restoreToCount(saved)
             val recovers = VehicleCatalog.isKnownRecoverable(launch)
@@ -1827,7 +1830,7 @@ class CommandConsoleView @JvmOverloads constructor(
         } else {
             if (!separated) {
                 val saved = canvas.save()
-                canvas.clipRect(0f, contentTop, w, contentBot)
+                canvas.clipRect(w * 0.04f, contentTop, w * 0.96f, contentBot)
                 drawVehicle(canvas, cx, baseY, rocketH, launch, tSec, 1, false, skin, lamp(), 0.32f)
                 canvas.restoreToCount(saved)
                 drawLabel(
@@ -1841,7 +1844,7 @@ class CommandConsoleView @JvmOverloads constructor(
                     drawReentryCard(canvas, w, rocketTop, contentBot, launch, tSec, skin)
                 } else {
                     val saved = canvas.save()
-                    canvas.clipRect(0f, contentTop, w, contentBot)
+                    canvas.clipRect(w * 0.04f, contentTop, w * 0.96f, contentBot)
                     drawVehicle(canvas, cx, baseY, rocketH, launch, tSec, 2, true, skin, lamp(), 1f)
                     canvas.restoreToCount(saved)
                 }

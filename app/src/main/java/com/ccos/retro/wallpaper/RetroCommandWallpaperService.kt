@@ -4582,14 +4582,13 @@ class RetroCommandWallpaperService : WallpaperService() {
             val analogCeil = if (mapBot > minTop + 24f) mapBot else minTop + height * 0.28f
             val boxW = buttonRects[3].width()
             val labPad = telSp(14f)
-            // Stamp 98: stages fill plate HARD; short plumePad; clip still above STACK label.
+            // Stamp 99 ELON: content-bbox fill; content aspect NOT 0.40 frame; clip after content-fill.
             val slotH = (analogCeil - minTop - labPad).coerceAtLeast(telSp(56f))
             val slotW = boxW * 0.96f
-            // Prefer stage size over long plume; flame nests under MVac inside pad.
-            val plumePad = (slotH * 0.10f).coerceAtLeast(telSp(14f))
+            val plumePad = (slotH * 0.08f).coerceAtLeast(telSp(12f))
             val hullSlot = (slotH - plumePad).coerceAtLeast(telSp(40f))
-            // aspect 0.40 matches VehicleDraw maxSlotW — full silhouette, no right chop.
-            val rocketH = com.ccos.retro.event.VehicleDraw.fitHeightForSlot(slotW, hullSlot, 0.40f)
+            // Content aspect ~0.10–0.29 — fill plate; letterbox > chop.
+            val rocketH = com.ccos.retro.event.VehicleDraw.fitHeightForSlot(slotW, hullSlot, 0.20f)
             val leftCx = buttonRects[3].centerX()
             val rightCx = buttonRects[7].centerX()
             val separated = tSec >= sepTime(launch)
@@ -4615,7 +4614,7 @@ class RetroCommandWallpaperService : WallpaperService() {
 
             // Stamp 95: clip to white STACK box ABOVE label — never leak onto STACK text.
             val boxBot = bot - labPad
-            val insetX = telSp(3f)
+            val insetX = telSp(4f)
             canvas.save()
             // Stamp 98: clip IN box; tiny inset so stroke does not chop right silhouette.
             canvas.clipRect(stage1Hit.left + insetX, stage1Hit.top, stage1Hit.right - insetX, boxBot)

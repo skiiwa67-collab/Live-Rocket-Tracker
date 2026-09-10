@@ -246,17 +246,15 @@ object VehicleDraw {
             }
             return true
         }
-        // No parts: pre-sep keeps full catalog bitmap. Post-sep without parts → false
-        // (caller uses cleanSilhouette — not geometric sticks, not crop-sep).
-        if (separated) return false
+        // Stamp 99 ELON: continuous hull; CONTENT bbox src → fill plate (STACK+STG1+STG2). Letterbox > chop.
         val hull = vehicleHullBitmap(artId) ?: return false
-        val dest = artDestRect(hull, cx, baseY, h, maxSlotW = h * 0.40f)
-        // Stamp 97: brighter fill alpha so burn-down reads through cutout windows.
+        val hullSrc = stageHullSrcRect(artId, hull, stage, separated)
+        // Wide maxSlotW: letterbox via height shrink inside artDestRect; NEVER horizontal hull clip.
+        val dest = artDestRect(hull, cx, baseY, h, maxSlotW = h * 0.55f, src = hullSrc)
         val glassA = (alpha * 0.88f).coerceIn(0.55f, 0.95f)
-        // Stamp 92: fills behind catalog hull (cutout windows); never loose blocks on top.
         try {
             val usedMasks = drawStageTankMasks(
-                artId, canvas, null, dest, stage, separated,
+                artId, canvas, hullSrc, dest, stage, separated,
                 fuelOf(tSec, launch, 1), fuelOf(tSec, launch, 2), methalox, glassA
             )
             if (!usedMasks) {
@@ -272,9 +270,18 @@ object VehicleDraw {
         } catch (t: Throwable) {
             Log.e("LRT89", "overlay tanks", t)
         }
-        drawBitmapSrcInRect(canvas, hull, null, dest, alpha * 1.0f)
+        drawBitmapSrcInRect(canvas, hull, hullSrc, dest, alpha * 1.0f)
+        // Stamp 99: kill baked LOX/RP-1 wash in emptied band (cutaway has prop tint in pixels).
         try {
-            paintArtPathFlames(canvas, cx, baseY, h, tSec, stage, artId, methalox, alpha, launch)
+            paintEmptyCharcoalOverHull(
+                artId, canvas, hullSrc, dest, stage, separated,
+                fuelOf(tSec, launch, 1), fuelOf(tSec, launch, 2)
+            )
+        } catch (t: Throwable) {
+            Log.e("LRT99", "empty charcoal over", t)
+        }
+        try {
+            paintArtPathFlames(canvas, cx, baseY, h, tSec, stage, artId, methalox, alpha, launch, hullDest = dest, hullSrc = hullSrc)
         } catch (t: Throwable) {
             Log.e("LRT88", "art-path flames", t)
         }
@@ -306,8 +313,8 @@ object VehicleDraw {
         alpha: Float,
         launch: LaunchSnapshot?
     ): Boolean {
-        // Stamp 94: F9 pre-sep uses continuous stack/shell hull (fills-behind), not s1+s2 assemble (gaps).
-        if (!separated && artId == "f9") return false
+        // Stamp 99: F9 NEVER assembled parts (Chris: STG2 right-chop / tiny). Continuous letterbox only.
+        if (artId == "f9") return false
         // Prefer shell hulls when Darren ships them; else plain part; else _s1/_s2 aliases.
         val booster = if (artId == "soyuz" || artId == "proton") {
             firstBitmap(
@@ -349,7 +356,7 @@ object VehicleDraw {
         var drewStageTanks = false
         if (wantB && booster != null) {
             val bH = h * bFrac
-            val destB = artDestRect(booster, cx, baseY, bH, maxSlotW = h * 0.40f)
+            val destB = artDestRect(booster, cx, baseY, bH, maxSlotW = h * 0.72f)
             // Stamp 94: F9 booster/stack already has Merlin side-profile bells — skip octaweb overlay.
             if (engRing != null && artId != "f9") {
                 val eH = bH * 0.14f
@@ -373,7 +380,7 @@ object VehicleDraw {
                 if (ox != null || fuel != null) {
                     // Stamp 98: dark empty FULL band then colored remaining (97 bbox bands kept).
                     val destH = destB.height().coerceAtLeast(1f)
-                    val emptyC = Color.argb(240, 10, 12, 16)
+                    val emptyC = Color.argb(255, 0, 0, 0)
                     if (ox != null) {
                         val n = "vehicle_${artId}_tank_s1_ox"
                         val bb = alphaBBoxCached(n, ox)
@@ -442,7 +449,7 @@ object VehicleDraw {
         if (wantU && upper != null) {
             val uH = h * uFrac
             val uBase = if (wantB && booster != null) baseY - h * bFrac else baseY
-            val destU = artDestRect(upper, cx, uBase, uH, maxSlotW = h * 0.38f)
+            val destU = artDestRect(upper, cx, uBase, uH, maxSlotW = h * 0.72f)
             // Stamp 97: F9 MVac bell baked into ship/upper/s2 hull — skip engShip overlay (no double-bell).
             if (engShip != null && artId != "f9") {
                 val eH = uH * 0.16f
@@ -466,7 +473,7 @@ object VehicleDraw {
                 if (ox != null || fuel != null) {
                     // Stamp 98: dark empty FULL band then colored remaining (97 bbox bands kept).
                     val destH = destU.height().coerceAtLeast(1f)
-                    val emptyC = Color.argb(240, 10, 12, 16)
+                    val emptyC = Color.argb(255, 0, 0, 0)
                     if (ox != null) {
                         val n = "vehicle_${artId}_tank_s2_ox"
                         val bb = alphaBBoxCached(n, ox)
@@ -586,7 +593,7 @@ object VehicleDraw {
         }
     }
 
-    /** HW-safe plume under the art hull when enginesLit > 0. Splash/ENG 0 = no flame. */
+    /** HW-safe plume when enginesLit > 0. Stamp 99 ELON: never squash full-frame flame into fh stub. */
     private fun paintArtPathFlames(
         canvas: Canvas,
         cx: Float,
@@ -597,32 +604,51 @@ object VehicleDraw {
         artId: String,
         methalox: Boolean,
         alpha: Float,
-        launch: LaunchSnapshot?
+        launch: LaunchSnapshot?,
+        hullDest: RectF? = null,
+        hullSrc: Rect? = null
     ) {
         val sep = FlightProfiles.sepTime(launch)
         if (!burning(tSec, launch, stage, sep)) return
-        // Stamp 97: flame_*/exhaust_* = PLUME overlay ONLY when ENG lit (burning() above).
-        // Never use these as hull/fill state — fills stay tank masks; hull is bright ship/upper/s2.
-        val bmp = if (stage >= 2) {
-            firstBitmap(
+        val flameName = if (stage >= 2) {
+            arrayOf(
                 "vehicle_${artId}_flame_s2",
                 "vehicle_${artId}_flame_ship",
                 "vehicle_${artId}_exhaust_ship"
             )
         } else {
-            firstBitmap(
+            arrayOf(
                 "vehicle_${artId}_flame_s1",
                 "vehicle_${artId}_flame_booster",
                 "vehicle_${artId}_exhaust_booster"
             )
         }
+        val bmp = firstBitmap(*flameName) 
         if (bmp != null) {
             val flick = 0.82f + 0.18f * sin((tSec * 33f + cx * 0.07f).toDouble()).toFloat()
-            // Stamp 98: STG2 Vac LARGE width (~1.75x bell), SHORT nest under MVac — prefer plate fill over long plume.
-            val fw = if (stage >= 2) h * 0.55f else h * 0.34f
-            val fh = if (stage >= 2) h * 0.16f else h * 0.28f
-            val dest = RectF(cx - fw * 0.5f, baseY, cx + fw * 0.5f, baseY + fh * flick)
-            drawBitmapSrcInRect(canvas, bmp, null, dest, (alpha * flick).coerceIn(0.25f, 1f))
+            val fName = flameName.firstOrNull { loadVehicleDrawable(it) != null } ?: flameName[0]
+            val fbb = alphaBBoxCached(fName, bmp)
+            val hull = hullDest
+            if (hull != null && hullSrc != null && hullSrc.height() > 0) {
+                // Content-bbox hull: place flame CONTENT under hull bottom (S1 y~0.90 / Vac under MVac).
+                val overlap = hull.height() * 0.02f
+                val scale = hull.height() / hullSrc.height().toFloat()
+                val fw = (fbb.width() * scale * 1.35f).coerceAtLeast(hull.width() * 0.85f)
+                val fh = (fbb.height() * scale * 1.25f * flick).coerceAtLeast(hull.height() * 0.10f)
+                val dest = RectF(cx - fw * 0.5f, hull.bottom - overlap, cx + fw * 0.5f, hull.bottom - overlap + fh)
+                drawBitmapSrcInRect(canvas, bmp, fbb, dest, (alpha * flick).coerceIn(0.70f, 1f))
+            } else if (hull != null) {
+                // Same dest as hull (full-frame aligned); extend slightly below for exhaust past baseY.
+                val extend = if (stage >= 2) hull.height() * 0.08f else hull.height() * 0.16f
+                val dest = RectF(hull.left, hull.top, hull.right, hull.bottom + extend * flick)
+                drawBitmapSrcInRect(canvas, bmp, null, dest, (alpha * flick).coerceIn(0.70f, 1f))
+            } else {
+                // Fallback: content flame sprite under baseY — still use flame bbox, not full 1200.
+                val fw = if (stage >= 2) h * 0.22f else h * 0.40f
+                val fh = if (stage >= 2) h * 0.28f else h * 0.22f
+                val dest = RectF(cx - fw * 0.5f, baseY - fh * 0.05f, cx + fw * 0.5f, baseY + fh * flick)
+                drawBitmapSrcInRect(canvas, bmp, fbb, dest, (alpha * flick).coerceIn(0.70f, 1f))
+            }
             return
         }
         val kind = when {
@@ -632,32 +658,82 @@ object VehicleDraw {
             artId.contains("lm") || artId == "cz8a" || artId == "cz2d" -> "merlin"
             else -> "merlin"
         }
-        val fw = if (stage >= 2) h * 0.16f else h * 0.22f
-        val fh = if (stage >= 2) h * 0.20f else h * 0.26f
+        val fw = if (stage >= 2) h * 0.16f else h * 0.30f
+        val fh = if (stage >= 2) h * 0.20f else h * 0.34f
         flame(canvas, cx, baseY, fw, fh, alpha, tSec, kind)
     }
 
-    private fun artDestRect(bmp: Bitmap, cx: Float, baseY: Float, h: Float, maxSlotW: Float = Float.MAX_VALUE): RectF {
-        // Stamp 90: dynamically shrink to slot width — never fixed px overflow.
+    private fun artDestRect(
+        bmp: Bitmap,
+        cx: Float,
+        baseY: Float,
+        h: Float,
+        maxSlotW: Float = Float.MAX_VALUE,
+        src: Rect? = null
+    ): RectF {
+        // Stamp 99: aspect from SRC crop when present (stage letterbox). Cap width → shrink H (never chop right).
+        val srcW = (src?.width() ?: bmp.width).toFloat().coerceAtLeast(1f)
+        val srcH = (src?.height() ?: bmp.height).toFloat().coerceAtLeast(1f)
         var destH = h.coerceAtLeast(8f)
-        var scale = destH / bmp.height.toFloat().coerceAtLeast(1f)
-        var destW = bmp.width * scale
+        var destW = destH * (srcW / srcH)
         val cap = maxSlotW.coerceAtLeast(8f)
         if (destW > cap) {
-            scale = cap / bmp.width.toFloat().coerceAtLeast(1f)
             destW = cap
-            destH = bmp.height * scale
+            destH = destW * (srcH / srcW)
         }
         val left = cx - destW / 2f
         return RectF(left, baseY - destH, left + destW, baseY)
     }
 
-    fun fitHeightForSlot(slotW: Float, slotH: Float, aspectWH: Float = 0.42f): Float {
-        // Stamp 98 HARD: fill plate (1.00 H / 1.00 W); aspect matched to maxSlotW so no right chop.
+    fun fitHeightForSlot(slotW: Float, slotH: Float, aspectWH: Float = 0.20f): Float {
+        // Stamp 99 ELON: content aspect ~0.10–0.29 (NOT 0.40 padded frame). Fill slot; letterbox > chop.
         val maxH = slotH.coerceAtLeast(8f) * 1.00f
-        val maxW = slotW.coerceAtLeast(8f) * 1.00f
-        val hFromW = maxW / aspectWH.coerceIn(0.15f, 0.85f)
+        val maxW = slotW.coerceAtLeast(8f) * 0.96f
+        val hFromW = maxW / aspectWH.coerceIn(0.08f, 0.55f)
         return min(maxH, hFromW)
+    }
+
+    /**
+     * Stamp 99 ELON: CONTENT alpha-bbox src (not full 424x1200 pad). STACK+STG1+STG2.
+     * Modest pad only — scale content island to fill plate. Letterbox > chop.
+     */
+    private fun stageHullSrcRect(artId: String, hull: Bitmap, stage: Int, separated: Boolean): Rect {
+        val (probeName, probeBmp) = if (!separated) {
+            // STACK: content bbox of the continuous hull itself.
+            "vehicle_${artId}_stack_content" to hull
+        } else if (stage >= 2) {
+            val p = firstBitmap(
+                "vehicle_${artId}_s2", "vehicle_${artId}_ship", "vehicle_${artId}_upper"
+            )
+            val n = when {
+                p == null -> "vehicle_${artId}_stack_content"
+                else -> "vehicle_${artId}_s2"
+            }
+            n to (p ?: hull)
+        } else {
+            val p = firstBitmap(
+                "vehicle_${artId}_s1", "vehicle_${artId}_booster", "vehicle_${artId}_core"
+            )
+            val n = when {
+                p == null -> "vehicle_${artId}_stack_content"
+                else -> "vehicle_${artId}_s1"
+            }
+            n to (p ?: hull)
+        }
+        val bb = if (probeBmp.width == hull.width && probeBmp.height == hull.height) {
+            alphaBBoxCached(probeName, probeBmp)
+        } else {
+            alphaBBoxCached("vehicle_${artId}_stack_content", hull)
+        }
+        val padX = max(2, (bb.width() * 0.10f).toInt())
+        val padY = max(2, (bb.height() * 0.03f).toInt())
+        // STG2: small pad below for MVac skirt still inside ship art.
+        val botPad = if (separated && stage >= 2) max(6, (bb.height() * 0.10f).toInt()) else padY
+        val left = (bb.left - padX).coerceAtLeast(0)
+        val top = (bb.top - padY).coerceAtLeast(0)
+        val right = (bb.right + padX).coerceAtMost(hull.width)
+        val bot = (bb.bottom + botPad).coerceAtMost(hull.height)
+        return Rect(left, top, right.coerceAtLeast(left + 1), bot.coerceAtLeast(top + 1))
     }
 
     private fun drawBitmapSrcInRect(canvas: Canvas, bmp: Bitmap, src: Rect?, dest: RectF, alpha: Float) {
@@ -715,6 +791,77 @@ object VehicleDraw {
         return box
     }
 
+    /**
+     * Stamp 99 ELON: AFTER hull — overpaint emptied band opaque BLACK.
+     * Charcoal-behind alone CANNOT clear baked cyan/orange in cutaway/stack windows.
+     * Remaining band: re-tint LOX/RP-1 on top at alpha 255 so fill line screams.
+     */
+    private fun paintEmptyCharcoalOverHull(
+        artId: String,
+        canvas: Canvas,
+        hullSrc: Rect?,
+        dest: RectF,
+        stage: Int,
+        separated: Boolean,
+        fuel1: Float,
+        fuel2: Float
+    ) {
+        val black = Color.argb(255, 0, 0, 0)
+        val lox = Color.argb(255, 60, 190, 255)
+        val rp1 = Color.argb(255, 255, 130, 40)
+        val drawS1 = stage == 1
+        val drawS2 = stage == 2 || (stage == 1 && !separated)
+        data class Layer(val suffix: String, val level: Float, val prop: Int)
+        val layers = mutableListOf<Layer>()
+        if (drawS1) {
+            layers += Layer("tank_s1_ox", fuel1, lox)
+            layers += Layer("tank_s1_fuel", fuel1, rp1)
+        }
+        if (drawS2) {
+            layers += Layer("tank_s2_ox", fuel2, lox)
+            layers += Layer("tank_s2_fuel", fuel2, rp1)
+        }
+        val destH = dest.height().coerceAtLeast(1f)
+        for (layer in layers) {
+            val name = "vehicle_${artId}_${layer.suffix}"
+            val mask = loadVehicleDrawable(name) ?: continue
+            val bbox = alphaBBoxCached(name, mask)
+            val srcTop = (hullSrc?.top ?: 0).toFloat()
+            val srcH = (hullSrc?.height() ?: mask.height).toFloat().coerceAtLeast(1f)
+            val bTop = dest.top + (bbox.top - srcTop) / srcH * destH
+            val bBot = dest.top + (bbox.bottom - srcTop) / srcH * destH
+            val lvl = layer.level.coerceIn(0f, 1f)
+            val top = bTop.coerceAtMost(bBot)
+            val bot = bBot.coerceAtLeast(top + 1f)
+            val bandH = (bot - top).coerceAtLeast(1f)
+            val fillTop = bot - bandH * lvl
+            // Emptied region [top, fillTop] → pure BLACK over hull (kills baked prop tint).
+            if (fillTop > top + 0.5f) {
+                val saved = canvas.save()
+                canvas.clipRect(dest.left, top.coerceIn(dest.top, dest.bottom), dest.right, fillTop.coerceIn(dest.top, dest.bottom))
+                val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    colorFilter = PorterDuffColorFilter(black, PorterDuff.Mode.SRC_IN)
+                    alpha = 255
+                }
+                val mSrc = if (hullSrc != null) {
+                    val ll = hullSrc.left.coerceIn(0, (mask.width - 1).coerceAtLeast(0))
+                    val tt = hullSrc.top.coerceIn(0, (mask.height - 1).coerceAtLeast(0))
+                    val rr = hullSrc.right.coerceIn(ll + 1, mask.width.coerceAtLeast(ll + 1))
+                    val bb = hullSrc.bottom.coerceIn(tt + 1, mask.height.coerceAtLeast(tt + 1))
+                    Rect(ll, tt, rr, bb)
+                } else {
+                    Rect(0, 0, mask.width, mask.height)
+                }
+                canvas.drawBitmap(mask, mSrc, dest, p)
+                canvas.restoreToCount(saved)
+            }
+            // Remaining propellant on TOP at full alpha so fill line reads on phone.
+            if (lvl > 0.001f) {
+                drawTankMaskLevel(canvas, mask, hullSrc, dest, lvl, layer.prop, tint = true, bandTop = top, bandBot = bot)
+            }
+        }
+    }
+
     private fun drawStageTankMasks(
         artId: String,
         canvas: Canvas,
@@ -727,10 +874,10 @@ object VehicleDraw {
         methalox: Boolean,
         alpha: Float
     ): Boolean {
-        // Stamp 98: DARK empty-tank deplete (Chris lock). Full charcoal mask first, then LOX/RP-1 remaining.
+        // Stamp 99 ELON: fills-behind still; emptied band later BLACK-over-hull (baked tanks).
         // Keep 97 fills-behind + alpha bbox bands — no geometry thrash.
-        val a = (255 * alpha).toInt().coerceIn(180, 255)
-        val empty = Color.argb(a, 10, 12, 16)
+        val a = 255
+        val empty = Color.argb(255, 0, 0, 0)
         val lox = Color.argb(a, 60, 190, 255)
         val fuelC = if (methalox)
             Color.argb(a, 255, 175, 45)
@@ -753,12 +900,13 @@ object VehicleDraw {
             val name = "vehicle_${artId}_$suffix"
             val mask = loadVehicleDrawable(name) ?: continue
             any = true
-            // Full-frame masks: deplete inside EACH mask alpha bbox mapped into dest.
+            // Stamp 99: map mask bbox into dest in HULL SRC space (content crop), not full 1200.
             // Do NOT mid-split dest — that clips real islands (esp. S2 fuel) to ZERO.
             val bbox = alphaBBoxCached(name, mask)
-            val maskH = mask.height.toFloat().coerceAtLeast(1f)
-            val bTop = dest.top + (bbox.top / maskH) * destH
-            val bBot = dest.top + (bbox.bottom / maskH) * destH
+            val srcTop = (hullSrc?.top ?: 0).toFloat()
+            val srcH = (hullSrc?.height() ?: mask.height).toFloat().coerceAtLeast(1f)
+            val bTop = dest.top + (bbox.top - srcTop) / srcH * destH
+            val bBot = dest.top + (bbox.bottom - srcTop) / srcH * destH
             // Dark empty FULL band, then colored remaining level only (emptied stays dark).
             drawTankMaskLevel(canvas, mask, hullSrc, dest, 1f, empty, bandTop = bTop, bandBot = bBot)
             drawTankMaskLevel(canvas, mask, hullSrc, dest, level, color, bandTop = bTop, bandBot = bBot)
@@ -784,9 +932,11 @@ object VehicleDraw {
         val lvl = level.coerceIn(0f, 1f)
         if (lvl <= 0.001f) return
         val mSrc = if (hullSrc != null) {
+            val l = hullSrc.left.coerceIn(0, (mask.width - 1).coerceAtLeast(0))
             val t = hullSrc.top.coerceIn(0, (mask.height - 1).coerceAtLeast(0))
+            val r = hullSrc.right.coerceIn(l + 1, mask.width.coerceAtLeast(l + 1))
             val b = hullSrc.bottom.coerceIn(t + 1, mask.height.coerceAtLeast(t + 1))
-            Rect(0, t, mask.width.coerceAtLeast(1), b)
+            Rect(l, t, r, b)
         } else {
             Rect(0, 0, mask.width, mask.height)
         }
@@ -794,7 +944,7 @@ object VehicleDraw {
             if (tint && color != 0) {
                 colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN)
             }
-            this.alpha = 250
+            this.alpha = 255
         }
         val top = bandTop.coerceAtMost(bandBot)
         val bot = bandBot.coerceAtLeast(top + 1f)
