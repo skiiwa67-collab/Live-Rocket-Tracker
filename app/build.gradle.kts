@@ -1,4 +1,4 @@
-plugins {
+﻿plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
@@ -11,8 +11,8 @@ android {
         applicationId = "com.liverockettracker"
         minSdk = 24
         targetSdk = 35
-        versionCode = 101
-        versionName = "1.0.91"
+        versionCode = 102
+        versionName = "1.0.92"
     }
 
     buildTypes {
