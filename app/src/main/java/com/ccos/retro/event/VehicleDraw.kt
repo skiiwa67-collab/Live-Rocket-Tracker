@@ -297,6 +297,8 @@ object VehicleDraw {
         alpha: Float,
         launch: LaunchSnapshot?
     ): Boolean {
+        // Stamp 94: F9 pre-sep uses continuous stack/shell hull (fills-behind), not s1+s2 assemble (gaps).
+        if (!separated && artId == "f9") return false
         // Prefer shell hulls when Darren ships them; else plain part; else _s1/_s2 aliases.
         val booster = if (artId == "soyuz" || artId == "proton") {
             firstBitmap(
@@ -339,7 +341,8 @@ object VehicleDraw {
         if (wantB && booster != null) {
             val bH = h * bFrac
             val destB = artDestRect(booster, cx, baseY, bH, maxSlotW = h * 0.55f)
-            if (engRing != null) {
+            // Stamp 94: F9 booster/stack already has Merlin side-profile bells — skip octaweb overlay.
+            if (engRing != null && artId != "f9") {
                 val eH = bH * 0.14f
                 drawBitmapSrcInRect(
                     canvas, engRing, null,
