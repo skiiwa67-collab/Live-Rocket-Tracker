@@ -247,7 +247,13 @@ object VehicleDraw {
             return true
         }
         // Stamp 99 ELON: continuous hull; CONTENT bbox src → fill plate (STACK+STG1+STG2). Letterbox > chop.
-        val hull = vehicleHullBitmap(artId) ?: return false
+        // Stamp 101: STG2 hull = ship/upper/s2 (clean MVac), not wide stack crop.
+        val hull = if (separated && stage >= 2) {
+            firstBitmap("vehicle_${artId}_ship", "vehicle_${artId}_upper", "vehicle_${artId}_s2")
+                ?: vehicleHullBitmap(artId)
+        } else {
+            vehicleHullBitmap(artId)
+        } ?: return false
         val hullSrc = stageHullSrcRect(artId, hull, stage, separated)
         // Wide maxSlotW: letterbox via height shrink inside artDestRect; NEVER horizontal hull clip.
         val dest = artDestRect(hull, cx, baseY, h, maxSlotW = h * 0.55f, src = hullSrc)
@@ -756,7 +762,12 @@ object VehicleDraw {
             )
         }
 
-        val padX = max(2, (bb.width() * 0.10f).toInt())
+        // stamp 101 clean bell — no pad wings around MVac.
+        val padX = if (separated && stage >= 2) {
+            max(2, (bb.width() * 0.02f).toInt())
+        } else {
+            max(2, (bb.width() * 0.10f).toInt())
+        }
         val padY = max(2, (bb.height() * 0.03f).toInt())
         val left = (bb.left - padX).coerceAtLeast(0)
         // STG1: never pad upward past S2/MVac cut (would re-glue upperstage).
