@@ -1794,14 +1794,13 @@ class CommandConsoleView @JvmOverloads constructor(
 
         val rocketTop = stripTop + stripH + dp(8f)
         val footerY = h - dp(22f)
-        // Stamp 96: content rect ABOVE STACK label; plumePad large enough that flame RectF fits INSIDE clip.
+        // Stamp 97: stages BIGGER; plume secondary (shrink plumePad, keep flame inside clip).
         val labelReserve = dp(28f)
         val contentBot = footerY - labelReserve
         val contentTop = rocketTop
         val slotH = (contentBot - contentTop).coerceAtLeast(h * 0.42f)
-        // Proven root cause: plumePad=0.10 + fh~0.20*rocketH exceeded contentBot -> clip killed all flames.
-        val plumePad = (slotH * 0.28f).coerceAtLeast(dp(36f))
-        val rocketH = ((slotH - plumePad) * 0.90f).coerceAtLeast(h * 0.42f)
+        val plumePad = (slotH * 0.14f).coerceAtLeast(dp(22f))
+        val rocketH = ((slotH - plumePad) * 0.96f).coerceAtLeast(h * 0.48f)
         val baseY = contentBot - plumePad
         val cx = w * 0.5f
         if (stage == 1) {

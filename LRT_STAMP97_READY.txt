@@ -1,0 +1,38 @@
+﻿# LRT Stamp 97 - FUEL deplete + stages bigger + Darren STG2 MVac
+
+**Branch:** stamp-85
+**Parent bump:** 53d85fa (versionCode 97 / versionName 1.0.87)
+**Version:** 97 / 1.0.87
+**Commit subject:** stamp 97: tank bbox deplete + stage scale + Darren STG2 MVac (Ada / ada@local)
+
+## Proven root cause (Chris HARD FAIL)
+F9 continuous path drawStageTankMasks mid-split dest (ox=upper half, fuel=lower half) on FULL-FRAME 424x1200 tank masks.
+Mask alpha islands sit in correct stage regions (S1 mid-lower; S2 upper) — mid-split clips real pixels (esp. S2 fuel) → ZERO visible fill while fuelRemain drains correctly.
+Also vehicle_f9_shell more opaque than stack/cutaway — hull preference must favor cutaway-readable art.
+
+## FIX A — tank deplete visible (PRIMARY)
+- VehicleDraw.alphaBBoxCached + maskAlphaBBox: one-time getPixels scan per mask name (not per-frame)
+- drawStageTankMasks: bandTop/bandBot from bbox mapped into dest; NO dest mid-split
+- Assembled booster/upper discrete tanks: same bbox bands
+- Brighter glassA + LOX/fuel colors; fills-behind then hull on top
+- Hull order: stack, cutaway, side, vehicle_*, shell LAST
+
+## FIX B — stages BIGGER
+- CommandConsoleView: plumePad 0.14*slotH; rocketH 0.96*(slotH-plumePad)
+- Wallpaper: plumePad 0.14*slotH; fitHeightForSlot 0.99H/0.97W
+- Clip still above STACK label
+
+## FIX C — plume secondary
+- flame_s2/flame_ship/exhaust_ship = PLUME overlay ONLY when burning()/ENG lit
+- Do not use flame composites as hull/fill state
+
+## Darren STG2 MVac (folded)
+- Dirty M PNGs: s2/ship/upper + flame_s2/ship + exhaust_ship + stack/shell/side/cutaway/fuel/vehicle_f9 composites
+- MVac bell BAKED into ship/upper/s2 hull (side-profile) — skip engShip overlay for artId==f9 (no double-bell)
+- No invented engine_ship art
+
+## Sync path
+D:\Downloads\LiveRocketTracker-vc97-debug.apk
+
+## HOLD
+No China/FH. No wink-killers (bbox scan once at cache, not per-frame getPixel on draw).
