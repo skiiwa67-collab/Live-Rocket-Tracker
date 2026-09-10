@@ -1794,14 +1794,14 @@ class CommandConsoleView @JvmOverloads constructor(
 
         val rocketTop = stripTop + stripH + dp(8f)
         val footerY = h - dp(22f)
-        // Stamp 97: stages BIGGER; plume secondary (shrink plumePad, keep flame inside clip).
+        // Stamp 98: stages fill plate HARD; short plumePad (flame nests under MVac — never shrink rocket for plume).
         val labelReserve = dp(28f)
         val contentBot = footerY - labelReserve
         val contentTop = rocketTop
         val slotH = (contentBot - contentTop).coerceAtLeast(h * 0.42f)
-        // Stamp 97 HARD: fill STACK plate; plume secondary (short pad, still inside clip).
+        // Prefer stage size; plume secondary. Clip full width so hull not half-cut.
         val plumePad = (slotH * 0.10f).coerceAtLeast(dp(18f))
-        val rocketH = ((slotH - plumePad) * 0.99f).coerceAtLeast(h * 0.52f)
+        val rocketH = ((slotH - plumePad) * 1.00f).coerceAtLeast(h * 0.55f)
         val baseY = contentBot - plumePad
         val cx = w * 0.5f
         if (stage == 1) {

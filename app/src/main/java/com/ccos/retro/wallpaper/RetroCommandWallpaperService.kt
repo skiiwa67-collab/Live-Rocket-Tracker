@@ -4582,13 +4582,14 @@ class RetroCommandWallpaperService : WallpaperService() {
             val analogCeil = if (mapBot > minTop + 24f) mapBot else minTop + height * 0.28f
             val boxW = buttonRects[3].width()
             val labPad = telSp(14f)
-            // Stamp 97: stages BIGGER; plumePad shrink (plume secondary). Clip still above STACK label.
+            // Stamp 98: stages fill plate HARD; short plumePad; clip still above STACK label.
             val slotH = (analogCeil - minTop - labPad).coerceAtLeast(telSp(56f))
-            val slotW = boxW * 0.98f
-            // Stamp 97 HARD: dolls fill STG1/STG2 plates fleet-wide; plumePad short.
+            val slotW = boxW * 0.96f
+            // Prefer stage size over long plume; flame nests under MVac inside pad.
             val plumePad = (slotH * 0.10f).coerceAtLeast(telSp(14f))
             val hullSlot = (slotH - plumePad).coerceAtLeast(telSp(40f))
-            val rocketH = com.ccos.retro.event.VehicleDraw.fitHeightForSlot(slotW, hullSlot, 0.38f)
+            // aspect 0.40 matches VehicleDraw maxSlotW — full silhouette, no right chop.
+            val rocketH = com.ccos.retro.event.VehicleDraw.fitHeightForSlot(slotW, hullSlot, 0.40f)
             val leftCx = buttonRects[3].centerX()
             val rightCx = buttonRects[7].centerX()
             val separated = tSec >= sepTime(launch)
@@ -4614,8 +4615,10 @@ class RetroCommandWallpaperService : WallpaperService() {
 
             // Stamp 95: clip to white STACK box ABOVE label — never leak onto STACK text.
             val boxBot = bot - labPad
+            val insetX = telSp(3f)
             canvas.save()
-            canvas.clipRect(stage1Hit.left, stage1Hit.top, stage1Hit.right, boxBot)
+            // Stamp 98: clip IN box; tiny inset so stroke does not chop right silhouette.
+            canvas.clipRect(stage1Hit.left + insetX, stage1Hit.top, stage1Hit.right - insetX, boxBot)
             if (!separated) {
                 drawVehicle(canvas, leftCx, baseY, leftH, launch, tSec, 1, false, skin, lamp, 1f)
             } else {
@@ -4623,7 +4626,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             }
             canvas.restore()
             canvas.save()
-            canvas.clipRect(stage2Hit.left, stage2Hit.top, stage2Hit.right, boxBot)
+            canvas.clipRect(stage2Hit.left + insetX, stage2Hit.top, stage2Hit.right - insetX, boxBot)
             if (!separated) {
                 drawVehicle(canvas, rightCx, baseY, rightH, launch, tSec, 1, false, skin, lamp, 0.42f)
             } else {
