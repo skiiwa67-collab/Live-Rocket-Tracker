@@ -23,6 +23,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.ccos.retro.R
 import com.ccos.retro.data.LaunchDataProvider
+import com.ccos.retro.data.MissionTapeStore
 import com.ccos.retro.data.LaunchSnapshot
 import com.ccos.retro.data.autoDwellHint
 import com.ccos.retro.data.LaunchWindow
@@ -51,6 +52,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs = AppPrefs(this)
+        MissionTapeStore.ensure(this)
         prefs.restoreCommandPageHud()
         prefs.ensurePaidAppDefaults()
         if (!prefs.setupComplete) {
@@ -248,11 +250,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateLaunchStatus(msg: String) {
+        val pending = MissionTapeStore.pendingNote(
+            if (::telemetryModule.isInitialized) telemetryModule.tracked else null
+        ) ?: MissionTapeStore.sharedHudNote
+        @Suppress("NAME_SHADOWING")
+        val msg = if (!pending.isNullOrBlank() && pending !in msg) "$msg | $pending" else msg
         val tv = findViewById<TextView>(R.id.txt_launch_status) ?: return
         tv.text = msg
         tv.setTextColor(
             when {
-                msg.startsWith("OK") -> 0xFF90FFB0.toInt()
+                msg.contains("PENDING REAL TELEMETRY") -> 0xFFFFCC66.toInt()
+                msg.startsWith("OK") || msg.startsWith("SEARCH OK") -> 0xFF90FFB0.toInt()
                 msg.startsWith("FAILED") || msg.contains("throttle", ignoreCase = true) ->
                     0xFFFF8080.toInt()
                 else -> 0xFF668899.toInt()

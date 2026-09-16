@@ -15,6 +15,7 @@ import android.view.SurfaceHolder
 import android.view.WindowInsets
 import com.ccos.retro.BuildConfig
 import com.ccos.retro.data.LaunchDataProvider
+import com.ccos.retro.data.MissionTapeStore
 import com.ccos.retro.data.SystemMetricsProvider
 import com.ccos.retro.data.WebcastResolver
 import com.ccos.retro.engine.NanoParticle
@@ -411,6 +412,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             super.onCreate(surfaceHolder)
             state = BuildState(this@RetroCommandWallpaperService)
             prefs = AppPrefs(this@RetroCommandWallpaperService)
+            MissionTapeStore.ensure(this@RetroCommandWallpaperService)
             metrics = SystemMetricsProvider(this@RetroCommandWallpaperService)
             launchProvider = LaunchDataProvider()
             rocketModule = VectorRocketModule(state)

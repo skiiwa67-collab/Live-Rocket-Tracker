@@ -11,8 +11,13 @@ android {
         applicationId = "com.liverockettracker"
         minSdk = 24
         targetSdk = 36
-        versionCode = 108
-        versionName = "1.0.98"
+        versionCode = 109
+        versionName = "1.0.99"
+        buildConfigField(
+            "String",
+            "MISSION_TAPE_BASE_URL",
+            "\"https://raw.githubusercontent.com/skiiwa67-collab/lrt-mission-tapes/main/v1\""
+        )
     }
 
     buildTypes {

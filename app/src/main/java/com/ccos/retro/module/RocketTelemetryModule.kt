@@ -3,6 +3,7 @@ package com.ccos.retro.module
 import android.util.Log
 
 import com.ccos.retro.data.LaunchDataProvider
+import com.ccos.retro.data.MissionTapeStore
 import com.ccos.retro.data.LaunchSnapshot
 import com.ccos.retro.data.LaunchWindow
 import com.ccos.retro.event.FlightEventCatalog
@@ -761,6 +762,10 @@ class RocketTelemetryModule(
             provider.rememberHistoricSelection(hint)
         }
         val found = hint?.takeIf { it.id == id } ?: provider.findById(id)
+        // Stamp 109: HISTORIC open / select pulls CDN mission tape (Starship gold slug fallback).
+        if (found != null) {
+            MissionTapeStore.requestFor(found, force = true)
+        }
 
         if (prefs.telemetryPinned) {
             // Stamp 55: MOVE pin to the newly selected launch (never keep stale LCK id).
@@ -895,6 +900,9 @@ class RocketTelemetryModule(
             resolveTracked()
         }
         if (tracked == null) resolveTracked()
+        // Stamp 109: live Starship polls mission tape CDN ~20s.
+        MissionTapeStore.maybePollLive(tracked)
+        MissionTapeStore.refreshHudNote(tracked)
     }
 
     /** True while LL2 is in-flight or cache has never landed (cold wallpaper). */

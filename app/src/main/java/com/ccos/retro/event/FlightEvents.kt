@@ -1,5 +1,7 @@
 package com.ccos.retro.event
 
+import com.ccos.retro.data.MissionTapeStore
+
 import com.ccos.retro.data.LaunchSnapshot
 import com.ccos.retro.geo.GeoDraw
 import com.ccos.retro.geo.PadBook
@@ -32,11 +34,23 @@ object FlightEventCatalog {
 
     fun family(launch: LaunchSnapshot?): String = VehicleCatalog.family(launch)
 
+    /** Stamp 109: honest banner when CDN tape missing/pending. */
+    fun pendingTelemetryNote(launch: LaunchSnapshot?): String? =
+        MissionTapeStore.pendingNote(launch)
+
     fun timeline(launch: LaunchSnapshot?): List<FlightEvent> {
+        // Stamp 109: CDN mission tape truth beats family templates when usable.
+        val tape = launch?.let { MissionTapeStore.get(it.id) }
+        if (tape != null && tape.hasUsableTruth()) {
+            MissionTapeStore.refreshHudNote(launch)
+            return tape.toFlightEvents()
+        }
         // Stamp 105b: Fail/Partial only — never blank Success/Completed tape (not isTerminal).
         if (launch != null && launch.id != "demo-spacex-fail" && isFailOrPartialCut(launch)) {
             return emptyList()
         }
+        // Template path — HUD must show PENDING REAL TELEMETRY (not silent fake historic).
+        MissionTapeStore.refreshHudNote(launch)
         val base = when {
             VehicleCatalog.needsUpdate(launch) -> unknownVehicle()
             else -> when (family(launch)) {
