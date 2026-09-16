@@ -413,9 +413,21 @@ class LaunchDataProvider {
                 var source = "ll2"
                 var upcoming = fetchList(PROD_UPCOMING, "ll2")
                 if (upcoming == null) {
+                    // Stamp 113: retry PROD after backoff before lldev — lldev NET can lag days
+                    // (Flight 14 showed Sep 18 / [1d] while prod+SpaceX = Sep 22 / [6d]).
+                    sharedStatus = "Prod upcoming miss - retry PROD..."
+                    try { Thread.sleep(3500L) } catch (_: InterruptedException) {}
+                    upcoming = fetchList(PROD_UPCOMING, "ll2")
+                }
+                if (upcoming == null) {
                     sharedStatus = "Prod upcoming throttled  -  trying lldev..."
                     upcoming = fetchList(DEV_UPCOMING, "lldev")
-                    if (upcoming != null) source = "lldev"
+                    if (upcoming != null) {
+                        source = "lldev"
+                        // Stamp 113: overlay prod NET for soonest birds (lldev stale NET guard).
+                        upcoming = enrichNetsFromProd(upcoming)
+                        source = upcoming.source
+                    }
                 }
                 var previous = fetchList(PROD_PREVIOUS, "ll2")
                 if (previous == null) {
@@ -526,71 +538,123 @@ class LaunchDataProvider {
 
 
 
+    /**
+     * Stamp 113: lldev catalog can carry stale NET. For soonest birds, try prod by id
+     * and adopt prod net/window when available. Cap to avoid hammering LL2.
+     */
+    private fun enrichNetsFromProd(lldev: LaunchListResult): LaunchListResult {
+        val now = System.currentTimeMillis()
+        val ranked = lldev.launches
+            .filter { !it.id.startsWith("demo-") && it.secondsToNet(now) > 0 }
+            .sortedBy { it.netMs }
+            .take(12)
+        if (ranked.isEmpty()) return lldev
+        val byId = LinkedHashMap<String, LaunchSnapshot>()
+        for (l in lldev.launches) byId[l.id] = l
+        var patched = 0
+        for (l in ranked) {
+            val prod = fetchLaunchById(l.id) ?: continue
+            if (prod.netMs != l.netMs) patched++
+            byId[l.id] = prod
+        }
+        val src = if (patched > 0) "lldev+prod-net" else lldev.source
+        sharedStatus = "lldev enrich | patched=$patched / ${ranked.size} | $src"
+        return LaunchListResult(byId.values.sortedBy { it.netMs }, System.currentTimeMillis(), src)
+    }
+
+    /** Stamp 113: GET one launch from prod LL2 (single-object JSON). */
+    private fun fetchLaunchById(id: String): LaunchSnapshot? {
+        if (id.isBlank() || id.startsWith("demo-")) return null
+        return try {
+            val urlStr = "https://ll.thespacedevs.com/2.2.0/launch/$id/?mode=detailed"
+            val conn = (URL(urlStr).openConnection() as HttpURLConnection).apply {
+                connectTimeout = 10_000
+                readTimeout = 10_000
+                requestMethod = "GET"
+                setRequestProperty("Accept", "application/json")
+                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.103 (Android; net-enrich)")
+            }
+            val code = conn.responseCode
+            if (code != 200) {
+                Log.w(TAG, "fetchLaunchById HTTP $code id=$id")
+                return null
+            }
+            val body = conn.inputStream.bufferedReader().use { it.readText() }
+            parseLaunchObject(JSONObject(body), "ll2-id")
+        } catch (e: Exception) {
+            Log.w(TAG, "fetchLaunchById $id: ${e.message}")
+            null
+        }
+    }
+
     private fun parseList(json: String, source: String): LaunchListResult {
         val root = JSONObject(json)
         val results = root.optJSONArray("results") ?: JSONArray()
         val list = mutableListOf<LaunchSnapshot>()
         for (i in 0 until results.length()) {
-            val o = results.getJSONObject(i)
-            val status = o.optJSONObject("status")
-            val netStr = strOrNull(o, "net") ?: continue
-            val netMs = parseIso(netStr) ?: continue
-            val windowStart = parseIso(strOrNull(o, "window_start")) ?: netMs
-            val windowEnd = parseIso(strOrNull(o, "window_end")) ?: netMs
-            val provider = strOrNull(o, "lsp_name")
-                ?: o.optJSONObject("launch_service_provider")?.let { strOrNull(it, "name") }
-                ?: "Unknown"
-            val rocket = strOrNull(o, "launcher")
-                ?: o.optJSONObject("rocket")?.optJSONObject("configuration")?.let {
-                    strOrNull(it, "full_name") ?: strOrNull(it, "name")
-                }
-                ?: "Rocket"
-            val mission = strOrNull(o, "mission")
-                ?: o.optJSONObject("mission")?.let { strOrNull(it, "name") }
-                ?: ""
-            val padObj = o.optJSONObject("pad")
-            // pad is an object in LL2. optString(object) dumps JSON. Never show that.
-            val pad = humanName(padObj?.let { strOrNull(it, "name") })
-                ?: humanName(strOrNull(o, "pad"))
-                ?: ""
-            val locObj = padObj?.optJSONObject("location") ?: o.optJSONObject("location")
-            val location = humanName(locObj?.let { strOrNull(it, "name") })
-                ?: humanName(strOrNull(o, "location"))
-                ?: ""
-            val padLat = floatOrNull(padObj, "latitude")
-            val padLon = floatOrNull(padObj, "longitude")
-            val refs = extractWebcasts(o)
-            list.add(
-                LaunchSnapshot(
-                    id = strOrNull(o, "id") ?: "unknown-$i",
-                    name = strOrNull(o, "name") ?: "Unnamed",
-                    statusName = status?.let { strOrNull(it, "name") } ?: "Unknown",
-                    statusAbbrev = status?.let { strOrNull(it, "abbrev") }
-                        ?: status?.let { strOrNull(it, "name") }?.take(3)
-                        ?: "???",
-                    netMs = netMs,
-                    windowStartMs = windowStart,
-                    windowEndMs = windowEnd,
-                    provider = provider,
-                    rocketName = rocket,
-                    missionName = mission.ifBlank { strOrNull(o, "name") ?: "Mission" },
-                    pad = pad,
-                    location = location,
-                    padLat = padLat,
-                    padLon = padLon,
-                    imageUrl = strOrNull(o, "image"),
-                    webcastUrl = refs.firstOrNull()?.url,
-                    webcasts = refs,
-                    webcastLive = o.optBoolean("webcast_live", false),
-                    probability = if (o.has("probability") && !o.isNull("probability"))
-                        o.optInt("probability") else null,
-                    holdReason = strOrNull(o, "holdreason")?.takeIf { it.isNotBlank() },
-                    lastUpdatedMs = System.currentTimeMillis()
-                )
-            )
+            val snap = parseLaunchObject(results.getJSONObject(i), source) ?: continue
+            list.add(snap)
         }
-        val next = strOrNull(root, "next")
-        return LaunchListResult(list, System.currentTimeMillis(), source, nextUrl = next)
+        return LaunchListResult(list, System.currentTimeMillis(), source)
+    }
+
+    /** Stamp 113: one LL2 launch object → snapshot (results[] or GET /launch/{id}/). */
+    private fun parseLaunchObject(o: JSONObject, source: String): LaunchSnapshot? {
+        val status = o.optJSONObject("status")
+        val netStr = strOrNull(o, "net") ?: return null
+        val netMs = parseIso(netStr) ?: return null
+        val windowStart = parseIso(strOrNull(o, "window_start")) ?: netMs
+        val windowEnd = parseIso(strOrNull(o, "window_end")) ?: netMs
+        val provider = strOrNull(o, "lsp_name")
+            ?: o.optJSONObject("launch_service_provider")?.let { strOrNull(it, "name") }
+            ?: "Unknown"
+        val rocket = strOrNull(o, "launcher")
+            ?: o.optJSONObject("rocket")?.optJSONObject("configuration")?.let {
+                strOrNull(it, "full_name") ?: strOrNull(it, "name")
+            }
+            ?: "Rocket"
+        val mission = strOrNull(o, "mission")
+            ?: o.optJSONObject("mission")?.let { strOrNull(it, "name") }
+            ?: ""
+        val padObj = o.optJSONObject("pad")
+        // pad is an object in LL2. optString(object) dumps JSON. Never show that.
+        val pad = humanName(padObj?.let { strOrNull(it, "name") })
+            ?: humanName(strOrNull(o, "pad"))
+            ?: ""
+        val locObj = padObj?.optJSONObject("location") ?: o.optJSONObject("location")
+        val location = humanName(locObj?.let { strOrNull(it, "name") })
+            ?: humanName(strOrNull(o, "location"))
+            ?: ""
+        val padLat = floatOrNull(padObj, "latitude")
+        val padLon = floatOrNull(padObj, "longitude")
+        val refs = extractWebcasts(o)
+        val id = strOrNull(o, "id") ?: return null
+        return LaunchSnapshot(
+            id = id,
+            name = strOrNull(o, "name") ?: "Unnamed",
+            statusName = status?.let { strOrNull(it, "name") } ?: "Unknown",
+            statusAbbrev = status?.let { strOrNull(it, "abbrev") }
+                ?: status?.let { strOrNull(it, "name") }?.take(3)
+                ?: "???",
+            netMs = netMs,
+            windowStartMs = windowStart,
+            windowEndMs = windowEnd,
+            provider = provider,
+            rocketName = rocket,
+            missionName = mission.ifBlank { strOrNull(o, "name") ?: "Mission" },
+            pad = pad,
+            location = location,
+            padLat = padLat,
+            padLon = padLon,
+            imageUrl = strOrNull(o, "image"),
+            webcastUrl = refs.firstOrNull()?.url,
+            webcasts = refs,
+            webcastLive = o.optBoolean("webcast_live", false),
+            probability = if (o.has("probability") && !o.isNull("probability"))
+                o.optInt("probability") else null,
+            holdReason = strOrNull(o, "holdreason")?.takeIf { it.isNotBlank() },
+            lastUpdatedMs = System.currentTimeMillis()
+        )
     }
 
 
