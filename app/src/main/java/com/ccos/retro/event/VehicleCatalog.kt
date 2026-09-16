@@ -823,7 +823,6 @@ object VehicleCatalog {
     const val CZ8A_DRAWABLE = "vehicle_cz8a"
     const val CZ12_DRAWABLE = "vehicle_cz12"
     const val ZQ3_DRAWABLE = "vehicle_zq3"
-    const val CZ8A_DRAWABLE = "vehicle_cz8a"
     const val KZ11_DRAWABLE = "vehicle_kz11"
     const val CZ2D_DRAWABLE = "vehicle_cz2d"
 
