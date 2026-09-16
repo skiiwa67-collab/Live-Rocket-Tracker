@@ -364,6 +364,33 @@ class LaunchDataProvider {
         return "scrub" in blob
     }
 
+
+    /** Tip 116: never adopt earlier future NET (lldev stale) over a later prior NET (same id). */
+    private fun preferLaterNet(
+        prior: LaunchSnapshot?,
+        incoming: LaunchSnapshot,
+        now: Long = System.currentTimeMillis()
+    ): LaunchSnapshot {
+        if (prior == null || prior.id != incoming.id) return incoming
+        val pFuture = prior.netMs > now
+        val iFuture = incoming.netMs > now
+        return if (pFuture && (!iFuture || prior.netMs > incoming.netMs)) {
+            incoming.copy(
+                netMs = prior.netMs,
+                windowStartMs = prior.windowStartMs,
+                windowEndMs = prior.windowEndMs
+            )
+        } else incoming
+    }
+
+    private fun isStarshipFlight14(s: LaunchSnapshot): Boolean {
+        val blob = "${s.name} ${s.rocketName} ${s.missionName}".lowercase()
+        if ("starship" !in blob) return false
+        // Loose: "Flight 14", "IFT-14", "flight14", bare mid-token 14 after flight/ift
+        return Regex("""(?i)(flight\s*[-#]?\s*14|ift\s*[-#]?\s*14|(?<![0-9])14(?![0-9]))""")
+            .containsMatchIn(blob)
+    }
+
     private fun upsertMergeLive(
         prior: List<LaunchSnapshot>,
         fetchedUpcoming: List<LaunchSnapshot>?,
@@ -378,7 +405,8 @@ class LaunchDataProvider {
             if (isScrubbedOrTerminal(f)) {
                 byId.remove(f.id)
             } else {
-                byId[f.id] = f
+                // Tip 116: REFRESH must not wipe later prod NET with earlier lldev stale.
+                byId[f.id] = preferLaterNet(byId[f.id], f, now)
             }
         }
         for (p in previous.orEmpty()) {
@@ -483,6 +511,7 @@ class LaunchDataProvider {
                     }
                     return@execute
                 }
+                // Tip 116: ensureCritical already ran on upcoming; upsert prefers later NET vs prior.
                 val mergedLaunches = upsertMergeLive(priorList, upcoming.launches, pastCache.get()?.launches)
                 val merged = upcoming.copy(launches = mergedLaunches)
                 cache.set(merged)
@@ -553,24 +582,41 @@ class LaunchDataProvider {
      */
     private fun ensureCriticalNetsFromProd(list: LaunchListResult): LaunchListResult {
         val now = System.currentTimeMillis()
+        val priorById = cache.get()?.launches?.associateBy { it.id } ?: emptyMap()
         val crit = list.launches.filter { l ->
             if (l.id.startsWith("demo-")) return@filter false
-            if (l.secondsToNet(now) <= 0) return@filter false
-            val n = "${l.name} ${l.rocketName} ${l.missionName}".lowercase()
-            ("starship" in n && ("flight 14" in n || "flight-14" in n || "ift-14" in n || "ift 14" in n))
+            // Include even if incoming NET looks past/stale — still force prod / keep prior later NET.
+            isStarshipFlight14(l) || (priorById[l.id]?.let { isStarshipFlight14(it) } == true)
         }
         if (crit.isEmpty()) return list
         val byId = LinkedHashMap<String, LaunchSnapshot>()
         for (l in list.launches) byId[l.id] = l
         var patched = 0
+        var keptPrior = 0
         for (l in crit) {
-            val prod = fetchLaunchById(l.id) ?: continue
-            if (prod.netMs != l.netMs) patched++
-            byId[l.id] = prod
+            val prior = priorById[l.id]
+            val prod = fetchLaunchById(l.id)
+            when {
+                prod != null -> {
+                    val best = preferLaterNet(prior, preferLaterNet(l, prod, now), now)
+                    if (best.netMs != l.netMs) patched++
+                    byId[l.id] = best
+                }
+                prior != null && prior.netMs > l.netMs -> {
+                    // Tip 116: prod id fetch fail (429) — KEEP prior later NET; never adopt lldev [1d].
+                    byId[l.id] = preferLaterNet(prior, l, now)
+                    keptPrior++
+                }
+            }
         }
-        if (patched == 0) return list
-        val src = if (list.source.contains("prod-net")) list.source else "${list.source}+prod-net"
-        sharedStatus = "critical NET enrich | patched=$patched | $src"
+        if (patched == 0 && keptPrior == 0) return list
+        val src = when {
+            patched > 0 && list.source.contains("prod-net") -> list.source
+            patched > 0 -> "${list.source}+prod-net"
+            keptPrior > 0 -> "${list.source}+keep-prior-net"
+            else -> list.source
+        }
+        sharedStatus = "critical NET | patched=$patched keptPrior=$keptPrior | $src"
         return LaunchListResult(byId.values.sortedBy { it.netMs }, System.currentTimeMillis(), src)
     }
 
@@ -581,10 +627,7 @@ class LaunchDataProvider {
             .sortedBy { it.netMs }
             .take(12)
         // Stamp 115: also force-include Starship Flight 14 even if not in soonest 12.
-        val must = lldev.launches.filter { l ->
-            val n = "${l.name} ${l.rocketName}".lowercase()
-            "starship" in n && ("flight 14" in n || "flight-14" in n)
-        }
+        val must = lldev.launches.filter { isStarshipFlight14(it) }
         val ranked = (soon + must).distinctBy { it.id }
         if (ranked.isEmpty()) return lldev
         val byId = LinkedHashMap<String, LaunchSnapshot>()
@@ -610,7 +653,7 @@ class LaunchDataProvider {
                 readTimeout = 10_000
                 requestMethod = "GET"
                 setRequestProperty("Accept", "application/json")
-                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.105 (Android; net-enrich)")
+                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.106 (Android; net-enrich)")
             }
             val code = conn.responseCode
             if (code != 200) {
