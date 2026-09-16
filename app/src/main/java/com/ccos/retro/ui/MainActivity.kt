@@ -6,6 +6,9 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.Gravity
@@ -39,6 +42,11 @@ class MainActivity : AppCompatActivity() {
     private var launchList: List<LaunchSnapshot> = emptyList()
     private var suppressLaunchSelect = false
     private var historicQuery: String = ""
+    /** Stamp 107: debounce LL2 historic search — never fire every keystroke. */
+    private val uiHandler = Handler(Looper.getMainLooper())
+    private val historicSearchDebounceMs = 450L
+    private var populateDepth = 0
+    private val historicSearchRunnable = Runnable { fireHistoricSearchDebounced() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -150,8 +158,11 @@ class MainActivity : AppCompatActivity() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
+                // Stamp 107: local filter every key; network search debounced >=400ms.
                 historicQuery = s?.toString()?.trim().orEmpty()
                 populateLaunchSpinner()
+                uiHandler.removeCallbacks(historicSearchRunnable)
+                uiHandler.postDelayed(historicSearchRunnable, historicSearchDebounceMs)
             }
         })
 
@@ -265,86 +276,115 @@ class MainActivity : AppCompatActivity() {
         return q.lowercase().split(Regex("\\s+")).all { it in blob }
     }
 
-    private fun populateLaunchSpinner() {
-        val now = System.currentTimeMillis()
-        // Stamp 93: CURRENT = pickerPool (live only); HISTORICAL = historicPool (no live upcoming).
-        val liveOnly = launchProvider.pickerPool(now, prefs.telemetryHorizonDays)
-        val historic = prefs.telemetryListMode == "historical"
-
-        launchList = if (historic) {
-            // Stamp 106: default ~20 real past newest-first; demos only if query has "demo".
-            // Name search triggers 1yr LL2 previous/search (throttled in provider).
-            val q = historicQuery
-            if (q.isNotBlank() && "demo" !in q.lowercase()) {
-                launchProvider.requestHistoricSearch(q) {
-                    runOnUiThread {
-                        if (prefs.telemetryListMode == "historical") populateLaunchSpinner()
+    /** Stamp 107: debounced historic LL2 search — not every keystroke. */
+    private fun fireHistoricSearchDebounced() {
+        if (isFinishing || isDestroyed) return
+        if (prefs.telemetryListMode != "historical") return
+        val q = historicQuery
+        if (q.isBlank() || "demo" in q.lowercase()) return
+        try {
+            launchProvider.requestHistoricSearch(q) {
+                uiHandler.post {
+                    try {
+                        if (isFinishing || isDestroyed) return@post
+                        if (prefs.telemetryListMode != "historical") return@post
+                        // Refresh from search cache only — never re-enter requestHistoricSearch here.
+                        populateLaunchSpinner()
                         updateLaunchStatus(launchProvider.lastStatus)
+                    } catch (e: Exception) {
+                        Log.e("CCOS.Main", "search UI refresh: ${e.message}", e)
+                        try { updateLaunchStatus("SEARCH UI EX | ${e.message}") } catch (_: Exception) {}
                     }
                 }
             }
-            val pool = launchProvider.historicPool(now, q).filter {
-                // Pool already gates demos; keep replayable / past for edge cases.
-                it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) <= 0
-            }
-            if (q.isNotBlank()) pool.take(80) else pool.take(20)
-        } else {
-            val keepId = prefs.telemetryLaunchId
-            // Stamp 55: CURRENT keep only HOLD/in-flight/webcast/T+/upcoming  -  past -> HISTORIC.
-            val keep = liveOnly.firstOrNull { it.id == keepId }
-                ?: launchProvider.findById(keepId)?.takeIf {
-                    it.isActiveWatch(now) || it.isHold() || it.secondsToNet(now) > 0
-                }
-                ?: telemetryModule.tracked?.takeIf {
-                    it.id == keepId && (it.isActiveWatch(now) || it.isHold() || it.secondsToNet(now) > 0)
-                }
-            val base = liveOnly.toMutableList()
-            if (keep != null && base.none { it.id == keep.id }) base.add(0, keep)
-            base.sortedBy { it.netMs }.take(20)
+        } catch (e: Exception) {
+            Log.e("CCOS.Main", "fireHistoricSearch: ${e.message}", e)
+            try { updateLaunchStatus("SEARCH FIRE EX | ${e.message}") } catch (_: Exception) {}
         }
+    }
 
-        val labels = launchList.map { l ->
-            val secs = l.secondsToNet(now)
-            val tag = when {
-                l.id.startsWith("demo-") -> "[DEMO] "
-                l.isHold() -> "[HOLD] "
-                l.isActiveWatch(now) && secs <= 0 -> "[LIVE] "
-                secs < -LaunchWindow.PICKER_LOOKBACK_SEC -> "[PAST] "
-                secs < 0 -> "[T+] "
-                secs < 86400 -> "[${secs / 3600}h] "
-                else -> "[${secs / 86400}d] "
-            }
-            "$tag${l.name.take(36)} | ${l.provider.take(12)}"
-        }
-        val spinner = findViewById<Spinner>(R.id.spinner_launch)
-        suppressLaunchSelect = true
-        val emptyMsg = when {
-            launchProvider.isFetching -> "Fetching..."
-            historic && historicQuery.isNotBlank() -> "No historic match: " + historicQuery.take(18)
-            historic -> "No historic entries yet"
-            liveOnly.isEmpty() && launchProvider.lastError != null ->
-                "0 live | ${launchProvider.lastError}"
-            liveOnly.isEmpty() ->
-                "0 live in cache | ${launchProvider.lastStatus}"
-            else -> "0 in window (live cache=${liveOnly.size}) | try 1 MO / 6 MO"
-        }
-        spinner.adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_dropdown_item,
-            if (labels.isEmpty()) listOf(emptyMsg) else labels
-        )
-        val idx = launchList.indexOfFirst { it.id == prefs.telemetryLaunchId }
-        if (idx >= 0) spinner.setSelection(idx, false)
-        // Stamp 55: onItemSelected often fires after this frame  -  hold suppress until post.
-        spinner.post { spinner.post { suppressLaunchSelect = false } }
+    private fun populateLaunchSpinner() {
+        // Stamp 107: re-entry / concurrent spinner updates must not kill the process.
+        if (populateDepth > 0) return
+        populateDepth++
+        try {
+            val now = System.currentTimeMillis()
+            // Stamp 93: CURRENT = pickerPool (live only); HISTORICAL = historicPool (no live upcoming).
+            val liveOnly = launchProvider.pickerPool(now, prefs.telemetryHorizonDays)
+            val historic = prefs.telemetryListMode == "historical"
 
-        val extra = if (!historic) {
-            " | ${launchList.size} shown | ${liveOnly.size} in window"
-        } else {
-            " | ${launchList.size} historic"
+            launchList = if (historic) {
+                // Stamp 106/107: local pool only. LL2 search is debounced in fireHistoricSearchDebounced.
+                val q = historicQuery
+                val pool = launchProvider.historicPool(now, q).filter {
+                    it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) <= 0
+                }
+                if (q.isNotBlank()) pool.take(80) else pool.take(20)
+            } else {
+                val keepId = prefs.telemetryLaunchId
+                // Stamp 55: CURRENT keep only HOLD/in-flight/webcast/T+/upcoming  -  past -> HISTORIC.
+                val keep = liveOnly.firstOrNull { it.id == keepId }
+                    ?: launchProvider.findById(keepId)?.takeIf {
+                        it.isActiveWatch(now) || it.isHold() || it.secondsToNet(now) > 0
+                    }
+                    ?: telemetryModule.tracked?.takeIf {
+                        it.id == keepId && (it.isActiveWatch(now) || it.isHold() || it.secondsToNet(now) > 0)
+                    }
+                val base = liveOnly.toMutableList()
+                if (keep != null && base.none { it.id == keep.id }) base.add(0, keep)
+                base.sortedBy { it.netMs }.take(20)
+            }
+
+            val labels = launchList.map { l ->
+                val secs = l.secondsToNet(now)
+                val tag = when {
+                    l.id.startsWith("demo-") -> "[DEMO] "
+                    l.isHold() -> "[HOLD] "
+                    l.isActiveWatch(now) && secs <= 0 -> "[LIVE] "
+                    secs < -LaunchWindow.PICKER_LOOKBACK_SEC -> "[PAST] "
+                    secs < 0 -> "[T+] "
+                    secs < 86400 -> "[${secs / 3600}h] "
+                    else -> "[${secs / 86400}d] "
+                }
+                "$tag${l.name.take(36)} | ${l.provider.take(12)}"
+            }
+            val spinner = findViewById<Spinner>(R.id.spinner_launch)
+            suppressLaunchSelect = true
+            val emptyMsg = when {
+                launchProvider.isFetching -> "Fetching..."
+                historic && historicQuery.isNotBlank() -> "No historic match: " + historicQuery.take(18)
+                historic -> "No historic entries yet"
+                liveOnly.isEmpty() && launchProvider.lastError != null ->
+                    "0 live | ${launchProvider.lastError}"
+                liveOnly.isEmpty() ->
+                    "0 live in cache | ${launchProvider.lastStatus}"
+                else -> "0 in window (live cache=${liveOnly.size}) | try 1 MO / 6 MO"
+            }
+            spinner.adapter = ArrayAdapter(
+                this,
+                android.R.layout.simple_spinner_dropdown_item,
+                if (labels.isEmpty()) listOf(emptyMsg) else labels
+            )
+            val idx = launchList.indexOfFirst { it.id == prefs.telemetryLaunchId }
+            if (idx >= 0) spinner.setSelection(idx, false)
+            // Stamp 55: onItemSelected often fires after this frame  -  hold suppress until post.
+            spinner.post { spinner.post { suppressLaunchSelect = false } }
+
+            val extra = if (!historic) {
+                " | ${launchList.size} shown | ${liveOnly.size} in window"
+            } else {
+                " | ${launchList.size} historic"
+            }
+            updateLaunchStatus(launchProvider.lastStatus + extra)
+            refreshStatusLine()
+        } catch (e: Exception) {
+            Log.e("CCOS.Main", "populateLaunchSpinner: ${e.message}", e)
+            try {
+                updateLaunchStatus("LIST EX | ${e.message}")
+            } catch (_: Exception) {}
+        } finally {
+            populateDepth--
         }
-        updateLaunchStatus(launchProvider.lastStatus + extra)
-        refreshStatusLine()
     }
 
     private fun refreshStatusLine() {

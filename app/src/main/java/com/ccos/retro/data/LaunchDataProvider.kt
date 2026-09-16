@@ -47,6 +47,8 @@ class LaunchDataProvider {
         private val historicSearchCache = AtomicReference<List<LaunchSnapshot>>(emptyList())
         @Volatile private var lastHistoricSearchQ: String = ""
         @Volatile private var lastHistoricSearchMs: Long = 0L
+        /** Stamp 107: search in-flight — separate from catalog sharedFetching. */
+        @Volatile private var historicSearching: Boolean = false
         private const val historicSearchMinIntervalMs = 8_000L
         private const val HISTORIC_DEFAULT_N = 20
         private const val HISTORIC_SEARCH_YEAR_MS = 365L * 24L * 3600L * 1000L
@@ -163,8 +165,9 @@ class LaunchDataProvider {
     fun historicSearchCacheSize(): Int = historicSearchCache.get().size
 
     /**
-     * Stamp 106: LL2 previous/search lookback ~1 year. Throttled. No 2yr.
-     * Call from HISTORIC search UI; demos stay local-only.
+     * Stamp 106/107: LL2 previous/search lookback ~1 year. Throttled. No 2yr.
+     * Stamp 107: uses historicSearching (NOT sharedFetching) so catalog refresh is untouched.
+     * Exceptions → sharedStatus; never crash the process.
      */
     fun requestHistoricSearch(query: String, onDone: (() -> Unit)? = null) {
         val q = query.trim()
@@ -181,43 +184,52 @@ class LaunchDataProvider {
             onDone?.invoke()
             return
         }
-        if (sharedFetching) {
+        if (historicSearching) {
             onDone?.invoke()
             return
         }
-        sharedFetching = true
+        historicSearching = true
         sharedStatus = "Historic search | $q | 1yr..."
         executor.execute {
             try {
-                val gte = isoFormat.format(java.util.Date(now - HISTORIC_SEARCH_YEAR_MS))
-                val enc = URLEncoder.encode(q, "UTF-8")
-                val prod = "https://ll.thespacedevs.com/2.2.0/launch/previous/?limit=40&mode=detailed&search=$enc&net__gte=$gte"
-                val dev = "https://lldev.thespacedevs.com/2.2.0/launch/previous/?limit=40&mode=detailed&search=$enc&net__gte=$gte"
-                var hit = fetchList(prod, "ll2-search")
-                var src = "ll2-search"
-                if (hit == null) {
-                    hit = fetchList(dev, "lldev-search")
-                    if (hit != null) src = "lldev-search"
-                }
-                if (hit != null && hit.launches.size < 12 && !hit.nextUrl.isNullOrBlank()) {
-                    val more = fetchList(hit.nextUrl!!, src)
-                    if (more != null) {
-                        val merged = (hit.launches + more.launches).distinctBy { it.id }
-                        hit = hit.copy(launches = merged)
+                try {
+                    val gte = isoFormat.format(java.util.Date(now - HISTORIC_SEARCH_YEAR_MS))
+                    val enc = URLEncoder.encode(q, "UTF-8")
+                    val prod = "https://ll.thespacedevs.com/2.2.0/launch/previous/?limit=40&mode=detailed&search=$enc&net__gte=$gte"
+                    val dev = "https://lldev.thespacedevs.com/2.2.0/launch/previous/?limit=40&mode=detailed&search=$enc&net__gte=$gte"
+                    var hit = fetchList(prod, "ll2-search")
+                    var src = "ll2-search"
+                    if (hit == null) {
+                        hit = fetchList(dev, "lldev-search")
+                        if (hit != null) src = "lldev-search"
                     }
-                }
-                if (hit != null) {
-                    historicSearchCache.set(hit.launches.filter { !it.id.startsWith("demo-") })
-                    lastHistoricSearchQ = q
-                    lastHistoricSearchMs = System.currentTimeMillis()
-                    sharedStatus = "SEARCH OK | q=$q | n=${historicSearchCache.get().size} | $src"
-                    sharedError = null
-                } else {
-                    sharedStatus = "SEARCH FAIL | q=$q | ${sharedError ?: "no data"}"
+                    val next = hit?.nextUrl?.trim()?.takeIf { it.startsWith("http") }
+                    if (hit != null && hit.launches.size < 12 && next != null) {
+                        val more = fetchList(next, src)
+                        if (more != null) {
+                            val merged = (hit.launches + more.launches).distinctBy { it.id }
+                            hit = hit.copy(launches = merged)
+                        }
+                    }
+                    if (hit != null) {
+                        historicSearchCache.set(hit.launches.filter { !it.id.startsWith("demo-") })
+                        lastHistoricSearchQ = q
+                        lastHistoricSearchMs = System.currentTimeMillis()
+                        sharedStatus = "SEARCH OK | q=$q | n=${historicSearchCache.get().size} | $src"
+                        sharedError = null
+                    } else {
+                        sharedStatus = "SEARCH FAIL | q=$q | ${sharedError ?: "no data"}"
+                    }
+                } catch (e: Exception) {
+                    sharedError = e.message ?: "search exception"
+                    sharedStatus = "SEARCH EX | ${e.javaClass.simpleName}: ${e.message}"
+                    Log.e(TAG, "historic search failed: ${e.message}", e)
                 }
             } finally {
-                sharedFetching = false
-                onDone?.invoke()
+                historicSearching = false
+                try { onDone?.invoke() } catch (e: Exception) {
+                    Log.e(TAG, "historic search onDone: ${e.message}", e)
+                }
             }
         }
     }
