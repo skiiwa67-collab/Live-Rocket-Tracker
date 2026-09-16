@@ -105,6 +105,12 @@ class RocketTelemetryModule(
                 // Always drop leftover HOLD so AUTO can browse; resolveTracked
                 // may re-arm a short wall-clock hold if something is actively watched.
                 releaseHold()
+                // Stamp 111: HISTORIC search + AUTO + LCK off → CURRENT live AUTO (Soyuz/next).
+                if (provider.hasActiveHistoricSearch() && prefs.telemetryListMode == "historical") {
+                    leaveHistoricSearchForLiveAuto()
+                    if (activePage == 7) activePage = 2
+                    return true
+                }
                 // Stamp 79: historic/demo LCK or HISTORICAL — do NOT clearSim / restart theater.
                 val hist = prefs.telemetryListMode == "historical" ||
                     (tracked?.let { it.id.startsWith("demo-") || it.isReplayable() } == true)
@@ -254,7 +260,8 @@ class RocketTelemetryModule(
         val loopAt = minOf(end, chipSec)
         if (next > loopAt) {
             // Stamp 80: LCK = same-bird chip loop; unlocked HISTORICAL advances via maybeAdvanceHistoricRoll.
-            next = if (prefs.telemetryPinned) -30f else loopAt
+            // Stamp 111: search-scoped LCK+AUTO advances set (not same-bird loop).
+            next = if (prefs.telemetryPinned && !searchScopedLckAutoCycle()) -30f else loopAt
         }
         simSecondsFromNet = next
         // reuse now from live-gate above
@@ -311,19 +318,51 @@ class RocketTelemetryModule(
         return launch.isReplayable(now)
     }
 
+    /** Stamp 111: HISTORIC full-catalog search interest active. */
+    private fun hasSearchScopedHistoric(): Boolean =
+        prefs.telemetryListMode == "historical" && provider.hasActiveHistoricSearch()
+
+    /**
+     * Stamp 111: HISTORIC + search + AUTO + LCK off → leave theater, CURRENT live AUTO.
+     * Clears search interest so empty-tape live rollover stays CURRENT-only.
+     */
+    private fun leaveHistoricSearchForLiveAuto() {
+        provider.clearHistoricSearchInterest()
+        prefs.telemetryListMode = "current"
+        prefs.telemetryPinned = false
+        prefs.telemetryAuto = true
+        releaseHold()
+        clearSim()
+        resolveTracked()
+    }
+
+    /** Stamp 111: LCK + AUTO + search → cycle search set (not same-bird chip loop). */
+    private fun searchScopedLckAutoCycle(): Boolean =
+        hasSearchScopedHistoric() && prefs.telemetryPinned && prefs.telemetryAuto
+
     /** Stamp 78: HISTORICAL same-launch chip loop — NEVER advance to next historic/Soyuz. */
     private fun maybeAdvanceHistoricRoll(now: Long) {
         if (prefs.telemetryListMode != "historical") return
-        // Stamp 80: LCK pins one bird. Unlocked AUTO cycles historic list.
-        if (prefs.telemetryPinned) return
+        val searchScoped = provider.hasActiveHistoricSearch()
+        // Stamp 111: search + AUTO + LCK off → leave to CURRENT live (never cycle search unlocked).
+        if (searchScoped && !prefs.telemetryPinned && prefs.telemetryAuto) {
+            leaveHistoricSearchForLiveAuto()
+            return
+        }
+        // Stamp 80/111: LCK alone pins one bird. LCK + AUTO + search cycles search set only.
+        if (prefs.telemetryPinned && !(searchScoped && prefs.telemetryAuto)) return
         val cur = tracked ?: return
         if (!cur.isReplayable(now) && !cur.id.startsWith("demo-")) return
         val tSec = effectiveSecondsFromNet(now)
         val limitSec = (prefs.telemetryHoldDurationMs / 1000L).toFloat()
         if (tSec < limitSec) return
-        val pool = provider.historicPool(now).filter { // Stamp 93: no live upcoming
-            it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) < -60
-        }.sortedBy { it.netMs }
+        val pool = if (searchScoped) {
+            provider.searchScopedHistoricPool(now)
+        } else {
+            provider.historicPool(now).filter { // Stamp 93: no live upcoming
+                it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) < -60
+            }.sortedBy { it.netMs }
+        }
         if (pool.isEmpty()) return
         val idx = pool.indexOfFirst { it.id == cur.id }
         val next = if (idx < 0) pool.first() else pool[(idx + 1) % pool.size]

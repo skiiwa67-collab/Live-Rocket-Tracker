@@ -104,6 +104,8 @@ class MainActivity : AppCompatActivity() {
             prefs.telemetryPinned = false
             telemetryModule.releaseHold()
             telemetryModule.clearSim()
+            launchProvider.clearHistoricSearchInterest()
+            historicQuery = ""
             telemetryModule.resolveTracked()
             populateLaunchSpinner()
             refreshTrackingUi()
@@ -162,6 +164,7 @@ class MainActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) {
                 // Stamp 107: local filter every key; network search debounced >=400ms.
                 historicQuery = s?.toString()?.trim().orEmpty()
+                launchProvider.setHistoricSearchInterest(historicQuery)
                 populateLaunchSpinner()
                 uiHandler.removeCallbacks(historicSearchRunnable)
                 uiHandler.postDelayed(historicSearchRunnable, historicSearchDebounceMs)

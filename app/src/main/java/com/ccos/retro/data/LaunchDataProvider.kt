@@ -51,6 +51,8 @@ class LaunchDataProvider {
         @Volatile private var historicSearching: Boolean = false
         /** Stamp 110: latest query while a search is in flight. */
         @Volatile private var queuedHistoricSearchQ: String? = null
+        /** Stamp 111: UI/search interest for AUTO/LCK scope (any catalog string). */
+        @Volatile private var historicSearchInterestQ: String = ""
         private const val historicSearchMinIntervalMs = 8_000L
         private const val HISTORIC_DEFAULT_N = 20
         private const val HISTORIC_SEARCH_YEAR_MS = 365L * 24L * 3600L * 1000L
@@ -61,6 +63,9 @@ class LaunchDataProvider {
     val isFetching: Boolean get() = sharedFetching
     /** Stamp 110: LL2 historic name-search in flight (not catalog refresh). */
     val isHistoricSearching: Boolean get() = historicSearching
+    /** Stamp 111: non-blank search interest (Starship / Falcon / Electron / ...). */
+    val historicSearchInterest: String get() = historicSearchInterestQ
+    fun hasActiveHistoricSearch(): Boolean = historicSearchInterestQ.isNotBlank()
     val lastError: String? get() = sharedError
     val lastSource: String get() = sharedSource
     val lastCount: Int get() = sharedCount
@@ -168,6 +173,32 @@ class LaunchDataProvider {
 
     fun historicSearchCacheSize(): Int = historicSearchCache.get().size
 
+    /** Stamp 111: sync CMD search box interest (does not wipe cache). */
+    fun setHistoricSearchInterest(query: String) {
+        historicSearchInterestQ = query.trim()
+    }
+
+    /** Stamp 111: release search interest for AUTO leave-to-live. */
+    fun clearHistoricSearchInterest() {
+        historicSearchInterestQ = ""
+        lastHistoricSearchQ = ""
+        queuedHistoricSearchQ = null
+        historicSearchCache.set(emptyList())
+    }
+
+    /**
+     * Stamp 111: cycle pool for HISTORIC search + LCK + AUTO.
+     * Uses interest query hits (cache + past token match) — any agency string.
+     */
+    fun searchScopedHistoricPool(now: Long = System.currentTimeMillis()): List<LaunchSnapshot> {
+        val q = historicSearchInterestQ.trim()
+        if (q.isBlank()) return emptyList()
+        return historicPool(now, q)
+            .filter { !it.id.startsWith("demo-") || "demo" in q.lowercase() }
+            .filter { it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) < -60 }
+            .sortedBy { it.netMs }
+    }
+
     /**
      * Stamp 106/107: LL2 previous/search lookback ~1 year. Throttled. No 2yr.
      * Stamp 107: uses historicSearching (NOT sharedFetching) so catalog refresh is untouched.
@@ -194,6 +225,7 @@ class LaunchDataProvider {
             sharedStatus = "Historic search queued | $q"
             return
         }
+        historicSearchInterestQ = q
         historicSearching = true
         sharedStatus = "Historic search | $q | 1yr..."
         executor.execute {
