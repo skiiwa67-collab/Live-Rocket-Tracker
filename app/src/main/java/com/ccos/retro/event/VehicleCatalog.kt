@@ -389,7 +389,7 @@ object VehicleCatalog {
             s1Prop = "—",
             nerdNote = "CZ-2D: 4×YF-20-family as YF-21C first stage; second stage YF-24C (YF-22C + verniers). Optional YZ-3 upper (YF-50D ~6.5 kN) when stacked. Hypergolic; not recoverable. Published Wikipedia/Orbit Codex — no invent.",
             verified = true,
-            drawFamily = "lm",
+            drawFamily = "cz2d",
             s1Pattern = EnginePattern.CHAMBER4,
             s2Pattern = EnginePattern.VACUUM1,
             s1Name = "1st (YF-21C)",
@@ -429,6 +429,45 @@ object VehicleCatalog {
             s1Name = "1st+boosters (YF-100)",
             s2Name = "2nd (YF-75H/DA)",
             s2EngineName = "YF-75H/DA"
+        ),
+
+
+        VehicleSpec(
+            id = "kz11",
+            family = "kz11",
+            tokens = listOf(
+                "kuaizhou 11",
+                "kuaizhou-11",
+                "kz-11",
+                "kz11",
+                "kz 11",
+                "expace kz-11",
+                "快舟十一号"
+            ),
+            s1Engines = 1,
+            s2Engines = 1,
+            recoverable = false,
+            methalox = false,
+            fuelName = "HTPB/APCP",
+            oxName = "solid",
+            boostbackLit = 0,
+            landingLit = 0,
+            engineName = "solid",
+            s1Thrust = "S1 solid",
+            s2Thrust = "S2-S4 solid",
+            ispVac = "-",
+            mixRatio = "solid grain",
+            chamberBar = "-",
+            s1Dry = "-",
+            s1Prop = "-",
+            nerdNote = "Kuaizhou-11 (ExPace): ALL-SOLID 4-stage paper-doll. Art vehicle_kz11_*. Grain=fuel ochre; ox empty. No propane pills.",
+            verified = true,
+            drawFamily = "kz11",
+            s1Pattern = EnginePattern.VACUUM1,
+            s2Pattern = EnginePattern.VACUUM1,
+            s1Name = "1st (solid)",
+            s2Name = "upper (S2-S4)",
+            s2EngineName = "solid"
         ),
 
         VehicleSpec(
@@ -783,6 +822,8 @@ object VehicleCatalog {
     /** Darren LM-8A stack silhouette base name under res/drawable (png/webp). */
     const val CZ8A_DRAWABLE = "vehicle_cz8a"
     const val CZ12_DRAWABLE = "vehicle_cz12"
+    const val KZ11_DRAWABLE = "vehicle_kz11"
+    const val CZ2D_DRAWABLE = "vehicle_cz2d"
 
     const val UPDATE_HEAD = "NEW VEHICLE · DATA UPDATE REQUIRED"
     const val UPDATE_BODY = "This rocket is not in the vehicle book yet. Drawing and numbers ship in a later update. We will not invent them."
