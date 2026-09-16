@@ -659,7 +659,12 @@ class RetroCommandWallpaperService : WallpaperService() {
                         for ((r, url) in vidLinkHits) {
                             if (r.contains(x, y)) {
                                 trackingSwipe = false
-                                openWebcast(url)
+                                // Tip 128: OTHER VID OPTIONS sentinel — YT/http still openWebcast unchanged.
+                                if (url.startsWith("lrt://vid-chooser")) {
+                                    openVidChooser(telemetryModule.tracked)
+                                } else {
+                                    openWebcast(url)
+                                }
                                 state.registerInteraction()
                                 return
                             }
@@ -861,6 +866,55 @@ class RetroCommandWallpaperService : WallpaperService() {
                 }
                 startActivity(intent)
             } catch (_: Exception) { }
+        }
+
+        /**
+         * Tip 128: OTHER VID OPTIONS — additive only.
+         * Does not change openWebcast http/YT success path. Non-YouTube LL2 urls → createChooser.
+         * Empty → soft Toast. Never force m.youtube.com. Never touch FloatingVideoWindow.
+         */
+        private fun openVidChooser(launch: com.ccos.retro.data.LaunchSnapshot?) {
+            val fresh = launch?.id?.let { id ->
+                telemetryModule.selectableLaunches().firstOrNull { it.id == id }
+            } ?: launch
+            val alts = fresh?.allWebcasts().orEmpty()
+                .map { it.url.trim() }
+                .filter { it.startsWith("http", ignoreCase = true) }
+                .filter { WebcastResolver.youtubeVideoId(it) == null }
+                .distinct()
+            if (alts.isEmpty()) {
+                try {
+                    android.widget.Toast.makeText(
+                        applicationContext,
+                        "No alternate webcasts",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                } catch (_: Exception) { }
+                return
+            }
+            try {
+                val primary = Intent(Intent.ACTION_VIEW, Uri.parse(alts.first())).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                val chooser = Intent.createChooser(primary, "Other vid options").apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    if (alts.size > 1) {
+                        val more = alts.drop(1).map { u ->
+                            Intent(Intent.ACTION_VIEW, Uri.parse(u))
+                        }.toTypedArray()
+                        putExtra(Intent.EXTRA_INITIAL_INTENTS, more)
+                    }
+                }
+                startActivity(chooser)
+            } catch (_: Exception) {
+                try {
+                    android.widget.Toast.makeText(
+                        applicationContext,
+                        "No alternate webcasts",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                } catch (_: Exception) { }
+            }
         }
 
 
@@ -6943,6 +6997,12 @@ class RetroCommandWallpaperService : WallpaperService() {
                     rows += Triple("$label   |   Click Me", watch, withLamp(cyan, lamp * 0.75f))
                 }
             }
+            // Tip 128: ALWAYS show OTHER VID OPTIONS (chooser / soft empty). Sentinel not http.
+            rows += Triple(
+                "OTHER VID OPTIONS   |   Click Me",
+                "lrt://vid-chooser",
+                withLamp(cyan, lamp * 0.80f)
+            )
             // HARD: plain YouTube search + home so private webcast never blocks search.
             val q = if (launch != null) WebcastResolver.missionQuery(launch) else "rocket launch"
             val searchUrl = "https://www.youtube.com/results?search_query=" +
