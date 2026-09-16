@@ -440,5 +440,7 @@ object WebcastResolver {
 data class LaunchListResult(
     val launches: List<LaunchSnapshot>,
     val fetchedAtMs: Long,
-    val source: String
+    val source: String,
+    /** Stamp 106: LL2 pagination next URL when present. */
+    val nextUrl: String? = null
 )

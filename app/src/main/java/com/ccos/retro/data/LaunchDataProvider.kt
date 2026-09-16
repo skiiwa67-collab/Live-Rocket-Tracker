@@ -5,6 +5,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
@@ -22,9 +23,9 @@ class LaunchDataProvider {
     companion object {
         private const val TAG = "CCOS.Launch"
         private const val DEV_UPCOMING = "https://lldev.thespacedevs.com/2.2.0/launch/upcoming/?limit=50&mode=detailed"
-        private const val DEV_PREVIOUS = "https://lldev.thespacedevs.com/2.2.0/launch/previous/?limit=30&mode=detailed"
+        private const val DEV_PREVIOUS = "https://lldev.thespacedevs.com/2.2.0/launch/previous/?limit=25&mode=detailed"
         private const val PROD_UPCOMING = "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=50&mode=detailed"
-        private const val PROD_PREVIOUS = "https://ll.thespacedevs.com/2.2.0/launch/previous/?limit=30&mode=detailed"
+        private const val PROD_PREVIOUS = "https://ll.thespacedevs.com/2.2.0/launch/previous/?limit=25&mode=detailed"
 
         private val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
             timeZone = TimeZone.getTimeZone("UTC")
@@ -41,6 +42,14 @@ class LaunchDataProvider {
         @Volatile var sharedError: String? = null
         @Volatile var sharedSource: String = " - "
         @Volatile var sharedCount: Int = 0
+
+        /** Stamp 106: last historic name-search hits (1yr window). */
+        private val historicSearchCache = AtomicReference<List<LaunchSnapshot>>(emptyList())
+        @Volatile private var lastHistoricSearchQ: String = ""
+        @Volatile private var lastHistoricSearchMs: Long = 0L
+        private const val historicSearchMinIntervalMs = 8_000L
+        private const val HISTORIC_DEFAULT_N = 20
+        private const val HISTORIC_SEARCH_YEAR_MS = 365L * 24L * 3600L * 1000L
     }
 
     // Instance mirrors of shared cache state (Activity + Wallpaper share one pool)
@@ -92,18 +101,121 @@ class LaunchDataProvider {
         return out
     }
 
-    /** Stamp 93: demos + previous only — never live upcoming birds. */
-    fun historicPool(now: Long = System.currentTimeMillis()): List<LaunchSnapshot> {
+    /**
+     * Stamp 106: DEFAULT = real past only, newest-first, ~20.
+     * Demos only when [query] contains "demo" (case-insensitive).
+     * Name search merges local past + 1yr LL2 search cache (never invent).
+     */
+    fun historicPool(now: Long = System.currentTimeMillis(), query: String = ""): List<LaunchSnapshot> {
+        val q = query.trim()
+        val qLower = q.lowercase()
+        val wantDemo = "demo" in qLower
+        val tokens = qLower.split(Regex("\\s+")).filter { it.isNotBlank() && it != "demo" }
         val seen = linkedSetOf<String>()
         val out = mutableListOf<LaunchSnapshot>()
-        for (l in demoCatalog + pastCache.get()?.launches.orEmpty()) {
-            if (l.id in seen) continue
-            if (!l.id.startsWith("demo-") && l.secondsToNet(now) > 0 && !l.isReplayable(now)) continue
+
+        fun blob(l: LaunchSnapshot): String =
+            "${l.name} ${l.rocketName} ${l.provider} ${l.pad} ${l.location} ${l.statusName} ${l.missionName} ${l.holdReason.orEmpty()}".lowercase()
+
+        fun matchTokens(l: LaunchSnapshot): Boolean {
+            if (tokens.isEmpty()) return true
+            val b = blob(l)
+            return tokens.all { it in b }
+        }
+
+        fun add(l: LaunchSnapshot) {
+            if (l.id in seen) return
             seen += l.id
             out += l
         }
+
+        if (wantDemo) {
+            for (l in demoCatalog) {
+                if (tokens.isEmpty() || matchTokens(l)) add(l)
+            }
+        }
+
+        val pastSorted = pastCache.get()?.launches.orEmpty()
+            .filter { !it.id.startsWith("demo-") }
+            .filter { it.secondsToNet(now) <= 0 || it.isReplayable(now) }
+            .sortedByDescending { it.netMs }
+
+        if (q.isBlank()) {
+            pastSorted.take(HISTORIC_DEFAULT_N).forEach { add(it) }
+            return out
+        }
+
+        for (l in pastSorted) {
+            if (matchTokens(l)) add(l)
+        }
+        for (l in historicSearchCache.get().sortedByDescending { it.netMs }) {
+            if (matchTokens(l)) add(l)
+        }
         return out
     }
+
+    fun historicSearchCacheSize(): Int = historicSearchCache.get().size
+
+    /**
+     * Stamp 106: LL2 previous/search lookback ~1 year. Throttled. No 2yr.
+     * Call from HISTORIC search UI; demos stay local-only.
+     */
+    fun requestHistoricSearch(query: String, onDone: (() -> Unit)? = null) {
+        val q = query.trim()
+        val qLower = q.lowercase()
+        if (q.isBlank() || ("demo" in qLower && qLower.replace("demo", "").trim().isEmpty())) {
+            onDone?.invoke()
+            return
+        }
+        val now = System.currentTimeMillis()
+        if (q.equals(lastHistoricSearchQ, ignoreCase = true) &&
+            now - lastHistoricSearchMs < historicSearchMinIntervalMs &&
+            historicSearchCache.get().isNotEmpty()
+        ) {
+            onDone?.invoke()
+            return
+        }
+        if (sharedFetching) {
+            onDone?.invoke()
+            return
+        }
+        sharedFetching = true
+        sharedStatus = "Historic search | $q | 1yr..."
+        executor.execute {
+            try {
+                val gte = isoFormat.format(java.util.Date(now - HISTORIC_SEARCH_YEAR_MS))
+                val enc = URLEncoder.encode(q, "UTF-8")
+                val prod = "https://ll.thespacedevs.com/2.2.0/launch/previous/?limit=40&mode=detailed&search=$enc&net__gte=$gte"
+                val dev = "https://lldev.thespacedevs.com/2.2.0/launch/previous/?limit=40&mode=detailed&search=$enc&net__gte=$gte"
+                var hit = fetchList(prod, "ll2-search")
+                var src = "ll2-search"
+                if (hit == null) {
+                    hit = fetchList(dev, "lldev-search")
+                    if (hit != null) src = "lldev-search"
+                }
+                if (hit != null && hit.launches.size < 12 && !hit.nextUrl.isNullOrBlank()) {
+                    val more = fetchList(hit.nextUrl!!, src)
+                    if (more != null) {
+                        val merged = (hit.launches + more.launches).distinctBy { it.id }
+                        hit = hit.copy(launches = merged)
+                    }
+                }
+                if (hit != null) {
+                    historicSearchCache.set(hit.launches.filter { !it.id.startsWith("demo-") })
+                    lastHistoricSearchQ = q
+                    lastHistoricSearchMs = System.currentTimeMillis()
+                    sharedStatus = "SEARCH OK | q=$q | n=${historicSearchCache.get().size} | $src"
+                    sharedError = null
+                } else {
+                    sharedStatus = "SEARCH FAIL | q=$q | ${sharedError ?: "no data"}"
+                }
+            } finally {
+                sharedFetching = false
+                onDone?.invoke()
+            }
+        }
+    }
+
 
     /**
      * CURRENT / CMD live picker (stamp 55): upcoming within horizon +
@@ -219,6 +331,9 @@ class LaunchDataProvider {
                 // Stamp 72: upcoming fetch fail/null — KEEP prior cache; never cache.set(empty).
                 if (upcoming == null) {
                     sharedError = lastError ?: "upcoming fetch failed"
+                    val pastN = previous?.launches?.size ?: pastCache.get()?.launches?.size ?: 0
+                    // Stamp 106: past already replaced when previous != null; surface HTTP error.
+                    val pastNote = if (previous != null) "past=$pastN OK" else "past KEEP/FAIL"
                     val kept = upsertMergeLive(priorList, null, pastCache.get()?.launches)
                     if (kept.isNotEmpty()) {
                         val keptResult = LaunchListResult(
@@ -229,11 +344,11 @@ class LaunchDataProvider {
                         cache.set(keptResult)
                         sharedCount = kept.size
                         sharedSource = keptResult.source
-                        sharedStatus = "KEEP | prior=${kept.size} | fetch fail | $source"
+                        sharedStatus = "KEEP | prior=${kept.size} | upcoming FAIL | $pastNote | ${sharedError} | $source"
                         Log.w(TAG, lastStatus)
                         onDone?.invoke(keptResult)
                     } else {
-                        sharedStatus = "KEEP EMPTY | $lastError | past=${previous?.launches?.size ?: 0}"
+                        sharedStatus = "KEEP EMPTY | upcoming FAIL | $pastNote | ${sharedError} | $source"
                         Log.w(TAG, lastStatus)
                         onDone?.invoke(cache.get())
                     }
@@ -258,28 +373,45 @@ class LaunchDataProvider {
 
     private fun fetchList(urlStr: String, sourceTag: String): LaunchListResult? {
         return try {
-            val conn = (URL(urlStr).openConnection() as HttpURLConnection).apply {
-                connectTimeout = 12_000
-                readTimeout = 12_000
-                requestMethod = "GET"
-                setRequestProperty("Accept", "application/json")
-                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.41 (Android; upcoming+previous)")
+            fun once(): Pair<Int, String?> {
+                val conn = (URL(urlStr).openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 12_000
+                    readTimeout = 12_000
+                    requestMethod = "GET"
+                    setRequestProperty("Accept", "application/json")
+                    setRequestProperty("User-Agent", "LiveRocketTracker/1.0.96 (Android; upcoming+previous)")
+                }
+                val code = conn.responseCode
+                if (code != 200) {
+                    val errBody = try { conn.errorStream?.bufferedReader()?.use { it.readText() } } catch (_: Exception) { null }
+                    return code to errBody
+                }
+                val body = conn.inputStream.bufferedReader().use { it.readText() }
+                return 200 to body
             }
-            val code = conn.responseCode
+            var (code, bodyOrErr) = once()
+            // Stamp 106: one 429 backoff — do not hammer LL2.
+            if (code == 429) {
+                sharedError = "HTTP 429 throttle"
+                Log.w(TAG, "HTTP 429 from $urlStr — backoff 3.5s")
+                try { Thread.sleep(3500L) } catch (_: InterruptedException) {}
+                val retry = once()
+                code = retry.first
+                bodyOrErr = retry.second
+            }
             if (code != 200) {
-                val errBody = try { conn.errorStream?.bufferedReader()?.use { it.readText() } } catch (_: Exception) { null }
-                sharedError = "HTTP $code${errBody?.let { " | ${it.take(80)}" } ?: ""}"
-                Log.w(TAG, "HTTP $code from $urlStr | $errBody")
+                sharedError = "HTTP $code${bodyOrErr?.let { " | ${it.take(80)}" } ?: ""}"
+                Log.w(TAG, "HTTP $code from $urlStr | $bodyOrErr")
                 return null
             }
-            val body = conn.inputStream.bufferedReader().use { it.readText() }
-            parseList(body, sourceTag)
+            parseList(bodyOrErr ?: return null, sourceTag)
         } catch (e: Exception) {
             sharedError = e.message ?: "network error"
             Log.e(TAG, "Fetch failed: ${e.message}")
             null
         }
     }
+
 
 
     private fun parseList(json: String, source: String): LaunchListResult {
@@ -345,7 +477,8 @@ class LaunchDataProvider {
                 )
             )
         }
-        return LaunchListResult(list, System.currentTimeMillis(), source)
+        val next = strOrNull(root, "next")
+        return LaunchListResult(list, System.currentTimeMillis(), source, nextUrl = next)
     }
 
 

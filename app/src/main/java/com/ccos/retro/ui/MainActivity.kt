@@ -272,11 +272,22 @@ class MainActivity : AppCompatActivity() {
         val historic = prefs.telemetryListMode == "historical"
 
         launchList = if (historic) {
-            val pool = launchProvider.historicPool(now).filter {
-                it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) < -60
+            // Stamp 106: default ~20 real past newest-first; demos only if query has "demo".
+            // Name search triggers 1yr LL2 previous/search (throttled in provider).
+            val q = historicQuery
+            if (q.isNotBlank() && "demo" !in q.lowercase()) {
+                launchProvider.requestHistoricSearch(q) {
+                    runOnUiThread {
+                        if (prefs.telemetryListMode == "historical") populateLaunchSpinner()
+                        updateLaunchStatus(launchProvider.lastStatus)
+                    }
+                }
             }
-            val filtered = pool.filter { matchesHistoric(it, historicQuery) }
-            if (historicQuery.isNotBlank()) filtered.take(80) else filtered.take(40)
+            val pool = launchProvider.historicPool(now, q).filter {
+                // Pool already gates demos; keep replayable / past for edge cases.
+                it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) <= 0
+            }
+            if (q.isNotBlank()) pool.take(80) else pool.take(20)
         } else {
             val keepId = prefs.telemetryLaunchId
             // Stamp 55: CURRENT keep only HOLD/in-flight/webcast/T+/upcoming  -  past -> HISTORIC.
