@@ -464,41 +464,61 @@ class LaunchDataProvider {
     }
 
     /**
-     * Tip 121: for every upcoming (cap), force display NET from prod-by-id or vault.
-     * lldev body OK; NET/window/status never from lldev when prod/vault available.
+     * Tip 121/122 Chris HARD: EVERY live upcoming — customer miss risk if lldev NET slips.
+     * Phase1 vault overlay all. Phase2 prod-by-id for all within 14d + any missing vault + F14.
+     * lldev body OK; display NET/window/status never from lldev when prod/vault/prior-good exists.
      */
     private fun enforceProdNetAuthority(
         list: LaunchListResult,
         incomingSource: String
     ): LaunchListResult {
         val now = System.currentTimeMillis()
+        val fourteenDaysSec = 14L * 24L * 3600L
         val priorById = cache.get()?.launches?.associateBy { it.id } ?: emptyMap()
-        val upcoming = list.launches.filter { !it.id.startsWith("demo-") && it.secondsToNet(now) > -3600 }
-        // Always include F14; then soonest 20
-        val must = upcoming.filter { it.id == F14_LL2_ID || isStarshipFlight14(it) }
-        val soon = upcoming.sortedBy { it.netMs }.take(20)
-        val ranked = (must + soon).distinctBy { it.id }
         val byId = LinkedHashMap<String, LaunchSnapshot>()
         for (l in list.launches) byId[l.id] = l
-        var fromProd = 0
+
+        val upcoming = list.launches.filter { !it.id.startsWith("demo-") && it.secondsToNet(now) > -3600 }
+
+        // Phase 1: vault overlay EVERY upcoming (and any cached live) — never leave bare lldev NET.
         var fromVault = 0
-        for (l in ranked) {
+        for (l in upcoming) {
+            val before = byId[l.id] ?: l
+            val after = overlayVault(before)
+            if (after.netMs != before.netMs || after.windowStartMs != before.windowStartMs) fromVault++
+            byId[l.id] = after
+        }
+
+        // Phase 2: prod-by-id for everyone who still needs authority
+        val needFetch = upcoming.filter { l ->
+            val cur = byId[l.id] ?: l
+            val secs = cur.secondsToNet(now)
+            val noVault = ProdNetVault.get(l.id) == null
+            val near = secs in 0..fourteenDaysSec
+            val critical = l.id == F14_LL2_ID || isStarshipFlight14(cur)
+            noVault || near || critical || isLldevSourceTag(incomingSource)
+        }.sortedBy { (byId[it.id] ?: it).netMs }
+
+        var fromProd = 0
+        for (l in needFetch) {
             val prior = priorById[l.id]
             val prod = fetchLaunchById(l.id)
             val before = byId[l.id] ?: l
             val after = preferProdNet(before, prod, prior, incomingSource)
             if (prod != null && after.netMs == prod.netMs) fromProd++
-            else if (ProdNetVault.get(l.id) != null && after.netMs == ProdNetVault.get(l.id)!!.netMs) fromVault++
+            else if (ProdNetVault.get(l.id) != null) fromVault++
             byId[l.id] = after
-        }
-        // Also overlay vault on ALL remaining upcoming that we did not fetch (no lldev NET left unprotected)
-        for (l in list.launches) {
-            if (l.id in ranked.map { it.id }.toSet()) continue
-            if (l.id.startsWith("demo-")) continue
-            if (isLldevSourceTag(incomingSource)) {
-                byId[l.id] = overlayVault(l)
+            // Tip 122: log every near-term bird NET source (customer miss guard)
+            if (after.secondsToNet(now) in 0..fourteenDaysSec) {
+                val days = after.secondsToNet(now) / 86400.0
+                Log.i(
+                    TAG,
+                    "LIVE NET id=${after.id.take(8)} src=${if (prod != null) "prod" else if (ProdNetVault.get(after.id) != null) "vault" else "fallback"} " +
+                        "~[${String.format(java.util.Locale.US, "%.1f", days)}d] ${after.name.take(40)}"
+                )
             }
         }
+
         val src = when {
             isProdSourceTag(incomingSource) -> {
                 ProdNetVault.rememberProdList(list.launches.filter { !it.id.startsWith("demo-") })
@@ -508,10 +528,9 @@ class LaunchDataProvider {
             fromVault > 0 -> "lldev+vault-net"
             else -> incomingSource
         }
-        // Log F14 specifically
         byId[F14_LL2_ID]?.let { logF14Net(it, src) }
         byId.values.firstOrNull { isStarshipFlight14(it) }?.let { logF14Net(it, src) }
-        sharedStatus = "prod-NET auth | fetch=$fromProd vault=$fromVault | $src"
+        sharedStatus = "prod-NET auth ALL | fetch=$fromProd vaultHits=$fromVault need=${needFetch.size}/${upcoming.size} | $src"
         return LaunchListResult(byId.values.sortedBy { it.netMs }, System.currentTimeMillis(), src)
     }
 
@@ -759,7 +778,7 @@ class LaunchDataProvider {
                 readTimeout = 10_000
                 requestMethod = "GET"
                 setRequestProperty("Accept", "application/json")
-                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.111 (Android; tip121-prod-net)")
+                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.112 (Android; tip122-all-live-net)")
             }
             val code = conn.responseCode
             if (code != 200) {
