@@ -429,6 +429,11 @@ class LaunchDataProvider {
                         source = upcoming.source
                     }
                 }
+                // Stamp 115: always prod-overlay critical NETs (F14) even when upcoming came from prod/cache.
+                if (upcoming != null) {
+                    upcoming = ensureCriticalNetsFromProd(upcoming)
+                    source = upcoming.source
+                }
                 var previous = fetchList(PROD_PREVIOUS, "ll2")
                 if (previous == null) {
                     previous = fetchList(DEV_PREVIOUS, "lldev")
@@ -542,12 +547,45 @@ class LaunchDataProvider {
      * Stamp 113: lldev catalog can carry stale NET. For soonest birds, try prod by id
      * and adopt prod net/window when available. Cap to avoid hammering LL2.
      */
+    /**
+     * Stamp 115: F14 was outside soonest-12 enrich window → stale lldev Sep18 [1d] stuck.
+     * Always prod-refresh Starship Flight 14 (and other named critical) NETs.
+     */
+    private fun ensureCriticalNetsFromProd(list: LaunchListResult): LaunchListResult {
+        val now = System.currentTimeMillis()
+        val crit = list.launches.filter { l ->
+            if (l.id.startsWith("demo-")) return@filter false
+            if (l.secondsToNet(now) <= 0) return@filter false
+            val n = "${l.name} ${l.rocketName} ${l.missionName}".lowercase()
+            ("starship" in n && ("flight 14" in n || "flight-14" in n || "ift-14" in n || "ift 14" in n))
+        }
+        if (crit.isEmpty()) return list
+        val byId = LinkedHashMap<String, LaunchSnapshot>()
+        for (l in list.launches) byId[l.id] = l
+        var patched = 0
+        for (l in crit) {
+            val prod = fetchLaunchById(l.id) ?: continue
+            if (prod.netMs != l.netMs) patched++
+            byId[l.id] = prod
+        }
+        if (patched == 0) return list
+        val src = if (list.source.contains("prod-net")) list.source else "${list.source}+prod-net"
+        sharedStatus = "critical NET enrich | patched=$patched | $src"
+        return LaunchListResult(byId.values.sortedBy { it.netMs }, System.currentTimeMillis(), src)
+    }
+
     private fun enrichNetsFromProd(lldev: LaunchListResult): LaunchListResult {
         val now = System.currentTimeMillis()
-        val ranked = lldev.launches
+        val soon = lldev.launches
             .filter { !it.id.startsWith("demo-") && it.secondsToNet(now) > 0 }
             .sortedBy { it.netMs }
             .take(12)
+        // Stamp 115: also force-include Starship Flight 14 even if not in soonest 12.
+        val must = lldev.launches.filter { l ->
+            val n = "${l.name} ${l.rocketName}".lowercase()
+            "starship" in n && ("flight 14" in n || "flight-14" in n)
+        }
+        val ranked = (soon + must).distinctBy { it.id }
         if (ranked.isEmpty()) return lldev
         val byId = LinkedHashMap<String, LaunchSnapshot>()
         for (l in lldev.launches) byId[l.id] = l
@@ -572,7 +610,7 @@ class LaunchDataProvider {
                 readTimeout = 10_000
                 requestMethod = "GET"
                 setRequestProperty("Accept", "application/json")
-                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.103 (Android; net-enrich)")
+                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.105 (Android; net-enrich)")
             }
             val code = conn.responseCode
             if (code != 200) {

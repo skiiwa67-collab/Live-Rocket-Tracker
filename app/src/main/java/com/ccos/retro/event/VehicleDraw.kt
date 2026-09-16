@@ -275,7 +275,9 @@ object VehicleDraw {
         } ?: return false
         val hullSrc = stageHullSrcRect(artId, hull, stage, separated)
         // Wide maxSlotW: letterbox via height shrink inside artDestRect; NEVER horizontal hull clip.
-        val dest = artDestRect(hull, cx, baseY, h, maxSlotW = h * 0.55f, src = hullSrc)
+        // Stamp 115: CZ-12 (and friends) fill look plates — was 0.55 → tiny stack FAIL.
+        val plateCap = if (artId == "cz12" || artId == "cz8a" || artId == "lm" || artId == "lm5") h * 0.92f else h * 0.55f
+        val dest = artDestRect(hull, cx, baseY, h, maxSlotW = plateCap, src = hullSrc)
         val glassA = (alpha * 0.88f).coerceIn(0.55f, 0.95f)
         try {
             val usedMasks = drawStageTankMasks(
@@ -340,6 +342,8 @@ object VehicleDraw {
     ): Boolean {
         // Stamp 99: F9 NEVER assembled parts (Chris: STG2 right-chop / tiny). Continuous letterbox only.
         if (artId == "f9") return false
+        // Stamp 115: CZ-12 pre-sep MUST be continuous stack (Chris FAIL: tiny upper floating + gap).
+        if (artId == "cz12" && !separated) return false
         // Prefer shell hulls when Darren ships them; else plain part; else _s1/_s2 aliases.
         val booster = if (artId == "soyuz" || artId == "proton") {
             firstBitmap(
@@ -381,7 +385,7 @@ object VehicleDraw {
         var drewStageTanks = false
         if (wantB && booster != null) {
             val bH = h * bFrac
-            val destB = artDestRect(booster, cx, baseY, bH, maxSlotW = h * 0.72f)
+            val destB = artDestRect(booster, cx, baseY, bH, maxSlotW = h * 0.92f)
             // Stamp 94: F9 booster/stack already has Merlin side-profile bells — skip octaweb overlay.
             if (engRing != null && artId != "f9") {
                 val eH = bH * 0.14f
@@ -473,8 +477,14 @@ object VehicleDraw {
         }
         if (wantU && upper != null) {
             val uH = h * uFrac
-            val uBase = if (wantB && booster != null) baseY - h * bFrac else baseY
-            val destU = artDestRect(upper, cx, uBase, uH, maxSlotW = h * 0.72f)
+            // Stamp 115: attach flush to actual booster top (artDestRect may shrink H → gap if using h*bFrac).
+            val uBase = if (wantB && booster != null) {
+                // destB was drawn above; recompute same dest to read top
+                val bH2 = h * bFrac
+                val destB2 = artDestRect(booster, cx, baseY, bH2, maxSlotW = h * 0.92f)
+                destB2.top + (h * 0.008f) // slight overlap so no hairline gap
+            } else baseY
+            val destU = artDestRect(upper, cx, uBase, uH, maxSlotW = h * 0.92f)
             // Stamp 97: F9 MVac bell baked into ship/upper/s2 hull — skip engShip overlay (no double-bell).
             if (engShip != null && artId != "f9") {
                 val eH = uH * 0.16f
