@@ -765,9 +765,9 @@ object VehicleCatalog {
             chamberBar = "-",
             s1Dry = "-",
             s1Prop = "-",
-            nerdNote = "Orienspace Gravity-1. All-solid: 4x M1 strap-ons + M1 vac core + M2 + M3. Barge sea launch (Yellow/East China Sea). ~6.5 t LEO / ~4.2 t SSO; ~42 m / ~3.35 m class. Maiden 2024-01-11 Yunyao sats. Unpublished fields left Unknown.",
+            nerdNote = "Orienspace Gravity-1. All-solid: 4x M1 strap-ons + M1 vac core + M2 + M3. Barge sea launch (Yellow/East China Sea). ~6.5 t LEO / ~4.2 t SSO; ~42 m / ~3.35 m class. Maiden 2024-01-11 Yunyao sats. Stamp 119: art vehicle_gravity1_* all-solid HTPB ochre (ox empty). Unpublished fields left Unknown.",
             verified = true,
-            drawFamily = "generic",
+            drawFamily = "gravity1",
             s1Pattern = EnginePattern.UNKNOWN,
             s2Pattern = EnginePattern.UNKNOWN,
             s1Name = "GRAVITY-1 CORE + STRAPONS",
@@ -823,6 +823,7 @@ object VehicleCatalog {
     const val CZ8A_DRAWABLE = "vehicle_cz8a"
     const val CZ12_DRAWABLE = "vehicle_cz12"
     const val ZQ3_DRAWABLE = "vehicle_zq3"
+    const val GRAVITY1_DRAWABLE = "vehicle_gravity1"
     const val KZ11_DRAWABLE = "vehicle_kz11"
     const val CZ2D_DRAWABLE = "vehicle_cz2d"
 

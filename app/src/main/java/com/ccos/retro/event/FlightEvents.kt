@@ -384,7 +384,7 @@ object MissionFacts {
 
     fun isZhuque3(launch: LaunchSnapshot?): Boolean {
         val n = blob(launch) + " " + VehicleCatalog.blob(launch)
-        return "zhuque-3" in n || "zhuque 3" in n || "zq-3" in n || "zq3" in n
+        return "zhuque-3" in n || "zhuque 3" in n || "zq-3" in n || "zq3", "gravity1" in n
     }
 
     fun isSatMission(launch: LaunchSnapshot?): Boolean = true
