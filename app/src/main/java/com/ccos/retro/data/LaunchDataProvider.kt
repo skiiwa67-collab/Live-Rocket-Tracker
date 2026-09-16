@@ -467,99 +467,107 @@ class LaunchDataProvider {
     }
 
     /**
-     * Tip 123 ROOT (Chris soft-FAIL 122):
-     * - Never rememberProdList when source has lldev (vault poison).
-     * - F14 / critical prod-by-id FIRST before other fetches (429 was killing F14 last).
-     * - Cap secondary fetches; vault overlay everyone; reject lldev NET when vault/prod exists.
+     * Tip 124 ROOT (Chris soft-FAIL: TRACKING == lldev body exactly):
+     * - Pure prod catalog: vault stamp + overlay only (no mass by-id).
+     * - Forced lldev: F14/critical prod-by-id FIRST AND ONLY (no other fetches → no 429 kill).
+     * - Caller must not cache.set until sealCriticalNets returns true for F14.
      */
     private fun enforceProdNetAuthority(
         list: LaunchListResult,
         incomingSource: String
     ): LaunchListResult {
         val now = System.currentTimeMillis()
-        val fourteenDaysSec = 14L * 24L * 3600L
         val priorById = cache.get()?.launches?.associateBy { it.id } ?: emptyMap()
         val byId = LinkedHashMap<String, LaunchSnapshot>()
         for (l in list.launches) byId[l.id] = l
 
         val upcoming = list.launches.filter { !it.id.startsWith("demo-") && it.secondsToNet(now) > -3600 }
 
-        // Pure prod list only — stamp into vault (never lldev hybrid).
         if (isProdSourceTag(incomingSource)) {
             ProdNetVault.rememberProdList(upcoming)
+            var fromVault = 0
+            for (l in upcoming) {
+                val before = byId[l.id] ?: l
+                val after = overlayVault(before)
+                if (after.netMs != before.netMs) fromVault++
+                byId[l.id] = after
+            }
+            // Still pin F14 by-id once when missing from vault (edge)
+            val f14 = byId[F14_LL2_ID] ?: upcoming.firstOrNull { isStarshipFlight14(it) }
+            if (f14 != null && ProdNetVault.get(f14.id) == null) {
+                val prod = fetchLaunchById(f14.id)
+                if (prod != null) {
+                    byId[f14.id] = preferProdNet(byId[f14.id] ?: f14, prod, priorById[f14.id], incomingSource)
+                }
+            }
+            for (l in upcoming) byId[l.id] = overlayVault(byId[l.id] ?: l)
+            val src = "$incomingSource+vault"
+            byId[F14_LL2_ID]?.let { logF14Net(it, "FINAL-$src") }
+            sharedStatus = "prod catalog | vault=$fromVault | $src"
+            Log.i(TAG, lastStatus)
+            return LaunchListResult(byId.values.sortedBy { it.netMs }, System.currentTimeMillis(), src)
         }
 
-        // Phase 1: vault overlay EVERY upcoming
+        // ---- Forced lldev body: critical ONLY ----
         var fromVault = 0
         for (l in upcoming) {
             val before = byId[l.id] ?: l
             val after = overlayVault(before)
-            if (after.netMs != before.netMs || after.windowStartMs != before.windowStartMs) fromVault++
+            if (after.netMs != before.netMs) fromVault++
             byId[l.id] = after
         }
 
-        fun needsProdFetch(l: LaunchSnapshot): Boolean {
-            val cur = byId[l.id] ?: l
-            val noVault = ProdNetVault.get(l.id) == null
-            val near = cur.secondsToNet(now) in 0..fourteenDaysSec
-            val critical = l.id == F14_LL2_ID || isStarshipFlight14(cur)
-            // On lldev body: always try prod for near/critical/missing vault
-            return critical || noVault || (isLldevSourceTag(incomingSource) && near)
-        }
-
-        // Tip 123: F14 / critical FIRST, then soonest missing-vault (cap 10) — don't 429-kill F14.
-        val criticalFirst = upcoming.filter { l ->
+        val critical = upcoming.filter { l ->
             l.id == F14_LL2_ID || isStarshipFlight14(byId[l.id] ?: l)
-        }
-        val rest = upcoming
-            .filter { l -> needsProdFetch(l) && criticalFirst.none { it.id == l.id } }
-            .sortedBy { (byId[it.id] ?: it).netMs }
-            .take(10)
-        val needFetch = (criticalFirst + rest).distinctBy { it.id }
-
+        }.distinctBy { it.id }
+        // Tip 124: FIRST AND ONLY — never fetch other birds (429 killed F14 on tip122/123).
         var fromProd = 0
-        for (l in needFetch) {
+        for (l in critical) {
             val prior = priorById[l.id]
             var prod = fetchLaunchById(l.id)
-            // Tip 123: one backoff retry for F14 / critical only
-            if (prod == null && (l.id == F14_LL2_ID || isStarshipFlight14(l))) {
-                Log.w(TAG, "prod-by-id miss critical ${l.id.take(8)} — retry once")
-                try { Thread.sleep(2000L) } catch (_: InterruptedException) {}
+            if (prod == null) {
+                Log.w(TAG, "prod-by-id miss critical ${l.id.take(8)} — retry")
+                try { Thread.sleep(2500L) } catch (_: InterruptedException) {}
+                prod = fetchLaunchById(l.id)
+            }
+            if (prod == null) {
+                try { Thread.sleep(3500L) } catch (_: InterruptedException) {}
                 prod = fetchLaunchById(l.id)
             }
             val before = byId[l.id] ?: l
             val after = preferProdNet(before, prod, prior, incomingSource)
             if (prod != null && after.netMs == prod.netMs) fromProd++
             byId[l.id] = after
-            if (after.secondsToNet(now) in 0..fourteenDaysSec || l.id == F14_LL2_ID) {
-                val days = after.secondsToNet(now) / 86400.0
-                val tag = when {
-                    prod != null -> "prod-by-id"
-                    ProdNetVault.get(after.id) != null -> "vault"
-                    else -> "UNTRUSTED"
-                }
-                Log.i(
-                    TAG,
-                    "LIVE NET id=${after.id.take(8)} src=$tag ~[${String.format(java.util.Locale.US, "%.1f", days)}d] ${after.name.take(48)}"
-                )
-            }
+            logF14Net(after, if (prod != null) "prod-by-id" else "lldev-critical-miss")
         }
-
-        // Phase 3: final vault pass — merge must not leave lldev earlier than vault
-        for (l in upcoming) {
-            byId[l.id] = overlayVault(byId[l.id] ?: l)
-        }
+        for (l in upcoming) byId[l.id] = overlayVault(byId[l.id] ?: l)
 
         val src = when {
-            isProdSourceTag(incomingSource) -> "$incomingSource+vault"
             fromProd > 0 -> "lldev+prod-net-auth"
             fromVault > 0 -> "lldev+vault-net"
             else -> incomingSource
         }
         byId[F14_LL2_ID]?.let { logF14Net(it, "FINAL-$src") }
-        sharedStatus = "prod-NET auth | fetch=$fromProd vault=$fromVault need=${needFetch.size}/${upcoming.size} | $src"
+        sharedStatus = "lldev body | critical-only fetch=$fromProd vault=$fromVault | $src"
         Log.i(TAG, lastStatus)
         return LaunchListResult(byId.values.sortedBy { it.netMs }, System.currentTimeMillis(), src)
+    }
+
+    /** Tip 124: F14 sealed only when vault holds matching NET (prod-by-id or prod list wrote it). */
+    private fun isCriticalNetSealed(list: LaunchListResult): Boolean {
+        val f14 = list.launches.firstOrNull { it.id == F14_LL2_ID || isStarshipFlight14(it) }
+            ?: return true
+        if (isProdSourceTag(list.source)) return true
+        val vault = ProdNetVault.get(f14.id) ?: return false
+        return f14.netMs == vault.netMs
+    }
+
+    private fun formatNetIso(netMs: Long): String {
+        return try {
+            java.time.Instant.ofEpochMilli(netMs).toString()
+        } catch (_: Exception) {
+            netMs.toString()
+        }
     }
 
     private fun upsertMergeLive(
@@ -620,28 +628,52 @@ class LaunchDataProvider {
         executor.execute {
             try {
                 var source = "ll2"
-                var upcoming = fetchList(PROD_UPCOMING, "ll2")
-                if (upcoming == null) {
-                    // Stamp 113: retry PROD after backoff before lldev — lldev NET can lag days
-                    // (Flight 14 showed Sep 18 / [1d] while prod+SpaceX = Sep 22 / [6d]).
-                    sharedStatus = "Prod upcoming miss - retry PROD..."
-                    try { Thread.sleep(3500L) } catch (_: InterruptedException) {}
+                var upcoming: LaunchListResult? = null
+                // Tip 124: prod upcoming must win — never prefer lldev when prod 200.
+                for (attempt in 1..3) {
+                    sharedStatus = "Prod upcoming attempt $attempt/3..."
                     upcoming = fetchList(PROD_UPCOMING, "ll2")
-                }
-                if (upcoming == null) {
-                    sharedStatus = "Prod upcoming throttled  -  trying lldev..."
-                    upcoming = fetchList(DEV_UPCOMING, "lldev")
                     if (upcoming != null) {
-                        source = "lldev"
-                        // Stamp 113: overlay prod NET for soonest birds (lldev stale NET guard).
-                        upcoming = enrichNetsFromProd(upcoming)
-                        source = upcoming.source
+                        source = "ll2"
+                        Log.i(TAG, "PROD upcoming OK attempt=$attempt n=${upcoming.launches.size}")
+                        break
                     }
+                    Log.w(TAG, "PROD upcoming miss attempt=$attempt — backoff")
+                    try { Thread.sleep(3500L) } catch (_: InterruptedException) {}
                 }
-                // Tip 123: enforce owns vault write (pure prod only) — never remember lldev hybrid as prod.
                 if (upcoming != null) {
+                    // Prod catalog body — never fall through to lldev for display.
                     upcoming = enforceProdNetAuthority(upcoming, source)
                     source = upcoming.source
+                } else {
+                    // Keep prior PROD catalog if we have one — do not replace with lldev body.
+                    val priorCache = cache.get()
+                    if (priorCache != null && isProdSourceTag(priorCache.source) && priorCache.launches.isNotEmpty()) {
+                        Log.w(TAG, "PROD miss — KEEP prior prod catalog n=${priorCache.launches.size} (no lldev replace)")
+                        upcoming = enforceProdNetAuthority(priorCache, priorCache.source)
+                        source = upcoming.source
+                    } else {
+                        sharedStatus = "Prod throttled — lldev body + F14 seal only"
+                        upcoming = fetchList(DEV_UPCOMING, "lldev")
+                        if (upcoming != null) {
+                            source = "lldev"
+                            // Tip 124: critical-only; never rememberProdList lldev rows (enforce handles).
+                            upcoming = enforceProdNetAuthority(upcoming, source)
+                            source = upcoming.source
+                            // Seal F14 before allowing cache.set — retry critical until sealed or give up.
+                            var sealTries = 0
+                            while (!isCriticalNetSealed(upcoming!!) && sealTries < 4) {
+                                sealTries++
+                                Log.w(TAG, "F14 not sealed — retry seal $sealTries/4")
+                                try { Thread.sleep(3000L) } catch (_: InterruptedException) {}
+                                upcoming = enforceProdNetAuthority(upcoming!!, "lldev")
+                                source = upcoming.source
+                            }
+                            if (!isCriticalNetSealed(upcoming!!)) {
+                                Log.e(TAG, "F14 STILL UNSEALED after retries — refusing lldev cache.set for live NET")
+                            }
+                        }
+                    }
                 }
                 var previous = fetchList(PROD_PREVIOUS, "ll2")
                 if (previous == null) {
@@ -692,16 +724,38 @@ class LaunchDataProvider {
                     }
                     return@execute
                 }
-                // Tip 123: upsert then FINAL vault pass — TRACKING/findById must see prod NET.
+                // Tip 124: refuse cache.set of unsealed F14 on lldev body (customer miss).
                 val mergedLaunches = upsertMergeLive(priorList, upcoming.launches, pastCache.get()?.launches)
-                val sealed = mergedLaunches.map { overlayVault(it) }
-                val merged = upcoming.copy(launches = sealed, source = source)
+                val sealedList = mergedLaunches.map { overlayVault(it) }
+                var merged = upcoming.copy(launches = sealedList, source = source)
+                if (isLldevSourceTag(source) && !isCriticalNetSealed(merged)) {
+                    Log.e(TAG, "CACHE-SET BLOCKED — F14 unsealed src=$source")
+                    // Keep prior cache if any; do not publish lldev Sep18 as TRACKING truth.
+                    val kept = cache.get()
+                    if (kept != null) {
+                        sharedStatus = "BLOCKED lldev F14 unsealed — kept prior ${kept.source}"
+                        onDone?.invoke(kept)
+                        return@execute
+                    }
+                    // Fresh install: still set structure but force one more F14 fetch into list
+                    val force = fetchLaunchById(F14_LL2_ID)
+                    if (force != null) {
+                        ProdNetVault.rememberProd(force)
+                        val patched = sealedList.map { if (it.id == F14_LL2_ID || isStarshipFlight14(it)) overlayNetFields(it, force) else it }
+                        merged = merged.copy(launches = patched, source = "lldev+prod-net-auth")
+                        source = merged.source
+                    }
+                }
                 cache.set(merged)
                 lastFetchMs = System.currentTimeMillis()
                 sharedCount = merged.launches.size
                 sharedSource = source
-                merged.launches.firstOrNull { it.id == F14_LL2_ID || isStarshipFlight14(it) }?.let {
-                    logF14Net(it, "CACHE-SET-$source")
+                val f14 = merged.launches.firstOrNull { it.id == F14_LL2_ID || isStarshipFlight14(it) }
+                if (f14 != null) {
+                    Log.i(TAG, "CACHE-SET src=$source F14 netMs=${f14.netMs} ISO=${formatNetIso(f14.netMs)} ~[${String.format(java.util.Locale.US, "%.1f", f14.secondsToNet() / 86400.0)}d] status=${f14.statusAbbrev} n=${merged.launches.size}")
+                    logF14Net(f14, "CACHE-SET-$source")
+                } else {
+                    Log.i(TAG, "CACHE-SET src=$source F14=absent n=${merged.launches.size}")
                 }
                 sharedError = null
                 val pastN = previous?.launches?.size ?: 0
@@ -722,7 +776,7 @@ class LaunchDataProvider {
                     readTimeout = 12_000
                     requestMethod = "GET"
                     setRequestProperty("Accept", "application/json")
-                    setRequestProperty("User-Agent", "LiveRocketTracker/1.0.96 (Android; upcoming+previous)")
+                    setRequestProperty("User-Agent", "LiveRocketTracker/1.0.114 (Android; tip124-prod-catalog)")
                 }
                 val code = conn.responseCode
                 if (code != 200) {
@@ -807,7 +861,7 @@ class LaunchDataProvider {
                 readTimeout = 10_000
                 requestMethod = "GET"
                 setRequestProperty("Accept", "application/json")
-                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.113 (Android; tip123-vault-poison)")
+                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.114 (Android; tip124-prod-catalog)")
             }
             val code = conn.responseCode
             if (code != 200) {
