@@ -316,7 +316,9 @@ object VehicleCatalog {
             chamberBar = "—",
             s1Dry = "~1.2 t",
             s1Prop = "~9 t",
-            nerdNote = "Electric pumps. The whole first stage is a battery with a bad attitude.",
+            nerdNote = "Electric pumps. Stamp 120: polished vehicle_electron_* fills (MD5 D8AB6A stack). Continuous paper-doll.",
+            drawFamily = "electron",
+            verified = true,
             s1Pattern = EnginePattern.ELECTRON9,
             s2Pattern = EnginePattern.MERLIN_VAC
         ),
@@ -745,6 +747,43 @@ object VehicleCatalog {
             s1Pattern = EnginePattern.REAVER4,
             s2Pattern = EnginePattern.VACUUM1
         ),
+
+        VehicleSpec(
+            id = "pallas1",
+            family = "pallas1",
+            tokens = listOf(
+                "pallas-1",
+                "pallas 1",
+                "pallas1",
+                "galactic energy",
+                "galacticenergy"
+            ),
+            s1Engines = 7,
+            s2Engines = 1,
+            recoverable = false,
+            methalox = false,
+            fuelName = "RP-1",
+            oxName = "LOX",
+            boostbackLit = 0,
+            landingLit = 0,
+            engineName = "Welkin",
+            s1Thrust = "7x Welkin SL class",
+            s2Thrust = "Welkin Vac",
+            ispVac = "-",
+            mixRatio = "-",
+            chamberBar = "-",
+            s1Dry = "-",
+            s1Prop = "-",
+            nerdNote = "Galactic Energy Pallas-1: kerolox paper-doll. Stamp 120 art vehicle_pallas1_*. No propane pills. Unpublished fields Unknown.",
+            verified = true,
+            drawFamily = "pallas1",
+            s1Pattern = EnginePattern.UNKNOWN,
+            s2Pattern = EnginePattern.VACUUM1,
+            s1Name = "1st (Welkin)",
+            s2Name = "2nd (Welkin Vac)",
+            s2EngineName = "Welkin Vac"
+        ),
+
         VehicleSpec(
             id = "gravity1",
             family = "gravity1",
@@ -824,6 +863,8 @@ object VehicleCatalog {
     const val CZ12_DRAWABLE = "vehicle_cz12"
     const val ZQ3_DRAWABLE = "vehicle_zq3"
     const val GRAVITY1_DRAWABLE = "vehicle_gravity1"
+    const val PALLAS1_DRAWABLE = "vehicle_pallas1"
+    const val ELECTRON_DRAWABLE = "vehicle_electron"
     const val KZ11_DRAWABLE = "vehicle_kz11"
     const val CZ2D_DRAWABLE = "vehicle_cz2d"
 
