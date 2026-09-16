@@ -102,9 +102,11 @@ class LaunchDataProvider {
     }
 
     /**
-     * Stamp 106: DEFAULT = real past only, newest-first, ~20.
-     * Demos only when [query] contains "demo" (case-insensitive).
-     * Name search merges local past + 1yr LL2 search cache (never invent).
+     * Stamp 106: DEFAULT = real past only, newest-first, ~20. Never prepend demos.
+     * Demos KEPT in build (demoCatalog). Show demos when:
+     *  (a) search contains "demo", or
+     *  (b) pastCache empty / no real past (fresh install / offline fallback — never blank).
+     * When real past exists, demos never block Gravity-1 / newest.
      */
     fun historicPool(now: Long = System.currentTimeMillis(), query: String = ""): List<LaunchSnapshot> {
         val q = query.trim()
@@ -129,12 +131,6 @@ class LaunchDataProvider {
             out += l
         }
 
-        if (wantDemo) {
-            for (l in demoCatalog) {
-                if (tokens.isEmpty() || matchTokens(l)) add(l)
-            }
-        }
-
         val pastSorted = pastCache.get()?.launches.orEmpty()
             .filter { !it.id.startsWith("demo-") }
             .filter { it.secondsToNet(now) <= 0 || it.isReplayable(now) }
@@ -142,14 +138,24 @@ class LaunchDataProvider {
 
         if (q.isBlank()) {
             pastSorted.take(HISTORIC_DEFAULT_N).forEach { add(it) }
+            // Fallback only: no real past yet (fetch fail / fresh install).
+            if (out.isEmpty()) {
+                for (l in demoCatalog) add(l)
+            }
             return out
         }
 
+        // Real past / search hits first so demos never bury Gravity-1 when past exists.
         for (l in pastSorted) {
             if (matchTokens(l)) add(l)
         }
         for (l in historicSearchCache.get().sortedByDescending { it.netMs }) {
             if (matchTokens(l)) add(l)
+        }
+        if (wantDemo) {
+            for (l in demoCatalog) {
+                if (tokens.isEmpty() || matchTokens(l)) add(l)
+            }
         }
         return out
     }
