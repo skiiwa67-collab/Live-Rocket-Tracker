@@ -33,8 +33,8 @@ object FlightEventCatalog {
     fun family(launch: LaunchSnapshot?): String = VehicleCatalog.family(launch)
 
     fun timeline(launch: LaunchSnapshot?): List<FlightEvent> {
-        // Stamp 105: Fail/Partial — cut remaining nominal marks (no happy-path after boom).
-        if (launch != null && launch.isTerminal() && launch.id != "demo-spacex-fail") {
+        // Stamp 105b: Fail/Partial only — never blank Success/Completed tape (not isTerminal).
+        if (launch != null && launch.id != "demo-spacex-fail" && isFailOrPartialCut(launch)) {
             return emptyList()
         }
         val base = when {
@@ -73,6 +73,14 @@ object FlightEventCatalog {
         }
         if (!isFailBlob(failBlob(launch))) return null
         return liveFail(launch, tSec)
+    }
+
+    /** Stamp 105b: cut nominal tape on Failure/Partial only - never Success/Completed. */
+    private fun isFailOrPartialCut(launch: LaunchSnapshot): Boolean {
+        val status = "${launch.statusAbbrev} ${launch.statusName}".lowercase()
+        if ("success" in status || "completed" in status) return false
+        return "failure" in status || "partial" in status ||
+            ("fail" in status && "fairing" !in status)
     }
 
     private fun failBlob(launch: LaunchSnapshot): String =
