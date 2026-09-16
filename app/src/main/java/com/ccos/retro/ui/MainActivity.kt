@@ -380,15 +380,21 @@ class MainActivity : AppCompatActivity() {
             val historic = prefs.telemetryListMode == "historical"
 
             launchList = if (historic) {
+                // Stamp 112: sync box so auto-refresh never invents blank mid-type.
+                syncHistoricQueryFromBox()
                 // Stamp 106/107/110: local pool only. LL2 search debounced separately.
-                // Search hits: do NOT re-filter with isReplayable (drops valid CDN/LL2 past).
                 val q = historicQuery
-                val pool = if (q.isNotBlank()) {
+                var pool = if (q.isNotBlank()) {
                     launchProvider.historicPool(now, q)
                 } else {
                     launchProvider.historicPool(now, q).filter {
                         it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) <= 0
                     }
+                }
+                // Stamp 112 light: do not prepend CURRENT live selection into SEARCH HISTORIC.
+                if (q.isNotBlank()) {
+                    val liveId = telemetryModule.tracked?.takeIf { it.secondsToNet(now) > 0 }?.id
+                    if (liveId != null) pool = pool.filter { it.id != liveId }
                 }
                 if (q.isNotBlank()) pool.take(80) else pool.take(20)
             } else {

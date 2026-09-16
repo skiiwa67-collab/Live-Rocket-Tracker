@@ -211,18 +211,6 @@ data class LaunchSnapshot(
         if (isActiveWatch(now)) return false
         return secondsToNet(now) <= -LaunchWindow.WATCH_AFTER_NET_SEC
     }
-
-    /**
-     * Stamp 112: HISTORIC list/search only — never upcoming / Go / Hold preflight / live watch.
-     * Flight 14 and any future-NET bird stay CURRENT-only.
-     */
-    fun isHistoricPastEntry(now: Long = System.currentTimeMillis()): Boolean {
-        if (id.startsWith("demo-")) return true
-        if (secondsToNet(now) > 0) return false
-        if (isActiveWatch(now)) return false
-        // Past NET or terminal Success/Failure/Partial.
-        return isTerminal() || isReplayable(now) || secondsToNet(now) <= 0
-    }
 }
 
 /**

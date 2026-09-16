@@ -144,8 +144,7 @@ class LaunchDataProvider {
 
         val pastSorted = pastCache.get()?.launches.orEmpty()
             .filter { !it.id.startsWith("demo-") }
-            // Stamp 112: never upcoming/live (Flight 14 stays CURRENT-only).
-            .filter { it.isHistoricPastEntry(now) }
+            .filter { it.secondsToNet(now) <= 0 || it.isReplayable(now) }
             .sortedByDescending { it.netMs }
 
         if (q.isBlank()) {
@@ -162,8 +161,7 @@ class LaunchDataProvider {
             if (matchTokens(l)) add(l)
         }
         for (l in historicSearchCache.get().sortedByDescending { it.netMs }) {
-            // Stamp 112: search hits must be past-only (strip upcoming F14 etc.).
-            if (l.isHistoricPastEntry(now) && matchTokens(l)) add(l)
+            if (matchTokens(l)) add(l)
         }
         if (wantDemo) {
             for (l in demoCatalog) {
@@ -252,9 +250,7 @@ class LaunchDataProvider {
                         }
                     }
                     if (hit != null) {
-                        historicSearchCache.set(
-                            hit.launches.filter { !it.id.startsWith("demo-") && it.isHistoricPastEntry() }
-                        )
+                        historicSearchCache.set(hit.launches.filter { !it.id.startsWith("demo-") })
                         lastHistoricSearchQ = q
                         lastHistoricSearchMs = System.currentTimeMillis()
                         sharedStatus = "SEARCH OK | q=$q | n=${historicSearchCache.get().size} | $src"
@@ -347,10 +343,13 @@ class LaunchDataProvider {
                 prior?.source ?: "sticky-historic"
             )
         )
-        val sc = historicSearchCache.get().toMutableList()
-        if (sc.none { it.id == s.id }) {
-            sc.add(0, s)
-            historicSearchCache.set(sc)
+        // Stamp 112 light: never push CURRENT upcoming selection into historic search cache (F14 bleed).
+        if (s.secondsToNet() <= 0 || s.isReplayable()) {
+            val sc = historicSearchCache.get().toMutableList()
+            if (sc.none { it.id == s.id }) {
+                sc.add(0, s)
+                historicSearchCache.set(sc)
+            }
         }
     }
 
