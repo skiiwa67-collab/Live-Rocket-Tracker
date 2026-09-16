@@ -878,52 +878,81 @@ class RetroCommandWallpaperService : WallpaperService() {
         }
 
         /**
-         * Tip 128: OTHER VID OPTIONS — additive only.
-         * Does not change openWebcast http/YT success path. Non-YouTube LL2 urls → createChooser.
-         * Empty → soft Toast. Never force m.youtube.com. Never touch FloatingVideoWindow.
+         * Tip 131: OTHER VID OPTIONS — always createChooser with ≥1 ACTION_VIEW.
+         * Non-YT LL2 first; agency search fallbacks (no invented video ids); optional YT refs.
+         * Does NOT change openWebcast / FloatingVideoWindow.
          */
         private fun openVidChooser(launch: com.ccos.retro.data.LaunchSnapshot?) {
             val fresh = launch?.id?.let { id ->
                 telemetryModule.selectableLaunches().firstOrNull { it.id == id }
             } ?: launch
-            val alts = fresh?.allWebcasts().orEmpty()
-                .map { it.url.trim() }
-                .filter { it.startsWith("http", ignoreCase = true) }
-                .filter { WebcastResolver.youtubeVideoId(it) == null }
-                .distinct()
-            if (alts.isEmpty()) {
-                try {
-                    android.widget.Toast.makeText(
-                        applicationContext,
-                        "No alternate webcasts",
-                        android.widget.Toast.LENGTH_SHORT
-                    ).show()
-                } catch (_: Exception) { }
-                return
+            val urls = linkedSetOf<String>()
+            // (a) non-YouTube http from LL2
+            for (ref in fresh?.allWebcasts().orEmpty()) {
+                val u = ref.url.trim()
+                if (u.startsWith("http", ignoreCase = true) &&
+                    WebcastResolver.youtubeVideoId(u) == null
+                ) {
+                    urls += u
+                }
             }
+            // (b) agency-relative SEARCH fallbacks — never invent video ids
+            val q = if (fresh != null) {
+                WebcastResolver.missionQuery(fresh)
+            } else {
+                "rocket launch webcast"
+            }
+            val enc = java.net.URLEncoder.encode(
+                q,
+                java.nio.charset.StandardCharsets.UTF_8.name()
+            )
+            when {
+                fresh?.isChinese() == true -> {
+                    urls += "https://search.bilibili.com/all?keyword=$enc"
+                    urls += "https://www.baidu.com/sf/vsearch?pd=video&wd=$enc"
+                }
+                fresh?.isRussian() == true -> {
+                    urls += "https://vk.com/video?q=$enc"
+                    urls += "https://rutube.ru/search/?query=$enc"
+                }
+                else -> {
+                    urls += "https://www.google.com/search?q=$enc+webcast"
+                    urls += "https://duckduckgo.com/?q=$enc+webcast"
+                }
+            }
+            // (c) optional LL2 YouTube urls as extra chooser picks (YT blocked abroad still has searches)
+            for (ref in fresh?.allWebcasts().orEmpty()) {
+                val u = ref.url.trim()
+                if (u.startsWith("http", ignoreCase = true) &&
+                    WebcastResolver.youtubeVideoId(u) != null
+                ) {
+                    urls += u
+                }
+            }
+            if (urls.isEmpty()) {
+                urls += "https://www.google.com/search?q=rocket+launch+webcast"
+            }
+            val list = urls.toList()
             try {
-                val primary = Intent(Intent.ACTION_VIEW, Uri.parse(alts.first())).apply {
+                val primary = Intent(Intent.ACTION_VIEW, Uri.parse(list.first())).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 val chooser = Intent.createChooser(primary, "Other vid options").apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    if (alts.size > 1) {
-                        // Tip 130: EXTRA_INITIAL_INTENTS must be Parcelable[] (not typed Intent[] alone).
-                        val more = alts.drop(1).map { u ->
-                            Intent(Intent.ACTION_VIEW, Uri.parse(u))
-                        }.toTypedArray()
-                        putExtra(
-                            Intent.EXTRA_INITIAL_INTENTS,
-                            more as Array<out android.os.Parcelable>
-                        )
+                    if (list.size > 1) {
+                        // Tip 131: Array<Parcelable> — no unsafe Intent[] cast
+                        val more = Array<android.os.Parcelable>(list.size - 1) { i ->
+                            Intent(Intent.ACTION_VIEW, Uri.parse(list[i + 1]))
+                        }
+                        putExtra(Intent.EXTRA_INITIAL_INTENTS, more)
                     }
                 }
                 startActivity(chooser)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 try {
                     android.widget.Toast.makeText(
                         applicationContext,
-                        "No alternate webcasts",
+                        e.message ?: "No alternate webcasts",
                         android.widget.Toast.LENGTH_SHORT
                     ).show()
                 } catch (_: Exception) { }
