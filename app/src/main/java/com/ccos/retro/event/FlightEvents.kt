@@ -384,7 +384,7 @@ object MissionFacts {
 
     fun isZhuque3(launch: LaunchSnapshot?): Boolean {
         val n = blob(launch) + " " + VehicleCatalog.blob(launch)
-        return "zhuque-3" in n || "zhuque 3" in n || "zq-3" in n || "zq3", "gravity1" in n
+        return "zhuque-3" in n || "zhuque 3" in n || "zq-3" in n || "zq3" in n
     }
 
     fun isSatMission(launch: LaunchSnapshot?): Boolean = true
@@ -1178,7 +1178,7 @@ object FlightProfiles {
         // Stamp 93: non-Starship with SECO/insertion also coasts at vis-viva (fixes Falcon ~8317 mph freeze).
         val leoFamilies = setOf(
             "soyuz", "proton", "f9", "falcon", "fh", "zq", "electron", "atlas", "vulcan",
-            "ariane", "h3", "lvm3", "isro", "cz8a", "cz12", "cz2d", "kz11", "zq3", "lm", "lm5", "sls", "glenn"
+            "ariane", "h3", "lvm3", "isro", "cz8a", "cz12", "cz2d", "kz11", "zq3", "gravity1", "lm", "lm5", "sls", "glenn"
         )
         val hasLeoSeco = events(launch).any { e ->
             val n = e.second.uppercase()
