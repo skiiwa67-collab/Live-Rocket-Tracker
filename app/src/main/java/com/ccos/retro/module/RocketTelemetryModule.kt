@@ -70,6 +70,9 @@ class RocketTelemetryModule(
     private var lastGoodSnapshot: LaunchSnapshot? = null
 
     companion object {
+        /** Stamp 105: live CURRENT trails real webcast (~5s; never ahead). */
+        const val LIVE_WALL_LAG_SEC = 5f
+
         /** Stamp 59: Activity + wallpaper Engine share last HUD bird. */
         @Volatile var sharedLastGood: LaunchSnapshot? = null
     }
@@ -199,10 +202,16 @@ class RocketTelemetryModule(
     fun effectiveSecondsFromNet(now: Long = System.currentTimeMillis()): Float {
         val launch = tracked ?: return 0f
         // Stamp 86: live CURRENT/AUTO watch = wall-clock only (fixes T+165h sim stick on Soyuz).
+        // Stamp 105: trail YouTube by LIVE_WALL_LAG_SEC; Hold freezes pre-liftoff (early NET).
         if (isLiveWallClockBird(launch, now)) {
             scrubLiveSim(launch)
+            // pinnedNetMs already re-pins when launch.netMs changes (Hold/slip/fail NET update).
             val t0 = prefs.pinnedNetMs(launch.id, launch.netMs)
-            return (now - t0) / 1000f
+            var t = (now - t0) / 1000f - LIVE_WALL_LAG_SEC
+            if (launch.isHold()) {
+                t = minOf(t, -0.5f)
+            }
+            return t
         }
         // HISTORICAL / demo theater — sim memory, then prefs cursor, then wall-clock.
         val mem = simSecondsFromNet

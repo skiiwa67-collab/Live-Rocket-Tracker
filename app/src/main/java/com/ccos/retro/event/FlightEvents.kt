@@ -33,10 +33,18 @@ object FlightEventCatalog {
     fun family(launch: LaunchSnapshot?): String = VehicleCatalog.family(launch)
 
     fun timeline(launch: LaunchSnapshot?): List<FlightEvent> {
+        // Stamp 105: Fail/Partial — cut remaining nominal marks (no happy-path after boom).
+        if (launch != null && launch.isTerminal() && launch.id != "demo-spacex-fail") {
+            return emptyList()
+        }
         val base = when {
             VehicleCatalog.needsUpdate(launch) -> unknownVehicle()
             else -> when (family(launch)) {
-                "starship" -> if (MissionFacts.isFlight13(launch)) starshipFlight13() else starship()
+                "starship" -> when {
+                    MissionFacts.isFlight13(launch) -> starshipFlight13()
+                    MissionFacts.isFlight14(launch) -> starshipFlight14()
+                    else -> starship()
+                }
                 "f9", "fh" -> falcon(launch)
                 "sls" -> sls()
                 "soyuz" -> soyuz()
@@ -185,6 +193,18 @@ object FlightEventCatalog {
         ev("ss13_ship", 3340f, "SHIP SPLASH", "Intact in the Indian Ocean")
     )
 
+
+    /**
+     * Stamp 105: Flight 14 published-only sparse tape.
+     * Window opens 2026-09-22 7:15 AM CT (75 min); backup Sep 23.
+     * First orbital attempt; ~6 orbits ~275 km; Pacific splashdown west of Chile ~10h.
+     * NO invented MECO/hot-stage/deploy clocks - omit unpublished marks.
+     */
+    private fun starshipFlight14() = listOf(
+        ev("ss14_lift", 0f, "LIFTOFF", "Super Heavy / Starship - Flight 14 orbital attempt"),
+        ev("ss14_splash", 36000f, "SHIP SPLASHDOWN", "Pacific west of Chile ~10h (published window)", EventSeverity.WATCH)
+    )
+
     private fun starship() = listOf(
         ev("ss_lift", 0f, "LIFTOFF", "Super Heavy / Starship stack"),
         ev("ss_maxq", 60f, "MAX-Q", "Peak aerodynamic pressure"),
@@ -319,6 +339,7 @@ object MissionFacts {
             launch == null -> "GOAL  NO LOCK"
             VehicleCatalog.needsUpdate(launch) -> "GOAL  DATA UPDATE REQUIRED"
             isZhuque3(launch) -> "GOAL  ORBIT + BOOSTER LANDING"
+            isFlight14(launch) -> "GOAL  ORBITAL ATTEMPT"
             isTestFlight(launch) || isFlight13(launch) -> "GOAL  PERFORMANCE TEST"
             "starlink" in n -> "GOAL  ORBIT + SAT DEPLOY"
             "crew" in n || "astronaut" in n -> "GOAL  CREW TO ORBIT"
@@ -331,6 +352,12 @@ object MissionFacts {
     fun isFlight13(launch: LaunchSnapshot?): Boolean {
         val n = blob(launch)
         return "flight 13" in n || "flight-13" in n || "ift-13" in n || "ift 13" in n
+    }
+
+    /** Stamp 105: Starship Flight 14 / IFT-14 detector. */
+    fun isFlight14(launch: LaunchSnapshot?): Boolean {
+        val n = blob(launch)
+        return "flight 14" in n || "flight-14" in n || "ift-14" in n || "ift 14" in n
     }
 
     fun isZhuque3(launch: LaunchSnapshot?): Boolean {
@@ -387,6 +414,8 @@ object MissionFacts {
                 else -> null
             },
             ship = when {
+                isFlight14(launch) && tSec >= 36000f -> "PACIFIC SPLASH  CHILE"
+                isFlight14(launch) -> "ORBITAL ATTEMPT  ~275 KM"
                 isFlight13(launch) && tSec >= 3340f -> "SOFT SPLASH  INDIAN OCEAN"
                 isFlight13(launch) && tSec >= 780f -> "20 STARLINK V3  OUT"
                 isFlight13(launch) -> "PEZ  STARLINK V3  STOWED"
@@ -430,6 +459,13 @@ object MissionFacts {
             VehicleCatalog.UPDATE_HEAD,
             VehicleCatalog.UPDATE_BODY,
             true
+        )
+        if (isFlight14(launch)) return Classified(
+            "STARLINK V3", "BROADBAND SAT", "STACK",
+            "LEO ~275 KM / ~6 ORBITS",
+            "First orbital attempt. Pacific splashdown west of Chile ~10h if nominal.",
+            "Published window Sep 22 2026 7:15 AM CT (75 min); backup Sep 23. No invented deploy T+.",
+            false
         )
         if (isFlight13(launch)) return Classified(
             "STARLINK V3", "BROADBAND SAT", "20",
