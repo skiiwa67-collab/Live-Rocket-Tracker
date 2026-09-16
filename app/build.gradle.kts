@@ -11,8 +11,8 @@ android {
         applicationId = "com.liverockettracker"
         minSdk = 24
         targetSdk = 36
-        versionCode = 126
-        versionName = "1.0.116"
+        versionCode = 127
+        versionName = "1.0.117"
         buildConfigField(
             "String",
             "MISSION_TAPE_BASE_URL",
@@ -22,7 +22,9 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // Tip 127 Play money: R8 on — Console obfuscation warning = minify was off.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

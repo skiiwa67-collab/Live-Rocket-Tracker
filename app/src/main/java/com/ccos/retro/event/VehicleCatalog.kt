@@ -479,6 +479,12 @@ object VehicleCatalog {
             id = "cz12",
             family = "cz12",
             tokens = listOf(
+                "long march 12a",
+                "cz-12a",
+                "cz12a",
+                "lm-12a",
+                "lm12a",
+                "12a",
                 "long march 12",
                 "cz-12",
                 "cz12",
