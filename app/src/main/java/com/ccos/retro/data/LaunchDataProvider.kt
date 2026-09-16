@@ -1,5 +1,6 @@
 package com.ccos.retro.data
 
+import android.content.Context
 import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
@@ -56,6 +57,13 @@ class LaunchDataProvider {
         private const val historicSearchMinIntervalMs = 8_000L
         private const val HISTORIC_DEFAULT_N = 20
         private const val HISTORIC_SEARCH_YEAR_MS = 365L * 24L * 3600L * 1000L
+        /** Tip 121: Starship Flight 14 LL2 id — always prod-NET authority. */
+        const val F14_LL2_ID = "7d1afb26-6f9c-429b-9ccf-29012fd1e519"
+    }
+
+    /** Tip 121: bind durable prod-NET vault (call from Activity/Wallpaper onCreate). */
+    fun bindAppContext(context: Context) {
+        ProdNetVault.bind(context)
     }
 
     // Instance mirrors of shared cache state (Activity + Wallpaper share one pool)
@@ -365,30 +373,146 @@ class LaunchDataProvider {
     }
 
 
-    /** Tip 116: never adopt earlier future NET (lldev stale) over a later prior NET (same id). */
-    private fun preferLaterNet(
+    /**
+     * Tip 121: prod NET always beats lldev NET for the same id.
+     * Later-vs-earlier only among the same trust tier (both prod, or both unknown).
+     * lldev must never own display net/window/status.
+     */
+    private fun isProdSourceTag(tag: String?): Boolean {
+        if (tag.isNullOrBlank()) return false
+        val s = tag.lowercase()
+        return s == "ll2" || s.startsWith("ll2") || s.contains("prod") || s == "ll2-id"
+    }
+
+    private fun isLldevSourceTag(tag: String?): Boolean {
+        if (tag.isNullOrBlank()) return false
+        return "lldev" in tag.lowercase()
+    }
+
+    private fun overlayNetFields(base: LaunchSnapshot, from: LaunchSnapshot): LaunchSnapshot {
+        return base.copy(
+            netMs = from.netMs,
+            windowStartMs = from.windowStartMs,
+            windowEndMs = from.windowEndMs,
+            statusName = from.statusName,
+            statusAbbrev = from.statusAbbrev
+        )
+    }
+
+    private fun overlayVault(base: LaunchSnapshot): LaunchSnapshot = ProdNetVault.applyTo(base)
+
+    /**
+     * Tip 121 preferProdNet: if [prod] present, use its NET fields + remember vault.
+     * Else vault. Else prior only if not lldev-poisoned. Never keep bare lldev NET when better exists.
+     */
+    private fun preferProdNet(
+        base: LaunchSnapshot,
+        prod: LaunchSnapshot?,
         prior: LaunchSnapshot?,
-        incoming: LaunchSnapshot,
-        now: Long = System.currentTimeMillis()
+        incomingSource: String
     ): LaunchSnapshot {
-        if (prior == null || prior.id != incoming.id) return incoming
-        val pFuture = prior.netMs > now
-        val iFuture = incoming.netMs > now
-        return if (pFuture && (!iFuture || prior.netMs > incoming.netMs)) {
-            incoming.copy(
-                netMs = prior.netMs,
-                windowStartMs = prior.windowStartMs,
-                windowEndMs = prior.windowEndMs
-            )
-        } else incoming
+        if (prod != null) {
+            ProdNetVault.rememberProd(prod)
+            val out = overlayNetFields(base, prod)
+            logF14Net(out, "prod-by-id")
+            return out
+        }
+        val vaulted = overlayVault(base)
+        if (vaulted.netMs != base.netMs || vaulted.windowStartMs != base.windowStartMs) {
+            logF14Net(vaulted, "vault")
+            return vaulted
+        }
+        // Prior from in-memory cache: only if later than lldev base (poison guard) OR incoming is prod
+        if (prior != null && prior.id == base.id) {
+            if (isLldevSourceTag(incomingSource) && prior.netMs > base.netMs) {
+                val out = overlayNetFields(base, prior)
+                logF14Net(out, "prior-over-lldev")
+                return out
+            }
+            if (isProdSourceTag(incomingSource)) {
+                return preferLaterAmongProd(prior, base)
+            }
+        }
+        if (isLldevSourceTag(incomingSource)) {
+            // Last resort: still try vault again (no-op) — do NOT invent; keep structure but log
+            logF14Net(base, "lldev-UNTRUSTED-kept-no-vault")
+        }
+        return base
+    }
+
+    private fun preferLaterAmongProd(a: LaunchSnapshot, b: LaunchSnapshot): LaunchSnapshot {
+        val now = System.currentTimeMillis()
+        return if (a.netMs > now && (b.netMs <= now || a.netMs > b.netMs)) {
+            overlayNetFields(b, a)
+        } else b
+    }
+
+    private fun logF14Net(s: LaunchSnapshot, src: String) {
+        if (s.id == F14_LL2_ID || isStarshipFlight14(s)) {
+            val days = (s.netMs - System.currentTimeMillis()) / (24.0 * 3600_000.0)
+            Log.i(TAG, "F14 NET src=$src id=${s.id} netMs=${s.netMs} ~[${String.format(Locale.US, "%.1f", days)}d] status=${s.statusAbbrev}")
+        }
     }
 
     private fun isStarshipFlight14(s: LaunchSnapshot): Boolean {
+        if (s.id == F14_LL2_ID) return true
         val blob = "${s.name} ${s.rocketName} ${s.missionName}".lowercase()
         if ("starship" !in blob) return false
-        // Loose: "Flight 14", "IFT-14", "flight14", bare mid-token 14 after flight/ift
-        return Regex("""(?i)(flight\s*[-#]?\s*14|ift\s*[-#]?\s*14|(?<![0-9])14(?![0-9]))""")
+        // Tip 121: NO bare "14" — only flight/ift 14 forms
+        return Regex("""(?i)(flight\s*[-#]?\s*14|ift\s*[-#]?\s*14|flight14|ift14)""")
             .containsMatchIn(blob)
+    }
+
+    /**
+     * Tip 121: for every upcoming (cap), force display NET from prod-by-id or vault.
+     * lldev body OK; NET/window/status never from lldev when prod/vault available.
+     */
+    private fun enforceProdNetAuthority(
+        list: LaunchListResult,
+        incomingSource: String
+    ): LaunchListResult {
+        val now = System.currentTimeMillis()
+        val priorById = cache.get()?.launches?.associateBy { it.id } ?: emptyMap()
+        val upcoming = list.launches.filter { !it.id.startsWith("demo-") && it.secondsToNet(now) > -3600 }
+        // Always include F14; then soonest 20
+        val must = upcoming.filter { it.id == F14_LL2_ID || isStarshipFlight14(it) }
+        val soon = upcoming.sortedBy { it.netMs }.take(20)
+        val ranked = (must + soon).distinctBy { it.id }
+        val byId = LinkedHashMap<String, LaunchSnapshot>()
+        for (l in list.launches) byId[l.id] = l
+        var fromProd = 0
+        var fromVault = 0
+        for (l in ranked) {
+            val prior = priorById[l.id]
+            val prod = fetchLaunchById(l.id)
+            val before = byId[l.id] ?: l
+            val after = preferProdNet(before, prod, prior, incomingSource)
+            if (prod != null && after.netMs == prod.netMs) fromProd++
+            else if (ProdNetVault.get(l.id) != null && after.netMs == ProdNetVault.get(l.id)!!.netMs) fromVault++
+            byId[l.id] = after
+        }
+        // Also overlay vault on ALL remaining upcoming that we did not fetch (no lldev NET left unprotected)
+        for (l in list.launches) {
+            if (l.id in ranked.map { it.id }.toSet()) continue
+            if (l.id.startsWith("demo-")) continue
+            if (isLldevSourceTag(incomingSource)) {
+                byId[l.id] = overlayVault(l)
+            }
+        }
+        val src = when {
+            isProdSourceTag(incomingSource) -> {
+                ProdNetVault.rememberProdList(list.launches.filter { !it.id.startsWith("demo-") })
+                "$incomingSource+vault"
+            }
+            fromProd > 0 -> "lldev+prod-net-auth"
+            fromVault > 0 -> "lldev+vault-net"
+            else -> incomingSource
+        }
+        // Log F14 specifically
+        byId[F14_LL2_ID]?.let { logF14Net(it, src) }
+        byId.values.firstOrNull { isStarshipFlight14(it) }?.let { logF14Net(it, src) }
+        sharedStatus = "prod-NET auth | fetch=$fromProd vault=$fromVault | $src"
+        return LaunchListResult(byId.values.sortedBy { it.netMs }, System.currentTimeMillis(), src)
     }
 
     private fun upsertMergeLive(
@@ -405,8 +529,18 @@ class LaunchDataProvider {
             if (isScrubbedOrTerminal(f)) {
                 byId.remove(f.id)
             } else {
-                // Tip 116: REFRESH must not wipe later prod NET with earlier lldev stale.
-                byId[f.id] = preferLaterNet(byId[f.id], f, now)
+                // Tip 121: merge with vault/prod authority — never let lldev NET wipe good prod.
+                val prior = byId[f.id]
+                var merged = f
+                if (prior != null) {
+                    val vaulted = overlayVault(prior)
+                    if (vaulted.netMs >= f.netMs || ProdNetVault.get(f.id) != null) {
+                        merged = overlayNetFields(f, if (ProdNetVault.get(f.id) != null) overlayVault(f) else vaulted)
+                    }
+                } else {
+                    merged = overlayVault(f)
+                }
+                byId[f.id] = merged
             }
         }
         for (p in previous.orEmpty()) {
@@ -457,9 +591,12 @@ class LaunchDataProvider {
                         source = upcoming.source
                     }
                 }
-                // Stamp 115: always prod-overlay critical NETs (F14) even when upcoming came from prod/cache.
+                // Tip 121: prod owns display NET always (lldev body OK; NET from prod/vault only).
                 if (upcoming != null) {
-                    upcoming = ensureCriticalNetsFromProd(upcoming)
+                    if (source == "ll2" || source.startsWith("ll2")) {
+                        ProdNetVault.rememberProdList(upcoming.launches.filter { !it.id.startsWith("demo-") })
+                    }
+                    upcoming = enforceProdNetAuthority(upcoming, source)
                     source = upcoming.source
                 }
                 var previous = fetchList(PROD_PREVIOUS, "ll2")
@@ -580,44 +717,9 @@ class LaunchDataProvider {
      * Stamp 115: F14 was outside soonest-12 enrich window → stale lldev Sep18 [1d] stuck.
      * Always prod-refresh Starship Flight 14 (and other named critical) NETs.
      */
+    /** Tip 121: kept name for call sites — delegates to enforceProdNetAuthority. */
     private fun ensureCriticalNetsFromProd(list: LaunchListResult): LaunchListResult {
-        val now = System.currentTimeMillis()
-        val priorById = cache.get()?.launches?.associateBy { it.id } ?: emptyMap()
-        val crit = list.launches.filter { l ->
-            if (l.id.startsWith("demo-")) return@filter false
-            // Include even if incoming NET looks past/stale — still force prod / keep prior later NET.
-            isStarshipFlight14(l) || (priorById[l.id]?.let { isStarshipFlight14(it) } == true)
-        }
-        if (crit.isEmpty()) return list
-        val byId = LinkedHashMap<String, LaunchSnapshot>()
-        for (l in list.launches) byId[l.id] = l
-        var patched = 0
-        var keptPrior = 0
-        for (l in crit) {
-            val prior = priorById[l.id]
-            val prod = fetchLaunchById(l.id)
-            when {
-                prod != null -> {
-                    val best = preferLaterNet(prior, preferLaterNet(l, prod, now), now)
-                    if (best.netMs != l.netMs) patched++
-                    byId[l.id] = best
-                }
-                prior != null && prior.netMs > l.netMs -> {
-                    // Tip 116: prod id fetch fail (429) — KEEP prior later NET; never adopt lldev [1d].
-                    byId[l.id] = preferLaterNet(prior, l, now)
-                    keptPrior++
-                }
-            }
-        }
-        if (patched == 0 && keptPrior == 0) return list
-        val src = when {
-            patched > 0 && list.source.contains("prod-net") -> list.source
-            patched > 0 -> "${list.source}+prod-net"
-            keptPrior > 0 -> "${list.source}+keep-prior-net"
-            else -> list.source
-        }
-        sharedStatus = "critical NET | patched=$patched keptPrior=$keptPrior | $src"
-        return LaunchListResult(byId.values.sortedBy { it.netMs }, System.currentTimeMillis(), src)
+        return enforceProdNetAuthority(list, list.source)
     }
 
     private fun enrichNetsFromProd(lldev: LaunchListResult): LaunchListResult {
@@ -633,10 +735,14 @@ class LaunchDataProvider {
         val byId = LinkedHashMap<String, LaunchSnapshot>()
         for (l in lldev.launches) byId[l.id] = l
         var patched = 0
+        val priorById = cache.get()?.launches?.associateBy { it.id } ?: emptyMap()
         for (l in ranked) {
-            val prod = fetchLaunchById(l.id) ?: continue
-            if (prod.netMs != l.netMs) patched++
-            byId[l.id] = prod
+            val prod = fetchLaunchById(l.id)
+            val prior = priorById[l.id]
+            val before = byId[l.id] ?: l
+            val after = preferProdNet(before, prod, prior, "lldev")
+            if (prod != null && after.netMs != l.netMs) patched++
+            byId[l.id] = after
         }
         val src = if (patched > 0) "lldev+prod-net" else lldev.source
         sharedStatus = "lldev enrich | patched=$patched / ${ranked.size} | $src"
@@ -653,7 +759,7 @@ class LaunchDataProvider {
                 readTimeout = 10_000
                 requestMethod = "GET"
                 setRequestProperty("Accept", "application/json")
-                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.106 (Android; net-enrich)")
+                setRequestProperty("User-Agent", "LiveRocketTracker/1.0.111 (Android; tip121-prod-net)")
             }
             val code = conn.responseCode
             if (code != 200) {

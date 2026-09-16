@@ -93,7 +93,7 @@ class CommandCenterActivity : AppCompatActivity() {
         PadBook.ensure(this)
         kinetic = KineticFx(this)
         prefs = AppPrefs(this)
-        telemetryModule = RocketTelemetryModule(prefs, LaunchDataProvider())
+        telemetryModule = RocketTelemetryModule(prefs, LaunchDataProvider().also { it.bindAppContext(applicationContext) })
 
         console = findViewById(R.id.console_view)
         console.bind(telemetryModule, prefs)

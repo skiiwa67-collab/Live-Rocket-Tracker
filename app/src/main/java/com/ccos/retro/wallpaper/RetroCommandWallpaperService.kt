@@ -415,6 +415,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             MissionTapeStore.ensure(this@RetroCommandWallpaperService)
             metrics = SystemMetricsProvider(this@RetroCommandWallpaperService)
             launchProvider = LaunchDataProvider()
+            launchProvider.bindAppContext(applicationContext)
             rocketModule = VectorRocketModule(state)
             systemModule = SystemMetricsModule()
             telemetryModule = RocketTelemetryModule(prefs, launchProvider)

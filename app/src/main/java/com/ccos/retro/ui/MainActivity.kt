@@ -64,6 +64,7 @@ class MainActivity : AppCompatActivity() {
         }
         setContentView(R.layout.activity_main)
         launchProvider = LaunchDataProvider()
+        launchProvider.bindAppContext(applicationContext)
                 telemetryModule = RocketTelemetryModule(prefs, launchProvider)
         // Stamp 63 A: onCreate ensureData -> forceRefresh if null -> resolveTracked -> keepTrackedOrLastGood
         telemetryModule.ensureData()
