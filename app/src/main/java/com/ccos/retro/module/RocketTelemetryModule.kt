@@ -378,6 +378,12 @@ class RocketTelemetryModule(
     /** Stamp 59: NEVER leave tracked null while AUTO or launch id/pin set. */
     fun keepTrackedOrLastGood(now: Long = System.currentTimeMillis()) {
         if (tracked != null) {
+            // Tip 123: refresh NET/window from provider cache when same id (vault/prod slip fix).
+            val fresh = provider.findById(tracked!!.id)
+            if (fresh != null && (fresh.netMs != tracked!!.netMs || fresh.windowStartMs != tracked!!.windowStartMs)) {
+                Log.i("CCOS.Tel", "tracked NET refresh ${tracked!!.id.take(8)} ${tracked!!.netMs}→${fresh.netMs}")
+                rememberTracked(fresh)
+            }
             lastGoodSnapshot = tracked
             sharedLastGood = tracked
             return

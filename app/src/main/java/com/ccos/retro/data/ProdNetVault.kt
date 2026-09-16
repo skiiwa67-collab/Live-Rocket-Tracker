@@ -29,6 +29,16 @@ object ProdNetVault {
 
     fun bind(context: Context) {
         val f = File(context.applicationContext.filesDir, FILE)
+        // Tip 123: wipe once — tip 122 could poison vault via isProdSourceTag("lldev+prod-net").
+        val prefs = context.applicationContext.getSharedPreferences("ccos_prefs", Context.MODE_PRIVATE)
+        if (!prefs.getBoolean("prod_net_vault_v123", false)) {
+            map.clear()
+            if (f.exists()) {
+                f.delete()
+                Log.i(TAG, "tip123 wiped poisoned vault file")
+            }
+            prefs.edit().putBoolean("prod_net_vault_v123", true).apply()
+        }
         file = f
         load(f)
     }
