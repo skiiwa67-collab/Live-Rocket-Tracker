@@ -754,9 +754,13 @@ class RocketTelemetryModule(
         }
     }
 
-    fun selectLaunch(id: String) {
+    fun selectLaunch(id: String, hint: LaunchSnapshot? = null) {
         if (id.isBlank()) return
-        val found = provider.findById(id)
+        // Stamp 108: spinner/search snapshot sticks before findById — upsert into pastCache.
+        if (hint != null && hint.id == id) {
+            provider.rememberHistoricSelection(hint)
+        }
+        val found = hint?.takeIf { it.id == id } ?: provider.findById(id)
 
         if (prefs.telemetryPinned) {
             // Stamp 55: MOVE pin to the newly selected launch (never keep stale LCK id).

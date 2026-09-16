@@ -273,7 +273,38 @@ class LaunchDataProvider {
     fun findById(id: String): LaunchSnapshot? =
         cache.get()?.launches?.firstOrNull { it.id == id }
             ?: pastCache.get()?.launches?.firstOrNull { it.id == id }
+            // Stamp 108: historic name-search hits must resolve (Flight 13 / USSF-259).
+            ?: historicSearchCache.get().firstOrNull { it.id == id }
             ?: demoCatalog.firstOrNull { it.id == id }
+
+    /**
+     * Stamp 108: upsert a HISTORIC search/spinner pick into pastCache so wallpaper
+     * Engine findById never misses and never falls through to live Soyuz.
+     * demoCatalog unchanged; demos stay offline-only.
+     */
+    fun rememberHistoricSelection(s: LaunchSnapshot) {
+        if (s.id.isBlank() || s.id.startsWith("demo-")) return
+        val prior = pastCache.get()
+        val merged = LinkedHashMap<String, LaunchSnapshot>()
+        // Selected bird first, then prior past (newest order rebuilt below).
+        merged[s.id] = s
+        for (l in prior?.launches.orEmpty()) {
+            if (l.id !in merged) merged[l.id] = l
+        }
+        val sorted = merged.values.sortedByDescending { it.netMs }
+        pastCache.set(
+            LaunchListResult(
+                sorted,
+                System.currentTimeMillis(),
+                prior?.source ?: "sticky-historic"
+            )
+        )
+        val sc = historicSearchCache.get().toMutableList()
+        if (sc.none { it.id == s.id }) {
+            sc.add(0, s)
+            historicSearchCache.set(sc)
+        }
+    }
 
     /**
      * Stamp 72: once a bird is in the live catalog, NEVER drop on refresh unless

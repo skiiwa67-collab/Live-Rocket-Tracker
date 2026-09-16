@@ -175,7 +175,9 @@ class MainActivity : AppCompatActivity() {
                     // Stamp 60: real USER id change always selectLaunch (AUTO off + stick THAT bird).
                     // Programmatic populate still blocked by suppressLaunchSelect.
                     if (launch.id == prefs.telemetryLaunchId && launch.id == telemetryModule.tracked?.id) return
-                    telemetryModule.selectLaunch(launch.id)
+                    // Stamp 108: pass full snapshot so historic search picks (F13/USSF) stick.
+                    // Keep HISTORICAL listMode — never flip to CURRENT on select.
+                    telemetryModule.selectLaunch(launch.id, launch)
                     refreshTrackingUi()
                 }
             }
