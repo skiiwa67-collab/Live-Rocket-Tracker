@@ -49,6 +49,8 @@ class LaunchDataProvider {
         @Volatile private var lastHistoricSearchMs: Long = 0L
         /** Stamp 107: search in-flight — separate from catalog sharedFetching. */
         @Volatile private var historicSearching: Boolean = false
+        /** Stamp 110: latest query while a search is in flight. */
+        @Volatile private var queuedHistoricSearchQ: String? = null
         private const val historicSearchMinIntervalMs = 8_000L
         private const val HISTORIC_DEFAULT_N = 20
         private const val HISTORIC_SEARCH_YEAR_MS = 365L * 24L * 3600L * 1000L
@@ -57,6 +59,8 @@ class LaunchDataProvider {
     // Instance mirrors of shared cache state (Activity + Wallpaper share one pool)
     val lastStatus: String get() = sharedStatus
     val isFetching: Boolean get() = sharedFetching
+    /** Stamp 110: LL2 historic name-search in flight (not catalog refresh). */
+    val isHistoricSearching: Boolean get() = historicSearching
     val lastError: String? get() = sharedError
     val lastSource: String get() = sharedSource
     val lastCount: Int get() = sharedCount
@@ -185,7 +189,9 @@ class LaunchDataProvider {
             return
         }
         if (historicSearching) {
-            onDone?.invoke()
+            // Stamp 110: queue latest query — do NOT onDone (avoids empty "No historic match" wipe).
+            queuedHistoricSearchQ = q
+            sharedStatus = "Historic search queued | $q"
             return
         }
         historicSearching = true
@@ -229,6 +235,12 @@ class LaunchDataProvider {
                 historicSearching = false
                 try { onDone?.invoke() } catch (e: Exception) {
                     Log.e(TAG, "historic search onDone: ${e.message}", e)
+                }
+                // Stamp 110: run newest queued query (keep prior cache until SEARCH OK replaces).
+                val queued = queuedHistoricSearchQ
+                queuedHistoricSearchQ = null
+                if (!queued.isNullOrBlank() && !queued.equals(q, ignoreCase = true)) {
+                    requestHistoricSearch(queued, onDone)
                 }
             }
         }

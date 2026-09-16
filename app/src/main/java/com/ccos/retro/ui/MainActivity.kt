@@ -324,10 +324,15 @@ class MainActivity : AppCompatActivity() {
             val historic = prefs.telemetryListMode == "historical"
 
             launchList = if (historic) {
-                // Stamp 106/107: local pool only. LL2 search is debounced in fireHistoricSearchDebounced.
+                // Stamp 106/107/110: local pool only. LL2 search debounced separately.
+                // Search hits: do NOT re-filter with isReplayable (drops valid CDN/LL2 past).
                 val q = historicQuery
-                val pool = launchProvider.historicPool(now, q).filter {
-                    it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) <= 0
+                val pool = if (q.isNotBlank()) {
+                    launchProvider.historicPool(now, q)
+                } else {
+                    launchProvider.historicPool(now, q).filter {
+                        it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) <= 0
+                    }
                 }
                 if (q.isNotBlank()) pool.take(80) else pool.take(20)
             } else {
@@ -361,6 +366,10 @@ class MainActivity : AppCompatActivity() {
             val spinner = findViewById<Spinner>(R.id.spinner_launch)
             suppressLaunchSelect = true
             val emptyMsg = when {
+                // Stamp 110: never "No historic match" while search/catalog fetch in flight.
+                historic && historicQuery.isNotBlank() &&
+                    (launchProvider.isHistoricSearching || launchProvider.isFetching) ->
+                    "Historic search…"
                 launchProvider.isFetching -> "Fetching..."
                 historic && historicQuery.isNotBlank() -> "No historic match: " + historicQuery.take(18)
                 historic -> "No historic entries yet"
