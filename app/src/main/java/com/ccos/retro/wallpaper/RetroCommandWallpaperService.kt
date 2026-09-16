@@ -865,7 +865,16 @@ class RetroCommandWallpaperService : WallpaperService() {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 startActivity(intent)
-            } catch (_: Exception) { }
+            } catch (e: Exception) {
+                // Tip 130: soft Toast only — URL selection / m.youtube fallback unchanged.
+                try {
+                    android.widget.Toast.makeText(
+                        applicationContext,
+                        e.message ?: "No intent found",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                } catch (_: Exception) { }
+            }
         }
 
         /**
@@ -899,10 +908,14 @@ class RetroCommandWallpaperService : WallpaperService() {
                 val chooser = Intent.createChooser(primary, "Other vid options").apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     if (alts.size > 1) {
+                        // Tip 130: EXTRA_INITIAL_INTENTS must be Parcelable[] (not typed Intent[] alone).
                         val more = alts.drop(1).map { u ->
                             Intent(Intent.ACTION_VIEW, Uri.parse(u))
                         }.toTypedArray()
-                        putExtra(Intent.EXTRA_INITIAL_INTENTS, more)
+                        putExtra(
+                            Intent.EXTRA_INITIAL_INTENTS,
+                            more as Array<out android.os.Parcelable>
+                        )
                     }
                 }
                 startActivity(chooser)
