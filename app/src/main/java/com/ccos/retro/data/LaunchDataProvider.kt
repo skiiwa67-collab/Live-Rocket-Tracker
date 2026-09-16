@@ -144,7 +144,8 @@ class LaunchDataProvider {
 
         val pastSorted = pastCache.get()?.launches.orEmpty()
             .filter { !it.id.startsWith("demo-") }
-            .filter { it.secondsToNet(now) <= 0 || it.isReplayable(now) }
+            // Stamp 112: never upcoming/live (Flight 14 stays CURRENT-only).
+            .filter { it.isHistoricPastEntry(now) }
             .sortedByDescending { it.netMs }
 
         if (q.isBlank()) {
@@ -161,7 +162,8 @@ class LaunchDataProvider {
             if (matchTokens(l)) add(l)
         }
         for (l in historicSearchCache.get().sortedByDescending { it.netMs }) {
-            if (matchTokens(l)) add(l)
+            // Stamp 112: search hits must be past-only (strip upcoming F14 etc.).
+            if (l.isHistoricPastEntry(now) && matchTokens(l)) add(l)
         }
         if (wantDemo) {
             for (l in demoCatalog) {
@@ -250,7 +252,9 @@ class LaunchDataProvider {
                         }
                     }
                     if (hit != null) {
-                        historicSearchCache.set(hit.launches.filter { !it.id.startsWith("demo-") })
+                        historicSearchCache.set(
+                            hit.launches.filter { !it.id.startsWith("demo-") && it.isHistoricPastEntry() }
+                        )
                         lastHistoricSearchQ = q
                         lastHistoricSearchMs = System.currentTimeMillis()
                         sharedStatus = "SEARCH OK | q=$q | n=${historicSearchCache.get().size} | $src"
@@ -418,7 +422,23 @@ class LaunchDataProvider {
                 if (previous == null) {
                     previous = fetchList(DEV_PREVIOUS, "lldev")
                 }
-                previous?.let { pastCache.set(it) }
+                previous?.let { fetchedPast ->
+                    // Stamp 112: while historic search active, merge past — never wipe sticky/search picks mid-type.
+                    if (historicSearchInterestQ.isNotBlank()) {
+                        val merged = LinkedHashMap<String, LaunchSnapshot>()
+                        for (l in fetchedPast.launches) merged[l.id] = l
+                        for (l in pastCache.get()?.launches.orEmpty()) {
+                            if (l.id !in merged) merged[l.id] = l
+                        }
+                        pastCache.set(
+                            fetchedPast.copy(
+                                launches = merged.values.sortedByDescending { it.netMs }
+                            )
+                        )
+                    } else {
+                        pastCache.set(fetchedPast)
+                    }
+                }
                 val prior = cache.get()
                 val priorList = prior?.launches.orEmpty()
                 // Stamp 72: upcoming fetch fail/null — KEEP prior cache; never cache.set(empty).

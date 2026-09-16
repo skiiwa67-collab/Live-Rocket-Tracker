@@ -46,6 +46,8 @@ class MainActivity : AppCompatActivity() {
     /** Stamp 107: debounce LL2 historic search — never fire every keystroke. */
     private val uiHandler = Handler(Looper.getMainLooper())
     private val historicSearchDebounceMs = 450L
+    /** Stamp 112: true while debounce runnable is scheduled (mid-type protect). */
+    @Volatile private var historicSearchDebouncePending: Boolean = false
     private var populateDepth = 0
     private val historicSearchRunnable = Runnable { fireHistoricSearchDebounced() }
 
@@ -167,7 +169,10 @@ class MainActivity : AppCompatActivity() {
                 launchProvider.setHistoricSearchInterest(historicQuery)
                 populateLaunchSpinner()
                 uiHandler.removeCallbacks(historicSearchRunnable)
-                uiHandler.postDelayed(historicSearchRunnable, historicSearchDebounceMs)
+                historicSearchDebouncePending = historicQuery.isNotBlank() && "demo" !in historicQuery.lowercase()
+                if (historicSearchDebouncePending) {
+                    uiHandler.postDelayed(historicSearchRunnable, historicSearchDebounceMs)
+                }
             }
         })
 
@@ -228,10 +233,30 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btn_refresh_launches).setOnClickListener {
             updateLaunchStatus("Fetching...")
+            syncHistoricQueryFromBox()
+            val keepQ = historicQuery
             launchProvider.refreshIfNeeded(force = true) {
                 runOnUiThread {
-                    populateLaunchSpinner()
-                    updateLaunchStatus(launchProvider.lastStatus)
+                    // Stamp 112: manual REFRESH keeps text; re-run SAME historic query if any.
+                    syncHistoricQueryFromBox()
+                    if (prefs.telemetryListMode == "historical" && keepQ.isNotBlank()) {
+                        historicQuery = keepQ
+                        launchProvider.setHistoricSearchInterest(keepQ)
+                        val et = findViewById<EditText>(R.id.et_historic_search)
+                        if (et != null && et.text?.toString()?.trim().orEmpty() != keepQ) {
+                            et.setText(keepQ)
+                            et.setSelection(keepQ.length)
+                        }
+                        launchProvider.requestHistoricSearch(keepQ) {
+                            runOnUiThread {
+                                populateLaunchSpinner()
+                                updateLaunchStatus(launchProvider.lastStatus)
+                            }
+                        }
+                    } else {
+                        populateLaunchSpinner()
+                        updateLaunchStatus(launchProvider.lastStatus)
+                    }
                 }
             }
         }
@@ -242,6 +267,8 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 // Stamp 57: catalog landed - resolve AUTO now (onCreate resolve was pre-fetch null).
                 telemetryModule.resolveTracked()
+                // Stamp 112: never discard mid-type query on catalog land.
+                syncHistoricQueryFromBox()
                 populateLaunchSpinner()
                 updateLaunchStatus(launchProvider.lastStatus)
                 refreshStatusLine()
@@ -275,6 +302,7 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         // Stamp 57: never force AUTO on resume  -  MANUAL pick must stick (Soyuz stay Soyuz).
         refreshTrackingUi()
+        syncHistoricQueryFromBox()
         populateLaunchSpinner()
         updateLaunchStatus(launchProvider.lastStatus)
         refreshStatusLine()
@@ -291,6 +319,7 @@ class MainActivity : AppCompatActivity() {
 
     /** Stamp 107: debounced historic LL2 search — not every keystroke. */
     private fun fireHistoricSearchDebounced() {
+        historicSearchDebouncePending = false
         if (isFinishing || isDestroyed) return
         if (prefs.telemetryListMode != "historical") return
         val q = historicQuery
@@ -313,6 +342,30 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Log.e("CCOS.Main", "fireHistoricSearch: ${e.message}", e)
             try { updateLaunchStatus("SEARCH FIRE EX | ${e.message}") } catch (_: Exception) {}
+        }
+    }
+
+
+    /** Stamp 112: mid-type / focus / in-flight search — protect query + spinner. */
+    private fun isHistoricSearchUiActive(): Boolean {
+        if (prefs.telemetryListMode != "historical") return false
+        val et = findViewById<EditText>(R.id.et_historic_search)
+        val typed = et?.text?.toString()?.orEmpty() ?: ""
+        if (et?.hasFocus() == true) return true
+        if (typed.isNotBlank()) return true
+        if (historicQuery.isNotBlank()) return true
+        if (launchProvider.isHistoricSearching) return true
+        if (historicSearchDebouncePending) return true
+        return launchProvider.hasActiveHistoricSearch()
+    }
+
+    /** Stamp 112: keep historicQuery + interest synced from EditText (never invent blank). */
+    private fun syncHistoricQueryFromBox() {
+        val et = findViewById<EditText>(R.id.et_historic_search) ?: return
+        val typed = et.text?.toString()?.trim().orEmpty()
+        if (typed.isNotBlank() || et.hasFocus()) {
+            historicQuery = typed
+            launchProvider.setHistoricSearchInterest(typed)
         }
     }
 
