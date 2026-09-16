@@ -432,6 +432,43 @@ object VehicleCatalog {
         ),
 
         VehicleSpec(
+            id = "cz12",
+            family = "cz12",
+            tokens = listOf(
+                "long march 12",
+                "cz-12",
+                "cz12",
+                "lm-12",
+                "lm12",
+                "长征十二号"
+            ),
+            s1Engines = 4,
+            s2Engines = 2,
+            recoverable = false,
+            methalox = false,
+            fuelName = "RP-1",
+            oxName = "LOX",
+            boostbackLit = 0,
+            landingLit = 0,
+            engineName = "YF-100K",
+            s1Thrust = "4x YF-100K SL",
+            s2Thrust = "2x YF-115 VAC",
+            ispVac = "-",
+            mixRatio = "-",
+            chamberBar = "-",
+            s1Dry = "-",
+            s1Prop = "-",
+            nerdNote = "CZ-12 / Long March 12 (CALT/CASC): kerolox paper-doll pack. S1 4x YF-100K + S2 2x YF-115 (published class). Art: vehicle_cz12_* (stack/s1/s2/fairing + tank ox/fuel + flames). No propane pills. Unpublished fields left Unknown.",
+            verified = true,
+            drawFamily = "cz12",
+            s1Pattern = EnginePattern.CHAMBER4,
+            s2Pattern = EnginePattern.BE4_2,
+            s1Name = "1st (YF-100K)",
+            s2Name = "2nd (YF-115)",
+            s2EngineName = "YF-115"
+        ),
+
+        VehicleSpec(
             id = "lm",
             family = "lm",
             tokens = listOf("long march", "cz-"),
@@ -745,6 +782,7 @@ object VehicleCatalog {
 
     /** Darren LM-8A stack silhouette base name under res/drawable (png/webp). */
     const val CZ8A_DRAWABLE = "vehicle_cz8a"
+    const val CZ12_DRAWABLE = "vehicle_cz12"
 
     const val UPDATE_HEAD = "NEW VEHICLE · DATA UPDATE REQUIRED"
     const val UPDATE_BODY = "This rocket is not in the vehicle book yet. Drawing and numbers ship in a later update. We will not invent them."

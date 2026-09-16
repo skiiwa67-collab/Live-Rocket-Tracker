@@ -119,6 +119,7 @@ object VehicleDraw {
                     cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "cz8a" -> cz8a(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
+            "cz12" -> cz12(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
             "lm" -> {
                 if (!drawArtThenLmTanks("lm", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch))
                     cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
@@ -175,6 +176,24 @@ object VehicleDraw {
         launch: LaunchSnapshot
     ) {
         if (drawArtThenLmTanks("cz8a", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch)) return
+        cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
+    }
+
+    /** Stamp 114: CZ-12 / Long March 12 kerolox pack (vehicle_cz12_*). No propane pills. */
+    private fun cz12(
+        canvas: Canvas,
+        cx: Float,
+        baseY: Float,
+        h: Float,
+        tSec: Float,
+        stage: Int,
+        separated: Boolean,
+        skin: TelemetrySkin.Tokens,
+        lamp: Float,
+        alpha: Float,
+        launch: LaunchSnapshot
+    ) {
+        if (drawArtThenLmTanks("cz12", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch)) return
         cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
     }
 
@@ -266,7 +285,7 @@ object VehicleDraw {
             if (!usedMasks) {
                 val saved = canvas.save()
                 canvas.clipRect(dest)
-                if (wide || artId == "cz8a" || artId == "lm" || artId == "lm5") {
+                if (wide || artId == "cz8a" || artId == "cz12" || artId == "lm" || artId == "lm5") {
                     overlayLmTanks(canvas, cx, baseY, h, tSec, stage, separated, wide || artId == "lm5", lamp, glassA, launch)
                 } else {
                     overlayCoreTanks(canvas, cx, baseY, h, tSec, stage, separated, methalox, lamp, glassA, launch, cores)
@@ -694,7 +713,7 @@ object VehicleDraw {
             artId == "starship" || methalox || artId == "glenn" || artId == "vulcan" -> "raptor"
             artId == "sls" -> "rs25"
             artId == "soyuz" || artId == "proton" -> "rd107"
-            artId.contains("lm") || artId == "cz8a" || artId == "cz2d" -> "merlin"
+            artId.contains("lm") || artId == "cz8a" || artId == "cz12" || artId == "cz2d" -> "merlin"
             else -> "merlin"
         }
         val fw = if (stage >= 2) h * 0.16f else h * 0.30f
