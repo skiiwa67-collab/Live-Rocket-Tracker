@@ -409,11 +409,11 @@ object VehicleCatalog {
             s2Engines = 2,
             recoverable = false,
             methalox = false,
-            fuelName = "RP-1",
+            fuelName = "LH2",
             oxName = "LOX",
             boostbackLit = 0,
             landingLit = 0,
-            engineName = "YF-100",
+            engineName = "YF-100 / YF-75H",
             s1Thrust = "~4800 kN SL class",
             s2Thrust = "2x YF-75H/DA VAC",
             ispVac = "—",
@@ -421,7 +421,7 @@ object VehicleCatalog {
             chamberBar = "—",
             s1Dry = "—",
             s1Prop = "~371 t GLOW class",
-            nerdNote = "CZ-8A / Long March 8A (CALT/CASC): ~50.5 m, 3.35 m core, ~371 t liftoff, ~480 t-class / ~4800 kN liftoff thrust class. Stack 2 + 2 strap-ons: core S1 2x YF-100 kerolox, each booster 1x YF-100; S2 2x YF-75H/YF-75DA hydrolox (3.35 m); fairing up to ~5.2 m published. ~7 t to 700 km SSO. Maiden 2025-02-11 Wenchang. Published CALT/state media/skyrocket/Wikipedia-class — no invent. Darren art hook: res/drawable/vehicle_cz8a (png/webp).",
+            nerdNote = "CZ-8A / Long March 8A (CALT/CASC): ~50.5 m, 3.35 m core, ~371 t liftoff, ~480 t-class / ~4800 kN liftoff thrust class. Stack 2 + 2 strap-ons: core S1 2x YF-100 kerolox, each booster 1x YF-100; S2 2x YF-75H/YF-75DA hydrolox (3.35 m); fairing up to ~5.2 m published. ~7 t to 700 km SSO. Maiden 2025-02-11 Wenchang. Published CALT/state media/skyrocket/Wikipedia-class — no invent. Da Vinci art: vehicle_cz8a_*. Stamp 118: S2 hydrolox YF-75H/DA (fuelName LH2); S1+SRB still YF-100 kerolox. Art vehicle_cz8a_* continuous stack.",
             verified = true,
             drawFamily = "cz8a",
             s1Pattern = EnginePattern.CHAMBER4,
@@ -665,9 +665,9 @@ object VehicleCatalog {
             chamberBar = "—",
             s1Dry = "—",
             s1Prop = "~550 t GROSS",
-            nerdNote = "Stainless methalox. 9×TQ-12A + 1×TQ-15A. Grid fins and legs. Looks like Falcon 9 because the physics is the same. Y2 recovered Minqin ~T+8.",
+            nerdNote = "Stainless methalox. 9×TQ-12A + 1×TQ-15A. Grid fins and legs. Stamp 118: paper-doll vehicle_zq3_* (not F9 art). Stainless methalox. Y2 recovered Minqin ~T+8.",
             verified = true,
-            drawFamily = "f9",
+            drawFamily = "zq3",
             s1Pattern = EnginePattern.MERLIN9,
             s2Pattern = EnginePattern.MERLIN_VAC
         ),
@@ -822,6 +822,8 @@ object VehicleCatalog {
     /** Darren LM-8A stack silhouette base name under res/drawable (png/webp). */
     const val CZ8A_DRAWABLE = "vehicle_cz8a"
     const val CZ12_DRAWABLE = "vehicle_cz12"
+    const val ZQ3_DRAWABLE = "vehicle_zq3"
+    const val CZ8A_DRAWABLE = "vehicle_cz8a"
     const val KZ11_DRAWABLE = "vehicle_kz11"
     const val CZ2D_DRAWABLE = "vehicle_cz2d"
 
