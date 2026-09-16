@@ -166,6 +166,7 @@ object VehicleCatalog {
             recoverable = true,
             methalox = false,
             fuelName = "RP-1",
+            oxName = "LOX",
             boostbackLit = 3,
             landingLit = 3,
             engineName = "MERLIN 1D",
@@ -174,9 +175,11 @@ object VehicleCatalog {
             ispVac = "348 s",
             mixRatio = "2.36 O/F",
             chamberBar = "97 BAR",
-            s1Dry = "3× ~26 t",
-            s1Prop = "3× ~400 t",
-            nerdNote = "Three cores, one vacuum Merlin. Side boosters go home. Center core has a worse day.",
+            s1Dry = "3x ~26 t",
+            s1Prop = "3x ~400 t",
+            nerdNote = "Falcon Heavy: 3-core kerolox (LOX cyan + RP amber). Stamp 125 Soft-PASS vehicle_fh_* fills via drawArtThenCoreTanks(fh, cores=3). No propane pills.",
+            verified = true,
+            drawFamily = "fh",
             s1Pattern = EnginePattern.MERLIN27,
             s2Pattern = EnginePattern.MERLIN_VAC
         ),
@@ -749,6 +752,48 @@ object VehicleCatalog {
         ),
 
         VehicleSpec(
+            id = "kinetica1",
+            family = "kinetica1",
+            tokens = listOf(
+                "kinetica-1",
+                "kinetica 1",
+                "kinetica1",
+                "kinetica",
+                "lijian-1",
+                "lijian1",
+                "lijian 1",
+                "cas space",
+                "cas-space",
+                "zk-1",
+                "zk1"
+            ),
+            s1Engines = 1,
+            s2Engines = 1,
+            recoverable = false,
+            methalox = false,
+            fuelName = "SOLID",
+            oxName = "SOLID",
+            boostbackLit = 0,
+            landingLit = 0,
+            engineName = "HTPB/APCP stages",
+            s1Thrust = "-",
+            s2Thrust = "-",
+            ispVac = "-",
+            mixRatio = "-",
+            chamberBar = "-",
+            s1Dry = "-",
+            s1Prop = "-",
+            nerdNote = "CAS Space Kinetica-1 (Lijian-1): all-solid 4-stage HTPB/APCP. Stamp 125 art vehicle_kinetica1_* grain ochre (ox empty). No propane pills. Unpublished fields Unknown.",
+            verified = true,
+            drawFamily = "kinetica1",
+            s1Pattern = EnginePattern.UNKNOWN,
+            s2Pattern = EnginePattern.UNKNOWN,
+            s1Name = "S1 SOLID",
+            s2Name = "S2-S4 UPPER",
+            s2EngineName = "SOLID"
+        ),
+
+        VehicleSpec(
             id = "pallas1",
             family = "pallas1",
             tokens = listOf(
@@ -863,6 +908,7 @@ object VehicleCatalog {
     const val CZ12_DRAWABLE = "vehicle_cz12"
     const val ZQ3_DRAWABLE = "vehicle_zq3"
     const val GRAVITY1_DRAWABLE = "vehicle_gravity1"
+    const val KINETICA1_DRAWABLE = "vehicle_kinetica1"
     const val PALLAS1_DRAWABLE = "vehicle_pallas1"
     const val ELECTRON_DRAWABLE = "vehicle_electron"
     const val KZ11_DRAWABLE = "vehicle_kz11"
