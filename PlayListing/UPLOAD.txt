@@ -28,10 +28,11 @@ PROMO VIDEO
   Graphic assets → Promo video.
 
 APP ICON (512x512 PNG, full square, no rounded corners)
-  Still pick ONE. Files in this folder:
-  play-app-icon-512-A-MAP.png
-  play-app-icon-512-B-REENTRY.png
-  play-app-icon-512-C-COLLAGE.png
+  LOCKED: play-app-icon-512-A-MAP.png
+  This is the store listing icon AND the on-device launcher (mipmap ic_launcher).
+  Do not upload B-REENTRY or C-COLLAGE. Play rejected a listing/launcher mismatch
+  when the store used A-MAP and the installed launcher was the old cyan rocket.
+  B and C remain in this folder as unused alternates only.
 
 WHY THE CROPS
   Razr inner shots are 1224x2992 (2.44:1). Play rejects over 2:1.
