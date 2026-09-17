@@ -28,11 +28,14 @@ PROMO VIDEO
   Graphic assets → Promo video.
 
 APP ICON (512x512 PNG, full square, no rounded corners)
-  LOCKED: play-app-icon-512-A-MAP.png
-  This is the store listing icon AND the on-device launcher (mipmap ic_launcher).
-  Do not upload B-REENTRY or C-COLLAGE. Play rejected a listing/launcher mismatch
-  when the store used A-MAP and the installed launcher was the old cyan rocket.
-  B and C remain in this folder as unused alternates only.
+  LOCKED: F13-MAP winner A — Play listing AND on-device launcher must match.
+  Upload this file to Play Console:
+    play-app-icon-512-F13-MAP.png
+    (same pixels as play-app-icon-512-A-MAP.png — that filename is now F13 art)
+  Source crop: Starship F13 TRAJ / Re-entry Map ground track
+  (cyan arc Starbase → Indian Ocean). Do not bake the app name into the icon.
+  Do not upload B-REENTRY, C-COLLAGE, or the old A-MAP Earth+arc art.
+  Play rejected a listing/launcher mismatch when those two did not match.
 
 WHY THE CROPS
   Razr inner shots are 1224x2992 (2.44:1). Play rejects over 2:1.
