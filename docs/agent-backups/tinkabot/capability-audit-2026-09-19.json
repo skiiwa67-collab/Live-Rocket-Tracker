@@ -1,0 +1,29 @@
+{
+  "schema": "tinkabot-capability-audit/v1",
+  "updated_at": "2026-09-19T06:29:09-0500",
+  "can_today": {
+    "mcp_connected": ["Gmail","dropbox","Google-drive","X","Google-calendar","Chrome-devtools","Playwright","Notion","Browser-use","Antimetal","Aws-mcp","Aikido"],
+    "plugins": ["pstack installed","many needsAuth"],
+    "skills_local": ["session-json-multi-mirror-backup","team-triage-dump-on-degrade","dual-write-notion-and-github"],
+    "gh_cli": "skiiwa67-collab logged in (repo scope)",
+    "lane": "API→Agent Plugin wrap"
+  },
+  "gaps": [
+    "GitHub marketplace MCP not installed (needs PAT) — mitigated by gh CLI",
+    "No Cursor IDE local plugin load on Grok Bot for proving wraps in-chat",
+    "Many MCP connectors needsAuth (Slack, Context7, Stripe, …)",
+    "setup-pstack never run",
+    "MiniME down until tonight — no pager/voice sync"
+  ],
+  "done_now": [
+    "GitHub push docs/agent-backups/tinkabot/ mid + SIM",
+    "skill session-json-multi-mirror-backup",
+    "scaffold+prove ll2-agent-plugin at /workspace/ll2-agent-plugin (LaunchSummary)"
+  ],
+  "tonight": [
+    "Chris: optional GitHub marketplace plugin PAT if gh not enough",
+    "Chris: load ll2 plugin in Cursor IDE / decide publish",
+    "run /setup-pstack in Cursor",
+    "MiniME sync when back"
+  ]
+}
