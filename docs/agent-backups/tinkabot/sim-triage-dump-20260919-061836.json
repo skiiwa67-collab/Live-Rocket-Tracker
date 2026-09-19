@@ -1,0 +1,62 @@
+{
+  "schema": "team-triage-dump/v1",
+  "agent": "tinkabot",
+  "agent_id": "9ca7f7d0-4648-4cfe-bc49-206401979b89",
+  "dump_kind": "SIM",
+  "trigger": {
+    "what": "SIM TEST \u2014 dump-on-degrade Team Triage Protocol",
+    "when": "2026-09-19T06:18:36-0500",
+    "severity": "SIM",
+    "protocol": "/workspace/agent-backups/helios/TEAM_TRIAGE_PROTOCOL.json"
+  },
+  "standing_orders": [
+    "session JSON begin/mid/end \u2014 project signal only",
+    "mirror local + Dropbox /Grok-Agent-Backups + GitHub + Notion",
+    "driving-proxy = Helios while Chris unavailable",
+    "bugs dual-log Notion+GitHub",
+    "never publish plugin to marketplace unless owner asks + approve gate",
+    "pstack \u2260 deploy API"
+  ],
+  "lane": "wrap HTTP APIs into Cursor/Agent plugins (plugin.json + optional mcp.json + thin skill)",
+  "workflow": [
+    "name data shape first",
+    "smallest Agent Plugin scaffold",
+    "public no-auth HTTP = zero-dep stdio MCP until SDK earns install",
+    "prove local (Cursor IDE); Grok Bot cannot load ~/.cursor/plugins/local",
+    "publish: ask once company/service affiliation \u2192 Marketplace vs cursor.directory"
+  ],
+  "decisions": [
+    "prefer Agent Plugin over Cursor Plugin unless rules/hooks/agents needed",
+    "pstack installed as workflow pack; setup-pstack not run",
+    "no API wrap started \u2014 owner still onboarding/testing premade bots"
+  ],
+  "bugs": [],
+  "api_setups": {
+    "active_wraps": [],
+    "awaiting": "docs URL / OpenAPI / wrap X",
+    "practice_offered": "PokeAPI"
+  },
+  "pstack": {
+    "plugin_id": "9717366",
+    "version_seen": "0.15.2",
+    "installed": true,
+    "installed_at": "2026-09-17",
+    "setup_pstack": false,
+    "cache": "/home/box/sand-data/plugins/cache/cursor-public/pstack/"
+  },
+  "team_assignments": {
+    "Ada": "Android/Kotlin \u2014 consumes APIs in app; owns Git",
+    "Helios": "approval proxy + triage owner",
+    "Saxon": "advice",
+    "Da Vinci": "fleet art",
+    "tinkabot": "API\u2192plugin wiring for roster"
+  },
+  "deploy": "N/A \u2014 no plugin published",
+  "github": "blocked \u2014 cursor-github MCP unavailable on this host",
+  "resume_complete": true,
+  "paths": {
+    "local_workspace": "/workspace/agent-backups/tinkabot/sim-triage-dump-20260919-061836.json",
+    "local_agent": "/home/box/agent-data/agents/9ca7f7d0-4648-4cfe-bc49-206401979b89/backups/sim-triage-dump-20260919-061836.json",
+    "dropbox": "/Grok-Agent-Backups/tinkabot/sim-triage-dump-20260919-061836.json"
+  }
+}
