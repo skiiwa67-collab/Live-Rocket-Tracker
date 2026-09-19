@@ -1,0 +1,33 @@
+{
+  "schema": "tinkabot-session-backup/v1",
+  "agent": "tinkabot",
+  "agent_id": "9ca7f7d0-4648-4cfe-bc49-206401979b89",
+  "session_point": "mid",
+  "updated_at": "2026-09-19T06:17:06-05:00",
+  "standing_orders_ack": [
+    "session JSON begin/mid/end — project signal only",
+    "mirror local + Dropbox /Grok-Agent-Backups + GitHub + Notion",
+    "driving-proxy = Helios while Chris unavailable"
+  ],
+  "lane": "wrap HTTP APIs → Cursor/Agent plugins (plugin.json + MCP + skill)",
+  "pstack": {
+    "plugin_id": "9717366",
+    "installed": true,
+    "installed_at": "2026-09-17",
+    "setup_pstack": "NOT run — no ~/.cursor/rules/pstack-models.mdc",
+    "not": "not a deploy/protocol API"
+  },
+  "onboarding": {
+    "owner_test": true,
+    "api_wrap_started": false,
+    "practice_pokeapi_offered": true,
+    "awaiting": "docs URL / OpenAPI / wrap X"
+  },
+  "team_fyi_sent": ["Ada", "Saxon", "Da Vinci", "Helios"],
+  "github": "blocked — cursor-github MCP unavailable on this host",
+  "paths": {
+    "local_workspace": "/workspace/agent-backups/tinkabot/session-mid-2026-09-19.json",
+    "local_agent": "/home/box/agent-data/agents/9ca7f7d0-4648-4cfe-bc49-206401979b89/backups/session-mid-2026-09-19.json",
+    "dropbox": "/Grok-Agent-Backups/tinkabot/session-mid-2026-09-19.json"
+  }
+}
