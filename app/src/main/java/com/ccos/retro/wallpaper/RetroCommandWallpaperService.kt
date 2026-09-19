@@ -7014,6 +7014,19 @@ class RetroCommandWallpaperService : WallpaperService() {
             val panes = WebcastResolver.panes(launch)
             val rows = mutableListOf<Triple<String, String, Int>>()
             rows += Triple("WEBCAST", "", withLamp(skin.accent, lamp))
+            // Tip 133 / issue #45: CNSA/China (and similar) — data-availability notice, not a bug.
+            if (launch != null && launch.isChinese()) {
+                rows += Triple(
+                    "ABOUT LIVE DATA FOR SOME PROVIDERS",
+                    "",
+                    withLamp(skin.accent, lamp * 0.72f)
+                )
+                rows += Triple(
+                    "For certain launch providers (for example CNSA / China), real-time or near-real-time telemetry and live video are often not publicly available. Launches may appear delayed, incomplete, or without a live stream until official data or post-launch imagery is released. This is a limitation of the source data — not a bug in Live Rocket Tracker.",
+                    "",
+                    withLamp(skin.muted, lamp * 0.78f)
+                )
+            }
             if (launch == null) {
                 rows += Triple("NO LOCK", "", withLamp(skin.muted, lamp))
             } else {
