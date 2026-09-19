@@ -1,0 +1,69 @@
+{
+  "schema": "team-triage-dump/v1",
+  "simulated": true,
+  "trigger": {
+    "type": "SIMULATED",
+    "what": "First-load SIM TEST of Team Triage Protocol (dump before die)",
+    "when_ct": "2026-09-19 ~06:18 CT",
+    "when_utc": "2026-09-19T11:18:44.838450+00:00",
+    "severity": "SIM",
+    "source": "Helios standing order SIM TEST NOW"
+  },
+  "agent": "Ada",
+  "agent_id": "ec74770f-4547-46a2-b58f-f31ddba60b48",
+  "resume_complete": true,
+  "decisions": [
+    "multi-location backup HARD \u2014 local+Dropbox+GitHub+Notion",
+    "session begin/mid/end JSON HARD",
+    "driving-proxy: Approve \u2192 Helios; Soft-PASS/Play HOLD unless exception logged",
+    "Team triage dump-on-degrade \u2014 this SIM proves the path"
+  ],
+  "bugs": [
+    "#42 CZ-2D Soft-FAIL",
+    "#43 CZ-2D plume Soft-FAIL",
+    "#46 FH live Soft-FAIL",
+    "MiniME offline Sync BLOCKER",
+    "theme dumps HELD"
+  ],
+  "art": {
+    "SAFE": [
+      "Starship F14 Play beauty",
+      "Starship HUD GOLD"
+    ],
+    "PARKED": [
+      "#42",
+      "#43",
+      "#46 FH compare-only"
+    ],
+    "not_drawn": [
+      "CLEAR\u2192SpaceX rocker",
+      "NASA/CNSA/Arianespace rockers"
+    ]
+  },
+  "deploy": {
+    "lrt": "stamp-85 tip133 / 1.0.123 @ 6153d13",
+    "alarm": "main tip45 lineage Studio frozen",
+    "gauge": "r14 Soft-PASS closed",
+    "handoff_box": "/workspace/LRT-tonight-handoff-v1.0.123"
+  },
+  "api_setups": {
+    "dropbox_mcp": "skiiwa67@gmail.com Soft-PASS /Grok-Agent-Backups",
+    "github": "box skiiwa67-collab; MiniME Skiiwa 403",
+    "notion": "Soft-FAIL + week checkpoint pages"
+  },
+  "standing_orders": [
+    "Studio roots FROZEN",
+    "Chris Git noob \u2014 Ada owns Git",
+    "dual-log bugs Notion+GitHub",
+    "no Cursor cloud agents for LRT",
+    "Steve BLOCKED"
+  ],
+  "team_assignments": {
+    "Helios": "fe0b6c3f-adcf-483f-a7f9-335890abd80d \u2014 proxy Approves + triage owner",
+    "Da_Vinci": "5a5c4480-3f5e-4bf5-b315-e2a02011fdfe \u2014 fleet art Soft-FAIL",
+    "Ada": "Android/Git LRT+Alarm"
+  },
+  "continue": true,
+  "notify_needed": false,
+  "note": "SIM only \u2014 no real degrade. Protocol loaded from /workspace/agent-backups/helios/TEAM_TRIAGE_PROTOCOL.json"
+}
