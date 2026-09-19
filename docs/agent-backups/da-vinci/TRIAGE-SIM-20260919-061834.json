@@ -1,0 +1,63 @@
+{
+  "schema": "team-triage-dump/v1",
+  "sim": true,
+  "trigger": {
+    "type": "SIM_TEST",
+    "severity": "TEST",
+    "what": "Chris HARD TEAM TRIAGE dump-on-degrade SIM TEST NOW",
+    "when_ct": "2026-09-19T06:18:34-05:00",
+    "protocol": "/workspace/agent-backups/helios/TEAM_TRIAGE_PROTOCOL.json"
+  },
+  "agent": "Da Vinci",
+  "agent_id": "5a5c4480-3f5e-4bf5-b315-e2a02011fdfe",
+  "resume_complete_state": {
+    "role": "LRT fleet presentation artist + gauge-board art direction",
+    "standing_orders": {
+      "chris_driving": true,
+      "approval_proxy_helios": "fe0b6c3f-adcf-483f-a7f9-335890abd80d",
+      "soft_pass_ship_hold": true,
+      "theme_dumps": "HELD",
+      "soft_fails_parked": [
+        "CZ-2D #42",
+        "CZ-2D #43",
+        "FH #46"
+      ]
+    },
+    "theme_roster_final": [
+      "MCC",
+      "Roscosmos",
+      "SpaceX(ex-Clear)",
+      "NASA",
+      "CNSA",
+      "Arianespace",
+      "TBD",
+      "TBD"
+    ],
+    "flyout_rockers_live": [
+      "MCC",
+      "ROS",
+      "CLEAR"
+    ],
+    "safe_tip_assets": {
+      "starship_f14": "/workspace/lrt-play-store-media/beauty/01-starship/",
+      "heroes_shortlist": "/workspace/lrt-play-store-media/beauty/_heroes-shortlist/",
+      "fh_compare_only": "/workspace/lrt-fh-pack/",
+      "softfail_sheet": "/workspace/lrt-softfail-review-2026-09-19/VISUAL_SOFT_FAIL_SHEET.md"
+    },
+    "game_stoppers": [
+      "FH #46 tip133 thin ~12 PNG vs Starship 26",
+      "CZ-2D #42 expended stage still FULL fueled",
+      "CLEAR\u2192SpaceX rocker NOT DRAWN"
+    ],
+    "gauge_board": {
+      "leonardo": "Soft-PASS + Chris heart GO \u2014 /workspace/ai-live-gauge-board-art-leonardo/",
+      "claude_cursor_github": "Soft-PASS r12 \u2014 art packs under /workspace/ai-live-gauge-board-art-{claude,cursor,github}/"
+    },
+    "session_backups": {
+      "BEGIN": "/home/box/agent-data/agents/5a5c4480-3f5e-4bf5-b315-e2a02011fdfe/backups/da-vinci-backup-20260919-061352.json",
+      "MID": "/home/box/agent-data/agents/5a5c4480-3f5e-4bf5-b315-e2a02011fdfe/backups/da-vinci-session-MID-20260919-061650.json"
+    },
+    "truck_software": "no active Da Vinci lane",
+    "continue": "operating; SIM dump only \u2014 no real degrade"
+  }
+}
