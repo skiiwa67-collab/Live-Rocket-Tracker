@@ -1,0 +1,219 @@
+{
+  "schema": "tonight-minime-art-stage/v1",
+  "created_ct": "2026-09-19T06:26:59-05:00",
+  "stamp": "20260919-062659",
+  "minime_status": "DOWN until Chris home tonight",
+  "tonight_path": "MiniME on \u2192 CopyFromBox sync \u2192 Chris Studio+phone \u2192 Ada push \u2192 Chris Sync/run",
+  "holds": [
+    "Soft-PASS/Play HOLD",
+    "theme dumps HELD",
+    "FH #46 Soft-FAIL \u2014 pack compare-only"
+  ],
+  "ada_owns": "Git",
+  "minime_targets": {
+    "beauty_01_starship": "C:\\Users\\skiiw\\AndroidStudioProjects\\RetroCommandCenter\\docs\\play-store-media\\beauty\\01-starship\\\\",
+    "beauty_heroes": "C:\\Users\\skiiw\\AndroidStudioProjects\\RetroCommandCenter\\docs\\play-store-media\\beauty\\_heroes-shortlist\\\\",
+    "hud_assets_fh": "C:\\Users\\skiiw\\AndroidStudioProjects\\RetroCommandCenter\\hud-assets\\\\",
+    "drawable_fh": "C:\\Users\\skiiw\\AndroidStudioProjects\\RetroCommandCenter\\app\\src\\main\\res\\drawable\\\\"
+  },
+  "files": {
+    "SAFE_starship_f14": [
+      {
+        "box": "/workspace/lrt-play-store-media/beauty/01-starship/f14-starship-phone-hero-1080x1920-a.png",
+        "exists": true,
+        "bytes": 685647,
+        "md5": "98df85942aca55b1d8fbc61fc470b030"
+      },
+      {
+        "box": "/workspace/lrt-play-store-media/beauty/01-starship/f14-starship-phone-hero-1080x1920-b.png",
+        "exists": true,
+        "bytes": 683548,
+        "md5": "42da1dcdc3ecc7a6106b49a28472a727"
+      },
+      {
+        "box": "/workspace/lrt-play-store-media/beauty/01-starship/f14-starship-feature-1024x500.png",
+        "exists": true,
+        "bytes": 112067,
+        "md5": "b2b92e8c31440ae007f8aa1afcd3cf30"
+      }
+    ],
+    "SAFE_heroes_shortlist": [
+      {
+        "box": "/workspace/lrt-play-store-media/beauty/_heroes-shortlist/f14-starship-phone-hero-1080x1920-a.png",
+        "exists": true,
+        "bytes": 685647,
+        "md5": "98df85942aca55b1d8fbc61fc470b030"
+      },
+      {
+        "box": "/workspace/lrt-play-store-media/beauty/_heroes-shortlist/f14-starship-phone-hero-1080x1920-b.png",
+        "exists": true,
+        "bytes": 683548,
+        "md5": "42da1dcdc3ecc7a6106b49a28472a727"
+      },
+      {
+        "box": "/workspace/lrt-play-store-media/beauty/_heroes-shortlist/f14-starship-feature-1024x500.png",
+        "exists": true,
+        "bytes": 112067,
+        "md5": "b2b92e8c31440ae007f8aa1afcd3cf30"
+      }
+    ],
+    "FH_compare_only": [
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh.png",
+        "bytes": 42326,
+        "md5": "37ecae70bac234148b0ae2fdcf15fce3"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_booster.png",
+        "bytes": 35108,
+        "md5": "8e232bf8a32688ec943c9ecae8ff3a37"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_booster_tank_fills.png",
+        "bytes": 3215,
+        "md5": "e4dd72ce3e1e947804c8cf8c5ba8604a"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_cutaway.png",
+        "bytes": 42326,
+        "md5": "37ecae70bac234148b0ae2fdcf15fce3"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_engine_booster.png",
+        "bytes": 2632,
+        "md5": "aa7525e5fc44a4d2825e1a89ab08bee9"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_engine_ship.png",
+        "bytes": 2658,
+        "md5": "8a8b9ba38520ceb60c9a86da97a8ee43"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_exhaust_booster.png",
+        "bytes": 3706,
+        "md5": "d61e260ddad5ffbb8064296da72cc3e6"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_exhaust_ship.png",
+        "bytes": 3659,
+        "md5": "a32d9e80fe0a88e472d983d92c21c0cf"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_fairing.png",
+        "bytes": 6838,
+        "md5": "d682b84b78ec0dc9400b5f21ac780aa2"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_flame_booster.png",
+        "bytes": 3706,
+        "md5": "d61e260ddad5ffbb8064296da72cc3e6"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_flame_s1.png",
+        "bytes": 3706,
+        "md5": "d61e260ddad5ffbb8064296da72cc3e6"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_flame_s2.png",
+        "bytes": 3659,
+        "md5": "a32d9e80fe0a88e472d983d92c21c0cf"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_flame_ship.png",
+        "bytes": 3659,
+        "md5": "a32d9e80fe0a88e472d983d92c21c0cf"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_fuel.png",
+        "bytes": 4190,
+        "md5": "a8107b88d620facf12d280ca0cc24f47"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_full.png",
+        "bytes": 44001,
+        "md5": "f11ec89f76b3d7968de49690011b162d"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_payload.png",
+        "bytes": 6838,
+        "md5": "d682b84b78ec0dc9400b5f21ac780aa2"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_s1.png",
+        "bytes": 35108,
+        "md5": "8e232bf8a32688ec943c9ecae8ff3a37"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_s2.png",
+        "bytes": 10039,
+        "md5": "8a4a2b0359971fa470fc0dd91c3fa675"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_shell.png",
+        "bytes": 44961,
+        "md5": "8b7ef1f9d12df309c8503ffcc997ea1f"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_ship.png",
+        "bytes": 14328,
+        "md5": "82c4e9067ed7f0ff82dc9a0d61da8030"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_ship_tank_fills.png",
+        "bytes": 3091,
+        "md5": "938d79a9fc5a984910796d7522741bf1"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_side.png",
+        "bytes": 42364,
+        "md5": "1aa68fa5da340df815963ba99bb15618"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_srb.png",
+        "bytes": 35032,
+        "md5": "26ea22e65e4fc16b02015e2da5c5aca0"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_stack.png",
+        "bytes": 42364,
+        "md5": "1aa68fa5da340df815963ba99bb15618"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_tank_fills.png",
+        "bytes": 4190,
+        "md5": "a8107b88d620facf12d280ca0cc24f47"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_tank_s1_fuel.png",
+        "bytes": 2660,
+        "md5": "4b7b3cb54ed5e5ffbc4777647ff8b3c5"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_tank_s1_ox.png",
+        "bytes": 2645,
+        "md5": "779dfbf9a83ba37933e29d348c9a06dc"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_tank_s2_fuel.png",
+        "bytes": 2606,
+        "md5": "49ba7f3000df1c497a93f08ce0be804c"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_tank_s2_ox.png",
+        "bytes": 2573,
+        "md5": "75c41744e9eb9df00fd46d3f2a775374"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/vehicle_fh_upper.png",
+        "bytes": 6838,
+        "md5": "d682b84b78ec0dc9400b5f21ac780aa2"
+      },
+      {
+        "box": "/workspace/lrt-fh-pack/_proof_fh_floor.png",
+        "bytes": 165204,
+        "md5": "6d3dc50bfc572f4d27bc90bfcbcb7349"
+      }
+    ]
+  },
+  "softfail_sheet": "/workspace/lrt-softfail-review-2026-09-19/VISUAL_SOFT_FAIL_SHEET.md"
+}
