@@ -1,0 +1,32 @@
+{
+  "schema": "skippy-session-backup/v1",
+  "phase": "MID",
+  "agent": "Skippy the Magnificent",
+  "agent_id": "2f489fae-574f-4b61-b618-40a8a74b08e8",
+  "session_at": "2026-09-19T11:16:47.967710+00:00",
+  "projects": [
+    {
+      "name": "continuity-multi-backup",
+      "signal": "Pre-wipe JSON none. Continuity reconstructed. Local+Dropbox+Notion live. GitHub repo create blocked by Auto-review; awaiting Helios proxy (no Chris page).",
+      "paths": {
+        "local_continuity": "/workspace/skippy-continuity-backup.json",
+        "dropbox": "/Grok-Agent-Backups/Skippy/skippy-state.json",
+        "notion": "https://app.notion.com/p/3e0a94933faa8147add2f7d03c3a1ebf",
+        "github": "pending Helios proxy \u2192 skiiwa67-collab/grok-agent-backups"
+      }
+    },
+    {
+      "name": "yard-truck-software",
+      "signal": "Locks hold: F11 first-believer, pad stills frozen, one-bay strip (62), dropped-trailer Power Pod Gen1, cassette-ID routing. Skippy not in DFW Node. No file ship while Chris driving/unavailable."
+    },
+    {
+      "name": "skippy-gauge-theme",
+      "signal": "Soft-PASS live ?theme=skippy. Pack /workspace/skippy-gauge-theme/."
+    }
+  ],
+  "standing_orders": [
+    "session JSON BEGIN/MID/END, no filler, all projects incl truck software",
+    "mirror local + Dropbox /Grok-Agent-Backups + GitHub + Notion",
+    "driving proxy = Helios; do not page Chris for Approve"
+  ]
+}
