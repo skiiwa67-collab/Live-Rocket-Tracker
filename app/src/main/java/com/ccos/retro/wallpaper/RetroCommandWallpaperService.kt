@@ -228,8 +228,14 @@ class RetroCommandWallpaperService : WallpaperService() {
             return sp * d
         }
         private fun telBold() {
+            // #48: real BOLD typeface only — FakeBold double-strokes glyphs (MPHH/RANGGE)
             hudPaint.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-            hudPaint.isFakeBoldText = true
+            hudPaint.isFakeBoldText = false
+        }
+        private fun telRegular() {
+            hudPaint.typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
+            hudPaint.isFakeBoldText = false
+            hudPaint.style = Paint.Style.FILL
         }
         /** Largest bold size that fits the cell — never overflow. */
         private fun telFit(text: String, maxW: Float, maxH: Float, preferSp: Float = 18f): Float {
@@ -1800,6 +1806,7 @@ class RetroCommandWallpaperService : WallpaperService() {
         }
 
         private fun drawButtons(canvas: Canvas) {
+            telRegular()
             val onSys = prefs.isSystem()
             val onTel = prefs.isTelemetry()
             val labels = when {
@@ -2044,21 +2051,26 @@ class RetroCommandWallpaperService : WallpaperService() {
 
 
         private fun drawPadVersionMark(canvas: Canvas, r: RectF, padBaselineY: Float) {
+            // #48: keep VERSION_CODE but pin to TOP of PAD cell (not stacked on "PAD" → PAD132)
             val oldTf = hudPaint.typeface
             val oldAlign = hudPaint.textAlign
             val oldSize = hudPaint.textSize
             val oldColor = hudPaint.color
+            val oldFake = hudPaint.isFakeBoldText
             val mark = BuildConfig.VERSION_CODE.toString()
+            hudPaint.isFakeBoldText = false
             hudPaint.typeface = Typeface.MONOSPACE
             hudPaint.textAlign = Paint.Align.CENTER
-            hudPaint.textSize = (oldSize * 0.82f).coerceIn(16f, 22f)
-            hudPaint.color = Color.argb(255, 230, 240, 255)
-            val y = (padBaselineY - oldSize * 0.95f).coerceAtLeast(r.top + hudPaint.textSize + 2f)
+            hudPaint.textSize = (oldSize * 0.55f).coerceIn(11f, 14f)
+            hudPaint.color = Color.argb(200, 180, 200, 220)
+            // padBaselineY unused for Y — keep signature for call sites
+            val y = r.top + hudPaint.textSize + 3f
             canvas.drawText(mark, r.centerX(), y, hudPaint)
             hudPaint.typeface = oldTf
             hudPaint.textAlign = oldAlign
             hudPaint.textSize = oldSize
             hudPaint.color = oldColor
+            hudPaint.isFakeBoldText = oldFake
         }
 
         private fun drawFullFaceLabel(
@@ -2070,6 +2082,8 @@ class RetroCommandWallpaperService : WallpaperService() {
             locColor: Int,
             lamp: Float
         ) {
+            // #48: plates inherit FakeBold from gauges — reset before EN draw
+            hudPaint.isFakeBoldText = false
             hudPaint.textAlign = Paint.Align.CENTER
             if (en == "PAD") {
                 val g = RectF(r.left + 8f, r.top + 6f, r.right - 8f, r.bottom - 6f)
@@ -2167,8 +2181,9 @@ class RetroCommandWallpaperService : WallpaperService() {
             canvas.drawLine(r.right - 2f, r.bottom - m, r.right - 2f, r.bottom - 2f, strokePaint)
             canvas.drawLine(r.right - 2f, r.bottom - 2f, r.right - m, r.bottom - 2f, strokePaint)
             drawLedBar(canvas, r, active, Color.parseColor("#FFD700"), lamp)
+            // #48: Chris gold Soft-PASS = clean EN plates; zhFor kept for bilingual prefs later
             drawFullFaceLabel(
-                canvas, r, label, zhFor(label),
+                canvas, r, label, "",
                 if (active) Color.parseColor("#F5E6C8") else Color.parseColor("#A08060"),
                 if (active) Color.parseColor("#FFD700") else Color.parseColor("#7A6040"),
                 lamp
@@ -2723,6 +2738,8 @@ class RetroCommandWallpaperService : WallpaperService() {
                 6 -> drawTelMission(canvas, launch, skin, ts)
                 else -> drawTelCountdown(canvas, launch, skin, ts, now)
             }
+            // #48: do not leak FakeBold into side plates drawn after surface
+            hudPaint.isFakeBoldText = false
         }
 
         /** Large permanent top stack: local time, T- clock, agency/mission. */
