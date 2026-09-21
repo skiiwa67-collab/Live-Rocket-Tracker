@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Live Rocket Tracker</string>
-    <string name="wallpaper_description">Live Rocket Tracker wallpaper. Home HUD plus full Command Center.</string>
+    <string name="wallpaper_description">Live Rocket Tracker wallpaper — entertainment only. Tracks when launches happen so you can watch on YouTube or your phone. Not real-time telemetry from rocket companies.</string>
     <string name="set_wallpaper">Set as Live Wallpaper</string>
     <string name="command_desk_label">Command Desk</string>
     <string name="command_desk_desc">Empty desk page for the eight HUD buttons. Wallpaper shows through.</string>
+    <!-- Tip 136: Chris Soft-PASS entertainment disclaimer (wallpaper chrome) -->
+    <string name="disclaimer_entertainment_short">ENTERTAINMENT ONLY · not real telemetry</string>
+    <string name="disclaimer_entertainment_body">Entertainment purposes only. Rocket companies do not share real-time telemetry. This wallpaper tracks when launches happen so you can watch on YouTube or your phone.</string>
 </resources>
