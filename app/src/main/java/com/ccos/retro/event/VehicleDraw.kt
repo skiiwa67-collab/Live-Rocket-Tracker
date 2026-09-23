@@ -419,9 +419,13 @@ object VehicleDraw {
         wide: Boolean
     ): Boolean {
         // Stamp 90: Darren part packs first. NO full-stack crop-as-sep.
-        if (drawAssembledParts(artId, canvas, cx, baseY, h, tSec, stage, separated, methalox, lamp, alpha, launch)) {
+        val assembled = drawAssembledParts(artId, canvas, cx, baseY, h, tSec, stage, separated, methalox, lamp, alpha, launch)
+        if (assembled != null) {
             try {
-                paintArtPathFlames(canvas, cx, baseY, h, tSec, stage, artId, methalox, alpha, launch)
+                paintArtPathFlames(
+                    canvas, cx, baseY, h, tSec, stage, artId, methalox, alpha, launch,
+                    hullDest = assembled.dest, hullSrc = assembled.src
+                )
             } catch (t: Throwable) {
                 Log.e("LRT88", "art-path flames", t)
             }
@@ -488,6 +492,11 @@ object VehicleDraw {
      * Pre-sep: stack. Post-sep: STG1 booster/core only; STG2 Ship/upper only.
      * SRBs omitted after FlightProfiles.srbsGone.
      */
+    private data class AssembledFlameParent(
+        val dest: RectF,
+        val src: Rect
+    )
+
     private fun drawAssembledParts(
         artId: String,
         canvas: Canvas,
@@ -501,11 +510,11 @@ object VehicleDraw {
         lamp: Float,
         alpha: Float,
         launch: LaunchSnapshot?
-    ): Boolean {
+    ): AssembledFlameParent? {
         // Stamp 99: F9 NEVER assembled parts (Chris: STG2 right-chop / tiny). Continuous letterbox only.
-        if (artId == "f9") return false
+        if (artId == "f9") return null
         // Stamp 115: CZ-12 pre-sep MUST be continuous stack (Chris FAIL: tiny upper floating + gap).
-        if ((artId == "cz12" || artId == "cz2d" || artId == "kz11" || artId == "cz8a" || artId == "cz6a" || artId == "sr75" || artId == "nuri" || artId == "h3" || artId == "zq3" || artId == "gravity1" || artId == "kinetica1" || artId == "pallas1" || artId == "electron") && !separated) return false
+        if ((artId == "cz12" || artId == "cz2d" || artId == "kz11" || artId == "cz8a" || artId == "cz6a" || artId == "sr75" || artId == "nuri" || artId == "h3" || artId == "zq3" || artId == "gravity1" || artId == "kinetica1" || artId == "pallas1" || artId == "electron") && !separated) return null
         // Prefer shell hulls when Darren ships them; else plain part; else _s1/_s2 aliases.
         val booster = if (artId == "soyuz" || artId == "proton") {
             firstBitmap(
@@ -531,7 +540,7 @@ object VehicleDraw {
         val engShip = firstBitmap(
             "vehicle_${artId}_engine_ship", "vehicle_${artId}_engine_raptors", "vehicle_${artId}_engine_upper"
         )
-        if (booster == null && upper == null) return false
+        if (booster == null && upper == null) return null
 
         val wantB = if (separated) stage == 1 else true
         val wantU = if (separated) stage >= 2 else true
@@ -540,14 +549,17 @@ object VehicleDraw {
 
         val bFrac = if (wantB && wantU && booster != null && upper != null) 0.58f else 1f
         val uFrac = if (wantB && wantU && booster != null && upper != null) 0.42f else 1f
-        if ((!wantB || booster == null) && (!wantU || upper == null)) return false
+        if ((!wantB || booster == null) && (!wantU || upper == null)) return null
 
         // Stamp 92 COMPOSITE: engines → tank fills BEHIND → hull ON TOP (cutout windows show fuel).
         // Never draw fills after hull (loose color blocks / bleed outside silhouette).
         var drewStageTanks = false
+        var flameDestB: RectF? = null
+        var flameDestU: RectF? = null
         if (wantB && booster != null) {
             val bH = h * bFrac
             val destB = artDestRect(booster, cx, baseY, bH, maxSlotW = h * 0.92f)
+            flameDestB = destB
             // Stamp 94: F9 booster/stack already has Merlin side-profile bells — skip octaweb overlay.
             if (engRing != null && artId != "f9") {
                 val eH = bH * 0.14f
@@ -647,6 +659,7 @@ object VehicleDraw {
                 destB2.top + (h * 0.008f) // slight overlap so no hairline gap
             } else baseY
             val destU = artDestRect(upper, cx, uBase, uH, maxSlotW = h * 0.92f)
+            flameDestU = destU
             // Stamp 97: F9 MVac bell baked into ship/upper/s2 hull — skip engShip overlay (no double-bell).
             if (engShip != null && artId != "f9") {
                 val eH = uH * 0.16f
@@ -721,7 +734,17 @@ object VehicleDraw {
         } catch (t: Throwable) {
             Log.e("LRT95", "payload deploy", t)
         }
-        return true
+        // tip142 Stamp 100: pass assembled dest as flame parent (fleet). Soft-FAIL baseY stub.
+        val parent = when {
+            stage >= 2 && flameDestU != null && upper != null ->
+                AssembledFlameParent(flameDestU, Rect(0, 0, upper.width, upper.height))
+            flameDestB != null && booster != null ->
+                AssembledFlameParent(flameDestB, Rect(0, 0, booster.width, booster.height))
+            flameDestU != null && upper != null ->
+                AssembledFlameParent(flameDestU, Rect(0, 0, upper.width, upper.height))
+            else -> null
+        }
+        return parent
     }
 
     private fun firstBitmap(vararg names: String): Bitmap? {
