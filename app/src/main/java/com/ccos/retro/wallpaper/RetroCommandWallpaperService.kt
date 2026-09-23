@@ -409,8 +409,11 @@ class RetroCommandWallpaperService : WallpaperService() {
                 val start = System.nanoTime()
                 // Refresh prefs each frame so Settings changes apply live
                 drawFrame()
-                avgFrameMs = avgFrameMs * 0.9f + ((System.nanoTime() - start) / 1_000_000f) * 0.1f
-                handler.postDelayed(this, 55)
+                val frameMs = (System.nanoTime() - start) / 1_000_000f
+                avgFrameMs = avgFrameMs * 0.9f + frameMs * 0.1f
+                // tip146: one wall second = one app second — do not stack 55ms on top of heavy frames
+                val delay = (55L - frameMs.toLong()).coerceAtLeast(0L)
+                handler.postDelayed(this, delay)
             }
         }
 
@@ -1331,7 +1334,8 @@ class RetroCommandWallpaperService : WallpaperService() {
                             }
                             telemetryModule.resolveTracked(now)
                             if (telemetryModule.simSecondsFromNet != null) {
-                                val dt = (now - lastSimTickMs).coerceIn(0L, 50L) / 1000f
+                                // tip146: match MCC — wall dt up to 1s so hitch catch-up stays 1× realtime (never 50ms brake)
+                                val dt = (now - lastSimTickMs).coerceIn(0L, 1000L) / 1000f
                                 lastSimTickMs = now
                                 telemetryModule.tickSim(dt)
                             } else {

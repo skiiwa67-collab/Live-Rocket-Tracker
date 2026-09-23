@@ -262,13 +262,15 @@ class RocketTelemetryModule(
     fun tickSim(deltaSec: Float) {
         val launch = tracked
         val now = System.currentTimeMillis()
+        // tip146: live CURRENT birds are wall-clock only — scrub any leftover sim; never throttle live on tickSim.
         if (launch != null && isLiveWallClockBird(launch, now)) {
             scrubLiveSim(launch)
             return
         }
         val s = simSecondsFromNet ?: return
         if (!loopReplay) return
-        var next = s + deltaSec.coerceIn(0f, 0.25f)
+        // tip146 HARD: one app second = one real wall second. Catch-up after hitch ≤1s; no 0.25s speed brake.
+        var next = s + deltaSec.coerceIn(0f, 1.0f)
         val end = FlightProfiles.replayEndSec(tracked)
         val chipSec = (prefs.telemetryHoldDurationMs / 1000L).toFloat()
         val loopAt = minOf(end, chipSec)
