@@ -2061,7 +2061,8 @@ class RetroCommandWallpaperService : WallpaperService() {
             hudPaint.isFakeBoldText = false
             hudPaint.typeface = Typeface.MONOSPACE
             hudPaint.textAlign = Paint.Align.CENTER
-            hudPaint.textSize = (oldSize * 0.55f).coerceIn(11f, 14f)
+            // tip137: readable on large monitors — was 0.55f coerceIn(11,14)
+            hudPaint.textSize = (oldSize * 0.78f).coerceIn(20f, 32f)
             hudPaint.color = Color.argb(200, 180, 200, 220)
             // padBaselineY unused for Y — keep signature for call sites
             val y = r.top + hudPaint.textSize + 3f
