@@ -302,6 +302,8 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         // Stamp 57: never force AUTO on resume  -  MANUAL pick must stick (Soyuz stay Soyuz).
+        // tip150: re-tint settings chrome from prefs.consoleSkin (tip149 forLaunch may change it off-screen).
+        applyConsoleSkin()
         refreshTrackingUi()
         syncHistoricQueryFromBox()
         populateLaunchSpinner()
@@ -598,7 +600,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-        private fun styleConsoleChip(b: Button?, selected: Boolean, selectedBg: Int, idleBg: Int, selectedText: Int, idleText: Int) {
+    private fun styleConsoleChip(b: Button?, selected: Boolean, selectedBg: Int, idleBg: Int, selectedText: Int, idleText: Int) {
             if (b == null) return
             try {
                 b.backgroundTintList = null
@@ -614,7 +616,7 @@ class MainActivity : AppCompatActivity() {
             b.textSize = 11f
         }
 
-        private fun applyConsoleSkin() {
+    private fun applyConsoleSkin() {
         val section = findViewById<LinearLayout>(R.id.section_console_skin) ?: return
         val title = findViewById<TextView>(R.id.txt_console_title)
         val help = findViewById<TextView>(R.id.txt_console_help)

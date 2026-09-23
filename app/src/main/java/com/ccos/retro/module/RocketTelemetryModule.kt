@@ -115,6 +115,14 @@ class RocketTelemetryModule(
                     if (activePage == 7) activePage = 2
                     return true
                 }
+                // tip150: AUTO on finished historic/demo/exhausted sim → next upcoming CURRENT.
+                val nowBtn = System.currentTimeMillis()
+                val cur = tracked
+                if (cur != null && isSimOrTapeFinished(cur, nowBtn)) {
+                    handoffAutoToNextUpcoming(nowBtn)
+                    if (activePage == 7) activePage = 2
+                    return true
+                }
                 // Stamp 79: historic/demo LCK or HISTORICAL — do NOT clearSim / restart theater.
                 val hist = prefs.telemetryListMode == "historical" ||
                     (tracked?.let { it.id.startsWith("demo-") || it.isReplayable() } == true)
@@ -154,11 +162,11 @@ class RocketTelemetryModule(
             if (marks.none { kotlin.math.abs(it - p) < 0.5f }) marks.add(p)
         }
         marks.sort()
+        // tip150: + past last mark recycles to first event / start of tape (never clamp freeze).
         val target = if (dir > 0) {
-            marks.firstOrNull { it > t + 0.25f }
-                ?: (t + 25f).coerceAtMost(com.ccos.retro.event.FlightProfiles.replayEndSec(launch))
+            marks.firstOrNull { it > t + 0.25f } ?: marks.first()
         } else {
-            marks.lastOrNull { it < t - 0.25f } ?: (t - 30f).coerceAtLeast(-120f)
+            marks.lastOrNull { it < t - 0.25f } ?: marks.last()
         }
         jumpTo(target)
     }
@@ -277,7 +285,15 @@ class RocketTelemetryModule(
         if (next > loopAt) {
             // Stamp 80: LCK = same-bird chip loop; unlocked HISTORICAL advances via maybeAdvanceHistoricRoll.
             // Stamp 111: search-scoped LCK+AUTO advances set (not same-bird loop).
-            next = if (prefs.telemetryPinned && !searchScopedLckAutoCycle()) -30f else loopAt
+            // tip150: AUTO unlocked + tape end → next upcoming CURRENT (not freeze at loopAt).
+            when {
+                prefs.telemetryPinned && !searchScopedLckAutoCycle() -> next = -30f
+                prefs.telemetryAuto && !prefs.telemetryPinned -> {
+                    handoffAutoToNextUpcoming(now)
+                    return
+                }
+                else -> next = loopAt
+            }
         }
         simSecondsFromNet = next
         // reuse now from live-gate above
@@ -354,6 +370,62 @@ class RocketTelemetryModule(
         resolveTracked()
     }
 
+    /**
+     * tip150: sim/event tape finished (or past last catalog mark / chip loop).
+     * Uses sim cursor when theater is active so wall-clock historic flights are not
+     * false-ejected mid-scrub, and exhausted SECO freezes still hand off under AUTO.
+     */
+    private fun isSimOrTapeFinished(launch: LaunchSnapshot, now: Long): Boolean {
+        val end = FlightProfiles.replayEndSec(launch)
+        val chipSec = (prefs.telemetryHoldDurationMs / 1000L).toFloat()
+        val loopAt = minOf(end, chipSec)
+        val t = effectiveSecondsFromNet(now)
+        if (t >= loopAt - 0.5f) return true
+        val marks = FlightEventCatalog.timeline(launch)
+        if (marks.isNotEmpty() && marks.none { it.tSec > t + 0.5f }) return true
+        if (!launch.id.startsWith("demo-") &&
+            launch.isEventTapeExhausted(now) &&
+            !launch.isActiveWatch(now) &&
+            simSecondsFromNet == null
+        ) {
+            return true
+        }
+        return false
+    }
+
+    /**
+     * tip150: AUTO + exhausted sim/historic → next upcoming from CURRENT list.
+     * rememberTracked drives tip149 consoleSkin forLaunch map. Never stay pinned on dead tape.
+     */
+    private fun handoffAutoToNextUpcoming(now: Long) {
+        provider.clearHistoricSearchInterest()
+        prefs.telemetryListMode = "current"
+        prefs.telemetryPinned = false
+        prefs.telemetryAuto = true
+        releaseHold()
+        // Must flip listMode before clearSim so historicKeep does not re-arm theater.
+        simSecondsFromNet = null
+        forceStatus = null
+        loopReplay = false
+        val deadId = tracked?.id
+        if (!deadId.isNullOrBlank()) {
+            prefs.setEventCursorSec(deadId, null)
+            lastCursorWriteMs = System.currentTimeMillis()
+        }
+        val next = provider.getNextAny(now)
+            ?: provider.getNextSpaceX(now)
+            ?: provider.getCached()?.launches
+                ?.filter { it.isUpcoming(now) && !it.id.startsWith("demo-") && !it.isEventTapeExhausted(now) }
+                ?.minByOrNull { it.netMs }
+        if (next != null) {
+            rememberTracked(next)
+            prefs.telemetryLaunchId = next.id
+        } else {
+            prefs.telemetryLaunchId = ""
+            resolveTracked(now)
+        }
+    }
+
     /** Stamp 111: LCK + AUTO + search → cycle search set (not same-bird chip loop). */
     private fun searchScopedLckAutoCycle(): Boolean =
         hasSearchScopedHistoric() && prefs.telemetryPinned && prefs.telemetryAuto
@@ -366,6 +438,14 @@ class RocketTelemetryModule(
         if (searchScoped && !prefs.telemetryPinned && prefs.telemetryAuto) {
             leaveHistoricSearchForLiveAuto()
             return
+        }
+        // tip150: AUTO unlocked + tape/chip done → CURRENT next upcoming (not next historic / Soyuz stick).
+        if (!prefs.telemetryPinned && prefs.telemetryAuto) {
+            val curAuto = tracked
+            if (curAuto != null && isSimOrTapeFinished(curAuto, now)) {
+                handoffAutoToNextUpcoming(now)
+                return
+            }
         }
         // Stamp 80/111: LCK alone pins one bird. LCK + AUTO + search cycles search set only.
         if (prefs.telemetryPinned && !(searchScoped && prefs.telemetryAuto)) return
