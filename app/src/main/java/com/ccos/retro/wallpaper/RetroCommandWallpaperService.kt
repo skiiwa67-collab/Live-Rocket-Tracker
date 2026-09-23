@@ -3206,18 +3206,6 @@ class RetroCommandWallpaperService : WallpaperService() {
                 hudPaint.textSize = 17f * chipScale
                 canvas.drawText(jumpChipLabels[i], jumpChipRects[i].centerX(), jumpChipRects[i].centerY() + 6f * chipScale, hudPaint)
             }
-            hudPaint.color = withLamp(skin.muted, lamp)
-            hudPaint.textSize = 12f * chipScale
-            // Tip 136: Chris Soft-PASS — entertainment-only disclaimer (clear, plain)
-            canvas.drawText(
-                "ENTERTAINMENT ONLY · not real telemetry",
-                width / 2f, height * 0.78f, hudPaint
-            )
-            hudPaint.textSize = 11f * chipScale
-            canvas.drawText(
-                "Companies do not share live telemetry · track NET, watch on YouTube/phone",
-                width / 2f, height * 0.82f, hudPaint
-            )
         }
 
 
@@ -7144,18 +7132,6 @@ class RetroCommandWallpaperService : WallpaperService() {
                 y = drawWrappedCenter(canvas, m.note, cx, y, maxW, subSz, withLamp(if (m.classified) skin.hold else skin.muted, lamp), gap)
             }
             y = drawWrappedCenter(canvas, "${m.payloadName}   |   ${m.payloadState}", cx, y, maxW, subSz, withLamp(skin.go, lamp), gap)
-            // Tip 136: unmistakable entertainment-only disclaimer on wallpaper MISSION page
-            y += subSz * 0.55f
-            y = drawWrappedCenter(
-                canvas,
-                "ENTERTAINMENT PURPOSES ONLY",
-                cx, y, maxW, subSz, withLamp(skin.hold, lamp), gap
-            )
-            drawWrappedCenter(
-                canvas,
-                "Rocket companies do not share real-time telemetry. This wallpaper tracks when launches happen so you can watch on YouTube or your phone.",
-                cx, y, maxW, subSz * 0.92f, withLamp(skin.muted, lamp), gap
-            )
         }
 
         private fun drawOffPageDataWall(canvas: Canvas, now: Long) {
