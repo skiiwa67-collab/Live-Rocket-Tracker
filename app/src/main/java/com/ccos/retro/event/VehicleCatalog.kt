@@ -441,8 +441,13 @@ object VehicleCatalog {
             family = "cz6a",
             tokens = listOf(
                 "long march 6a",
+                "long march 6 a",
                 "cz-6a",
+                "cz 6a",
                 "cz6a",
+                "lm-6a",
+                "lm 6a",
+                "lm6a",
                 "chang zheng 6a",
                 "长征六号甲"
             ),

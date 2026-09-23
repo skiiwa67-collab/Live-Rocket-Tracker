@@ -119,6 +119,26 @@ data class LaunchSnapshot(
             n.contains("Hold", ignoreCase = true)
     }
 
+    /** tip146: LL2 TBD / TBC — not firm Go; with NET slip must not fake live past hold. */
+    fun isTbd(): Boolean {
+        val a = statusAbbrev.trim()
+        val n = statusName.trim()
+        val blob = "$a $n".lowercase()
+        return a.equals("TBD", ignoreCase = true) ||
+            a.equals("TBC", ignoreCase = true) ||
+            n.equals("TBD", ignoreCase = true) ||
+            n.equals("TBC", ignoreCase = true) ||
+            "to be determined" in blob ||
+            "to be confirmed" in blob
+    }
+
+    /** tip146: LL2 scrub / cancel pre-flight — exit live clock, do not invent flight. */
+    fun isScrubStatus(): Boolean {
+        val blob = "$statusAbbrev $statusName".lowercase()
+        if ("fairing" in blob) return false
+        return "scrub" in blob || "cancel" in blob
+    }
+
     fun isTerminal(): Boolean {
         val blob = "$statusAbbrev $statusName".lowercase()
         // Stamp 63: Success / Completed / Failure / Partial Failure eject AUTO immediately.

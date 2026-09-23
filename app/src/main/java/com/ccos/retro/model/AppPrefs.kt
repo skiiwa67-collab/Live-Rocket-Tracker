@@ -312,7 +312,9 @@ class AppPrefs(context: Context) {
     fun isSystem(): Boolean = activeModuleId == MODULE_SYSTEM
     fun isTelemetry(): Boolean = activeModuleId == MODULE_TELEMETRY
 
-    /** tip145: Settings panel chrome skin — 8 chips. Does not replace TelemetrySkin.forLaunch. */
+    /** tip145/tip146: Settings panel chrome skin — 8 chips. Does not replace TelemetrySkin.forLaunch.
+     * Manual override sticks in prefs for the current tracked launch; snaps back to MCC (default)
+     * when the tracked launch id changes (next launch). */
     var consoleSkin: String
         get() {
             val v = prefs.getString("console_skin", CONSOLE_SKIN_MCC) ?: CONSOLE_SKIN_MCC
@@ -321,6 +323,24 @@ class AppPrefs(context: Context) {
         set(v) {
             prefs.edit().putString("console_skin", normalizeConsoleSkin(v)).apply()
         }
+
+    /**
+     * tip146: call whenever tracked launch id binds. Manual consoleSkin sticks until
+     * [launchId] differs from the last noted id, then reset to MCC default.
+     */
+    fun noteConsoleSkinTrackedLaunch(launchId: String) {
+        if (launchId.isBlank()) return
+        val key = "console_skin_for_launch"
+        val prev = prefs.getString(key, "") ?: ""
+        if (prev.isNotBlank() && prev != launchId) {
+            prefs.edit()
+                .putString("console_skin", CONSOLE_SKIN_MCC)
+                .putString(key, launchId)
+                .apply()
+        } else if (prev != launchId) {
+            prefs.edit().putString(key, launchId).apply()
+        }
+    }
 
     /**
      * tip140 one-shot: default command page to 2 after first install / big patch.

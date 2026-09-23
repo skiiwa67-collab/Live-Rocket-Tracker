@@ -71,8 +71,12 @@ class RocketTelemetryModule(
     private var lastGoodSnapshot: LaunchSnapshot? = null
 
     companion object {
-        /** Stamp 105: live CURRENT trails real webcast (~5s; never ahead). */
+        /** Stamp 105 / tip146 KEEP: gold live trail behind real (within 2–5s band). */
         const val LIVE_WALL_LAG_SEC = 5f
+        /** tip146 Phase 1: sparse feeds (no webcast_live / not In Flight) may trail up to 30s. */
+        const val SPARSE_WALL_LAG_SEC = 30f
+        /** tip146: NET still this far ahead while sim past T-0 ⇒ treat as slip/hold. */
+        const val NET_SLIP_HOLD_SEC = 45L
 
         /** Stamp 59: Activity + wallpaper Engine share last HUD bird. */
         @Volatile var sharedLastGood: LaunchSnapshot? = null
@@ -209,14 +213,24 @@ class RocketTelemetryModule(
     fun effectiveSecondsFromNet(now: Long = System.currentTimeMillis()): Float {
         val launch = tracked ?: return 0f
         // Stamp 86: live CURRENT/AUTO watch = wall-clock only (fixes T+165h sim stick on Soyuz).
-        // Stamp 105: trail YouTube by LIVE_WALL_LAG_SEC; Hold freezes pre-liftoff (early NET).
+        // tip146 Phase 1: trail LL2 + webcast_live by LIVE_WALL_LAG_SEC (5s gold); sparse up to 30s.
+        // No YouTube/player detection — LL2 status / webcast_live / NET only. Never ahead of NET/liftoff.
         if (isLiveWallClockBird(launch, now)) {
             scrubLiveSim(launch)
-            // pinnedNetMs already re-pins when launch.netMs changes (Hold/slip/fail NET update).
+            // pinnedNetMs already re-pins when launch.netMs changes (Hold/slip/fail NET update) → rewind.
             val t0 = prefs.pinnedNetMs(launch.id, launch.netMs)
-            var t = (now - t0) / 1000f - LIVE_WALL_LAG_SEC
-            if (launch.isHold()) {
+            val trail = liveTrailSec(launch)
+            var t = (now - t0) / 1000f - trail
+            if (shouldPauseLiveForHoldScrub(launch, now, t)) {
+                // Hold / Scrub / TBD+slip: pause at pad; never fake live past a real hold.
+                if (launch.isScrubStatus()) {
+                    forceStatus = forceStatus ?: "Scrubbed"
+                }
                 t = minOf(t, -0.5f)
+            }
+            // Never ahead of real liftoff without LL2 In Flight or webcast_live past NET.
+            if (t >= 0f && !liveLiftoffConfirmed(launch, now)) {
+                t = -0.5f
             }
             return t
         }
@@ -294,6 +308,8 @@ class RocketTelemetryModule(
         if (s.id != lastBoundTrackedId) {
             lastBoundTrackedId = s.id
             trackedGeneration++
+            // tip146: consoleSkin manual override sticks for this launch; reset to MCC on next launch.
+            prefs.noteConsoleSkinTrackedLaunch(s.id)
             // Do not keep prior-flight theater/cursor on a new bird (agency mix FAIL).
             if (!s.id.startsWith("demo-") && simSecondsFromNet != null) {
                 clearSim()
@@ -791,13 +807,48 @@ class RocketTelemetryModule(
     fun autoRefreshIntervalMs(now: Long = System.currentTimeMillis()): Long {
         val t = tracked ?: return 5 * 60 * 1000L
         if (t.id.startsWith("demo-")) return 15 * 60 * 1000L
+        // tip146 Phase 1 hold/scrub + live-sync ramp (LL2 poll). tip138 cold path stays 2s in wallpaper.
+        if (t.isHold() || (t.isTbd() && t.secondsToNet(now) > NET_SLIP_HOLD_SEC)) {
+            return 5_000L
+        }
         val secs = t.secondsToNet(now)
         return when {
-            secs in -LaunchWindow.WATCH_AFTER_NET_SEC..2 * 3600L -> 60_000L // T-2h … T+6h
-            secs in 2 * 3600L..12 * 3600L -> 3 * 60_000L // T-12h → every 3 min
+            secs in -120L..0L -> 2_000L          // T-0 → T+2 await real liftoff
+            secs in 0L..3L * 60L -> 4_000L       // T-3 → T-0
+            secs in 3L * 60L..10L * 60L -> 12_000L // T-10 → T-3
+            secs in 10L * 60L..30L * 60L -> 30_000L // T-30 → T-10
+            t.isInFlightStatus() && secs > -LaunchWindow.WATCH_AFTER_NET_SEC -> 12_000L
+            secs in -LaunchWindow.WATCH_AFTER_NET_SEC..2 * 3600L -> 60_000L
+            secs in 2 * 3600L..12 * 3600L -> 3 * 60_000L
             secs in 12 * 3600L..48 * 3600L -> 5 * 60_000L
             else -> 10 * 60_000L
         }
+    }
+
+    /** tip146 Phase 1: gold 5s when LL2 webcast_live / In Flight; sparse trail up to 30s. */
+    private fun liveTrailSec(launch: LaunchSnapshot): Float {
+        return if (launch.isWebcastLive() || launch.isInFlightStatus()) LIVE_WALL_LAG_SEC
+        else SPARSE_WALL_LAG_SEC
+    }
+
+    /** tip146: liftoff confirmed for past T-0 — LL2 In Flight or webcast_live with NET reached. */
+    private fun liveLiftoffConfirmed(launch: LaunchSnapshot, now: Long): Boolean {
+        if (launch.isInFlightStatus()) return true
+        return launch.isWebcastLive() && launch.secondsToNet(now) <= 0L
+    }
+
+    /**
+     * tip146 hold-scrub: Pause/backup when LL2 Hold, Scrub/cancel, or TBD with slipped NET,
+     * or when NET is still meaningfully in the future while the lagged clock would be past T-0.
+     */
+    private fun shouldPauseLiveForHoldScrub(launch: LaunchSnapshot, now: Long, tLagged: Float): Boolean {
+        if (launch.isHold()) return true
+        if (launch.isScrubStatus()) return true
+        val netAhead = launch.secondsToNet(now)
+        if (launch.isTbd() && netAhead > NET_SLIP_HOLD_SEC) return true
+        // NET slipped later while lagged sim already at/past T-0 (CZ-8A class).
+        if (tLagged >= 0f && netAhead >= NET_SLIP_HOLD_SEC) return true
+        return false
     }
 
     fun selectLaunch(id: String, hint: LaunchSnapshot? = null) {
