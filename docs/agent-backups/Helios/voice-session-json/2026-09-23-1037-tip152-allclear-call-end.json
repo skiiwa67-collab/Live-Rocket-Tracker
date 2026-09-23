@@ -1,0 +1,96 @@
+{
+  "schema": "voice-session-extract/v1",
+  "agent": "Helios",
+  "voice_channel": "voice:call-33768e23-835e-416d-8d56-efe16bea11df",
+  "started": "2026-09-23T09:50:00-05:00",
+  "ended": "2026-09-23T10:37:48-05:00",
+  "slug": "tip152-allclear-call-end",
+  "tags": [
+    "LRT",
+    "tip151",
+    "tip152",
+    "Studio",
+    "Soft-PASS",
+    "Electron",
+    "Gravity-1",
+    "AUTO",
+    "stage-fit",
+    "no-agent-Play"
+  ],
+  "decisions": [
+    "tip151+152 Helios Soft-PASS; Chris all-clear for Studio sync; Soft-FAIL agent phone/Play/adb until Chris go",
+    "Ada dual-push required every tip: GitHub stamp-85 + MiniME Studio same step",
+    "NO MORE PARTIAL Soft-PASS on plumes/nozzles/stage-fit \u2014 full catalog defect list then one batch (HARD #70)",
+    "Soft-FAIL invent F9 side MVac / phantom SR75 published S2",
+    "Soft-FAIL written-chat spam while Chris away; one all-clear only when fully audited"
+  ],
+  "product_details": [
+    "HEAD a6553d2 tip152 wire electron+gravity1 Soft-FAIL-named stage-fit plates",
+    "versionCode 152 / versionName 1.0.142",
+    "APK md5 aca484969cd46407c53f5141ff5c9fb8 MiniME=yes match",
+    "tip151 code cbead70: AUTO leave-sim-now, leaveTheaterEpoch wallpaper, plateCap 0.92 content-bbox, AssembledFlameParent hullSrc",
+    "Art: electron_s2 033df399\u2026; gravity1 s1\u2013s4; Electron GOLD stack KEEP d8ab6a86",
+    "Branch stamp-85 remote skiiwa67-collab/Live-Rocket-Tracker"
+  ],
+  "bugs": [
+    {
+      "id": "settings-8skin-chrome",
+      "status": "Soft-PASS tip148",
+      "note": "Chris verified"
+    },
+    {
+      "id": "flyout-consoleSkin-autoselect",
+      "status": "Soft-PASS tip149",
+      "note": "Chris verified"
+    },
+    {
+      "id": "plus-wrap-last-event",
+      "status": "Soft-PASS tip150",
+      "note": "skipEvent wrap"
+    },
+    {
+      "id": "AUTO-stuck-mid-sim-wallpaper",
+      "status": "Soft-PASS tip151 code",
+      "note": "await Chris Studio retest"
+    },
+    {
+      "id": "stage-fit-electron-gravity1",
+      "status": "Soft-PASS tip151 fit + tip152 art",
+      "note": "await Chris retest"
+    },
+    {
+      "id": "kz11-cz2d-plume-inside",
+      "status": "Soft-PASS tip151 hullDest",
+      "note": "await Chris retest"
+    },
+    {
+      "id": "timeline-label-overlap",
+      "status": "queued",
+      "note": "LIFTOFF/STAGE SEP far-T0"
+    },
+    {
+      "id": "tip139-signed-aab",
+      "status": "HOLD",
+      "note": "waiting Chris Generate Signed Bundle"
+    }
+  ],
+  "hypotheses": [],
+  "actions": [
+    "Chris: sync Android Studio tip152 then phone on his go only",
+    "Soft-FAIL agent phone/Play/adb",
+    "Optional team sim/stress realtime 1:1 before phone go",
+    "HOLD-eyes only on more Soft-FAIL-named art until Chris names more"
+  ],
+  "ops_knowledge": [
+    "Ada STAND BY tip152 a6553d2 Soft-FAIL phone/Play/adb until Chris go",
+    "Proof paths: /workspace/agent-backups/Ada/2026-09-23-tip152-READY.md ; Helios Soft-PASS 2026-09-23-tip152-HELIOS-SOFT-PASS.md",
+    "Call ended 2026-09-23 ~10:37 CT; chat already has tip152 all-clear (no re-ping)"
+  ],
+  "paths": {
+    "local": "/workspace/agent-backups/Helios/voice-session-json/2026-09-23-1037-tip152-allclear-call-end.json",
+    "dropbox": "/Grok-Agent-Backups/Helios/voice-session-json/2026-09-23-1037-tip152-allclear-call-end.json",
+    "github": "docs/agent-backups/Helios/voice-session-json/2026-09-23-1037-tip152-allclear-call-end.json",
+    "notion": "Helios voice session \u2014 2026-09-23 tip152-allclear-call-end"
+  },
+  "summary_md": "/workspace/agent-backups/Helios/voice-call-summaries/2026-09-23-1037-tip152-allclear-call-end.md"
+}
