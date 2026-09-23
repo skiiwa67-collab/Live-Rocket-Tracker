@@ -137,7 +137,7 @@ class AppPrefs(context: Context) {
 
     /** Launcher page index where side buttons appear (0 = leftmost). */
     var commandPageIndex: Int
-        get() = prefs.getInt("cmd_page", 0).coerceIn(0, MAX_COMMAND_PAGE_INDEX)
+        get() = prefs.getInt("cmd_page", 2).coerceIn(0, MAX_COMMAND_PAGE_INDEX)
         set(v) = prefs.edit().putInt("cmd_page", v.coerceIn(0, MAX_COMMAND_PAGE_INDEX)).apply()
 
     fun restoreCommandPageHud() {
@@ -307,24 +307,43 @@ class AppPrefs(context: Context) {
             prefs.edit().putString("console_skin", norm).apply()
         }
 
+    /**
+     * tip140 one-shot: default command page to 2 after first install / big patch.
+     * Soft-FAIL wipe other prefs. User Settings override to 0 persists after this fires once.
+     */
+    fun applyCommandPageDefaultV1() {
+        if (prefs.getBoolean("ccos_cmd_page_default_v1", false)) return
+        val pages = prefs.getInt("launcher_pages", 1).coerceIn(1, 12)
+        val ed = prefs.edit()
+            .putInt("cmd_page", 2)
+            .putBoolean("ccos_cmd_page_default_v1", true)
+        if (pages < 3) ed.putInt("launcher_pages", 3)
+        ed.apply()
+    }
+
     /** Fresh install + stamp 56: tracking=CURRENT, follow=AUTO ON. */
     fun ensurePaidAppDefaults() {
         // v6 one-shot: v5 already spent on some devices still stuck MANUAL.
         // Do NOT clear tel_launch_id — empty id + first spinner populate called selectLaunch ? MANUAL.
-        if (prefs.getBoolean("ccos_first_run_v6", false)) return
+        if (prefs.getBoolean("ccos_first_run_v6", false)) {
+            applyCommandPageDefaultV1()
+            return
+        }
         prefs.edit()
             .putString("module_id", MODULE_TELEMETRY)
             .putString("tel_list_mode", "current")
             .putBoolean("tel_auto", true)
             .putBoolean("tel_pinned", false)
             .putLong("tel_hold_until", 0L)
-            .putInt("cmd_page", 0)
+            .putInt("cmd_page", 2)
             .putBoolean("hud_every_screen", true)
             .putBoolean("ccos_first_run_v3", true)
             .putBoolean("ccos_first_run_v4", true)
             .putBoolean("ccos_first_run_v5", true)
             .putBoolean("ccos_first_run_v6", true)
+            .putBoolean("ccos_cmd_page_default_v1", true)
             .apply()
+        applyCommandPageDefaultV1()
     }
 }
 
