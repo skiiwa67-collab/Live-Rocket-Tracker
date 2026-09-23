@@ -663,6 +663,8 @@ class MainActivity : AppCompatActivity() {
         title?.visibility = View.VISIBLE
         title?.text = "CONSOLE"
         help?.text = "8 skins · MCC ROS SPACEX NASA / CNSA ARIANE R.LAB ULA · same on CMD flyout"
+        // tip148: each of 8 skins gets distinct section bg + title/help + root/content tint
+        // accents match wallpaper consoleChipAccent / consoleFrameAccent
         when (skin) {
             AppPrefs.CONSOLE_SKIN_ROS -> {
                 section.setBackgroundResource(R.drawable.bg_console_ros)
@@ -670,14 +672,44 @@ class MainActivity : AppCompatActivity() {
                 help?.setTextColor(0xFFB8C890.toInt())
                 findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF0A0C08.toInt())
             }
-            AppPrefs.CONSOLE_SKIN_SPACEX, AppPrefs.CONSOLE_SKIN_ULA, AppPrefs.CONSOLE_SKIN_NASA,
-            AppPrefs.CONSOLE_SKIN_CNSA, AppPrefs.CONSOLE_SKIN_ARIANE, AppPrefs.CONSOLE_SKIN_RLAB -> {
-                section.setBackgroundResource(R.drawable.bg_console_clear)
-                title?.setTextColor(0xFF00E5FF.toInt())
-                help?.setTextColor(0xFF8AA0B0.toInt())
-                findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF060C12.toInt())
+            AppPrefs.CONSOLE_SKIN_SPACEX -> {
+                section.setBackgroundResource(R.drawable.bg_console_spacex)
+                title?.setTextColor(0xFF00D26A.toInt())
+                help?.setTextColor(0xFFA0A0A0.toInt())
+                findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF050505.toInt())
+            }
+            AppPrefs.CONSOLE_SKIN_NASA -> {
+                section.setBackgroundResource(R.drawable.bg_console_nasa)
+                title?.setTextColor(0xFF6A9AD4.toInt())
+                help?.setTextColor(0xFF8AA0B8.toInt())
+                findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF080C14.toInt())
+            }
+            AppPrefs.CONSOLE_SKIN_CNSA -> {
+                section.setBackgroundResource(R.drawable.bg_console_cnsa)
+                title?.setTextColor(0xFFDE2910.toInt())
+                help?.setTextColor(0xFFB08070.toInt())
+                findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF0C0606.toInt())
+            }
+            AppPrefs.CONSOLE_SKIN_ARIANE -> {
+                section.setBackgroundResource(R.drawable.bg_console_ariane)
+                title?.setTextColor(0xFFFFD100.toInt())
+                help?.setTextColor(0xFFA0A888.toInt())
+                findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF060A14.toInt())
+            }
+            AppPrefs.CONSOLE_SKIN_RLAB -> {
+                section.setBackgroundResource(R.drawable.bg_console_rlab)
+                title?.setTextColor(0xFFFF5A1F.toInt())
+                help?.setTextColor(0xFFA88878.toInt())
+                findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF080606.toInt())
+            }
+            AppPrefs.CONSOLE_SKIN_ULA -> {
+                section.setBackgroundResource(R.drawable.bg_console_ula)
+                title?.setTextColor(0xFFF6A800.toInt())
+                help?.setTextColor(0xFFA89870.toInt())
+                findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF060E1C.toInt())
             }
             else -> {
+                // MCC amber
                 section.setBackgroundResource(R.drawable.bg_console_mcc)
                 title?.setTextColor(0xFFFFB000.toInt())
                 help?.setTextColor(0xFF8AA0B0.toInt())
@@ -692,15 +724,26 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.section_telemetry)?.let { tel ->
             when (skin) {
                 AppPrefs.CONSOLE_SKIN_ROS -> tel.setBackgroundResource(R.drawable.bg_console_ros)
+                AppPrefs.CONSOLE_SKIN_SPACEX -> tel.setBackgroundResource(R.drawable.bg_console_spacex)
+                AppPrefs.CONSOLE_SKIN_NASA -> tel.setBackgroundResource(R.drawable.bg_console_nasa)
+                AppPrefs.CONSOLE_SKIN_CNSA -> tel.setBackgroundResource(R.drawable.bg_console_cnsa)
+                AppPrefs.CONSOLE_SKIN_ARIANE -> tel.setBackgroundResource(R.drawable.bg_console_ariane)
+                AppPrefs.CONSOLE_SKIN_RLAB -> tel.setBackgroundResource(R.drawable.bg_console_rlab)
+                AppPrefs.CONSOLE_SKIN_ULA -> tel.setBackgroundResource(R.drawable.bg_console_ula)
                 AppPrefs.CONSOLE_SKIN_MCC -> tel.setBackgroundResource(R.drawable.panel_console)
-                else -> tel.setBackgroundResource(R.drawable.bg_console_clear)
+                else -> tel.setBackgroundResource(R.drawable.bg_console_mcc)
             }
         }
         (findViewById<View>(android.R.id.content) as? android.view.ViewGroup)?.getChildAt(0)?.setBackgroundColor(
             when (skin) {
                 AppPrefs.CONSOLE_SKIN_ROS -> 0xFF1A2010.toInt()
-                AppPrefs.CONSOLE_SKIN_MCC -> 0xFF0A0E14.toInt()
-                else -> 0xFF060C12.toInt()
+                AppPrefs.CONSOLE_SKIN_SPACEX -> 0xFF0C0C0C.toInt()
+                AppPrefs.CONSOLE_SKIN_NASA -> 0xFF0A1220.toInt()
+                AppPrefs.CONSOLE_SKIN_CNSA -> 0xFF140808.toInt()
+                AppPrefs.CONSOLE_SKIN_ARIANE -> 0xFF0A1020.toInt()
+                AppPrefs.CONSOLE_SKIN_RLAB -> 0xFF101010.toInt()
+                AppPrefs.CONSOLE_SKIN_ULA -> 0xFF0A1830.toInt()
+                else -> 0xFF0A0E14.toInt() // MCC
             }
         )
     }

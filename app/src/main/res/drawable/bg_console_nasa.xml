@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- tip148: NASA settings chrome — #6A9AD4 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#0A0E18"/>
+    <stroke android:width="2dp" android:color="#6A9AD4"/>
+    <corners android:radius="10dp"/>
+</shape>
