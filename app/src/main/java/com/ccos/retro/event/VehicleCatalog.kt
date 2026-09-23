@@ -436,6 +436,42 @@ object VehicleCatalog {
             s2EngineName = "YF-75H/DA"
         ),
 
+        VehicleSpec(
+            id = "cz6a",
+            family = "cz6a",
+            tokens = listOf(
+                "long march 6a",
+                "cz-6a",
+                "cz6a",
+                "chang zheng 6a",
+                "长征六号甲"
+            ),
+            s1Engines = 2, // liquid core (YF-100×2); 4×FG-112 SRBs in nerdNote
+            s2Engines = 1,
+            recoverable = false,
+            methalox = false,
+            fuelName = "RP",
+            oxName = "LOX",
+            boostbackLit = 0,
+            landingLit = 0,
+            engineName = "YF-100 / YF-115 + FG-112 solid",
+            s1Thrust = "~7230 kN SL class (core+SRB)",
+            s2Thrust = "1x YF-115 VAC",
+            ispVac = "—",
+            mixRatio = "—",
+            chamberBar = "—",
+            s1Dry = "—",
+            s1Prop = "~530 t GLOW class",
+            nerdNote = "CZ-6A / Long March 6A (SAST/CASC): ~50 m, 3.35 m core, ~530 t liftoff, ~7230 kN liftoff thrust class. Stack 2 + 4 solid strap-ons (FG-112 Ø2.0×15.1 m HTPB solid). Core S1 2x YF-100 kerolox; S2 1x YF-115 kerolox (NOT hydrolox). Fairing ~4.2 m Ø / ~5.7 m class (5.2 m option published). ~5 t to 700 km SSO class. Maiden 2022-03-29 Taiyuan LC-9A. Published Wikipedia/NSF/CASC-class — no invent. Da Vinci art: vehicle_cz6a_* GOLD 2026-09-23 (SS×6 orange LM hull, solid SRBs, kerolox fills both stages).",
+            verified = true,
+            drawFamily = "cz6a",
+            s1Pattern = EnginePattern.CHAMBER4,
+            s2Pattern = EnginePattern.VACUUM1,
+            s1Name = "1st+4×SRB (YF-100+FG-112)",
+            s2Name = "2nd (YF-115)",
+            s2EngineName = "YF-115"
+        ),
+
 
         VehicleSpec(
             id = "kz11",
@@ -682,28 +718,120 @@ object VehicleCatalog {
             s1Pattern = EnginePattern.MERLIN9,
             s2Pattern = EnginePattern.MERLIN_VAC
         ),
+
+        VehicleSpec(
+            id = "sr75",
+            family = "sr75",
+            tokens = listOf(
+                "hyimpulse",
+                "sr75",
+                "sr-75",
+                "sr 75",
+                "hyimpulse sr75"
+            ),
+            s1Engines = 1, // single HyPLOX-75 hybrid
+            s2Engines = 0, // single-stage
+            recoverable = true, // parachute recovery Soft-PASS published
+            methalox = false,
+            fuelName = "Paraffin",
+            oxName = "LOX",
+            boostbackLit = 0,
+            landingLit = 0,
+            engineName = "HyPLOX-75",
+            s1Thrust = "~75 kN SL",
+            s2Thrust = "—",
+            ispVac = "—",
+            mixRatio = "—",
+            chamberBar = "—",
+            s1Dry = "—",
+            s1Prop = "—",
+            nerdNote = "HyImpulse SR75: single-stage suborbital hybrid sounding rocket / SL1 tech demonstrator. Published ~11–14 m length (art 12.5 m class), Ø0.64 m, one HyPLOX-75 paraffin+LOX ~75 kN SL, payload ~200–250 kg to ~200–250 km (mission-dependent). Two-stage parachute recovery Soft-PASS. Maiden 2024-05-03 Koonibba; Flight 2 NET day 2026-10-04 (day-precision — Soft-FAIL invent clock/pad). Published HyImpulse/Southern Launch/NSF-class — no invent. Da Vinci art: vehicle_sr75_* GOLD 2026-09-23 (SS×6 white composite hull, LOX cyan + paraffin amber/cream fills, single nozzle).",
+            verified = true,
+            drawFamily = "sr75",
+            s1Pattern = EnginePattern.VACUUM1,
+            s2Pattern = EnginePattern.VACUUM1,
+            s1Name = "HyPLOX-75 hybrid",
+            s2Name = "—",
+            s2EngineName = "—"
+        ),
+
+        VehicleSpec(
+            id = "nuri",
+            family = "nuri",
+            tokens = listOf(
+                "nuri",
+                "kslv-2",
+                "kslv2",
+                "kslv-ii",
+                "kslv ii",
+                "kari",
+                "누리호",
+                "korea space launch vehicle"
+            ),
+            s1Engines = 4, // 4× KRE-075
+            s2Engines = 1, // 1× KRE-075V (S3 KRE-007V Soft-PASS in nerdNote / ship)
+            recoverable = false,
+            methalox = false, // Jet-A1 + LOX all stages
+            fuelName = "RP",
+            oxName = "LOX",
+            boostbackLit = 0,
+            landingLit = 0,
+            engineName = "KRE-075 / KRE-075V / KRE-007V",
+            s1Thrust = "~2942 kN SL (4×KRE-075)",
+            s2Thrust = "1x KRE-075V VAC",
+            ispVac = "—",
+            mixRatio = "—",
+            chamberBar = "—",
+            s1Dry = "—",
+            s1Prop = "~200 t GLOW class",
+            nerdNote = "Nuri / KSLV-II (KARI): 47.2 m, S1 Ø3.5 m, upper Ø2.6 m, ~200 t GLOW. 3-stage kerolox Jet-A1+LOX — Soft-FAIL invent methane. S1 4×KRE-075 (~300 tf / ~2942 kN SL); S2 1×KRE-075V (~788 kN vac); S3 1×KRE-007V (~69 kN vac). Fairing ~Ø3.3 m (NSF). ~1.5–1.9 t SSO / ~3.3 t LEO class. No SRBs / not recoverable. Maiden 2021-10-21 Naro LP-2; orbital successes 2022-06-21, 2023-05-25, 2025-11-26. Published KARI/NSF/Everyday Astronaut/DongA/EUCASS — Soft-FAIL invent unpublished fairing height. Da Vinci art: vehicle_nuri_* GOLD 2026-09-23 (SS×6 white hull, 3-stage kerolox fills, no SRBs).",
+            verified = true,
+            drawFamily = "nuri",
+            s1Pattern = EnginePattern.CHAMBER4,
+            s2Pattern = EnginePattern.VACUUM1,
+            s1Name = "1st (4×KRE-075)",
+            s2Name = "2nd (KRE-075V)",
+            s2EngineName = "KRE-075V"
+        ),
+
         VehicleSpec(
             id = "h3",
             family = "h3",
-            tokens = listOf("h3", "h-3"),
+            tokens = listOf(
+                "h3",
+                "h-3",
+                "h3-24",
+                "h3-24l",
+                "h3 24",
+                "h3 24l",
+                "mmx",
+                "martian moons",
+                "martian moons exploration"
+            ),
             s1Engines = 2,
             s2Engines = 1,
             recoverable = false,
             methalox = false,
             fuelName = "LH2",
+            oxName = "LOX",
             boostbackLit = 0,
             landingLit = 0,
-            engineName = "LE-9 / LE-5B",
+            engineName = "LE-9 / LE-5B-3 + SRB-3",
             s1Thrust = "2.9 MN + SRB",
             s2Thrust = "137 kN VAC",
             ispVac = "448 s",
             mixRatio = "5.9 O/F",
             chamberBar = "—",
             s1Dry = "—",
-            s1Prop = "—",
-            nerdNote = "Tanegashima. Two LE-9. Solids have no liquid bells on the ENG plate.",
+            s1Prop = "~575 t GLOW class (H3-24L)",
+            nerdNote = "H3 / H3-24L (JAXA/MHI): ~63 m long-fairing class, Ø5.2 m core, ~575 t GLOW (no payload). S1 2×LE-9 hydrolox; S2 1×LE-5B-3 hydrolox; 4×SRB-3 Ø2.5 m solid. Long fairing ~16.4 m × Ø5.2 m. Tanegashima. MMX / Martian Moons Exploration Soft-PASS token cover. Published JAXA/MHI/MMX press kit — Soft-FAIL invent unpublished. Da Vinci art: vehicle_h3_* GOLD 2026-09-23 (SS×6 white hull, orange SRB-3, hydrolox fills). Solids have no liquid bells on the ENG plate.",
+            verified = true,
+            drawFamily = "h3",
             s1Pattern = EnginePattern.LE9_2,
-            s2Pattern = EnginePattern.RL10
+            s2Pattern = EnginePattern.RL10,
+            s1Name = "1st (2×LE-9+SRB-3)",
+            s2Name = "2nd (LE-5B-3)",
+            s2EngineName = "LE-5B-3"
         ),
 
         VehicleSpec(
@@ -911,6 +1039,9 @@ object VehicleCatalog {
 
     /** Darren LM-8A stack silhouette base name under res/drawable (png/webp). */
     const val CZ8A_DRAWABLE = "vehicle_cz8a"
+    const val CZ6A_DRAWABLE = "vehicle_cz6a"
+    const val SR75_DRAWABLE = "vehicle_sr75"
+    const val NURI_DRAWABLE = "vehicle_nuri"
     const val CZ12_DRAWABLE = "vehicle_cz12"
     const val ZQ3_DRAWABLE = "vehicle_zq3"
     const val GRAVITY1_DRAWABLE = "vehicle_gravity1"

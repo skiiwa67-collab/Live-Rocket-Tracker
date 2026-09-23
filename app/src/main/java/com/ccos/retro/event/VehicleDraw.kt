@@ -116,6 +116,15 @@ object VehicleDraw {
                     cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
             }
             "cz8a" -> cz8a(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
+            "cz6a" -> cz6a(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
+            "sr75" -> {
+                if (!drawArtThenCoreTanks("sr75", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch))
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
+            }
+            "nuri" -> {
+                if (!drawArtThenCoreTanks("nuri", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch))
+                    cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
+            }
             "cz12" -> cz12(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
             "cz2d" -> cz2d(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
             "kz11" -> kz11(canvas, cx, baseY, h, tSec, stage, separated, skin, lamp, alpha, launch)
@@ -179,6 +188,24 @@ object VehicleDraw {
         launch: LaunchSnapshot
     ) {
         if (drawArtThenLmTanks("cz8a", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch)) return
+        cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
+    }
+
+    /** tip139: CZ-6A / Long March 6A kerolox+SRB GOLD pack (vehicle_cz6a_*). */
+    private fun cz6a(
+        canvas: Canvas,
+        cx: Float,
+        baseY: Float,
+        h: Float,
+        tSec: Float,
+        stage: Int,
+        separated: Boolean,
+        skin: TelemetrySkin.Tokens,
+        lamp: Float,
+        alpha: Float,
+        launch: LaunchSnapshot
+    ) {
+        if (drawArtThenLmTanks("cz6a", canvas, cx, baseY, h, tSec, stage, separated, false, lamp, alpha, launch)) return
         cleanSilhouette(canvas, cx, baseY, h, stage, separated, skin, lamp, alpha)
     }
 
@@ -411,7 +438,7 @@ object VehicleDraw {
         val hullSrc = stageHullSrcRect(artId, hull, stage, separated)
         // Wide maxSlotW: letterbox via height shrink inside artDestRect; NEVER horizontal hull clip.
         // Stamp 115: CZ-12 (and friends) fill look plates — was 0.55 → tiny stack FAIL.
-        val plateCap = if (artId == "cz12" || artId == "cz2d" || artId == "kz11" || artId == "cz8a" || artId == "zq3" || artId == "gravity1" || artId == "kinetica1" || artId == "pallas1" || artId == "electron" || artId == "fh" || artId == "lm" || artId == "lm5") h * 0.92f else h * 0.55f
+        val plateCap = if (artId == "cz12" || artId == "cz2d" || artId == "kz11" || artId == "cz8a" || artId == "cz6a" || artId == "sr75" || artId == "nuri" || artId == "h3" || artId == "zq3" || artId == "gravity1" || artId == "kinetica1" || artId == "pallas1" || artId == "electron" || artId == "fh" || artId == "lm" || artId == "lm5") h * 0.92f else h * 0.55f
         val dest = artDestRect(hull, cx, baseY, h, maxSlotW = plateCap, src = hullSrc)
         val glassA = (alpha * 0.88f).coerceIn(0.55f, 0.95f)
         try {
@@ -422,7 +449,7 @@ object VehicleDraw {
             if (!usedMasks) {
                 val saved = canvas.save()
                 canvas.clipRect(dest)
-                if (wide || artId == "cz8a" || artId == "cz12" || artId == "cz2d" || artId == "kz11" || artId == "zq3" || artId == "gravity1" || artId == "kinetica1" || artId == "pallas1" || artId == "electron" || artId == "fh" || artId == "lm" || artId == "lm5") {
+                if (wide || artId == "cz8a" || artId == "cz6a" || artId == "sr75" || artId == "nuri" || artId == "h3" || artId == "cz12" || artId == "cz2d" || artId == "kz11" || artId == "zq3" || artId == "gravity1" || artId == "kinetica1" || artId == "pallas1" || artId == "electron" || artId == "fh" || artId == "lm" || artId == "lm5") {
                     overlayLmTanks(canvas, cx, baseY, h, tSec, stage, separated, wide || artId == "lm5", lamp, glassA, launch)
                 } else {
                     overlayCoreTanks(canvas, cx, baseY, h, tSec, stage, separated, methalox, lamp, glassA, launch, cores)
@@ -478,7 +505,7 @@ object VehicleDraw {
         // Stamp 99: F9 NEVER assembled parts (Chris: STG2 right-chop / tiny). Continuous letterbox only.
         if (artId == "f9") return false
         // Stamp 115: CZ-12 pre-sep MUST be continuous stack (Chris FAIL: tiny upper floating + gap).
-        if ((artId == "cz12" || artId == "cz2d" || artId == "kz11" || artId == "cz8a" || artId == "zq3" || artId == "gravity1" || artId == "kinetica1" || artId == "pallas1" || artId == "electron") && !separated) return false
+        if ((artId == "cz12" || artId == "cz2d" || artId == "kz11" || artId == "cz8a" || artId == "cz6a" || artId == "sr75" || artId == "nuri" || artId == "h3" || artId == "zq3" || artId == "gravity1" || artId == "kinetica1" || artId == "pallas1" || artId == "electron") && !separated) return false
         // Prefer shell hulls when Darren ships them; else plain part; else _s1/_s2 aliases.
         val booster = if (artId == "soyuz" || artId == "proton") {
             firstBitmap(
@@ -858,7 +885,7 @@ object VehicleDraw {
             artId == "starship" || methalox || artId == "glenn" || artId == "vulcan" -> "raptor"
             artId == "sls" -> "rs25"
             artId == "soyuz" || artId == "proton" -> "rd107"
-            artId.contains("lm") || artId == "cz8a" || artId == "cz12" || artId == "cz2d" || artId == "kz11" || artId == "gravity1" || artId == "kinetica1" || artId == "pallas1" || artId == "electron" || artId == "fh" -> "merlin"
+            artId.contains("lm") || artId == "cz8a" || artId == "cz6a" || artId == "nuri" || artId == "sr75" || artId == "h3" || artId == "cz12" || artId == "cz2d" || artId == "kz11" || artId == "gravity1" || artId == "kinetica1" || artId == "pallas1" || artId == "electron" || artId == "fh" -> "merlin"
             else -> "merlin"
         }
         val fw = if (stage >= 2) h * 0.16f else h * 0.30f
