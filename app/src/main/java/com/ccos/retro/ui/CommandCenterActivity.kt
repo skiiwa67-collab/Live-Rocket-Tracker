@@ -253,6 +253,7 @@ class CommandCenterActivity : AppCompatActivity() {
         super.onResume()
         applyImmersive()
         telemetryModule.ensureData()
+        telemetryModule.syncLeaveTheaterFromPeer()
         telemetryModule.resolveTracked()
         lastSimTickMs = System.currentTimeMillis()
         running = true

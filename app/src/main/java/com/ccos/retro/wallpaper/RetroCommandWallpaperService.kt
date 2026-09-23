@@ -847,7 +847,7 @@ class RetroCommandWallpaperService : WallpaperService() {
 
         /** Open official webcast / mission search for the *currently tracked* launch only. */
         private fun openPadEarth() {
-            telemetryModule.resolveTracked()
+            telemetryModule.syncLeaveTheaterFromPeer(); telemetryModule.resolveTracked()
             val launch = telemetryModule.tracked ?: return
             val ll = PadBook.lonLat(launch) ?: return
             val (lon, lat) = ll
@@ -860,7 +860,7 @@ class RetroCommandWallpaperService : WallpaperService() {
         }
 
         private fun openWebcast(preferredUrl: String? = null) {
-            telemetryModule.resolveTracked()
+            telemetryModule.syncLeaveTheaterFromPeer(); telemetryModule.resolveTracked()
             val launch = telemetryModule.tracked
             // Prefer fresh cache entry (webcast often appears only close to NET)
             val fresh = launch?.id?.let { telemetryModule.selectableLaunches().firstOrNull { s -> s.id == it } } ?: launch
@@ -1332,6 +1332,8 @@ class RetroCommandWallpaperService : WallpaperService() {
                                     telemetryModule.ensureData()
                                 }
                             }
+                            // tip151: AUTO handoff on MCC/other Engine must clear this Engine's sim now.
+                            telemetryModule.syncLeaveTheaterFromPeer()
                             telemetryModule.resolveTracked(now)
                             if (telemetryModule.simSecondsFromNet != null) {
                                 // tip146: match MCC — wall dt up to 1s so hitch catch-up stays 1× realtime (never 50ms brake)
@@ -7184,6 +7186,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                 }
             }
             if (mode != AppPrefs.DATA_SYSTEM && mode != AppPrefs.DATA_ROCKET) {
+                telemetryModule.syncLeaveTheaterFromPeer()
                 telemetryModule.resolveTracked(now)
             }
 

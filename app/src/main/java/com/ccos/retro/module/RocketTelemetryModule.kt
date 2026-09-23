@@ -80,6 +80,30 @@ class RocketTelemetryModule(
 
         /** Stamp 59: Activity + wallpaper Engine share last HUD bird. */
         @Volatile var sharedLastGood: LaunchSnapshot? = null
+
+        /**
+         * tip151: AUTO leave-sim handoff bumps this so every RocketTelemetryModule instance
+         * (Activity MCC vs wallpaper Engine) drops local simSecondsFromNet immediately.
+         * Prefs/rememberTracked alone left wallpaper on the old sim until Settings resume.
+         */
+        @Volatile var leaveTheaterEpoch: Long = 0L
+    }
+
+    private var appliedLeaveTheaterEpoch: Long = 0L
+
+    /** tip151: wallpaper/MCC poll — apply cross-instance leave-sim from AUTO handoff. */
+    fun syncLeaveTheaterFromPeer() {
+        val ep = leaveTheaterEpoch
+        if (appliedLeaveTheaterEpoch == ep) return
+        appliedLeaveTheaterEpoch = ep
+        simSecondsFromNet = null
+        forceStatus = null
+        loopReplay = false
+    }
+
+    private fun bumpLeaveTheaterEpoch() {
+        leaveTheaterEpoch++
+        appliedLeaveTheaterEpoch = leaveTheaterEpoch
     }
 
     /**
@@ -115,18 +139,23 @@ class RocketTelemetryModule(
                     if (activePage == 7) activePage = 2
                     return true
                 }
-                // tip150: AUTO on finished historic/demo/exhausted sim → next upcoming CURRENT.
+                // tip151: AUTO ON while mid-sim/demo/historic theater → leave SIM now to next upcoming.
+                // tip150 only handed off when isSimOrTapeFinished; hist/replayable skipped clearSim so
+                // mid-flight AUTO stayed stuck on Gravity/Electron theater.
                 val nowBtn = System.currentTimeMillis()
                 val cur = tracked
-                if (cur != null && isSimOrTapeFinished(cur, nowBtn)) {
+                val midSimTheater = cur != null && (
+                    cur.id.startsWith("demo-") ||
+                        cur.isReplayable(nowBtn) ||
+                        simSecondsFromNet != null ||
+                        prefs.telemetryListMode == "historical"
+                    )
+                if (midSimTheater || (cur != null && isSimOrTapeFinished(cur, nowBtn))) {
                     handoffAutoToNextUpcoming(nowBtn)
                     if (activePage == 7) activePage = 2
                     return true
                 }
-                // Stamp 79: historic/demo LCK or HISTORICAL — do NOT clearSim / restart theater.
-                val hist = prefs.telemetryListMode == "historical" ||
-                    (tracked?.let { it.id.startsWith("demo-") || it.isReplayable() } == true)
-                if (!hist) clearSim()
+                clearSim()
                 resolveTracked()
             }
             // AUTO is a lamp, not a page — never open the old overlay screen.
@@ -367,6 +396,7 @@ class RocketTelemetryModule(
         prefs.telemetryAuto = true
         releaseHold()
         clearSim()
+        bumpLeaveTheaterEpoch()
         resolveTracked()
     }
 
@@ -407,6 +437,7 @@ class RocketTelemetryModule(
         simSecondsFromNet = null
         forceStatus = null
         loopReplay = false
+        bumpLeaveTheaterEpoch()
         val deadId = tracked?.id
         if (!deadId.isNullOrBlank()) {
             prefs.setEventCursorSec(deadId, null)

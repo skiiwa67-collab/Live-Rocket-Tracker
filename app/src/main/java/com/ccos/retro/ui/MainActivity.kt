@@ -71,6 +71,7 @@ class MainActivity : AppCompatActivity() {
         if (telemetryModule.tracked == null) {
             telemetryModule.forceRefresh {
                 runOnUiThread {
+                    telemetryModule.syncLeaveTheaterFromPeer()
                     telemetryModule.resolveTracked()
                     telemetryModule.keepTrackedOrLastGood()
                     populateLaunchSpinner()
@@ -78,6 +79,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         } else {
+            telemetryModule.syncLeaveTheaterFromPeer()
             telemetryModule.resolveTracked()
             telemetryModule.keepTrackedOrLastGood()
         }
@@ -109,6 +111,7 @@ class MainActivity : AppCompatActivity() {
             telemetryModule.clearSim()
             launchProvider.clearHistoricSearchInterest()
             historicQuery = ""
+            telemetryModule.syncLeaveTheaterFromPeer()
             telemetryModule.resolveTracked()
             populateLaunchSpinner()
             refreshTrackingUi()
@@ -125,6 +128,7 @@ class MainActivity : AppCompatActivity() {
             prefs.telemetryPinned = false
             telemetryModule.releaseHold()
             telemetryModule.clearSim()
+            telemetryModule.syncLeaveTheaterFromPeer()
             telemetryModule.resolveTracked()
             populateLaunchSpinner()
             refreshTrackingUi()
@@ -267,6 +271,7 @@ class MainActivity : AppCompatActivity() {
         launchProvider.refreshIfNeeded(force = true) {
             runOnUiThread {
                 // Stamp 57: catalog landed - resolve AUTO now (onCreate resolve was pre-fetch null).
+                telemetryModule.syncLeaveTheaterFromPeer()
                 telemetryModule.resolveTracked()
                 // Stamp 112: never discard mid-type query on catalog land.
                 syncHistoricQueryFromBox()

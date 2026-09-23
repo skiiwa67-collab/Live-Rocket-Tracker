@@ -433,16 +433,19 @@ object VehicleDraw {
         }
         // Stamp 99 ELON: continuous hull; CONTENT bbox src → fill plate (STACK+STG1+STG2). Letterbox > chop.
         // Stamp 101: STG2 hull = ship/upper/s2 (clean MVac), not wide stack crop.
+        // tip151: STG2 prefers _s2 band (not ship+fairing) so plume/hullDest maps to stage exit.
+        // firstNonEmptyPart skips sr75 phantom empty s2. f9/starship s2≈ship.
         val hull = if (separated && stage >= 2) {
-            firstBitmap("vehicle_${artId}_ship", "vehicle_${artId}_upper", "vehicle_${artId}_s2")
-                ?: vehicleHullBitmap(artId)
+            firstNonEmptyPart(
+                "vehicle_${artId}_s2", "vehicle_${artId}_upper", "vehicle_${artId}_ship"
+            )?.second ?: vehicleHullBitmap(artId)
         } else {
             vehicleHullBitmap(artId)
         } ?: return false
         val hullSrc = stageHullSrcRect(artId, hull, stage, separated)
+        // tip151: fleet STG box fill — plateCap 0.92 for EVERY catalog family (was 0.55 → underscale).
         // Wide maxSlotW: letterbox via height shrink inside artDestRect; NEVER horizontal hull clip.
-        // Stamp 115: CZ-12 (and friends) fill look plates — was 0.55 → tiny stack FAIL.
-        val plateCap = if (artId == "cz12" || artId == "cz2d" || artId == "kz11" || artId == "cz8a" || artId == "cz6a" || artId == "sr75" || artId == "nuri" || artId == "h3" || artId == "zq3" || artId == "gravity1" || artId == "kinetica1" || artId == "pallas1" || artId == "electron" || artId == "fh" || artId == "lm" || artId == "lm5") h * 0.92f else h * 0.55f
+        val plateCap = h * 0.92f
         val dest = artDestRect(hull, cx, baseY, h, maxSlotW = plateCap, src = hullSrc)
         val glassA = (alpha * 0.88f).coerceIn(0.55f, 0.95f)
         try {
@@ -527,10 +530,18 @@ object VehicleDraw {
                 "vehicle_${artId}_s1", "vehicle_${artId}_core"
             )
         }
-        val upper = firstBitmap(
-            "vehicle_${artId}_ship_shell", "vehicle_${artId}_ship",
-            "vehicle_${artId}_upper", "vehicle_${artId}_s2"
-        )
+        // tip151: post-sep STG2 uses _s2 first (clean stage band). Pre-sep stack still wants ship/upper nose.
+        val upper = if (separated && stage >= 2) {
+            firstBitmap(
+                "vehicle_${artId}_s2", "vehicle_${artId}_upper",
+                "vehicle_${artId}_ship_shell", "vehicle_${artId}_ship"
+            )
+        } else {
+            firstBitmap(
+                "vehicle_${artId}_ship_shell", "vehicle_${artId}_ship",
+                "vehicle_${artId}_upper", "vehicle_${artId}_s2"
+            )
+        }
         val srb = firstBitmap("vehicle_${artId}_srb", "vehicle_${artId}_strap")
         val engRing = firstBitmap(
             "vehicle_${artId}_engine_ring",
@@ -556,10 +567,15 @@ object VehicleDraw {
         var drewStageTanks = false
         var flameDestB: RectF? = null
         var flameDestU: RectF? = null
+        var flameSrcB: Rect? = null
+        var flameSrcU: Rect? = null
         if (wantB && booster != null) {
             val bH = h * bFrac
-            val destB = artDestRect(booster, cx, baseY, bH, maxSlotW = h * 0.92f)
+            val srcB = partContentSrc("assembled_${artId}_booster", booster)
+                ?: Rect(0, 0, booster.width, booster.height)
+            val destB = artDestRect(booster, cx, baseY, bH, maxSlotW = h * 0.92f, src = srcB)
             flameDestB = destB
+            flameSrcB = srcB
             // Stamp 94: F9 booster/stack already has Merlin side-profile bells — skip octaweb overlay.
             if (engRing != null && artId != "f9") {
                 val eH = bH * 0.14f
@@ -613,8 +629,8 @@ object VehicleDraw {
                     }
                 }
             } catch (_: Throwable) { }
-            // Hull ON TOP — transparent cutouts reveal fills.
-            drawBitmapSrcInRect(canvas, booster, null, destB, alpha)
+            // Hull ON TOP — transparent cutouts reveal fills. tip151: content-bbox src.
+            drawBitmapSrcInRect(canvas, booster, srcB, destB, alpha)
             val finsBmp = firstBitmap(
                 "vehicle_${artId}_grid_fins", "vehicle_${artId}_fins", "vehicle_${artId}_booster_fins"
             )
@@ -650,16 +666,29 @@ object VehicleDraw {
             }
         }
         if (wantU && upper != null) {
+            // tip151: skip empty phantom s2 (sr75) — alias to non-empty upper/ship.
+            val upperPair = if (separated && stage >= 2) {
+                firstNonEmptyPart(
+                    "vehicle_${artId}_s2", "vehicle_${artId}_upper",
+                    "vehicle_${artId}_ship_shell", "vehicle_${artId}_ship"
+                )
+            } else null
+            val upperBmp = upperPair?.second ?: upper
+            val upperKey = upperPair?.first ?: "assembled_${artId}_upper"
             val uH = h * uFrac
             // Stamp 115: attach flush to actual booster top (artDestRect may shrink H → gap if using h*bFrac).
             val uBase = if (wantB && booster != null) {
-                // destB was drawn above; recompute same dest to read top
                 val bH2 = h * bFrac
-                val destB2 = artDestRect(booster, cx, baseY, bH2, maxSlotW = h * 0.92f)
+                val srcB2 = partContentSrc("assembled_${artId}_booster", booster)
+                    ?: Rect(0, 0, booster.width, booster.height)
+                val destB2 = artDestRect(booster, cx, baseY, bH2, maxSlotW = h * 0.92f, src = srcB2)
                 destB2.top + (h * 0.008f) // slight overlap so no hairline gap
             } else baseY
-            val destU = artDestRect(upper, cx, uBase, uH, maxSlotW = h * 0.92f)
+            val srcU = partContentSrc(upperKey, upperBmp)
+                ?: Rect(0, 0, upperBmp.width, upperBmp.height)
+            val destU = artDestRect(upperBmp, cx, uBase, uH, maxSlotW = h * 0.92f, src = srcU)
             flameDestU = destU
+            flameSrcU = srcU
             // Stamp 97: F9 MVac bell baked into ship/upper/s2 hull — skip engShip overlay (no double-bell).
             if (engShip != null && artId != "f9") {
                 val eH = uH * 0.16f
@@ -713,8 +742,8 @@ object VehicleDraw {
                     }
                 }
             } catch (_: Throwable) { }
-            // Ship hull ON TOP.
-            drawBitmapSrcInRect(canvas, upper, null, destU, alpha)
+            // Ship hull ON TOP. tip151: content-bbox src.
+            drawBitmapSrcInRect(canvas, upperBmp, srcU, destU, alpha)
         }
         // Fallback masks only when assembly drew no stage fills — still behind nothing here,
         // so skip if we already composited fills under hull (avoids on-top bleed).
@@ -734,14 +763,14 @@ object VehicleDraw {
         } catch (t: Throwable) {
             Log.e("LRT95", "payload deploy", t)
         }
-        // tip142 Stamp 100: pass assembled dest as flame parent (fleet). Soft-FAIL baseY stub.
+        // tip151: AssembledFlameParent hullSrc = content bbox (was full canvas → plume mid-body).
         val parent = when {
-            stage >= 2 && flameDestU != null && upper != null ->
-                AssembledFlameParent(flameDestU, Rect(0, 0, upper.width, upper.height))
-            flameDestB != null && booster != null ->
-                AssembledFlameParent(flameDestB, Rect(0, 0, booster.width, booster.height))
-            flameDestU != null && upper != null ->
-                AssembledFlameParent(flameDestU, Rect(0, 0, upper.width, upper.height))
+            stage >= 2 && flameDestU != null && flameSrcU != null ->
+                AssembledFlameParent(flameDestU, flameSrcU)
+            flameDestB != null && flameSrcB != null ->
+                AssembledFlameParent(flameDestB, flameSrcB)
+            flameDestU != null && flameSrcU != null ->
+                AssembledFlameParent(flameDestU, flameSrcU)
             else -> null
         }
         return parent
@@ -749,6 +778,26 @@ object VehicleDraw {
 
     private fun firstBitmap(vararg names: String): Bitmap? {
         for (n in names) loadVehicleDrawable(n)?.let { return it }
+        return null
+    }
+
+    /** tip151: content alpha-bbox for assembled part dest/hullSrc. Empty plate → null (sr75 phantom s2). */
+    private fun partContentSrc(cacheKey: String, bmp: Bitmap): Rect? {
+        val bb = alphaBBoxCached(cacheKey, bmp)
+        if (bb.width() <= 2 || bb.height() <= 2) return null
+        return bb
+    }
+
+    /**
+     * tip151: STG2/upper bitmap with empty opaque plate (sr75 sentinel) falls through to ship/upper.
+     * Soft-FAIL claim phantom published S2 — alias only.
+     */
+    private fun firstNonEmptyPart(vararg names: String): Pair<String, Bitmap>? {
+        for (n in names) {
+            val bmp = loadVehicleDrawable(n) ?: continue
+            val bb = alphaBBoxCached(n, bmp)
+            if (bb.width() > 2 && bb.height() > 2) return n to bmp
+        }
         return null
     }
 
