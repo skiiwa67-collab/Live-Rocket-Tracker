@@ -290,6 +290,8 @@ object TelemetrySkin {
             launch.rocketName.contains("Super Heavy", ignoreCase = true) -> spacex
         launch.isSpaceX() -> spacex
         launch.isBlueOrigin() -> blueOrigin
+        // tip149: ULA before NASA (Atlas/Vulcan often tagged with NASA payloads).
+        launch.isUla() -> nasa
         launch.isNasa() -> nasa
         launch.isChinese() -> chinese
         launch.isRussian() -> roscosmos

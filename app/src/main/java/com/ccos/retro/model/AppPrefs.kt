@@ -2,6 +2,8 @@ package com.ccos.retro.model
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.ccos.retro.data.LaunchSnapshot
+import com.ccos.retro.skin.TelemetrySkin
 
 class AppPrefs(context: Context) {
     private val prefs: SharedPreferences =
@@ -63,6 +65,22 @@ class AppPrefs(context: Context) {
         fun consoleSkinIndex(id: String): Int {
             val i = CONSOLE_SKIN_IDS.indexOf(normalizeConsoleSkin(id))
             return if (i >= 0) i else 0
+        }
+
+        /** tip149: map TelemetrySkin.forLaunch (+ ULA) to CONSOLE_SKIN_IDS. */
+        fun consoleSkinIdForLaunch(launch: LaunchSnapshot?): String {
+            if (launch == null) return CONSOLE_SKIN_MCC
+            // Prefer ULA before NASA-ish providers / forLaunch nasa fallback.
+            if (launch.isUla()) return CONSOLE_SKIN_ULA
+            return when (TelemetrySkin.forLaunch(launch)) {
+                TelemetrySkin.spacex -> CONSOLE_SKIN_SPACEX
+                TelemetrySkin.roscosmos -> CONSOLE_SKIN_ROS
+                TelemetrySkin.nasa -> CONSOLE_SKIN_NASA
+                TelemetrySkin.chinese -> CONSOLE_SKIN_CNSA
+                TelemetrySkin.esa -> CONSOLE_SKIN_ARIANE
+                TelemetrySkin.rocketLab -> CONSOLE_SKIN_RLAB
+                else -> CONSOLE_SKIN_MCC // blueOrigin / isro / jaxa / generic
+            }
         }
 
         fun normalizeHoldDurationMs(raw: Long): Long {
@@ -312,9 +330,9 @@ class AppPrefs(context: Context) {
     fun isSystem(): Boolean = activeModuleId == MODULE_SYSTEM
     fun isTelemetry(): Boolean = activeModuleId == MODULE_TELEMETRY
 
-    /** tip145/tip146: Settings panel chrome skin — 8 chips. Does not replace TelemetrySkin.forLaunch.
-     * Manual override sticks in prefs for the current tracked launch; snaps back to MCC (default)
-     * when the tracked launch id changes (next launch). */
+    /** tip145/tip149: Settings panel chrome skin — 8 chips. Does not replace TelemetrySkin.forLaunch.
+     * Manual override sticks in prefs for the current tracked launch; on tracked launch id change
+     * auto-selects from TelemetrySkin.forLaunch map (ULA/SPACEX/ROS/…). */
     var consoleSkin: String
         get() {
             val v = prefs.getString("console_skin", CONSOLE_SKIN_MCC) ?: CONSOLE_SKIN_MCC
@@ -325,20 +343,20 @@ class AppPrefs(context: Context) {
         }
 
     /**
-     * tip146: call whenever tracked launch id binds. Manual consoleSkin sticks until
-     * [launchId] differs from the last noted id, then reset to MCC default.
+     * tip149: call whenever tracked launch id binds. Manual consoleSkin sticks until
+     * [launchId] differs from the last noted id, then set from TelemetrySkin.forLaunch map
+     * (not hardcoded MCC). Flyout highlight reads prefs.consoleSkin.
      */
-    fun noteConsoleSkinTrackedLaunch(launchId: String) {
+    fun noteConsoleSkinTrackedLaunch(launchId: String, launch: LaunchSnapshot? = null) {
         if (launchId.isBlank()) return
         val key = "console_skin_for_launch"
         val prev = prefs.getString(key, "") ?: ""
-        if (prev.isNotBlank() && prev != launchId) {
+        if (prev != launchId) {
+            val skinId = consoleSkinIdForLaunch(launch)
             prefs.edit()
-                .putString("console_skin", CONSOLE_SKIN_MCC)
+                .putString("console_skin", skinId)
                 .putString(key, launchId)
                 .apply()
-        } else if (prev != launchId) {
-            prefs.edit().putString(key, launchId).apply()
         }
     }
 
