@@ -1273,17 +1273,20 @@ class RetroCommandWallpaperService : WallpaperService() {
                         val telCanvas = canvas!!
                         val clipMark = telCanvas.save()
                         try {
-                            val interval = if (telemetryModule.autoMode)
-                                telemetryModule.autoRefreshIntervalMs(now)
-                            else
-                                5 * 60 * 1000L
+                            // tip138: while cold/fetching, re-kick every 2s (queue in LaunchDataProvider)
+                            val cold = telemetryModule.isFetchingData()
+                            val interval = when {
+                                cold -> 2_000L
+                                telemetryModule.autoMode -> telemetryModule.autoRefreshIntervalMs(now)
+                                else -> 5 * 60 * 1000L
+                            }
                             if (now - lastLaunchRefresh > interval) {
                                 lastLaunchRefresh = now
                                 val near = telemetryModule.tracked?.let {
                                     val s = it.secondsToNet(now)
                                     s in -300L..(2 * 3600L) && !it.id.startsWith("demo-")
                                 } == true
-                                if (near || telemetryModule.autoMode) {
+                                if (near || telemetryModule.autoMode || cold) {
                                     telemetryModule.forceRefresh()
                                 } else {
                                     telemetryModule.ensureData()
@@ -2784,7 +2787,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                 telemetryModule.forceStatus != null -> "SCRUBBED · ${launch?.name?.take(22) ?: ""}"
                 telemetryModule.simSecondsFromNet != null -> "SIM · ${launch?.name?.take(26) ?: skin.label}"
                 launch != null -> "${launch.provider.take(12)} · ${launch.name.take(20)}"
-                else -> "NO LAUNCH TRACKED"
+                else -> telemetryModule.noTrackLabel("NO LAUNCH TRACKED")
             }
 
             val phone = isPhoneDesk()

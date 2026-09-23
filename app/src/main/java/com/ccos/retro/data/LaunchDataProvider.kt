@@ -40,6 +40,10 @@ class LaunchDataProvider {
         private const val minIntervalMs = 2 * 60 * 1000L
         @Volatile var sharedStatus: String = "Idle  -  not fetched yet"
         @Volatile var sharedFetching: Boolean = false
+        /** tip138: do not drop refresh while a fetch is in flight (fast Engine recreate / adb). */
+        @Volatile private var refreshQueued: Boolean = false
+        @Volatile private var refreshQueuedForce: Boolean = false
+        private val pendingRefreshOnDone = AtomicReference<((LaunchListResult?) -> Unit)?>(null)
         @Volatile var sharedError: String? = null
         @Volatile var sharedSource: String = " - "
         @Volatile var sharedCount: Int = 0
@@ -618,7 +622,11 @@ class LaunchDataProvider {
             return
         }
         if (isFetching) {
+            // tip138: queue instead of drop — fast adb/Engine recreate was starving live paint
             sharedStatus = "Fetching..."
+            refreshQueued = true
+            refreshQueuedForce = refreshQueuedForce || force
+            if (onDone != null) pendingRefreshOnDone.set(onDone)
             onDone?.invoke(cache.get())
             return
         }
@@ -764,6 +772,14 @@ class LaunchDataProvider {
                 onDone?.invoke(merged)
             } finally {
                 sharedFetching = false
+                val need = refreshQueued
+                val forceAgain = refreshQueuedForce
+                refreshQueued = false
+                refreshQueuedForce = false
+                val cb = pendingRefreshOnDone.getAndSet(null)
+                if (need) {
+                    refreshIfNeeded(force = forceAgain, onDone = cb)
+                }
             }
         }
     }
