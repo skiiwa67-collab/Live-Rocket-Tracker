@@ -8,4 +8,7 @@
     <!-- Tip 136: Chris Soft-PASS entertainment disclaimer (wallpaper chrome) -->
     <string name="disclaimer_entertainment_short">ENTERTAINMENT ONLY · not real telemetry</string>
     <string name="disclaimer_entertainment_body">Entertainment purposes only. Rocket companies do not share real-time telemetry. This wallpaper tracks when launches happen so you can watch on YouTube or your phone.</string>
+    <!-- Tip 142: Chris Soft-PASS main-screen entertainment disclaimer (under app title) Soft-FAIL tip136 wallpaper Soft-FAIL change -->
+    <string name="disclaimer_main_title">ENTERTAINMENT ONLY</string>
+    <string name="disclaimer_main_body">We sync launches as close to real time as public sources allow, but no rocket company provides exact live telemetry. Delays and holds can make this display differ from the actual launch — confirm with the official stream.</string>
 </resources>
