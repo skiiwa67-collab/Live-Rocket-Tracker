@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- tip145: console chip idle -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#0A1528"/>
+            <stroke android:width="2dp" android:color="#6A5020"/>
+            <corners android:radius="6dp"/>
+        </shape>
+    </item>
+</layer-list>

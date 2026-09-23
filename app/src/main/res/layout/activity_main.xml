@@ -20,6 +20,36 @@
             android:letterSpacing="0.08"
             android:paddingBottom="2dp"/>
 
+
+        <!-- tip142/tip145: main-screen disclaimer under app title -->
+        <LinearLayout
+            android:id="@+id/box_disclaimer_main"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_disclaimer_main"
+            android:padding="12dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="12dp">
+            <TextView
+                android:id="@+id/txt_disclaimer_main_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/disclaimer_main_title"
+                android:textColor="#F2C14E"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:paddingBottom="4dp"/>
+            <TextView
+                android:id="@+id/txt_disclaimer_main_body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/disclaimer_main_body"
+                android:textColor="#FFE8A0"
+                android:textSize="13sp"
+                android:textStyle="bold"/>
+        </LinearLayout>
+
         <TextView
             android:id="@+id/txt_status"
             android:layout_width="match_parent"
@@ -53,66 +83,159 @@
                 android:id="@+id/txt_console_help"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Settings look: MCC amber bay | ROS Soyuz hardware | CLEAR modern. Live preview. Same skin on CMD flyout."
+                android:text="Settings look: 8 console skins (MCC ROS SPACEX NASA / CNSA ARIANE R.LAB ULA). Live preview. Same skins on CMD flyout."
                 android:textColor="#8AA0B0"
                 android:textSize="12sp"
                 android:paddingBottom="8dp"/>
 
-            <LinearLayout
+                        <LinearLayout
                 android:id="@+id/row_console_skin"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="vertical">
+                <LinearLayout
+                    android:id="@+id/row_console_skin_1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="6dp">
                 <Button
                     android:id="@+id/btn_console_mcc"
                     android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:textSize="14sp"
+                    android:layout_height="40dp"
+                    android:textSize="11sp"
                     android:layout_weight="1"
                     android:text="MCC"
                     android:textStyle="bold"
-                    android:textColor="#0A0E14"
+                    android:textColor="#1A1200"
                     android:background="@drawable/chip_console_selected_mcc"
-                    android:backgroundTint="@null"
-                    android:maxLines="1"
-                    android:ellipsize="none"
-                    android:paddingLeft="4dp"
-                    android:paddingRight="4dp"
-                    android:layout_marginEnd="4dp"/>
-                <Button
-                    android:id="@+id/btn_console_ros"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:textSize="14sp"
-                    android:layout_weight="1"
-                    android:text="ROS"
-                    android:textStyle="bold"
-                    android:textColor="#6A7850"
-                    android:background="@drawable/chip_console_ros_idle"
-                    android:backgroundTint="@null"
-                    android:maxLines="1"
-                    android:ellipsize="none"
-                    android:paddingLeft="4dp"
-                    android:paddingRight="4dp"
-                    android:layout_marginHorizontal="4dp"/>
-                <Button
-                    android:id="@+id/btn_console_clear"
-                    android:layout_width="0dp"
-                    android:layout_height="56dp"
-                    android:textSize="13sp"
-                    android:layout_weight="1"
-                    android:text="CLEAR"
-                    android:textStyle="bold"
-                    android:textColor="#4A5A68"
-                    android:background="@drawable/chip_console_idle"
                     android:backgroundTint="@null"
                     android:maxLines="1"
                     android:ellipsize="none"
                     android:paddingLeft="2dp"
                     android:paddingRight="2dp"
-                    android:layout_marginStart="4dp"/>
+                    android:layout_margin="2dp"/>
+                <Button
+                    android:id="@+id/btn_console_ros"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:textSize="11sp"
+                    android:layout_weight="1"
+                    android:text="ROS"
+                    android:textStyle="bold"
+                    android:textColor="#E8E0D0"
+                    android:background="@drawable/chip_console_idle_ros"
+                    android:backgroundTint="@null"
+                    android:maxLines="1"
+                    android:ellipsize="none"
+                    android:paddingLeft="2dp"
+                    android:paddingRight="2dp"
+                    android:layout_margin="2dp"/>
+                <Button
+                    android:id="@+id/btn_console_spacex"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:textSize="11sp"
+                    android:layout_weight="1"
+                    android:text="SPACEX"
+                    android:textStyle="bold"
+                    android:textColor="#F0F0F0"
+                    android:background="@drawable/chip_console_idle_spacex"
+                    android:backgroundTint="@null"
+                    android:maxLines="1"
+                    android:ellipsize="none"
+                    android:paddingLeft="2dp"
+                    android:paddingRight="2dp"
+                    android:layout_margin="2dp"/>
+                <Button
+                    android:id="@+id/btn_console_nasa"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:textSize="11sp"
+                    android:layout_weight="1"
+                    android:text="NASA"
+                    android:textStyle="bold"
+                    android:textColor="#E8EEF8"
+                    android:background="@drawable/chip_console_idle_nasa"
+                    android:backgroundTint="@null"
+                    android:maxLines="1"
+                    android:ellipsize="none"
+                    android:paddingLeft="2dp"
+                    android:paddingRight="2dp"
+                    android:layout_margin="2dp"/>
+                </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/row_console_skin_2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                <Button
+                    android:id="@+id/btn_console_cnsa"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:textSize="11sp"
+                    android:layout_weight="1"
+                    android:text="CNSA"
+                    android:textStyle="bold"
+                    android:textColor="#F5E6C8"
+                    android:background="@drawable/chip_console_idle_cnsa"
+                    android:backgroundTint="@null"
+                    android:maxLines="1"
+                    android:ellipsize="none"
+                    android:paddingLeft="2dp"
+                    android:paddingRight="2dp"
+                    android:layout_margin="2dp"/>
+                <Button
+                    android:id="@+id/btn_console_ariane"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:textSize="11sp"
+                    android:layout_weight="1"
+                    android:text="ARIANE"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/chip_console_idle_arianespace"
+                    android:backgroundTint="@null"
+                    android:maxLines="1"
+                    android:ellipsize="none"
+                    android:paddingLeft="2dp"
+                    android:paddingRight="2dp"
+                    android:layout_margin="2dp"/>
+                <Button
+                    android:id="@+id/btn_console_rlab"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:textSize="11sp"
+                    android:layout_weight="1"
+                    android:text="R.LAB"
+                    android:textStyle="bold"
+                    android:textColor="#F2F2F2"
+                    android:background="@drawable/chip_console_idle_rocketlab"
+                    android:backgroundTint="@null"
+                    android:maxLines="1"
+                    android:ellipsize="none"
+                    android:paddingLeft="2dp"
+                    android:paddingRight="2dp"
+                    android:layout_margin="2dp"/>
+                <Button
+                    android:id="@+id/btn_console_ula"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:textSize="11sp"
+                    android:layout_weight="1"
+                    android:text="ULA"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:background="@drawable/chip_console_idle_ula"
+                    android:backgroundTint="@null"
+                    android:maxLines="1"
+                    android:ellipsize="none"
+                    android:paddingLeft="2dp"
+                    android:paddingRight="2dp"
+                    android:layout_margin="2dp"/>
+                </LinearLayout>
             </LinearLayout>
-        </LinearLayout>
+</LinearLayout>
 
         <Button
             android:id="@+id/btn_set_wallpaper"

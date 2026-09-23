@@ -211,7 +211,7 @@ class RetroCommandWallpaperService : WallpaperService() {
         private val lampRockerRects = arrayOf(RectF(), RectF(), RectF())
         private val textRockerRects = arrayOf(RectF(), RectF(), RectF())
         private val holdRockerRects = arrayOf(RectF(), RectF(), RectF())
-        private val consoleRockerRects = arrayOf(RectF(), RectF(), RectF())
+        private val consoleRockerRects = Array(8) { RectF() }
         private val extraRockerHits = mutableListOf<Pair<RectF, () -> Unit>>()
 
         /** Screen-relative size so panels stay readable on phones and tablets. */
@@ -1079,6 +1079,43 @@ class RetroCommandWallpaperService : WallpaperService() {
                 rects[i].set(x0, top, x0 + w, top + h)
             }
         }
+
+        /** tip145: CONSOLE 8 chips as 2 rows × 4 (settings + CMD flyout). */
+        private fun layoutConsoleTwoRows(rects: Array<RectF>, left: Float, top: Float, right: Float, h: Float, rowGap: Float = 8f) {
+            val gap = 8f
+            val cols = 4
+            val w = (right - left - gap * (cols - 1)) / cols
+            for (i in rects.indices) {
+                val col = i % cols
+                val row = i / cols
+                val x0 = left + col * (w + gap)
+                val y0 = top + row * (h + rowGap)
+                rects[i].set(x0, y0, x0 + w, y0 + h)
+            }
+        }
+
+        private fun consoleChipAccent(skinId: String): Int = when (skinId) {
+            AppPrefs.CONSOLE_SKIN_ROS -> Color.parseColor("#C8102E")
+            AppPrefs.CONSOLE_SKIN_SPACEX -> Color.parseColor("#00D26A")
+            AppPrefs.CONSOLE_SKIN_NASA -> Color.parseColor("#6A9AD4")
+            AppPrefs.CONSOLE_SKIN_CNSA -> Color.parseColor("#DE2910")
+            AppPrefs.CONSOLE_SKIN_ARIANE -> Color.parseColor("#FFD100")
+            AppPrefs.CONSOLE_SKIN_RLAB -> Color.parseColor("#FF5A1F")
+            AppPrefs.CONSOLE_SKIN_ULA -> Color.parseColor("#F6A800")
+            else -> Color.parseColor("#FFB000")
+        }
+
+        private fun consoleFrameAccent(skinId: String): Int = when (skinId) {
+            AppPrefs.CONSOLE_SKIN_ROS -> Color.parseColor("#8B9A4B")
+            AppPrefs.CONSOLE_SKIN_SPACEX -> Color.parseColor("#FFFFFF")
+            AppPrefs.CONSOLE_SKIN_NASA -> Color.parseColor("#6A9AD4")
+            AppPrefs.CONSOLE_SKIN_CNSA -> Color.parseColor("#DE2910")
+            AppPrefs.CONSOLE_SKIN_ARIANE -> Color.parseColor("#FFD100")
+            AppPrefs.CONSOLE_SKIN_RLAB -> Color.parseColor("#FF5A1F")
+            AppPrefs.CONSOLE_SKIN_ULA -> Color.parseColor("#F6A800")
+            else -> Color.parseColor("#FFB000")
+        }
+
 
         private fun drawRockerRow(
             canvas: Canvas,
@@ -2410,17 +2447,13 @@ class RetroCommandWallpaperService : WallpaperService() {
             // Previous builds drew the border first, so LAMP / analog sat outside the box.
             var y = panelTop + titleSz + su(0.022f)
             if (state.activeModule == 0) {
-                // Stamp 88: CONSOLE MCC|ROS|CLEAR on wallpaper COMMAND flyout (same prefs as Settings).
+                // tip145: CONSOLE 8 chips 2x4 on wallpaper COMMAND flyout (same prefs as Settings).
                 y += labelSz + 8f
-                layoutRockerRow(consoleRockerRects, panelLeft, y, panelRight, rockerH)
-                listOf(
-                    AppPrefs.CONSOLE_SKIN_MCC,
-                    AppPrefs.CONSOLE_SKIN_ROS,
-                    AppPrefs.CONSOLE_SKIN_CLEAR
-                ).forEachIndexed { i, skinId ->
+                layoutConsoleTwoRows(consoleRockerRects, panelLeft, y, panelRight, rockerH * 0.92f)
+                AppPrefs.CONSOLE_SKIN_IDS.forEachIndexed { i, skinId ->
                     extraRockerHits.add(consoleRockerRects[i] to { prefs.consoleSkin = skinId })
                 }
-                y = consoleRockerRects[0].bottom + sectionGap
+                y = consoleRockerRects[4].bottom + sectionGap
                 y += labelSz + 8f
                 layoutRockerRow(textRockerRects, panelLeft, y, panelRight, rockerH)
                 y = textRockerRects[0].bottom + sectionGap
@@ -2459,11 +2492,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             val panelBottom = y + su(0.018f)
             panelBounds.set(panelLeft - 16f, panelTop - 28f, panelRight + 16f, panelBottom + 8f)
             val cmdShellAccent = if (state.activeModule == 0) {
-                when (prefs.consoleSkin) {
-                    AppPrefs.CONSOLE_SKIN_ROS -> Color.parseColor("#8B9A4B")
-                    AppPrefs.CONSOLE_SKIN_CLEAR -> Color.parseColor("#00E5FF")
-                    else -> Color.parseColor("#FFB000")
-                }
+                consoleFrameAccent(prefs.consoleSkin)
             } else RetroSkin.cyan
             drawConsoleShell(
                 canvas,
@@ -2489,16 +2518,8 @@ class RetroCommandWallpaperService : WallpaperService() {
             hudPaint.textAlign = Paint.Align.LEFT
 
             if (state.activeModule == 0) {
-                val consoleSel = when (prefs.consoleSkin) {
-                    AppPrefs.CONSOLE_SKIN_ROS -> 1
-                    AppPrefs.CONSOLE_SKIN_CLEAR -> 2
-                    else -> 0
-                }
-                val consoleAccent = when (prefs.consoleSkin) {
-                    AppPrefs.CONSOLE_SKIN_ROS -> Color.parseColor("#C8102E")
-                    AppPrefs.CONSOLE_SKIN_CLEAR -> Color.parseColor("#00E5FF")
-                    else -> Color.parseColor("#FFB000")
-                }
+                val consoleSel = AppPrefs.consoleSkinIndex(prefs.consoleSkin)
+                val consoleAccent = consoleChipAccent(prefs.consoleSkin)
                 labelPaint.color = Color.parseColor("#F0F6FC")
                 labelPaint.textSize = labelSz
                 labelPaint.textAlign = Paint.Align.LEFT
@@ -3206,6 +3227,18 @@ class RetroCommandWallpaperService : WallpaperService() {
                 hudPaint.textSize = 17f * chipScale
                 canvas.drawText(jumpChipLabels[i], jumpChipRects[i].centerX(), jumpChipRects[i].centerY() + 6f * chipScale, hudPaint)
             }
+            hudPaint.color = withLamp(skin.muted, lamp)
+            hudPaint.textSize = 12f * chipScale
+            // Tip 136/145: entertainment-only disclaimer (clear, plain)
+            canvas.drawText(
+                "ENTERTAINMENT ONLY · not real telemetry",
+                width / 2f, height * 0.78f, hudPaint
+            )
+            hudPaint.textSize = 11f * chipScale
+            canvas.drawText(
+                "Companies do not share live telemetry · track NET, watch on YouTube/phone",
+                width / 2f, height * 0.82f, hudPaint
+            )
         }
 
 
@@ -6638,11 +6671,11 @@ class RetroCommandWallpaperService : WallpaperService() {
             var rockerH = panelRockerH()
             if (prefs.extraScreens) rockerH *= 0.86f
             val inset = 16f
-            // Stamp 88: CONSOLE MCC|ROS|CLEAR at TOP of COMMAND popout.
+            // tip145: CONSOLE 8 chips 2x4 at TOP of COMMAND popout.
             var y = top + titleSize + su(0.04f)
             y += labelSz + 8f
-            layoutRockerRow(consoleRockerRects, panelLeft + inset, y, panelRight - inset, rockerH)
-            y = consoleRockerRects[0].bottom + su(0.028f)
+            layoutConsoleTwoRows(consoleRockerRects, panelLeft + inset, y, panelRight - inset, rockerH * 0.90f)
+            y = consoleRockerRects[4].bottom + su(0.028f)
             y += labelSz + 8f
             layoutRockerRow(textRockerRects, panelLeft + inset, y, panelRight - inset, rockerH)
             y = textRockerRects[0].bottom + su(0.028f)
@@ -6690,12 +6723,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             val holdTop = holdLabelY + labelSz + 8f
             layoutRockerRow(holdRockerRects, panelLeft + inset, holdTop, panelRight - inset, rockerH)
             extraRockerHits.clear()
-            val consoleHits = listOf(
-                AppPrefs.CONSOLE_SKIN_MCC,
-                AppPrefs.CONSOLE_SKIN_ROS,
-                AppPrefs.CONSOLE_SKIN_CLEAR
-            )
-            consoleHits.forEachIndexed { i, skinId ->
+            AppPrefs.CONSOLE_SKIN_IDS.forEachIndexed { i, skinId ->
                 extraRockerHits.add(consoleRockerRects[i] to {
                     prefs.consoleSkin = skinId
                 })
@@ -6711,16 +6739,8 @@ class RetroCommandWallpaperService : WallpaperService() {
             val footerTop = holdRockerRects[0].bottom + su(0.03f)
             val bottom = min(footerTop + labelSz * 2.4f + su(0.04f), height - 8f)
             panelBounds.set(panelLeft - 6f, top - 8f, panelRight + 6f, bottom + 6f)
-            val consoleShellAccent = when (prefs.consoleSkin) {
-                AppPrefs.CONSOLE_SKIN_ROS -> Color.parseColor("#8B9A4B")
-                AppPrefs.CONSOLE_SKIN_CLEAR -> Color.parseColor("#00E5FF")
-                else -> Color.parseColor("#FFB000")
-            }
-            val consolePanelAccent = when (prefs.consoleSkin) {
-                AppPrefs.CONSOLE_SKIN_ROS -> Color.parseColor("#C8102E")
-                AppPrefs.CONSOLE_SKIN_CLEAR -> Color.parseColor("#00E5FF")
-                else -> Color.parseColor("#FFB000")
-            }
+            val consoleShellAccent = consoleFrameAccent(prefs.consoleSkin)
+            val consolePanelAccent = consoleChipAccent(prefs.consoleSkin)
             drawConsoleShell(canvas, panelLeft, top, panelRight, bottom, withLamp(consoleShellAccent, lamp))
             canvas.save()
             canvas.clipRect(panelBounds)
@@ -6740,11 +6760,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                 }
             }
             rowLabel("CONSOLE", consoleRockerRects, withLamp(consolePanelAccent, lamp))
-            val consoleSel = when (prefs.consoleSkin) {
-                AppPrefs.CONSOLE_SKIN_ROS -> 1
-                AppPrefs.CONSOLE_SKIN_CLEAR -> 2
-                else -> 0
-            }
+            val consoleSel = AppPrefs.consoleSkinIndex(prefs.consoleSkin)
             drawRockerRow(
                 canvas, consoleRockerRects, AppPrefs.ROCKER_LABELS_CONSOLE, consoleSel,
                 withLamp(consolePanelAccent, lamp), withLamp(skin.text, lamp), withLamp(skin.muted, lamp),
@@ -7132,6 +7148,18 @@ class RetroCommandWallpaperService : WallpaperService() {
                 y = drawWrappedCenter(canvas, m.note, cx, y, maxW, subSz, withLamp(if (m.classified) skin.hold else skin.muted, lamp), gap)
             }
             y = drawWrappedCenter(canvas, "${m.payloadName}   |   ${m.payloadState}", cx, y, maxW, subSz, withLamp(skin.go, lamp), gap)
+            // Tip 136/145: entertainment-only disclaimer on wallpaper MISSION page
+            y += subSz * 0.55f
+            y = drawWrappedCenter(
+                canvas,
+                "ENTERTAINMENT PURPOSES ONLY",
+                cx, y, maxW, subSz, withLamp(skin.hold, lamp), gap
+            )
+            drawWrappedCenter(
+                canvas,
+                "Rocket companies do not share real-time telemetry. This wallpaper tracks when launches happen so you can watch on YouTube or your phone.",
+                cx, y, maxW, subSz * 0.92f, withLamp(skin.muted, lamp), gap
+            )
         }
 
         private fun drawOffPageDataWall(canvas: Canvas, now: Long) {

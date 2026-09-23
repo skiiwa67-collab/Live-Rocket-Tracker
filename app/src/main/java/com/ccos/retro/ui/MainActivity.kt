@@ -611,72 +611,96 @@ class MainActivity : AppCompatActivity() {
             b.setBackgroundResource(if (selected) selectedBg else idleBg)
             b.setTextColor(if (selected) selectedText else idleText)
             b.isAllCaps = false
-            b.textSize = 15f
+            b.textSize = 11f
         }
 
         private fun applyConsoleSkin() {
         val section = findViewById<LinearLayout>(R.id.section_console_skin) ?: return
         val title = findViewById<TextView>(R.id.txt_console_title)
         val help = findViewById<TextView>(R.id.txt_console_help)
-        val mcc = findViewById<Button>(R.id.btn_console_mcc)
-        val ros = findViewById<Button>(R.id.btn_console_ros)
-        val clear = findViewById<Button>(R.id.btn_console_clear)
+        val buttons = listOf(
+            findViewById<Button>(R.id.btn_console_mcc),
+            findViewById<Button>(R.id.btn_console_ros),
+            findViewById<Button>(R.id.btn_console_spacex),
+            findViewById<Button>(R.id.btn_console_nasa),
+            findViewById<Button>(R.id.btn_console_cnsa),
+            findViewById<Button>(R.id.btn_console_ariane),
+            findViewById<Button>(R.id.btn_console_rlab),
+            findViewById<Button>(R.id.btn_console_ula)
+        )
+        val labels = AppPrefs.ROCKER_LABELS_CONSOLE
+        val selectedBg = intArrayOf(
+            R.drawable.chip_console_selected_mcc,
+            R.drawable.chip_console_selected_ros,
+            R.drawable.chip_console_selected_spacex,
+            R.drawable.chip_console_selected_nasa,
+            R.drawable.chip_console_selected_cnsa,
+            R.drawable.chip_console_selected_arianespace,
+            R.drawable.chip_console_selected_rocketlab,
+            R.drawable.chip_console_selected_ula
+        )
+        val idleBg = intArrayOf(
+            R.drawable.chip_console_idle_mcc,
+            R.drawable.chip_console_idle_ros,
+            R.drawable.chip_console_idle_spacex,
+            R.drawable.chip_console_idle_nasa,
+            R.drawable.chip_console_idle_cnsa,
+            R.drawable.chip_console_idle_arianespace,
+            R.drawable.chip_console_idle_rocketlab,
+            R.drawable.chip_console_idle_ula
+        )
+        // selected text / idle text per pack tokens
+        val selText = intArrayOf(
+            0xFF1A1200.toInt(), 0xFFE8E0D0.toInt(), 0xFFF0F0F0.toInt(), 0xFFE8EEF8.toInt(),
+            0xFFF5E6C8.toInt(), 0xFFFFFFFF.toInt(), 0xFFF2F2F2.toInt(), 0xFFFFFFFF.toInt()
+        )
+        val idleText = intArrayOf(
+            0xFF8A7050.toInt(), 0xFF6A7850.toInt(), 0xFF6A6A6A.toInt(), 0xFF6A7A90.toInt(),
+            0xFF8A6060.toInt(), 0xFF6A7090.toInt(), 0xFF6A6A6A.toInt(), 0xFF5A6A88.toInt()
+        )
         val skin = prefs.consoleSkin
-        // Stamp 70: selected = BRIGHT fill + BRIGHT text; idle = dark + dim. Clear Material tints.
-        mcc?.text = "MCC"
-        ros?.text = "ROS"
-        clear?.text = "CLEAR"
+        val sel = AppPrefs.consoleSkinIndex(skin)
+        title?.visibility = View.VISIBLE
+        title?.text = "CONSOLE"
+        help?.text = "8 skins · MCC ROS SPACEX NASA / CNSA ARIANE R.LAB ULA · same on CMD flyout"
         when (skin) {
             AppPrefs.CONSOLE_SKIN_ROS -> {
                 section.setBackgroundResource(R.drawable.bg_console_ros)
-                title?.visibility = View.VISIBLE
-                title?.text = "\u041D\u0410\u0421\u0422\u0420\u041E\u0419\u041A\u0418 / SETTINGS"
                 title?.setTextColor(0xFFE8F0D8.toInt())
-                help?.text = "Selected LIT bright text | idle dim | shared CMD flyout"
                 help?.setTextColor(0xFFB8C890.toInt())
-                styleConsoleChip(mcc, false, R.drawable.chip_console_selected_ros, R.drawable.chip_console_ros_idle, 0xFFFFFFF0.toInt(), 0xFF6A7A58.toInt())
-                styleConsoleChip(ros, true, R.drawable.chip_console_selected_ros, R.drawable.chip_console_ros_idle, 0xFFFFFFF0.toInt(), 0xFF6A7A58.toInt())
-                styleConsoleChip(clear, false, R.drawable.chip_console_selected_ros, R.drawable.chip_console_ros_idle, 0xFFFFFFF0.toInt(), 0xFF6A7A58.toInt())
                 findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF0A0C08.toInt())
             }
-            AppPrefs.CONSOLE_SKIN_CLEAR -> {
-                title?.visibility = View.VISIBLE
+            AppPrefs.CONSOLE_SKIN_SPACEX, AppPrefs.CONSOLE_SKIN_ULA, AppPrefs.CONSOLE_SKIN_NASA,
+            AppPrefs.CONSOLE_SKIN_CNSA, AppPrefs.CONSOLE_SKIN_ARIANE, AppPrefs.CONSOLE_SKIN_RLAB -> {
                 section.setBackgroundResource(R.drawable.bg_console_clear)
-                title?.text = "CONSOLE"
                 title?.setTextColor(0xFF00E5FF.toInt())
-                help?.text = "Selected LIT bright text | idle dim | shared CMD flyout"
                 help?.setTextColor(0xFF8AA0B0.toInt())
-                styleConsoleChip(mcc, false, R.drawable.chip_console_selected_clear, R.drawable.chip_console_idle, 0xFFFFFFF0.toInt(), 0xFF5A6878.toInt())
-                styleConsoleChip(ros, false, R.drawable.chip_console_selected_clear, R.drawable.chip_console_idle, 0xFFFFFFF0.toInt(), 0xFF5A6878.toInt())
-                styleConsoleChip(clear, true, R.drawable.chip_console_selected_clear, R.drawable.chip_console_idle, 0xFFFFFFF0.toInt(), 0xFF5A6878.toInt())
                 findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF060C12.toInt())
             }
             else -> {
-                title?.visibility = View.VISIBLE
                 section.setBackgroundResource(R.drawable.bg_console_mcc)
-                title?.text = "CONSOLE"
                 title?.setTextColor(0xFFFFB000.toInt())
-                help?.text = "Selected LIT bright text | idle dim | shared CMD flyout"
                 help?.setTextColor(0xFF8AA0B0.toInt())
-                // HARD: never 0xFF1A1000 on MCC selected — bright cream/white on lit amber
-                styleConsoleChip(mcc, true, R.drawable.chip_console_selected_mcc, R.drawable.chip_console_idle, 0xFFFFFFF0.toInt(), 0xFF5A6878.toInt())
-                styleConsoleChip(ros, false, R.drawable.chip_console_selected_mcc, R.drawable.chip_console_idle, 0xFFFFFFF0.toInt(), 0xFF5A6878.toInt())
-                styleConsoleChip(clear, false, R.drawable.chip_console_selected_mcc, R.drawable.chip_console_idle, 0xFFFFFFF0.toInt(), 0xFF5A6878.toInt())
                 findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF0A0E14.toInt())
             }
+        }
+        for (i in buttons.indices) {
+            val b = buttons[i]
+            b?.text = labels[i]
+            styleConsoleChip(b, i == sel, selectedBg[i], idleBg[i], selText[i], idleText[i])
         }
         findViewById<View>(R.id.section_telemetry)?.let { tel ->
             when (skin) {
                 AppPrefs.CONSOLE_SKIN_ROS -> tel.setBackgroundResource(R.drawable.bg_console_ros)
-                AppPrefs.CONSOLE_SKIN_CLEAR -> tel.setBackgroundResource(R.drawable.bg_console_clear)
-                else -> tel.setBackgroundResource(R.drawable.panel_console)
+                AppPrefs.CONSOLE_SKIN_MCC -> tel.setBackgroundResource(R.drawable.panel_console)
+                else -> tel.setBackgroundResource(R.drawable.bg_console_clear)
             }
         }
         (findViewById<View>(android.R.id.content) as? android.view.ViewGroup)?.getChildAt(0)?.setBackgroundColor(
             when (skin) {
                 AppPrefs.CONSOLE_SKIN_ROS -> 0xFF1A2010.toInt()
-                AppPrefs.CONSOLE_SKIN_CLEAR -> 0xFF060C12.toInt()
-                else -> 0xFF0A0E14.toInt()
+                AppPrefs.CONSOLE_SKIN_MCC -> 0xFF0A0E14.toInt()
+                else -> 0xFF060C12.toInt()
             }
         )
     }
@@ -686,9 +710,15 @@ private fun wireConsoleSkin() {
             prefs.consoleSkin = id
             applyConsoleSkin()
         }
-        findViewById<Button>(R.id.btn_console_mcc)?.setOnClickListener { pick(AppPrefs.CONSOLE_SKIN_MCC) }
-        findViewById<Button>(R.id.btn_console_ros)?.setOnClickListener { pick(AppPrefs.CONSOLE_SKIN_ROS) }
-        findViewById<Button>(R.id.btn_console_clear)?.setOnClickListener { pick(AppPrefs.CONSOLE_SKIN_CLEAR) }
+        val ids = AppPrefs.CONSOLE_SKIN_IDS
+        val btnIds = intArrayOf(
+            R.id.btn_console_mcc, R.id.btn_console_ros, R.id.btn_console_spacex, R.id.btn_console_nasa,
+            R.id.btn_console_cnsa, R.id.btn_console_ariane, R.id.btn_console_rlab, R.id.btn_console_ula
+        )
+        for (i in btnIds.indices) {
+            val skinId = ids[i]
+            findViewById<Button>(btnIds[i])?.setOnClickListener { pick(skinId) }
+        }
         applyConsoleSkin()
     }
 

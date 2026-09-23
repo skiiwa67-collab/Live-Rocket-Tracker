@@ -37,11 +37,33 @@ class AppPrefs(context: Context) {
         const val HOLD_DUR_48H_MS = 48L * 3600_000L
         val HOLD_DUR_ALLOWED_MS = longArrayOf(HOLD_DUR_1H_MS, HOLD_DUR_2H_MS, HOLD_DUR_48H_MS)
         val ROCKER_LABELS_HOLD = arrayOf("1H", "2H", "48H")
-        /** Stamp 65 Batch D: Settings CONSOLE skin chips (panel chrome only). */
-        val ROCKER_LABELS_CONSOLE = arrayOf("MCC", "ROS", "CLEAR")
+        /** tip145: Settings + CMD flyout CONSOLE skins — 8 chips 2x4 (panel chrome only). */
+        val ROCKER_LABELS_CONSOLE = arrayOf("MCC", "ROS", "SPACEX", "NASA", "CNSA", "ARIANE", "R.LAB", "ULA")
+        val CONSOLE_SKIN_IDS = arrayOf("MCC", "ROS", "SPACEX", "NASA", "CNSA", "ARIANE", "R.LAB", "ULA")
         const val CONSOLE_SKIN_MCC = "MCC"
         const val CONSOLE_SKIN_ROS = "ROS"
+        const val CONSOLE_SKIN_SPACEX = "SPACEX"
+        const val CONSOLE_SKIN_NASA = "NASA"
+        const val CONSOLE_SKIN_CNSA = "CNSA"
+        const val CONSOLE_SKIN_ARIANE = "ARIANE"
+        const val CONSOLE_SKIN_RLAB = "R.LAB"
+        const val CONSOLE_SKIN_ULA = "ULA"
+        /** Legacy CLEAR maps to MCC. */
         const val CONSOLE_SKIN_CLEAR = "CLEAR"
+
+        fun normalizeConsoleSkin(raw: String): String {
+            return when (raw) {
+                CONSOLE_SKIN_MCC, CONSOLE_SKIN_ROS, CONSOLE_SKIN_SPACEX, CONSOLE_SKIN_NASA,
+                CONSOLE_SKIN_CNSA, CONSOLE_SKIN_ARIANE, CONSOLE_SKIN_RLAB, CONSOLE_SKIN_ULA -> raw
+                CONSOLE_SKIN_CLEAR -> CONSOLE_SKIN_MCC
+                else -> CONSOLE_SKIN_MCC
+            }
+        }
+
+        fun consoleSkinIndex(id: String): Int {
+            val i = CONSOLE_SKIN_IDS.indexOf(normalizeConsoleSkin(id))
+            return if (i >= 0) i else 0
+        }
 
         fun normalizeHoldDurationMs(raw: Long): Long {
             val one = HOLD_DUR_1H_MS
@@ -290,21 +312,14 @@ class AppPrefs(context: Context) {
     fun isSystem(): Boolean = activeModuleId == MODULE_SYSTEM
     fun isTelemetry(): Boolean = activeModuleId == MODULE_TELEMETRY
 
-    /** Stamp 65: Settings panel chrome skin - MCC|ROS|CLEAR. Does not replace TelemetrySkin.forLaunch. */
+    /** tip145: Settings panel chrome skin — 8 chips. Does not replace TelemetrySkin.forLaunch. */
     var consoleSkin: String
         get() {
             val v = prefs.getString("console_skin", CONSOLE_SKIN_MCC) ?: CONSOLE_SKIN_MCC
-            return when (v) {
-                CONSOLE_SKIN_ROS, CONSOLE_SKIN_CLEAR -> v
-                else -> CONSOLE_SKIN_MCC
-            }
+            return normalizeConsoleSkin(v)
         }
         set(v) {
-            val norm = when (v) {
-                CONSOLE_SKIN_ROS, CONSOLE_SKIN_CLEAR -> v
-                else -> CONSOLE_SKIN_MCC
-            }
-            prefs.edit().putString("console_skin", norm).apply()
+            prefs.edit().putString("console_skin", normalizeConsoleSkin(v)).apply()
         }
 
     /**
