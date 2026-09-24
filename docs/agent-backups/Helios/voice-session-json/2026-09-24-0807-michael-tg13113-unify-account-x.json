@@ -1,0 +1,63 @@
+{
+  "schema": "voice-session-extract/v1",
+  "agent": "Helios",
+  "call_id": "call-f4cca8ae-8b6a-4c7c-8648-207c80deeba3",
+  "started": "2026-09-24T07:45:00-05:00",
+  "ended": "2026-09-24T08:07:00-05:00",
+  "slug": "michael-tg13113-unify-account-x",
+  "tags": [
+    "Grok Bot",
+    "T-G13113",
+    "T-G948",
+    "Michael",
+    "Unify account",
+    "X",
+    "LRT",
+    "pricing"
+  ],
+  "decisions": [
+    "Michael's latest reply sits on T-G13113 (layout / red fail banner / floating voice bar), not on T-G948 voice-continuity.",
+    "Chris ordered a root-cause reply on the existing T-G13113 thread; Helios sent it (msg 1a0d37465beef85d, 2026-09-24 7:46:55 AM CT).",
+    "Nima Owji X post (4:53 AM Sep 24, 2026) shows a Grok menu Unify account button; it does not explicitly say merge regular Grok + Grok Bot.",
+    "Chris: thread replies are not noise \u2014 people want unified apps (regular Grok + Grok Bot), not only an account login merge."
+  ],
+  "product_details": [
+    "X URL: https://x.com/nima_owji/status/2103060359116374049 \u2014 author @nima_owji; screenshot of Unify account in Grok account menu.",
+    "T-G13113 thread 1a0ce530504c8412; Michael latest before Chris reply: 1a0d04706bb76c50 (2026-09-23 4:58 PM CT) still tracking banner and floating voice bar.",
+    "T-G948 still Sam only; Friday retest planned; no timeline.",
+    "LRT price reminder carried: set $1.99 if Console still $9.99; keep paid."
+  ],
+  "bugs": [
+    {
+      "id": "T-G13113",
+      "status": "open / Cursor tracking",
+      "note": "Red fail banner + floating voice bar; Chris root-cause: tip140-era malformed reply tool call (missing required field) \u2192 silent fail + same banner spam on other bots. Asked Cursor if they see missing field + silent-retry."
+    },
+    {
+      "id": "T-G948",
+      "status": "open / Sam product team",
+      "note": "Voice context continuity after hangup; Friday retest. Not the thread Michael answered."
+    }
+  ],
+  "hypotheses": [
+    "Unify account may be login/billing merge only; Chris and thread want product-level unified apps (Grok + Grok Bot)."
+  ],
+  "actions": [
+    "Watch Michael reply on T-G13113 after Chris root-cause note.",
+    "Friday retest / follow-up on T-G948.",
+    "Chris: set LRT price to $1.99 if still $9.99; keep paid.",
+    "Track Unify account / unified-apps product signal; do not overclaim merge of Grok + Grok Bot from the screenshot alone."
+  ],
+  "ops_knowledge": [
+    "X API + WebFetch 403; Soft-PASS read via box browser signed in as @CaminoArcher.",
+    "Screenshot path: /workspace/screenshots/shot-call_POAqWYZJAKyJxEQU2Xea59HLfc_03546114fd42d1a9.png",
+    "Call ended with Helios cut off mid-reply; chat wrap posted after hangup."
+  ],
+  "paths": {
+    "local": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0807-michael-tg13113-unify-account-x.json",
+    "dropbox": "/Grok-Agent-Backups/Helios/voice-session-json/2026-09-24-0807-michael-tg13113-unify-account-x.json",
+    "github": "docs/agent-backups/Helios/voice-session-json/2026-09-24-0807-michael-tg13113-unify-account-x.json",
+    "notion": "Helios voice session \u2014 2026-09-24 michael-tg13113-unify-account-x"
+  },
+  "summary_md": "/workspace/agent-backups/Helios/voice-call-summaries/2026-09-24-0807-michael-tg13113-unify-account-x.md"
+}
