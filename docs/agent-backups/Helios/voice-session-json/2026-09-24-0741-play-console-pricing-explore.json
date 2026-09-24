@@ -1,0 +1,49 @@
+{
+  "schema": "voice-session-extract/v1",
+  "agent": "Helios",
+  "call_id": "call-c2c02404-be2f-48dd-a001-b78c2a73e2fd",
+  "started": "2026-09-24T07:34:32.425-05:00",
+  "ended": "2026-09-24T07:41:45.219-05:00",
+  "slug": "play-console-pricing-explore",
+  "tags": ["LRT", "Play Console", "pricing", "deep-links", "tip154"],
+  "decisions": [
+    "Deep-link Console patches are not catalog updates; do not use patches for the rocket catalog. A remote/server-side catalog is the correct later path.",
+    "Keep LRT paid, not free; intended price is about $1.99 rather than $9.99.",
+    "Skip price experiments at roughly three installs."
+  ],
+  "product_details": [
+    "tip154 / version 1.0.144 is Production Active.",
+    "Play Console App pricing → Set pricing is the price-change path; no new APK is needed and new buys receive the new price.",
+    "Chris corrected the Play Console phone number while exploring the Console."
+  ],
+  "bugs": [
+    {
+      "id": "LRT-price-tier-mismatch",
+      "status": "open",
+      "note": "Console showed $9.99 while Chris remembered setting about $1.99; set $1.99 if still $9.99, while keeping LRT paid."
+    },
+    {
+      "id": "Samsung-One-UI-widget-drop",
+      "status": "not-a-crash / skin quirk",
+      "note": "Samsung One UI prevented widget placement; crash log is otherwise mostly Chris's own builds."
+    }
+  ],
+  "hypotheses": [],
+  "actions": [
+    "Chris: set LRT price to $1.99 if it is still $9.99; keep the app paid.",
+    "Watch Play Console vitals for several days.",
+    "Later: use staged rollout on the next tip and move the rocket catalog server-side when ready."
+  ],
+  "ops_knowledge": [
+    "Deep-link patches remap URL routing and do not ship or refresh catalog data.",
+    "Price changes are made in Play Console via App pricing → Set pricing; no APK release is required.",
+    "Do not use pricing A/B experiments with only about three installs."
+  ],
+  "paths": {
+    "local": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0741-play-console-pricing-explore.json",
+    "dropbox": "/Grok-Agent-Backups/Helios/voice-session-json/2026-09-24-0741-play-console-pricing-explore.json",
+    "github": "docs/agent-backups/Helios/voice-session-json/2026-09-24-0741-play-console-pricing-explore.json",
+    "notion": "Helios voice session — 2026-09-24 play-console-pricing-explore"
+  },
+  "summary_md": "/workspace/agent-backups/Helios/voice-call-summaries/2026-09-24-0741-play-console-pricing-explore.md"
+}
