@@ -17,3 +17,7 @@ app/release/
 _patch*.py
 _*.png
 .kotlin/
+lumen-keel/.godot/
+lumen-keel/build/
+*.exe
+*.pck
