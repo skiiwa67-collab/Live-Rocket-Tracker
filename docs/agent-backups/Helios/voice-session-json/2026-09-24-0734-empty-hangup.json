@@ -1,0 +1,31 @@
+{
+  "schema": "voice-session-extract/v1",
+  "agent": "Helios",
+  "started": "2026-09-24T07:33:59.205-05:00",
+  "ended": "2026-09-24T07:34:03.191-05:00",
+  "slug": "empty-hangup",
+  "tags": [
+    "voice",
+    "LRT",
+    "Play Console"
+  ],
+  "decisions": [],
+  "product_details": [],
+  "bugs": [],
+  "hypotheses": [],
+  "actions": [],
+  "ops_knowledge": [
+    "Play Console deep-link patch modal = promo; Dismiss OK unless changing deep links; tip154 1.0.144 Production Active unchanged"
+  ],
+  "paths": {
+    "local": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0734-empty-hangup.json",
+    "dropbox": "/Grok-Agent-Backups/Helios/voice-session-json/2026-09-24-0734-empty-hangup.json",
+    "github": "docs/agent-backups/Helios/voice-session-json/2026-09-24-0734-empty-hangup.json",
+    "notion": "Helios voice session — 2026-09-24 empty-hangup"
+  },
+  "summary_md": "/workspace/agent-backups/Helios/voice-call-summaries/2026-09-24-0734-empty-hangup.md",
+  "call_id": "call-1e6261be-2ee2-4f32-8424-c4b93b2be4d2",
+  "duration_ms": 3986,
+  "ending": "hung-up",
+  "note": "aborted ~4s hang-up no turns"
+}
