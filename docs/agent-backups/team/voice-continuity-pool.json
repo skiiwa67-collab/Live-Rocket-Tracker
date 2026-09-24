@@ -1,22 +1,28 @@
 {
   "schema": "voice-continuity-pool/v2",
-  "updated_at": "2026-09-24T07:34:03-05:00",
+  "updated_at": "2026-09-24T07:41:45.219-05:00",
   "updated_by": "Helios",
   "products": {
     "LRT": {
-      "last_discussed": "tip154 1.0.144 Production Active unchanged; Play Console deep-link patch modal is promo—Dismiss OK unless changing deep links.",
+      "last_discussed": "tip154 / 1.0.144 Production Active; deep-link Console patches are not rocket-catalog updates; LRT remains paid with target price ~$1.99.",
       "decisions": [
         "tip151+152 Helios Soft-PASS; Chris all-clear for Studio sync; Soft-FAIL agent phone/Play/adb until Chris go",
         "Ada dual-push required every tip: GitHub stamp-85 + MiniME Studio same step",
         "NO MORE PARTIAL Soft-PASS on plumes/nozzles/stage-fit — full catalog defect list then one batch (HARD #70)",
         "Soft-FAIL invent F9 side MVac / phantom SR75 published S2",
-        "Soft-FAIL written-chat spam while Chris away; one all-clear only when fully audited"
+        "Soft-FAIL written-chat spam while Chris away; one all-clear only when fully audited",
+        "Deep-link Console patches are not catalog updates; use a remote/server-side catalog later.",
+        "Keep LRT paid, not free; target price is about $1.99 rather than $9.99.",
+        "Skip price experiments at roughly three installs."
       ],
       "open_actions": [
         "Chris: sync Android Studio tip152 then phone on his go only",
         "Soft-FAIL agent phone/Play/adb",
         "Optional team sim/stress realtime 1:1 before phone go",
-        "HOLD-eyes only on more Soft-FAIL-named art until Chris names more"
+        "HOLD-eyes only on more Soft-FAIL-named art until Chris names more",
+        "Chris: set LRT price to $1.99 if it is still $9.99; keep the app paid.",
+        "Watch Play Console vitals for several days.",
+        "Later: staged rollout on the next tip; server-side catalog when ready."
       ],
       "bugs": [
         {
@@ -58,6 +64,16 @@
           "id": "tip139-signed-aab",
           "status": "HOLD",
           "note": "waiting Chris Generate Signed Bundle"
+        },
+        {
+          "id": "LRT-price-tier-mismatch",
+          "status": "open",
+          "note": "Console showed $9.99 while Chris remembered about $1.99; set $1.99 if still $9.99 while keeping LRT paid."
+        },
+        {
+          "id": "Samsung-One-UI-widget-drop",
+          "status": "not-a-crash / skin quirk",
+          "note": "Samsung One UI prevented widget placement; crash log is otherwise mostly Chris's own builds."
         }
       ],
       "hypotheses": [],
@@ -66,7 +82,9 @@
         "tip152",
         "Studio",
         "tip154",
-        "Play Console"
+        "Play Console",
+        "pricing",
+        "deep-links"
       ]
     },
     "Alarm Pro": {
@@ -260,6 +278,27 @@
   "recent_calls": [
     {
       "agent": "Helios",
+      "started": "2026-09-24T07:34:32.425-05:00",
+      "ended": "2026-09-24T07:41:45.219-05:00",
+      "slug": "play-console-pricing-explore",
+      "tags": [
+        "LRT",
+        "Play Console",
+        "pricing",
+        "deep-links",
+        "tip154"
+      ],
+      "paths": {
+        "local_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0741-play-console-pricing-explore.json",
+        "dropbox_json": "/Grok-Agent-Backups/Helios/voice-session-json/2026-09-24-0741-play-console-pricing-explore.json",
+        "local_md": "/workspace/agent-backups/Helios/voice-call-summaries/2026-09-24-0741-play-console-pricing-explore.md",
+        "dropbox_md": "/Grok-Agent-Backups/Helios/voice-call-summaries/2026-09-24-0741-play-console-pricing-explore.md",
+        "github": "docs/agent-backups/Helios/voice-session-json/2026-09-24-0741-play-console-pricing-explore.json",
+        "notion": "Helios voice session — 2026-09-24 play-console-pricing-explore"
+      }
+    },
+    {
+      "agent": "Helios",
       "started": "2026-09-24T07:33:59.205-05:00",
       "ended": "2026-09-24T07:34:03.191-05:00",
       "slug": "empty-hangup",
@@ -411,8 +450,8 @@
     },
     "LRT": {
       "product_key": "LRT",
-      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0734-empty-hangup.json",
-      "updated_at": "2026-09-24T07:34:03-05:00"
+      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0741-play-console-pricing-explore.json",
+      "updated_at": "2026-09-24T07:41:45.219-05:00"
     },
     "tip152": {
       "product_key": "LRT",
@@ -426,13 +465,23 @@
     },
     "tip154": {
       "product_key": "LRT",
-      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0734-empty-hangup.json",
-      "updated_at": "2026-09-24T07:34:03-05:00"
+      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0741-play-console-pricing-explore.json",
+      "updated_at": "2026-09-24T07:41:45.219-05:00"
     },
     "Play Console": {
       "product_key": "LRT",
-      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0734-empty-hangup.json",
-      "updated_at": "2026-09-24T07:34:03-05:00"
+      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0741-play-console-pricing-explore.json",
+      "updated_at": "2026-09-24T07:41:45.219-05:00"
+    },
+    "pricing": {
+      "product_key": "LRT",
+      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0741-play-console-pricing-explore.json",
+      "updated_at": "2026-09-24T07:41:45.219-05:00"
+    },
+    "deep-links": {
+      "product_key": "LRT",
+      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0741-play-console-pricing-explore.json",
+      "updated_at": "2026-09-24T07:41:45.219-05:00"
     }
   },
   "sessions": [
@@ -454,17 +503,17 @@
   ],
   "latest": {
     "agent": "Helios",
-    "ended_at": "2026-09-23T06:52:24-05:00",
-    "call_id": "voice:call-97dcc99b-0e86-414d-b4b2-7309eb19a2d5",
-    "slug": "pc-voice-fixed-continuity-test",
+    "ended_at": "2026-09-24T07:41:45.219-05:00",
+    "call_id": "call-c2c02404-be2f-48dd-a001-b78c2a73e2fd",
+    "slug": "play-console-pricing-explore",
     "tags": [
-      "voice",
-      "continuity",
-      "PC-TTS",
-      "Cursor-bug",
-      "xAI"
+      "LRT",
+      "Play Console",
+      "pricing",
+      "deep-links",
+      "tip154"
     ],
-    "one_liner": "PC voice Soft-PASS fixed; continuity Soft-FAIL open — shut-down memory test + drive Soft-PASS in ~2 days",
-    "json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-23-0652-pc-voice-fixed-continuity-test.json"
+    "one_liner": "LRT pricing exploration: keep paid at ~$1.99; deep-link patches are not catalog updates; tip154 remains Production Active.",
+    "json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0741-play-console-pricing-explore.json"
   }
 }
