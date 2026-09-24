@@ -1,6 +1,6 @@
 {
   "schema": "voice-continuity-pool/v2",
-  "updated_at": "2026-09-24T08:07:00-05:00",
+  "updated_at": "2026-09-24T08:53:00-05:00",
   "updated_by": "Helios",
   "products": {
     "LRT": {
@@ -284,9 +284,46 @@
         "Living Icon",
         "Helios-profile"
       ]
+    },
+    "You Ship / Frontier": {
+      "last_discussed": "Frontier officially announced after last week's You Ship teaser; X tagged screenshot visibility path.",
+      "decisions": [
+        "Tag developer + one screenshot + short pickup line on X for visibility.",
+        "Prefer file upload in X web compose over paste if compression softens the shot."
+      ],
+      "open_actions": [
+        "Chris: post tagged screenshot on X when ready."
+      ],
+      "bugs": [],
+      "hypotheses": [],
+      "tags": [
+        "You Ship",
+        "Frontier",
+        "X"
+      ]
     }
   },
   "recent_calls": [
+    {
+      "agent": "Helios",
+      "started": "2026-09-24T08:45:00-05:00",
+      "slug": "youship-frontier-x-screenshot-post",
+      "tags": [
+        "X",
+        "You Ship",
+        "Frontier",
+        "visibility",
+        "screenshot"
+      ],
+      "paths": {
+        "local_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0853-youship-frontier-x-screenshot-post.json",
+        "dropbox_json": "/Grok-Agent-Backups/Helios/voice-session-json/2026-09-24-0853-youship-frontier-x-screenshot-post.json",
+        "local_md": "/workspace/agent-backups/Helios/voice-call-summaries/2026-09-24-0853-youship-frontier-x-screenshot-post.md",
+        "dropbox_md": "/Grok-Agent-Backups/Helios/voice-call-summaries/2026-09-24-0853-youship-frontier-x-screenshot-post.md",
+        "github": "docs/agent-backups/Helios/voice-session-json/2026-09-24-0853-youship-frontier-x-screenshot-post.json",
+        "notion": "Helios voice session \u2014 2026-09-24 youship-frontier-x-screenshot-post"
+      }
+    },
     {
       "agent": "Helios",
       "started": "2026-09-24T07:45:00-05:00",
@@ -536,6 +573,31 @@
       "product_key": "Grok Bot voice",
       "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0807-michael-tg13113-unify-account-x.json",
       "updated_at": "2026-09-24T08:07:00-05:00"
+    },
+    "X": {
+      "product_key": "You Ship / Frontier",
+      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0853-youship-frontier-x-screenshot-post.json",
+      "updated_at": "2026-09-24T08:53:00-05:00"
+    },
+    "You Ship": {
+      "product_key": "You Ship / Frontier",
+      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0853-youship-frontier-x-screenshot-post.json",
+      "updated_at": "2026-09-24T08:53:00-05:00"
+    },
+    "Frontier": {
+      "product_key": "You Ship / Frontier",
+      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0853-youship-frontier-x-screenshot-post.json",
+      "updated_at": "2026-09-24T08:53:00-05:00"
+    },
+    "visibility": {
+      "product_key": "You Ship / Frontier",
+      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0853-youship-frontier-x-screenshot-post.json",
+      "updated_at": "2026-09-24T08:53:00-05:00"
+    },
+    "screenshot": {
+      "product_key": "You Ship / Frontier",
+      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0853-youship-frontier-x-screenshot-post.json",
+      "updated_at": "2026-09-24T08:53:00-05:00"
     }
   },
   "sessions": [
@@ -557,20 +619,17 @@
   ],
   "latest": {
     "agent": "Helios",
-    "ended_at": "2026-09-24T08:07:00-05:00",
-    "call_id": "call-f4cca8ae-8b6a-4c7c-8648-207c80deeba3",
-    "slug": "michael-tg13113-unify-account-x",
+    "ended_at": "2026-09-24T08:53:00-05:00",
+    "call_id": "call-51f4a2b2-48ff-468c-ba77-ac1d4fd0bab4",
+    "slug": "youship-frontier-x-screenshot-post",
     "tags": [
-      "Grok Bot",
-      "T-G13113",
-      "T-G948",
-      "Michael",
-      "Unify account",
       "X",
-      "LRT",
-      "pricing"
+      "You Ship",
+      "Frontier",
+      "visibility",
+      "screenshot"
     ],
-    "one_liner": "Michael on T-G13113 (not T-G948); Chris root-cause sent; Unify account X post; Chris wants unified apps not only account merge.",
-    "json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0807-michael-tg13113-unify-account-x.json"
+    "one_liner": "You Ship / Frontier announced; Chris path = tagged X screenshot via web compose upload (prefer file over paste).",
+    "json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0853-youship-frontier-x-screenshot-post.json"
   }
 }
