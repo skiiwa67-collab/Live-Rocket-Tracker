@@ -1,0 +1,40 @@
+{
+  "schema": "voice-session-extract/v1",
+  "agent": "Helios",
+  "call_id": "call-51f4a2b2-48ff-468c-ba77-ac1d4fd0bab4",
+  "started": "2026-09-24T08:45:00-05:00",
+  "ended": "2026-09-24T08:53:00-05:00",
+  "slug": "youship-frontier-x-screenshot-post",
+  "tags": [
+    "X",
+    "You Ship",
+    "Frontier",
+    "visibility",
+    "screenshot"
+  ],
+  "decisions": [
+    "Posting a tagged screenshot on X is a solid visibility path for the developer / game (visibility problem is real).",
+    "Prefer one screenshot + short line (e.g. just picked this up, here's what it looks like) over many algorithm pushes.",
+    "Upload via X web compose: drag-drop or paperclip from screenshots folder; Ctrl+V paste also works but X may compress pasted images harder \u2014 re-upload file if soft."
+  ],
+  "product_details": [
+    "You Ship teaser was revealed last week; Frontier is officially announced \u2014 timing window for visibility posts.",
+    "Target post pattern: tag the developer so their followers see it."
+  ],
+  "bugs": [],
+  "hypotheses": [],
+  "actions": [
+    "Chris: compose X post with tagged developer + one screenshot via web compose upload (prefer file upload over paste if quality matters)."
+  ],
+  "ops_knowledge": [
+    "X web compose: drag-drop onto compose box or paperclip file picker.",
+    "Clipboard paste (Ctrl+V) into compose works; watch for softer compression vs uploaded files."
+  ],
+  "paths": {
+    "local": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0853-youship-frontier-x-screenshot-post.json",
+    "dropbox": "/Grok-Agent-Backups/Helios/voice-session-json/2026-09-24-0853-youship-frontier-x-screenshot-post.json",
+    "github": "docs/agent-backups/Helios/voice-session-json/2026-09-24-0853-youship-frontier-x-screenshot-post.json",
+    "notion": "Helios voice session \u2014 2026-09-24 youship-frontier-x-screenshot-post"
+  },
+  "summary_md": "/workspace/agent-backups/Helios/voice-call-summaries/2026-09-24-0853-youship-frontier-x-screenshot-post.md"
+}
