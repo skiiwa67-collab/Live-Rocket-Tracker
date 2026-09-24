@@ -1,14 +1,14 @@
 {
   "schema": "voice-continuity-pool/v2",
-  "updated_at": "2026-09-23T10:37:48-05:00",
+  "updated_at": "2026-09-24T07:34:03-05:00",
   "updated_by": "Helios",
   "products": {
     "LRT": {
-      "last_discussed": "tip152 Soft-PASS a6553d2 152/1.0.142 Studio-ready Soft-FAIL phone until Chris go",
+      "last_discussed": "tip154 1.0.144 Production Active unchanged; Play Console deep-link patch modal is promo—Dismiss OK unless changing deep links.",
       "decisions": [
         "tip151+152 Helios Soft-PASS; Chris all-clear for Studio sync; Soft-FAIL agent phone/Play/adb until Chris go",
         "Ada dual-push required every tip: GitHub stamp-85 + MiniME Studio same step",
-        "NO MORE PARTIAL Soft-PASS on plumes/nozzles/stage-fit \u2014 full catalog defect list then one batch (HARD #70)",
+        "NO MORE PARTIAL Soft-PASS on plumes/nozzles/stage-fit — full catalog defect list then one batch (HARD #70)",
         "Soft-FAIL invent F9 side MVac / phantom SR75 published S2",
         "Soft-FAIL written-chat spam while Chris away; one all-clear only when fully audited"
       ],
@@ -64,7 +64,9 @@
       "tags": [
         "LRT",
         "tip152",
-        "Studio"
+        "Studio",
+        "tip154",
+        "Play Console"
       ]
     },
     "Alarm Pro": {
@@ -79,7 +81,7 @@
         {
           "id": "AlarmPro#3",
           "status": "fix Soft-PASS tip46 0.5.22",
-          "note": "\u221212h base shift when HOUR_OF_DAY % 12 == 0"
+          "note": "−12h base shift when HOUR_OF_DAY % 12 == 0"
         }
       ],
       "hypotheses": [
@@ -151,7 +153,7 @@
         "LTL"
       ],
       "company": "Estes Express Lines (LTL)",
-      "last_discussed": "2026-09-19 Fri voice sessions 04\u201308 \u2014 company ops wedge: Samsara UI + AS400 pingback + Sincera DoD fuel",
+      "last_discussed": "2026-09-19 Fri voice sessions 04–08 — company ops wedge: Samsara UI + AS400 pingback + Sincera DoD fuel",
       "source_sessions": [
         {
           "seq": "04",
@@ -190,23 +192,23 @@
         "AS400": "Load-bearing dispatch backend (~30 years). Tablet talks to AS400. Do not rip/replace as first move.",
         "Samsara": "ELD + driver tablet software. Where UI lives. Target layer for validation gate + UI redesign.",
         "Sincera_DoD": "Services panel concept on routes: fuel / wash / shop per terminal; if no fuel, next company-preferred station (Pilot/Flying J/QT).",
-        "ELD": "Hours of service / Drive Smart live in Samsara tablet UI \u2014 HOS must be largest on-screen element."
+        "ELD": "Hours of service / Drive Smart live in Samsara tablet UI — HOS must be largest on-screen element."
       },
       "pingback_workflow": {
-        "problem": "Dispatcher assigns van/bobtail but order still requires trailer + dolly \u2192 driver cannot dispatch; wasted call time both sides.",
+        "problem": "Dispatcher assigns van/bobtail but order still requires trailer + dolly → driver cannot dispatch; wasted call time both sides.",
         "example_session_07": "Dispatcher set Chris pulling a set when he was pulling a van; took three tries to explain.",
-        "fix": "At Samsara layer: if asset type is van/bobtail but trailer/dolly marked required \u2192 reject + message/red-flag back to dispatcher (email or AS400 flag) before driver screen.",
+        "fix": "At Samsara layer: if asset type is van/bobtail but trailer/dolly marked required → reject + message/red-flag back to dispatcher (email or AS400 flag) before driver screen.",
         "watchout": "False positives if fields default-populated; key rule off actual asset type."
       },
       "ui_spec_highlights": [
-        "Parchment background (not bright white) \u2014 functional glare fix",
-        "Routes panel expands; show trailer number(s), origin/dest codes (e.g. DAL 089\u2192ARL 193), dolly, green/yellow/red status",
+        "Parchment background (not bright white) — functional glare fix",
+        "Routes panel expands; show trailer number(s), origin/dest codes (e.g. DAL 089→ARL 193), dolly, green/yellow/red status",
         "Fix accidental O hot-tap; enlarge truck number",
         "Collapse Training/Documents/Trip Log/Qualifications behind Other; HOS largest; Drive Smart stay big; Tasks show specific dates",
         "Prominent sign-out; merge Vehicle+truck into dynamic traits button (C&G, single/twin screw) from fleet/S400 source"
       ],
       "open_actions": [
-        "Map Estes public software stack (Samsara modules, AS400/IBM i facts, APIs) \u2014 Soft-FAIL invent undocumented pieces",
+        "Map Estes public software stack (Samsara modules, AS400/IBM i facts, APIs) — Soft-FAIL invent undocumented pieces",
         "Design Samsara-layer van-vs-sets validation + pingback prototype",
         "Continue estes-tablet-redesign spec (GitHub if exists)",
         "Sincera DoD fuel panel + fuel-chain API/partnership research",
@@ -230,7 +232,7 @@
         }
       ],
       "hypotheses": [
-        "Samsara gate between AS400 and driver tablet is fastest path \u2014 no RPG/AS400 rewrite",
+        "Samsara gate between AS400 and driver tablet is fastest path — no RPG/AS400 rewrite",
         "Driver+UI expertise is Chris's wedge into Estes software org"
       ]
     },
@@ -258,6 +260,25 @@
   "recent_calls": [
     {
       "agent": "Helios",
+      "started": "2026-09-24T07:33:59.205-05:00",
+      "ended": "2026-09-24T07:34:03.191-05:00",
+      "slug": "empty-hangup",
+      "tags": [
+        "voice",
+        "LRT",
+        "Play Console"
+      ],
+      "paths": {
+        "local_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0734-empty-hangup.json",
+        "dropbox_json": "/Grok-Agent-Backups/Helios/voice-session-json/2026-09-24-0734-empty-hangup.json",
+        "local_md": "/workspace/agent-backups/Helios/voice-call-summaries/2026-09-24-0734-empty-hangup.md",
+        "dropbox_md": "/Grok-Agent-Backups/Helios/voice-call-summaries/2026-09-24-0734-empty-hangup.md",
+        "github": "docs/agent-backups/Helios/voice-session-json/2026-09-24-0734-empty-hangup.json",
+        "notion": "Helios voice session — 2026-09-24 empty-hangup"
+      }
+    },
+    {
+      "agent": "Helios",
       "started": "2026-09-23T09:50:00-05:00",
       "ended": "2026-09-23T10:37:48-05:00",
       "slug": "tip152-allclear-call-end",
@@ -279,7 +300,7 @@
         "local_md": "/workspace/agent-backups/Helios/voice-call-summaries/2026-09-23-1037-tip152-allclear-call-end.md",
         "dropbox_md": "/Grok-Agent-Backups/Helios/voice-call-summaries/2026-09-23-1037-tip152-allclear-call-end.md",
         "github": "docs/agent-backups/Helios/voice-session-json/2026-09-23-1037-tip152-allclear-call-end.json",
-        "notion": "Helios voice session \u2014 2026-09-23 tip152-allclear-call-end"
+        "notion": "Helios voice session — 2026-09-23 tip152-allclear-call-end"
       }
     },
     {
@@ -298,7 +319,7 @@
         "local_md": "/workspace/agent-backups/tinkabot/voice-call-summaries/2026-09-21-1718-voice-test-broken-across-board.md",
         "dropbox_md": "/Grok-Agent-Backups/tinkabot/voice-call-summaries/2026-09-21-1718-voice-test-broken-across-board.md",
         "github": "docs/agent-backups/tinkabot/voice-session-json/",
-        "notion": "tinkabot voice session \u2014 2026-09-21 voice-test"
+        "notion": "tinkabot voice session — 2026-09-21 voice-test"
       }
     },
     {
@@ -337,8 +358,8 @@
     "skill": "voice-call-continuity-log Soft-PASS v2 (session JSON + tags + pool + dual purpose + team-wide)",
     "schema_doc": "/workspace/agent-backups/team/VOICE_SESSION_EXTRACT_SCHEMA.md",
     "session_json_path": "/workspace/agent-backups/<Agent>/voice-session-json/",
-    "auto_every_call": "Soft-FAIL \u2014 no platform voice-end event; each bot must run skill end-of-call",
-    "audio_stt": "Soft-FAIL \u2014 extract from agent call context unless STT tool ran",
+    "auto_every_call": "Soft-FAIL — no platform voice-end event; each bot must run skill end-of-call",
+    "audio_stt": "Soft-FAIL — extract from agent call context unless STT tool ran",
     "prior_exports_local": "/workspace/agent-backups/helios/voice-exports/ Soft-PASS 25 sessions + INDEX.md",
     "prior_exports_dropbox_gaps": [
       "02",
@@ -390,8 +411,8 @@
     },
     "LRT": {
       "product_key": "LRT",
-      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-23-1037-tip152-allclear-call-end.json",
-      "updated_at": "2026-09-23T10:37:48-05:00"
+      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0734-empty-hangup.json",
+      "updated_at": "2026-09-24T07:34:03-05:00"
     },
     "tip152": {
       "product_key": "LRT",
@@ -402,6 +423,16 @@
       "product_key": "LRT",
       "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-23-1037-tip152-allclear-call-end.json",
       "updated_at": "2026-09-23T10:37:48-05:00"
+    },
+    "tip154": {
+      "product_key": "LRT",
+      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0734-empty-hangup.json",
+      "updated_at": "2026-09-24T07:34:03-05:00"
+    },
+    "Play Console": {
+      "product_key": "LRT",
+      "latest_session_json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-0734-empty-hangup.json",
+      "updated_at": "2026-09-24T07:34:03-05:00"
     }
   },
   "sessions": [
@@ -417,7 +448,7 @@
         "Cursor-bug",
         "xAI"
       ],
-      "one_liner": "PC voice Soft-PASS fixed; continuity Soft-FAIL open \u2014 shut-down memory test + drive Soft-PASS in ~2 days",
+      "one_liner": "PC voice Soft-PASS fixed; continuity Soft-FAIL open — shut-down memory test + drive Soft-PASS in ~2 days",
       "json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-23-0652-pc-voice-fixed-continuity-test.json"
     }
   ],
@@ -433,7 +464,7 @@
       "Cursor-bug",
       "xAI"
     ],
-    "one_liner": "PC voice Soft-PASS fixed; continuity Soft-FAIL open \u2014 shut-down memory test + drive Soft-PASS in ~2 days",
+    "one_liner": "PC voice Soft-PASS fixed; continuity Soft-FAIL open — shut-down memory test + drive Soft-PASS in ~2 days",
     "json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-23-0652-pc-voice-fixed-continuity-test.json"
   }
 }
