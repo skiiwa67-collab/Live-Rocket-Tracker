@@ -22,16 +22,25 @@ func _ready() -> void:
 	_show_title()
 
 func _show_title() -> void:
+	var layer = CanvasLayer.new()
+	layer.layer = 10
 	title = Control.new()
-	title.set_anchors_preset(Control.PRESET_FULL_RECT)
+	title.mouse_filter = Control.MOUSE_FILTER_STOP
+	layer.add_child(title)
+	add_child(layer)
+	_fill(title)
 	var bg = ColorRect.new()
 	bg.color = Color(0.04, 0.035, 0.03)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	title.add_child(bg)
+	_fill(bg)
+	var center = CenterContainer.new()
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	title.add_child(center)
+	_fill(center)
 	var v = VBoxContainer.new()
-	v.set_anchors_preset(Control.PRESET_CENTER)
-	v.position = Vector2(360, 180)
-	title.add_child(v)
+	v.alignment = BoxContainer.ALIGNMENT_CENTER
+	center.add_child(v)
 	var h = Label.new()
 	h.text = "LUMEN KEEL"
 	h.add_theme_font_size_override("font_size", 48)
@@ -65,7 +74,29 @@ func _show_title() -> void:
 	help.text = "WASD move   mouse look   E interact   F scan   G seat   I pockets   Z autopilot   V camera   ` debug   Esc menu"
 	help.add_theme_color_override("font_color", Color(0.6, 0.55, 0.45))
 	v.add_child(help)
-	add_child(title)
+	var settings_btn = Button.new()
+	settings_btn.text = "Settings"
+	v.add_child(settings_btn)
+	var settings_host = CenterContainer.new()
+	settings_host.visible = false
+	settings_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	title.add_child(settings_host)
+	_fill(settings_host)
+	settings_btn.pressed.connect(func() -> void:
+		v.visible = false
+		settings_host.visible = true
+		for c in settings_host.get_children():
+			c.queue_free()
+		settings_host.add_child(DisplayCfg.build_controls(func() -> void:
+			settings_host.visible = false
+			v.visible = true
+		))
+	)
+
+func _fill(c: Control) -> void:
+	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	c.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	c.grow_vertical = Control.GROW_DIRECTION_BOTH
 
 func _begin_new() -> void:
 	Game.new_game()
@@ -73,8 +104,10 @@ func _begin_new() -> void:
 
 func _start_world() -> void:
 	if title:
-		title.queue_free()
+		var layer = title.get_parent()
 		title = null
+		if layer:
+			layer.queue_free()
 	world = preload("res://scripts/world/system_world.gd").new()
 	add_child(world)
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED

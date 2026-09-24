@@ -426,12 +426,13 @@ func _plumes(on: bool) -> void:
 		plume_r.emitting = on
 
 func _look_input() -> Vector2:
-	var sens = 0.0022
-	if Game.state.has("settings"):
-		sens = float(Game.state["settings"].get("mouse_sens", sens))
+	var sens = DisplayCfg.mouse_sens
+	var look = DisplayCfg.look_scale()
 	var v = Vector2.ZERO
 	if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 		v = Input.get_last_mouse_velocity() * sens * 0.06
+		v.x *= look.x
+		v.y *= look.y
 	if Input.get_connected_joypads().size() > 0:
 		var j = Input.get_connected_joypads()[0]
 		v.x += Input.get_joy_axis(j, JOY_AXIS_RIGHT_X) * 0.03

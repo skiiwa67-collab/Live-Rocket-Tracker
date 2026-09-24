@@ -16,40 +16,42 @@ var _sliders = {}
 func _ready() -> void:
 	layer = 20
 	root = Control.new()
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
+	_fill(root)
 	var theme = _theme()
 	root.theme = theme
 	prompt = _label("", 18)
-	prompt.position = Vector2(480, 640)
 	prompt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	root.add_child(prompt)
+	_anchor_bottom(prompt, 0.5, 0.5, -320, -56, 320, -16)
 	objective = _label("", 16)
-	objective.position = Vector2(24, 24)
 	objective.size = Vector2(560, 80)
 	objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	objective.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(objective)
+	_anchor_top(objective, 0.0, 0.0, 24, 24, 584, 104)
 	stats = _label("", 15)
-	stats.position = Vector2(900, 16)
 	stats.size = Vector2(360, 220)
+	stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	stats.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(stats)
+	_anchor_top(stats, 1.0, 0.0, -384, 16, -16, 236)
 	toast = _label("", 18)
-	toast.position = Vector2(24, 620)
 	toast.size = Vector2(700, 40)
 	toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(toast)
+	_anchor_bottom(toast, 0.0, 1.0, 24, -48, 724, -12)
 	_scan = Control.new()
-	_scan.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_scan.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(_scan)
+	_fill(_scan)
 	panel = PanelContainer.new()
-	panel.position = Vector2(240, 60)
-	panel.custom_minimum_size = Vector2(800, 580)
+	panel.custom_minimum_size = Vector2(520, 420)
 	panel.visible = false
 	root.add_child(panel)
+	_anchor_center(panel, 400, 320)
 	panel_box = VBoxContainer.new()
 	panel.add_child(panel_box)
 	Game.toast.connect(func(t): toast.text = t)
@@ -70,6 +72,36 @@ func _theme() -> Theme:
 	t.set_stylebox("normal", "Button", btn)
 	t.set_color("font_color", "Button", Color(0.95, 0.86, 0.7))
 	return t
+
+func _fill(c: Control) -> void:
+	c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	c.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	c.grow_vertical = Control.GROW_DIRECTION_BOTH
+
+func _anchor_top(c: Control, ax: float, ay: float, l: float, t: float, r: float, b: float) -> void:
+	c.anchor_left = ax
+	c.anchor_top = ay
+	c.anchor_right = ax
+	c.anchor_bottom = ay
+	c.offset_left = l
+	c.offset_top = t
+	c.offset_right = r
+	c.offset_bottom = b
+
+func _anchor_bottom(c: Control, ax: float, ay: float, l: float, t: float, r: float, b: float) -> void:
+	_anchor_top(c, ax, ay, l, t, r, b)
+
+func _anchor_center(c: Control, half_w: float, half_h: float) -> void:
+	c.anchor_left = 0.5
+	c.anchor_top = 0.5
+	c.anchor_right = 0.5
+	c.anchor_bottom = 0.5
+	c.offset_left = -half_w
+	c.offset_top = -half_h
+	c.offset_right = half_w
+	c.offset_bottom = half_h
+	c.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	c.grow_vertical = Control.GROW_DIRECTION_BOTH
 
 func _label(text: String, size: int) -> Label:
 	var l = Label.new()
@@ -426,7 +458,7 @@ func open_designer() -> void:
 	open = "design"
 	world.designer = true
 	_show("SHIP DESIGNER  — schematic")
-	panel.position = Vector2(760, 40)
+	_anchor_top(panel, 1.0, 0.0, -500, 24, -16, 680)
 	panel.custom_minimum_size = Vector2(480, 640)
 	var cats = ["engine", "weapon", "shield", "capacitor", "core", "conduit", "autopilot", "scanner", "bay", "frame"]
 	var cat_list = ItemList.new()
@@ -535,6 +567,12 @@ func open_pause() -> void:
 	panel_box.add_child(_btn("Load cheat slot", func():
 		if SaveGame.load_slot(true):
 			_reload_world()
+	))
+	panel_box.add_child(_btn("Display settings", func():
+		_clear(panel_box)
+		panel_box.add_child(DisplayCfg.build_controls(func():
+			open_pause()
+		))
 	))
 	panel_box.add_child(_btn("Resume", close))
 

@@ -13,6 +13,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
+DisplayCfg="*res://scripts/autoload/display_cfg.gd"
 Catalog="*res://scripts/autoload/catalog.gd"
 SimClock="*res://scripts/autoload/sim_clock.gd"
 Game="*res://scripts/autoload/game.gd"
@@ -23,8 +24,12 @@ AudioFx="*res://scripts/autoload/audio_fx.gd"
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
+window/size/window_width_override=1280
+window/size/window_height_override=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+window/stretch/scale_mode="fractional"
+window/dpi/allow_hidpi=true
 
 [input]
 

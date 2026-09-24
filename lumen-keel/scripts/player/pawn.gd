@@ -235,15 +235,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED:
 		if world and world.ui and world.ui.blocks_look():
 			return
-		var sens = float(Game.state["settings"].get("mouse_sens", 0.0022))
+		var sens = DisplayCfg.mouse_sens
 		var mot: InputEventMouseMotion = event
-		var invert = 1.0 if not bool(Game.state["settings"].get("invert_y", false)) else -1.0
+		var look = DisplayCfg.look_scale()
 		if mode == "seat":
 			return
-		yaw -= mot.relative.x * sens
-		pitch -= mot.relative.y * sens * invert
+		yaw -= mot.relative.x * sens * look.x
+		pitch -= mot.relative.y * sens * look.y
 		pitch = clampf(pitch, deg_to_rad(-80), deg_to_rad(75))
-		rotate_object_local(Vector3(0, 1, 0), -mot.relative.x * sens)
+		rotate_object_local(Vector3(0, 1, 0), -mot.relative.x * sens * look.x)
 		if mode != "seat":
 			pivot.rotation.x = pitch
 	if event.is_action_pressed("view_toggle"):
