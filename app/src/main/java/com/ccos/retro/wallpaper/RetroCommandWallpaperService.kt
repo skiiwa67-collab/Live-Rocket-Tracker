@@ -217,7 +217,7 @@ class RetroCommandWallpaperService : WallpaperService() {
         private val sliderTrackHeight = 14f
         private val lampRockerRects = arrayOf(RectF(), RectF(), RectF())
         private val textRockerRects = arrayOf(RectF(), RectF(), RectF())
-        private val holdRockerRects = arrayOf(RectF(), RectF(), RectF())
+        private val holdRockerRects = Array(4) { RectF() }
         private val consoleRockerRects = Array(24) { RectF() }
         private val extraRockerHits = mutableListOf<Pair<RectF, () -> Unit>>()
 
@@ -2683,10 +2683,10 @@ class RetroCommandWallpaperService : WallpaperService() {
                 y = layoutFlyoutConsoles(panelLeft, y, panelRight, rockerH * 0.92f) + sectionGap
                 bindFlyoutConsoleHits()
                 y += labelSz + 8f
-                layoutRockerRow(textRockerRects, panelLeft, y, panelRight, rockerH)
+                layoutRockerRow(textRockerRects, panelLeft, y, panelRight, rockerH * 0.62f)
                 y = textRockerRects[0].bottom + sectionGap
                 y += labelSz + 8f
-                layoutRockerRow(lampRockerRects, panelLeft, y, panelRight, rockerH)
+                layoutRockerRow(lampRockerRects, panelLeft, y, panelRight, rockerH * 0.62f)
                 y = lampRockerRects[0].bottom + sectionGap
             }
 
@@ -4745,6 +4745,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             hudPaint.textAlign = Paint.Align.CENTER
             // Stamp 85: when LCK on, show chip length (1H/2H/48H) so 48H stays readable next to AUTO.
             val chip = when (prefs.telemetryHoldDurationMs) {
+                AppPrefs.HOLD_DUR_30M_MS -> "30M"
                 AppPrefs.HOLD_DUR_1H_MS -> "1H"
                 AppPrefs.HOLD_DUR_48H_MS -> "48H"
                 else -> "2H"
@@ -6959,10 +6960,10 @@ class RetroCommandWallpaperService : WallpaperService() {
             y += labelSz + 8f
             y = layoutFlyoutConsoles(panelLeft + inset, y, panelRight - inset, rockerH * 0.90f) + su(0.028f)
             y += labelSz + 8f
-            layoutRockerRow(textRockerRects, panelLeft + inset, y, panelRight - inset, rockerH)
+            layoutRockerRow(textRockerRects, panelLeft + inset, y, panelRight - inset, rockerH * 0.62f)
             y = textRockerRects[0].bottom + su(0.028f)
             y += labelSz + 8f
-            layoutRockerRow(lampRockerRects, panelLeft + inset, y, panelRight - inset, rockerH)
+            layoutRockerRow(lampRockerRects, panelLeft + inset, y, panelRight - inset, rockerH * 0.62f)
 
             val toggleH = panelToggleH() * (if (prefs.extraScreens) 0.90f else 1f)
             val toggleY = lampRockerRects[0].bottom + su(0.028f)
@@ -7056,9 +7057,10 @@ class RetroCommandWallpaperService : WallpaperService() {
                 withLamp(skin.accent, lamp), withLamp(skin.text, lamp), withLamp(skin.muted, lamp)
             )
             val holdSel = when (prefs.telemetryHoldDurationMs) {
-                AppPrefs.HOLD_DUR_1H_MS -> 0
-                AppPrefs.HOLD_DUR_48H_MS -> 2
-                else -> 1
+                AppPrefs.HOLD_DUR_30M_MS -> 0
+                AppPrefs.HOLD_DUR_1H_MS -> 1
+                AppPrefs.HOLD_DUR_48H_MS -> 3
+                else -> 2
             }
             rowLabel("LCK TIMER", holdRockerRects)
             drawRockerRow(

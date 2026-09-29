@@ -273,6 +273,7 @@ fun LaunchSnapshot.autoDwellHint(
     if (pinned && holdDurationMs > 0L) {
         val dur = AppPrefs.normalizeHoldDurationMs(holdDurationMs)
         val chip = when (dur) {
+            AppPrefs.HOLD_DUR_30M_MS -> "30M"
             AppPrefs.HOLD_DUR_1H_MS -> "1H"
             AppPrefs.HOLD_DUR_48H_MS -> "48H"
             else -> "2H"

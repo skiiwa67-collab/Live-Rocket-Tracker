@@ -34,11 +34,12 @@ class AppPrefs(context: Context) {
         val ROCKER_LABELS_TEXT = arrayOf("SM", "MD", "LG")
 
         /** Stamp 85: LCK/HOLD chips — 1H|2H|48H only (drop 6H/24H). */
+        const val HOLD_DUR_30M_MS = 30L * 60_000L
         const val HOLD_DUR_1H_MS = 1L * 3600_000L
         const val HOLD_DUR_2H_MS = 2L * 3600_000L
         const val HOLD_DUR_48H_MS = 48L * 3600_000L
-        val HOLD_DUR_ALLOWED_MS = longArrayOf(HOLD_DUR_1H_MS, HOLD_DUR_2H_MS, HOLD_DUR_48H_MS)
-        val ROCKER_LABELS_HOLD = arrayOf("1H", "2H", "48H")
+        val HOLD_DUR_ALLOWED_MS = longArrayOf(HOLD_DUR_30M_MS, HOLD_DUR_1H_MS, HOLD_DUR_2H_MS, HOLD_DUR_48H_MS)
+        val ROCKER_LABELS_HOLD = arrayOf("30M", "1H", "2H", "48H")
         /** tip145: Settings + CMD flyout CONSOLE skins — 8 chips 2x4 (panel chrome only). */
         val ROCKER_LABELS_CONSOLE = arrayOf("MCC", "ROS", "SPACEX", "NASA", "CNSA", "ARIANE", "R.LAB", "ULA", "JAXA", "ISRO")
         val CONSOLE_SKIN_IDS = arrayOf("MCC", "ROS", "SPACEX", "NASA", "CNSA", "ARIANE", "R.LAB", "ULA", "JAXA", "ISRO")
@@ -89,12 +90,14 @@ class AppPrefs(context: Context) {
         }
 
         fun normalizeHoldDurationMs(raw: Long): Long {
+            val half = HOLD_DUR_30M_MS
             val one = HOLD_DUR_1H_MS
             val two = HOLD_DUR_2H_MS
             val twoDay = HOLD_DUR_48H_MS
             // Legacy: 6H→2H, 24H→48H, 4H→2H, old 2D(=48H) stays
             return when {
                 raw <= 0L -> two
+                raw in (half - 60_000L)..(half + 60_000L) -> half
                 raw in (one - 60_000L)..(one + 60_000L) -> one
                 raw in (two - 60_000L)..(two + 60_000L) -> two
                 raw in (6L * 3600_000L - 60_000L)..(6L * 3600_000L + 60_000L) -> two
