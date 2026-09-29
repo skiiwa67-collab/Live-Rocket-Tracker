@@ -231,6 +231,10 @@ class RocketTelemetryModule(
     /** Effective seconds from NET for display/metrics (sim or real). */
     
     /** Stamp 86: CURRENT live/upcoming birds stay on wall-clock — never sim/cursor theater. */
+    /** True when this launch is driven by the wall clock (live watch), not sim or replay. */
+    fun isLiveWallClockFlight(launch: LaunchSnapshot, now: Long = System.currentTimeMillis()): Boolean =
+        isLiveWallClockBird(launch, now)
+
     private fun isLiveWallClockBird(launch: LaunchSnapshot, now: Long): Boolean {
         if (launch.id.startsWith("demo-")) return false
         if (prefs.telemetryListMode == "historical") return false
@@ -538,7 +542,7 @@ class RocketTelemetryModule(
         // Stamp 59: restore before resolve
         if (tracked == null) keepTrackedOrLastGood(now)
         val prevId = tracked?.id
-        // Stamp 85: LCK lifetime = NET + telemetryHoldDurationMs (1H|2H|48H). Never forever-pin.
+        // Stamp 85: LCK lifetime = NET + telemetryHoldDurationMs (30m|1h|2h|24h|48h). Never forever-pin.
         if (prefs.telemetryPinned) {
             val expireId = prefs.telemetryLaunchId.ifBlank { tracked?.id ?: pinnedSnapshot?.id ?: "" }
             val expireLaunch = when {
@@ -572,7 +576,7 @@ class RocketTelemetryModule(
                     else -> null
                 }
             if (pinBird != null) {
-                // Stamp 85: historic/demo pin until togglePin; live expires only on NET+chip (1H|2H|48H).
+                // Stamp 85: historic/demo pin until togglePin; live expires only on NET+chip (30m|1h|2h|24h|48h).
                 val historicPin = isHistoricOrDemoPin(pinBird, now)
                 val expiredByDur = !historicPin && pinBird.netMs + prefs.telemetryHoldDurationMs <= now
                 if (expiredByDur) {
@@ -898,7 +902,7 @@ class RocketTelemetryModule(
         prefs.telemetryPinned = true
         // Keep prefs.telemetryAuto (FOLLOW intent). autoMode getter gates browse while LCK on.
         pinnedSnapshot = t
-        // Stamp 85: chip (1H|2H|48H) picks hold duration; live pin expires via NET+chip.
+        // Stamp 85: chip (30m|1h|2h|24h|48h) picks hold duration; live pin expires via NET+chip.
         holdFor(prefs.telemetryHoldDurationMs)
     }
 
