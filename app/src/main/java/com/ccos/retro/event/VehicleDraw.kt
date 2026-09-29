@@ -517,7 +517,7 @@ object VehicleDraw {
         // Stamp 99: F9 NEVER assembled parts (Chris: STG2 right-chop / tiny). Continuous letterbox only.
         if (artId == "f9") return null
         // Stamp 115: CZ-12 pre-sep MUST be continuous stack (Chris FAIL: tiny upper floating + gap).
-        if ((artId == "cz12" || artId == "cz2d" || artId == "kz11" || artId == "cz8a" || artId == "cz6a" || artId == "sr75" || artId == "nuri" || artId == "h3" || artId == "zq3" || artId == "gravity1" || artId == "kinetica1" || artId == "pallas1" || artId == "electron") && !separated) return null
+        if ((artId == "cz12" || artId == "cz2d" || artId == "kz11" || artId == "cz8a" || artId == "cz6a" || artId == "sr75" || artId == "nuri" || artId == "h3" || artId == "zq3" || artId == "gravity1" || artId == "kinetica1" || artId == "pallas1" || artId == "electron" || artId == "fh") && !separated) return null
         // Prefer shell hulls when Darren ships them; else plain part; else _s1/_s2 aliases.
         val booster = if (artId == "soyuz" || artId == "proton") {
             firstBitmap(
@@ -556,7 +556,7 @@ object VehicleDraw {
         val wantB = if (separated) stage == 1 else true
         val wantU = if (separated) stage >= 2 else true
         val srbGone = FlightProfiles.srbsGone(launch, tSec)
-        val wantSrb = !srbGone && !separated && srb != null
+        val wantSrb = artId != "fh" && !srbGone && !separated && srb != null
 
         val bFrac = if (wantB && wantU && booster != null && upper != null) 0.58f else 1f
         val uFrac = if (wantB && wantU && booster != null && upper != null) 0.42f else 1f
