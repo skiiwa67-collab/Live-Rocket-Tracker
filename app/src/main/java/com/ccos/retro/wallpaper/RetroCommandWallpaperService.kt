@@ -181,6 +181,13 @@ class RetroCommandWallpaperService : WallpaperService() {
         private val activeSliders = mutableListOf<LiveSlider>()
         private var draggingSlider: LiveSlider? = null
         private var showPanel = false
+            set(value) {
+                if (value != field) consoleBoardOpen = false
+                field = value
+            }
+        private var consoleBoardOpen = false
+        private val consoleBoardBack = RectF()
+        private val consoleMoreRect = RectF()
         private val panelBounds = RectF()
         private var panelTouchLocked = false
         private val modeChipAnalog = RectF()
@@ -211,7 +218,7 @@ class RetroCommandWallpaperService : WallpaperService() {
         private val lampRockerRects = arrayOf(RectF(), RectF(), RectF())
         private val textRockerRects = arrayOf(RectF(), RectF(), RectF())
         private val holdRockerRects = arrayOf(RectF(), RectF(), RectF())
-        private val consoleRockerRects = Array(12) { RectF() }
+        private val consoleRockerRects = Array(24) { RectF() }
         private val extraRockerHits = mutableListOf<Pair<RectF, () -> Unit>>()
 
         /** Screen-relative size so panels stay readable on phones and tablets. */
@@ -1100,12 +1107,12 @@ class RetroCommandWallpaperService : WallpaperService() {
         }
 
         /** tip145: CONSOLE 8 chips as 2 rows × 4 (settings + CMD flyout). */
-        private fun layoutConsoleTwoRows(rects: Array<RectF>, left: Float, top: Float, right: Float, h: Float, rowGap: Float = -1f) {
+        private fun layoutConsoleTwoRows(rects: Array<RectF>, left: Float, top: Float, right: Float, h: Float, rowGap: Float = -1f, limit: Int = Int.MAX_VALUE) {
             val span = (right - left).coerceAtLeast(1f)
             val gap = span * 0.02f
             val step = if (rowGap >= 0f) rowGap else h * 0.18f
             val cols = 4
-            val count = minOf(rects.size, AppPrefs.CONSOLE_SKIN_IDS.size)
+            val count = minOf(rects.size, AppPrefs.CONSOLE_SKIN_IDS.size, limit)
             val w = (span - gap * (cols - 1)) / cols
             for (i in rects.indices) rects[i].setEmpty()
             for (i in 0 until count) {
@@ -1115,6 +1122,154 @@ class RetroCommandWallpaperService : WallpaperService() {
                 val y0 = top + row * (h + step)
                 rects[i].set(x0, y0, x0 + w, y0 + h)
             }
+        }
+
+
+        /** First eight console chips stay on the Command flyout. The rest open a second panel. */
+        private fun layoutFlyoutConsoles(left: Float, top: Float, right: Float, h: Float): Float {
+            val shown = minOf(8, AppPrefs.CONSOLE_SKIN_IDS.size, consoleRockerRects.size)
+            layoutConsoleTwoRows(consoleRockerRects, left, top, right, h, limit = shown)
+            val bottom = if (shown == 0) top else consoleRockerRects[shown - 1].bottom
+            if (AppPrefs.CONSOLE_SKIN_IDS.size > shown) {
+                val gap = (right - left).coerceAtLeast(1f) * 0.02f
+                val moreH = h * 0.62f
+                consoleMoreRect.set(left, bottom + gap, right, bottom + gap + moreH)
+                return consoleMoreRect.bottom
+            }
+            consoleMoreRect.setEmpty()
+            return bottom
+        }
+
+        private fun bindFlyoutConsoleHits() {
+            val ids = AppPrefs.CONSOLE_SKIN_IDS
+            val shown = minOf(8, ids.size, consoleRockerRects.size)
+            for (i in 0 until shown) {
+                val skinId = ids[i]
+                extraRockerHits.add(consoleRockerRects[i] to { prefs.consoleSkin = skinId })
+            }
+            if (!consoleMoreRect.isEmpty) {
+                extraRockerHits.add(consoleMoreRect to { consoleBoardOpen = true })
+            }
+        }
+
+        private fun drawConsoleMore(canvas: Canvas, accent: Int, textColor: Int) {
+            val r = consoleMoreRect
+            if (r.isEmpty) return
+            val sel = AppPrefs.consoleSkinIndex(prefs.consoleSkin)
+            val overflow = sel >= 8
+            val label = if (overflow && sel in AppPrefs.ROCKER_LABELS_CONSOLE.indices) {
+                AppPrefs.ROCKER_LABELS_CONSOLE[sel]
+            } else {
+                "MORE"
+            }
+            fillPaint.color = if (overflow) Color.argb(255, 48, 72, 96) else Color.argb(210, 8, 12, 16)
+            canvas.drawRoundRect(r, 8f, 8f, fillPaint)
+            strokePaint.style = Paint.Style.STROKE
+            strokePaint.strokeWidth = if (overflow) 6.5f else 3.2f
+            strokePaint.color = if (overflow) accent else Color.parseColor("#8AA0B4")
+            canvas.drawRoundRect(r, 8f, 8f, strokePaint)
+            hudPaint.textAlign = Paint.Align.CENTER
+            hudPaint.isFakeBoldText = false
+            hudPaint.color = if (overflow) textColor else Color.parseColor("#D0DCE8")
+            var size = r.height() * 0.42f
+            hudPaint.textSize = size
+            var guard = 0
+            val maxW = r.width() * 0.88f
+            while (guard++ < 24 && size > 8f && hudPaint.measureText(label) > maxW) {
+                size *= 0.88f
+                hudPaint.textSize = size
+            }
+            canvas.drawText(label, r.centerX(), r.centerY() + size * 0.35f, hudPaint)
+        }
+
+        private fun drawConsoleBoard(canvas: Canvas, left: Float, top: Float, right: Float, bottomLimit: Float, accent: Int) {
+            extraRockerHits.clear()
+            extraChipHits.clear()
+            modeChipAnalog.setEmpty()
+            modeChipDigital.setEmpty()
+            resetChipRect.setEmpty()
+            consoleMoreRect.setEmpty()
+            textRockerRects.forEach { it.setEmpty() }
+            lampRockerRects.forEach { it.setEmpty() }
+            holdRockerRects.forEach { it.setEmpty() }
+            panelToggleAnalog.setEmpty()
+            panelToggleUnits.setEmpty()
+            panelToggleExtra.setEmpty()
+            panelToggleConsole.setEmpty()
+            val ids = AppPrefs.CONSOLE_SKIN_IDS
+            val labels = AppPrefs.ROCKER_LABELS_CONSOLE
+            val cols = 4
+            val rows = ((ids.size + cols - 1) / cols).coerceAtLeast(1)
+            val titleSz = panelTitleSize()
+            val backH = panelToggleH() * 0.72f
+            val gap = (right - left).coerceAtLeast(1f) * 0.02f
+            val gridTop = top + titleSz + su(0.04f)
+            val gridBottom = (bottomLimit - backH - su(0.05f)).coerceAtLeast(gridTop + rows * 24f)
+            val chipH = ((gridBottom - gridTop) - gap * (rows - 1)) / rows
+            val chipW = ((right - left) - gap * (cols - 1)) / cols
+            for (i in consoleRockerRects.indices) consoleRockerRects[i].setEmpty()
+            val n = minOf(ids.size, consoleRockerRects.size)
+            for (i in 0 until n) {
+                val col = i % cols
+                val row = i / cols
+                val x0 = left + col * (chipW + gap)
+                val y0 = gridTop + row * (chipH + gap)
+                consoleRockerRects[i].set(x0, y0, x0 + chipW, y0 + chipH)
+            }
+            val backTop = gridTop + rows * chipH + (rows - 1) * gap + su(0.02f)
+            consoleBoardBack.set(left, backTop, right, backTop + backH)
+            val shellBottom = consoleBoardBack.bottom
+            panelBounds.set(left - 12f, top - 16f, right + 12f, shellBottom + 10f)
+            drawConsoleShell(canvas, left - 8f, top - 8f, right + 8f, shellBottom + 4f, accent)
+            hudPaint.color = accent
+            hudPaint.textSize = titleSz
+            hudPaint.textAlign = Paint.Align.CENTER
+            hudPaint.isFakeBoldText = false
+            canvas.drawText("CONSOLES", (left + right) / 2f, top + titleSz * 0.82f, hudPaint)
+            val sel = AppPrefs.consoleSkinIndex(prefs.consoleSkin)
+            for (i in 0 until n) {
+                val r = consoleRockerRects[i]
+                val on = i == sel
+                val chipAccent = consoleChipAccent(ids[i])
+                fillPaint.color = if (on) Color.argb(255, 48, 72, 96) else Color.argb(210, 8, 12, 16)
+                canvas.drawRoundRect(r, 8f, 8f, fillPaint)
+                strokePaint.style = Paint.Style.STROKE
+                strokePaint.strokeWidth = if (on) 6.5f else 3.2f
+                strokePaint.color = if (on) chipAccent else Color.parseColor("#8AA0B4")
+                canvas.drawRoundRect(r, 8f, 8f, strokePaint)
+                val label = labels.getOrElse(i) { ids[i] }
+                hudPaint.textAlign = Paint.Align.CENTER
+                hudPaint.color = if (on) Color.WHITE else Color.parseColor("#D0DCE8")
+                var size = r.height() * 0.34f
+                hudPaint.textSize = size
+                val maxW = r.width() * 0.86f
+                var guard = 0
+                while (guard++ < 24 && size > 8f && hudPaint.measureText(label) > maxW) {
+                    size *= 0.88f
+                    hudPaint.textSize = size
+                }
+                canvas.drawText(label, r.centerX(), r.centerY() + size * 0.35f, hudPaint)
+                val skinId = ids[i]
+                extraRockerHits.add(r to { prefs.consoleSkin = skinId })
+            }
+            fillPaint.color = Color.parseColor("#1A2228")
+            canvas.drawRoundRect(consoleBoardBack, 10f, 10f, fillPaint)
+            strokePaint.strokeWidth = 3.2f
+            strokePaint.color = accent
+            canvas.drawRoundRect(consoleBoardBack, 10f, 10f, strokePaint)
+            hudPaint.color = Color.WHITE
+            hudPaint.textAlign = Paint.Align.CENTER
+            var backSize = consoleBoardBack.height() * 0.38f
+            hudPaint.textSize = backSize
+            val backMax = consoleBoardBack.width() * 0.8f
+            var guard = 0
+            while (guard++ < 16 && backSize > 8f && hudPaint.measureText("BACK") > backMax) {
+                backSize *= 0.88f
+                hudPaint.textSize = backSize
+            }
+            canvas.drawText("BACK", consoleBoardBack.centerX(), consoleBoardBack.centerY() + backSize * 0.35f, hudPaint)
+            extraRockerHits.add(consoleBoardBack to { consoleBoardOpen = false })
+            hudPaint.textAlign = Paint.Align.LEFT
         }
 
         private fun consoleChipAccent(skinId: String): Int = when (skinId) {
@@ -2357,6 +2512,13 @@ class RetroCommandWallpaperService : WallpaperService() {
             val panelLeft = width * 0.14f
             val panelRight = width * 0.86f
             val panelTop = height * 0.12f
+            if (consoleBoardOpen && state.activeModule == 0) {
+                drawConsoleBoard(
+                    canvas, panelLeft, panelTop, panelRight, height - su(0.02f),
+                    consoleFrameAccent(prefs.consoleSkin)
+                )
+                return
+            }
             val onSys = prefs.isSystem()
             val analog = prefs.systemAnalog
 
@@ -2516,11 +2678,8 @@ class RetroCommandWallpaperService : WallpaperService() {
             if (state.activeModule == 0) {
                 // tip145: CONSOLE 8 chips 2x4 on wallpaper COMMAND flyout (same prefs as Settings).
                 y += labelSz + 8f
-                layoutConsoleTwoRows(consoleRockerRects, panelLeft, y, panelRight, rockerH * 0.92f)
-                AppPrefs.CONSOLE_SKIN_IDS.forEachIndexed { i, skinId ->
-                    extraRockerHits.add(consoleRockerRects[i] to { prefs.consoleSkin = skinId })
-                }
-                y = consoleRockerRects[AppPrefs.CONSOLE_SKIN_IDS.lastIndex.coerceAtLeast(0)].bottom + sectionGap
+                y = layoutFlyoutConsoles(panelLeft, y, panelRight, rockerH * 0.92f) + sectionGap
+                bindFlyoutConsoleHits()
                 y += labelSz + 8f
                 layoutRockerRow(textRockerRects, panelLeft, y, panelRight, rockerH)
                 y = textRockerRects[0].bottom + sectionGap
@@ -2596,6 +2755,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                     consoleAccent, Color.WHITE, RetroSkin.labelMuted,
                     strongSelected = true
                 )
+                drawConsoleMore(canvas, consoleAccent, Color.WHITE)
                 canvas.drawText("HUD TEXT", panelLeft, textRockerRects[0].top - 10f, labelPaint)
                 drawRockerRow(
                     canvas, textRockerRects, AppPrefs.ROCKER_LABELS_TEXT, prefs.textStepIndex(),
@@ -6789,11 +6949,17 @@ class RetroCommandWallpaperService : WallpaperService() {
             var rockerH = panelRockerH()
             if (prefs.extraScreens) rockerH *= 0.86f
             val inset = 16f
-            // tip145: CONSOLE 8 chips 2x4 at TOP of COMMAND popout.
+            if (consoleBoardOpen) {
+                drawConsoleBoard(
+                    canvas, panelLeft, top, panelRight, height - 8f,
+                    consoleFrameAccent(prefs.consoleSkin)
+                )
+                return
+            }
+            // First eight chips on the flyout. MORE opens the rest on a second panel.
             var y = top + titleSize + su(0.04f)
             y += labelSz + 8f
-            layoutConsoleTwoRows(consoleRockerRects, panelLeft + inset, y, panelRight - inset, rockerH * 0.90f)
-            y = consoleRockerRects[AppPrefs.CONSOLE_SKIN_IDS.lastIndex.coerceAtLeast(0)].bottom + su(0.028f)
+            y = layoutFlyoutConsoles(panelLeft + inset, y, panelRight - inset, rockerH * 0.90f) + su(0.028f)
             y += labelSz + 8f
             layoutRockerRow(textRockerRects, panelLeft + inset, y, panelRight - inset, rockerH)
             y = textRockerRects[0].bottom + su(0.028f)
@@ -6841,11 +7007,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             val holdTop = holdLabelY + labelSz + 8f
             layoutRockerRow(holdRockerRects, panelLeft + inset, holdTop, panelRight - inset, rockerH)
             extraRockerHits.clear()
-            AppPrefs.CONSOLE_SKIN_IDS.forEachIndexed { i, skinId ->
-                extraRockerHits.add(consoleRockerRects[i] to {
-                    prefs.consoleSkin = skinId
-                })
-            }
+            bindFlyoutConsoleHits()
             val holdMs = AppPrefs.HOLD_DUR_ALLOWED_MS
             for (i in holdRockerRects.indices) {
                 val dur = holdMs[i]
@@ -6884,6 +7046,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                 withLamp(consolePanelAccent, lamp), withLamp(skin.text, lamp), withLamp(skin.muted, lamp),
                 strongSelected = true
             )
+            drawConsoleMore(canvas, withLamp(consolePanelAccent, lamp), withLamp(skin.text, lamp))
             rowLabel("HUD TEXT", textRockerRects)
             drawRockerRow(
                 canvas, textRockerRects, AppPrefs.ROCKER_LABELS_TEXT, prefs.textStepIndex(),
