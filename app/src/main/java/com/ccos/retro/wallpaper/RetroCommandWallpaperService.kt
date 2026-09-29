@@ -1107,11 +1107,10 @@ class RetroCommandWallpaperService : WallpaperService() {
         }
 
         /** tip145: CONSOLE 8 chips as 2 rows × 4 (settings + CMD flyout). */
-        private fun layoutConsoleTwoRows(rects: Array<RectF>, left: Float, top: Float, right: Float, h: Float, rowGap: Float = -1f, limit: Int = Int.MAX_VALUE) {
+        private fun layoutConsoleTwoRows(rects: Array<RectF>, left: Float, top: Float, right: Float, h: Float, rowGap: Float = -1f, cols: Int = 4, limit: Int = Int.MAX_VALUE) {
             val span = (right - left).coerceAtLeast(1f)
             val gap = span * 0.02f
             val step = if (rowGap >= 0f) rowGap else h * 0.18f
-            val cols = 4
             val count = minOf(rects.size, AppPrefs.CONSOLE_SKIN_IDS.size, limit)
             val w = (span - gap * (cols - 1)) / cols
             for (i in rects.indices) rects[i].setEmpty()
@@ -1125,30 +1124,20 @@ class RetroCommandWallpaperService : WallpaperService() {
         }
 
 
-        /** First eight console chips stay on the Command flyout. The rest open a second panel. */
+        /** Ten company chips, five across and two down, on the Command flyout. */
         private fun layoutFlyoutConsoles(left: Float, top: Float, right: Float, h: Float): Float {
-            val shown = minOf(8, AppPrefs.CONSOLE_SKIN_IDS.size, consoleRockerRects.size)
-            layoutConsoleTwoRows(consoleRockerRects, left, top, right, h, limit = shown)
-            val bottom = if (shown == 0) top else consoleRockerRects[shown - 1].bottom
-            if (AppPrefs.CONSOLE_SKIN_IDS.size > shown) {
-                val gap = (right - left).coerceAtLeast(1f) * 0.02f
-                val moreH = h * 0.62f
-                consoleMoreRect.set(left, bottom + gap, right, bottom + gap + moreH)
-                return consoleMoreRect.bottom
-            }
+            val shown = minOf(AppPrefs.CONSOLE_SKIN_IDS.size, consoleRockerRects.size)
+            layoutConsoleTwoRows(consoleRockerRects, left, top, right, h, cols = 5, limit = shown)
             consoleMoreRect.setEmpty()
-            return bottom
+            return if (shown == 0) top else consoleRockerRects[shown - 1].bottom
         }
 
         private fun bindFlyoutConsoleHits() {
             val ids = AppPrefs.CONSOLE_SKIN_IDS
-            val shown = minOf(8, ids.size, consoleRockerRects.size)
+            val shown = minOf(ids.size, consoleRockerRects.size)
             for (i in 0 until shown) {
                 val skinId = ids[i]
                 extraRockerHits.add(consoleRockerRects[i] to { prefs.consoleSkin = skinId })
-            }
-            if (!consoleMoreRect.isEmpty) {
-                extraRockerHits.add(consoleMoreRect to { consoleBoardOpen = true })
             }
         }
 
@@ -6944,14 +6933,10 @@ class RetroCommandWallpaperService : WallpaperService() {
         private fun drawTelemetryPanel(canvas: Canvas) {
             val skin = TelemetrySkin.forLaunch(telemetryModule.tracked)
             val lamp = prefs.lampBrightness
-            val btnW = width * 0.175f
-            val btnH = height * 0.078f
-            val btnGap = height * 0.014f
-            val btnTop = height * 0.055f
-            val btnBottom = btnTop + 4f * btnH + 3f * btnGap
-            val panelLeft = btnW + 18f
-            val panelRight = width - btnW - 18f
-            val top = btnBottom + height * 0.012f
+            val cmd = buttonRects[0]
+            val panelLeft = cmd.right + su(0.012f)
+            val panelRight = buttonRects[4].left - su(0.012f)
+            val top = cmd.top
             extraRockerHits.clear()
             extraChipHits.clear()
             themeChipRects.clear()
