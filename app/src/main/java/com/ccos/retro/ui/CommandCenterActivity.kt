@@ -256,23 +256,15 @@ class CommandCenterActivity : AppCompatActivity() {
         telemetryModule.syncLeaveTheaterFromPeer()
         telemetryModule.resolveTracked()
         lastSimTickMs = System.currentTimeMillis()
-        if (!running) {
-            running = true
-            handler.removeCallbacks(tick)
-            handler.post(tick)
-        }
+        running = true
+        handler.removeCallbacks(tick)
+        handler.post(tick)
         if (this::vidWeb.isInitialized && vidShowing) vidWeb.onResume()
     }
 
     override fun onPause() {
-        // tip155: a live wall-clock flight keeps ticking while backgrounded so the event
-        // tape advances through the whole flight. A sim or replay still pauses, because it
-        // advances by elapsed dt instead of the wall clock.
-        val live = telemetryModule.tracked?.let { telemetryModule.isLiveWallClockFlight(it) } == true
-        if (!live) {
-            running = false
-            handler.removeCallbacks(tick)
-        }
+        running = false
+        handler.removeCallbacks(tick)
         if (this::vidWeb.isInitialized) {
             vidWeb.onPause()
             CookieManager.getInstance().flush()

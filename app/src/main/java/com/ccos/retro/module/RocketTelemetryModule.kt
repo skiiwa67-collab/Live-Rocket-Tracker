@@ -231,10 +231,6 @@ class RocketTelemetryModule(
     /** Effective seconds from NET for display/metrics (sim or real). */
     
     /** Stamp 86: CURRENT live/upcoming birds stay on wall-clock — never sim/cursor theater. */
-    /** True when this launch is driven by the wall clock (live watch), not sim or replay. */
-    fun isLiveWallClockFlight(launch: LaunchSnapshot, now: Long = System.currentTimeMillis()): Boolean =
-        isLiveWallClockBird(launch, now)
-
     private fun isLiveWallClockBird(launch: LaunchSnapshot, now: Long): Boolean {
         if (launch.id.startsWith("demo-")) return false
         if (prefs.telemetryListMode == "historical") return false
