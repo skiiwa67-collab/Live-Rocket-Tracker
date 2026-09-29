@@ -1335,18 +1335,31 @@ class RetroCommandWallpaperService : WallpaperService() {
                         r.left + 3f, r.top + 3f, r.right - 3f, r.bottom - 3f, 6f, 6f, strokePaint
                     )
                 }
-                val lampX = r.left + 16f
+                val lampR = minOf(r.height() * 0.14f, r.width() * 0.07f).coerceAtLeast(3f)
+                val lampX = r.left + lampR + r.width() * 0.08f
                 if (on) {
                     fillPaint.color = accent
-                    canvas.drawCircle(lampX, r.centerY(), if (strongSelected) 8.5f else 7f, fillPaint)
+                    canvas.drawCircle(lampX, r.centerY(), lampR, fillPaint)
                 } else {
-                    strokePaint.strokeWidth = 3f
-                    canvas.drawCircle(lampX, r.centerY(), 7f, strokePaint)
+                    strokePaint.strokeWidth = 2.2f
+                    canvas.drawCircle(lampX, r.centerY(), lampR, strokePaint)
                 }
+                val textLeft = lampX + lampR + r.width() * 0.04f
+                val maxW = (r.right - textLeft - r.width() * 0.06f).coerceAtLeast(8f)
                 hudPaint.textAlign = Paint.Align.CENTER
-                hudPaint.textSize = r.height() * 0.36f
+                hudPaint.isFakeBoldText = false
+                var size = r.height() * 0.36f
+                hudPaint.textSize = size
+                var guard = 0
+                while (guard++ < 24 && size > 8f && hudPaint.measureText(labels[i]) > maxW) {
+                    size *= 0.86f
+                    hudPaint.textSize = size
+                }
                 hudPaint.color = if (on) textColor else muted
-                canvas.drawText(labels[i], r.centerX() + 8f, r.centerY() + r.height() * 0.14f, hudPaint)
+                canvas.save()
+                canvas.clipRect(r)
+                canvas.drawText(labels[i], textLeft + maxW / 2f, r.centerY() + size * 0.32f, hudPaint)
+                canvas.restore()
             }
         }
 
