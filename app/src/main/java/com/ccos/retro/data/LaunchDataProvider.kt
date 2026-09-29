@@ -41,6 +41,40 @@ class LaunchDataProvider {
         @Volatile var sharedError: String? = null
         @Volatile var sharedSource: String = "—"
         @Volatile var sharedCount: Int = 0
+
+        /** A launch that fell out of the limit=20 window this long past NET is treated as flown/gone. */
+        private const val AGE_OUT_PAST_MS = 6 * 60 * 60 * 1000L
+
+        /**
+         * CHRIS RULE — upsert MERGE BY ID. A refresh must never erase a live bird.
+         *
+         * - New ids in [incoming] are added.
+         * - Existing ids present in [incoming] are updated (the fresh snapshot wins).
+         * - Existing ids NOT in [incoming] are KEPT (they merely dropped out of the
+         *   top-[limit] window, e.g. a T-23h CZ-2D / Long March) — UNLESS the prior
+         *   snapshot is terminal (scrubbed / launched / failed) or flew well in the
+         *   past, in which case it ages out.
+         *
+         * Pure and deterministic so it can be unit-tested without Android or network.
+         */
+        fun mergeWatch(
+            existing: List<LaunchSnapshot>,
+            incoming: List<LaunchSnapshot>,
+            now: Long = System.currentTimeMillis()
+        ): List<LaunchSnapshot> {
+            val merged = LinkedHashMap<String, LaunchSnapshot>(existing.size + incoming.size)
+            // Seed with prior cache, dropping only terminal / long-flown birds.
+            for (l in existing) {
+                if (l.isTerminal()) continue
+                if (l.secondsToNet(now) < -(AGE_OUT_PAST_MS / 1000L)) continue
+                merged[l.id] = l
+            }
+            // Upsert the fresh window: fresh snapshot wins for existing ids, new ids added.
+            for (l in incoming) {
+                merged[l.id] = l
+            }
+            return merged.values.sortedBy { it.netMs }
+        }
     }
 
     // Instance mirrors of shared cache state (Activity + Wallpaper share one pool)
@@ -120,18 +154,27 @@ class LaunchDataProvider {
                 }
                 previous?.let { pastCache.set(it) }
                 if (upcoming != null && upcoming.launches.isNotEmpty()) {
-                    cache.set(upcoming)
-                    lastFetchMs = System.currentTimeMillis()
-                    sharedCount = upcoming.launches.size
+                    // Single writer: this executor is a single thread, so the
+                    // read-modify-write of the shared cache is race-free. Merge the
+                    // fresh window into the prior cache instead of replacing it —
+                    // never drop a live bird that slipped out of limit=20.
+                    val nowMs = System.currentTimeMillis()
+                    val prior = cache.get()?.launches.orEmpty()
+                    val merged = mergeWatch(prior, upcoming.launches, nowMs)
+                    val result = LaunchListResult(merged, nowMs, source)
+                    cache.set(result)
+                    lastFetchMs = nowMs
+                    sharedCount = merged.size
                     sharedSource = source
                     sharedError = null
                     val pastN = previous?.launches?.size ?: 0
-                    sharedStatus = "OK · ${upcoming.launches.size} upcoming · $pastN past · $source"
+                    sharedStatus = "OK · ${merged.size} live (${upcoming.launches.size} in window) · $pastN past · $source"
                     Log.i(TAG, lastStatus)
-                    onDone?.invoke(upcoming)
+                    onDone?.invoke(result)
                 } else {
+                    // Fetch failure / empty upcoming: KEEP the prior cache. Never wipe.
                     sharedError = lastError ?: "No upcoming from LL2"
-                    sharedStatus = "NO UPCOMING · $lastError · past=${previous?.launches?.size ?: 0}"
+                    sharedStatus = "NO UPCOMING (kept cache) · $lastError · past=${previous?.launches?.size ?: 0}"
                     Log.w(TAG, lastStatus)
                     onDone?.invoke(cache.get())
                 }

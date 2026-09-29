@@ -58,6 +58,9 @@ class RocketTelemetryModule(
     /** Last snapshot that matched the LCK id. Survives a catalog miss of findById. */
     private var pinnedSnapshot: LaunchSnapshot? = null
 
+    /** Last launch AUTO settled on. Survives a transient getNextAny miss so AUTO never flips. */
+    private var lastGoodTracked: LaunchSnapshot? = null
+
     /** Auto mode: always lock to the next upcoming launch. LCK forces this off. */
     var autoMode: Boolean
         get() = prefs.telemetryAuto && !prefs.telemetryPinned
@@ -194,26 +197,18 @@ class RocketTelemetryModule(
                 prefs.telemetryLaunchId = pinId
             }
             val found = if (pinId.isNotBlank()) provider.findById(pinId) else null
-            if (found != null) {
-                tracked = found
-                pinnedSnapshot = found
-            } else {
-                // Catalog refresh / process start can miss findById. Keep the pinned flight.
-                // Never fall through to getNextAny.
-                val keep = when {
-                    tracked?.id == pinId -> tracked
-                    pinnedSnapshot?.id == pinId -> pinnedSnapshot
-                    else -> tracked ?: pinnedSnapshot
-                }
-                if (keep != null) {
-                    tracked = keep
-                    pinnedSnapshot = keep
-                    if (prefs.telemetryLaunchId.isBlank()) prefs.telemetryLaunchId = keep.id
-                }
+            // Never blank on a single findById miss. Hold pinnedSnapshot / tracked and
+            // recover the instant the catalog returns the pinned id again.
+            val keep = TelemetryTargeting.choosePinnedTarget(found, tracked, pinnedSnapshot)
+            if (keep != null) {
+                tracked = keep
+                pinnedSnapshot = keep
+                if (prefs.telemetryLaunchId.isBlank()) prefs.telemetryLaunchId = keep.id
             }
         } else if (isHolding(now)) {
             // HOLD beats AUTO. Do not let the next NET on Earth steal an in-flight vehicle.
             pinnedSnapshot = null
+            lastGoodTracked = null
             tracked = provider.findById(prefs.telemetryLaunchId) ?: tracked
         } else if (autoMode) {
             pinnedSnapshot = null
@@ -221,12 +216,21 @@ class RocketTelemetryModule(
                 .filter { !it.id.startsWith("demo-") }
             val inFlight = live.filter { it.isInFlight(now) }
                 .minByOrNull { kotlin.math.abs(it.secondsToNet(now)) }
-            val next = inFlight ?: provider.getNextAny(now)
+            val candidate = inFlight ?: provider.getNextAny(now)
+            // Sticky: a transient getNextAny miss or a mere window reshuffle must not
+            // flip the tracked launch (e.g. Long March → Soyuz). Only retarget when the
+            // current bird is genuinely gone/terminal or a live in-flight bird supersedes it.
+            val current = lastGoodTracked ?: tracked
+            val chosenId = TelemetryTargeting
+                .chooseAutoTarget(current, candidate, inFlight != null, now)?.id
+            val next = chosenId?.let { provider.findById(it) } ?: candidate ?: current
             tracked = next
-            if (next != null && prefs.telemetryLaunchId != next.id) {
-                prefs.telemetryLaunchId = next.id
+            if (next != null) {
+                lastGoodTracked = next
+                if (prefs.telemetryLaunchId != next.id) prefs.telemetryLaunchId = next.id
             }
-            if (inFlight != null) {
+            // Arm the in-flight hold only when we actually settled on that live bird.
+            if (inFlight != null && next?.id == inFlight.id) {
                 val dur = prefs.telemetryHoldDurationMs
                 val until = maxOf(now + dur, inFlight.netMs + dur)
                 if (prefs.telemetryHoldUntilMs < until) prefs.telemetryHoldUntilMs = until
@@ -236,6 +240,7 @@ class RocketTelemetryModule(
             }
         } else {
             pinnedSnapshot = null
+            lastGoodTracked = null
             val id = prefs.telemetryLaunchId
             tracked = when {
                 id.isNotBlank() -> provider.findById(id)
