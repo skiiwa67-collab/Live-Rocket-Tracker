@@ -6949,8 +6949,11 @@ class RetroCommandWallpaperService : WallpaperService() {
                 )
                 return
             }
-            // First eight chips on the flyout. MORE opens the rest on a second panel.
-            var y = top + titleSize + su(0.04f)
+            // ENTER CONSOLE sits under the COMMAND title. Company chips follow.
+            val enterH = panelToggleH() * 0.92f
+            val enterTop = top + titleSize * 0.95f
+            panelToggleConsole.set(panelLeft + inset, enterTop, panelRight - inset, enterTop + enterH)
+            var y = panelToggleConsole.bottom + su(0.016f)
             y += labelSz + 8f
             y = layoutFlyoutConsoles(panelLeft + inset, y, panelRight - inset, rockerH * 0.90f) + su(0.028f)
             y += labelSz + 8f
@@ -6960,18 +6963,17 @@ class RetroCommandWallpaperService : WallpaperService() {
             layoutRockerRow(lampRockerRects, panelLeft + inset, y, panelRight - inset, rockerH * 0.62f)
 
             val toggleH = panelToggleH() * (if (prefs.extraScreens) 0.90f else 1f)
-            val toggleY = lampRockerRects[0].bottom + su(0.028f)
-            val half = (panelRight - panelLeft - 36f) / 2f
-            // Stamp 88: ANALOG|DIGITAL dual chips (visible selection) + UNITS on next row left.
-            val analogMid = panelLeft + inset + half - 6f
-            modeChipAnalog.set(panelLeft + inset, toggleY, (panelLeft + inset + analogMid) / 2f - 4f, toggleY + toggleH)
-            modeChipDigital.set((panelLeft + inset + analogMid) / 2f + 4f, toggleY, analogMid, toggleY + toggleH)
+            val modeH = toggleH * 1.22f
+            val modeY = lampRockerRects[0].bottom + su(0.028f)
+            val modeMid = (panelLeft + panelRight) / 2f
+            modeChipAnalog.set(panelLeft + inset, modeY, modeMid - 6f, modeY + modeH)
+            modeChipDigital.set(modeMid + 6f, modeY, panelRight - inset, modeY + modeH)
             panelToggleAnalog.setEmpty()
-            panelToggleUnits.set(panelLeft + inset + half + 6f, toggleY, panelRight - inset, toggleY + toggleH)
 
-            val extraY = toggleY + toggleH + su(0.016f)
+            val extraY = modeY + modeH + su(0.016f)
+            val half = (panelRight - panelLeft - 36f) / 2f
             panelToggleExtra.set(panelLeft + inset, extraY, panelLeft + inset + half - 6f, extraY + toggleH)
-            panelToggleConsole.set(panelLeft + inset + half + 6f, extraY, panelRight - inset, extraY + toggleH)
+            panelToggleUnits.set(panelLeft + inset + half + 6f, extraY, panelRight - inset, extraY + toggleH)
             var afterExtra = extraY + toggleH
             if (prefs.extraScreens) {
                 val chipY = extraY + toggleH + 6f
@@ -7091,14 +7093,23 @@ class RetroCommandWallpaperService : WallpaperService() {
             drawModeChip(modeChipDigital, "DIGITAL", !prefs.telemetryAnalog)
             drawToggle(panelToggleUnits, prefs.useImperial, "MPH / MI", "KM/H")
             drawToggle(panelToggleExtra, prefs.extraScreens, "EXTRA PAGES ON", "EXTRA PAGES OFF")
-            fillPaint.color = withLamp(Color.argb(180, 8, 12, 16), lamp)
+            val enterAccent = consolePanelAccent
+            fillPaint.color = withLamp(
+                Color.argb(
+                    255,
+                    (Color.red(enterAccent) * 0.72f).toInt().coerceIn(40, 255),
+                    (Color.green(enterAccent) * 0.72f).toInt().coerceIn(40, 255),
+                    (Color.blue(enterAccent) * 0.72f).toInt().coerceIn(24, 255)
+                ),
+                lamp
+            )
             canvas.drawRoundRect(panelToggleConsole, 10f, 10f, fillPaint)
-            strokePaint.strokeWidth = 2f
-            strokePaint.color = withLamp(skin.muted, lamp)
+            strokePaint.strokeWidth = 3.2f
+            strokePaint.color = withLamp(enterAccent, lamp)
             canvas.drawRoundRect(panelToggleConsole, 10f, 10f, strokePaint)
-            hudPaint.color = withLamp(skin.muted, lamp)
+            hudPaint.color = Color.WHITE
             hudPaint.textAlign = Paint.Align.CENTER
-            hudPaint.textSize = telFit("ENTER CONSOLE", panelToggleConsole.width() * 0.9f, panelToggleConsole.height() * 0.42f, 13f)
+            hudPaint.textSize = telFit("ENTER CONSOLE", panelToggleConsole.width() * 0.9f, panelToggleConsole.height() * 0.46f, 16f)
             canvas.drawText(
                 "ENTER CONSOLE",
                 panelToggleConsole.centerX(),
