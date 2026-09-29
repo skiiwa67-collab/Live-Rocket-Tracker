@@ -637,7 +637,9 @@ class MainActivity : AppCompatActivity() {
             findViewById<Button>(R.id.btn_console_cnsa),
             findViewById<Button>(R.id.btn_console_ariane),
             findViewById<Button>(R.id.btn_console_rlab),
-            findViewById<Button>(R.id.btn_console_ula)
+            findViewById<Button>(R.id.btn_console_ula),
+            findViewById<Button>(R.id.btn_console_jaxa),
+            findViewById<Button>(R.id.btn_console_isro)
         )
         val labels = AppPrefs.ROCKER_LABELS_CONSOLE
         val selectedBg = intArrayOf(
@@ -648,7 +650,9 @@ class MainActivity : AppCompatActivity() {
             R.drawable.chip_console_selected_cnsa,
             R.drawable.chip_console_selected_arianespace,
             R.drawable.chip_console_selected_rocketlab,
-            R.drawable.chip_console_selected_ula
+            R.drawable.chip_console_selected_ula,
+            R.drawable.chip_console_selected_nasa,
+            R.drawable.chip_console_selected_mcc
         )
         val idleBg = intArrayOf(
             R.drawable.chip_console_idle_mcc,
@@ -658,22 +662,26 @@ class MainActivity : AppCompatActivity() {
             R.drawable.chip_console_idle_cnsa,
             R.drawable.chip_console_idle_arianespace,
             R.drawable.chip_console_idle_rocketlab,
-            R.drawable.chip_console_idle_ula
+            R.drawable.chip_console_idle_ula,
+            R.drawable.chip_console_idle_nasa,
+            R.drawable.chip_console_idle_mcc
         )
         // selected text / idle text per pack tokens
         val selText = intArrayOf(
             0xFF1A1200.toInt(), 0xFFE8E0D0.toInt(), 0xFFF0F0F0.toInt(), 0xFFE8EEF8.toInt(),
-            0xFFF5E6C8.toInt(), 0xFFFFFFFF.toInt(), 0xFFF2F2F2.toInt(), 0xFFFFFFFF.toInt()
+            0xFFF5E6C8.toInt(), 0xFFFFFFFF.toInt(), 0xFFF2F2F2.toInt(), 0xFFFFFFFF.toInt(),
+            0xFFE8EEF8.toInt(), 0xFFFFB000.toInt()
         )
         val idleText = intArrayOf(
             0xFF8A7050.toInt(), 0xFF6A7850.toInt(), 0xFF6A6A6A.toInt(), 0xFF6A7A90.toInt(),
-            0xFF8A6060.toInt(), 0xFF6A7090.toInt(), 0xFF6A6A6A.toInt(), 0xFF5A6A88.toInt()
+            0xFF8A6060.toInt(), 0xFF6A7090.toInt(), 0xFF6A6A6A.toInt(), 0xFF5A6A88.toInt(),
+            0xFF6A7A90.toInt(), 0xFF8A7050.toInt()
         )
         val skin = prefs.consoleSkin
         val sel = AppPrefs.consoleSkinIndex(skin)
         title?.visibility = View.VISIBLE
         title?.text = "CONSOLE"
-        help?.text = "8 skins · MCC ROS SPACEX NASA / CNSA ARIANE R.LAB ULA · same on CMD flyout"
+        help?.text = "Skins page past eight when needed · JAXA ISRO on the next row · same on CMD flyout"
         // tip148: each of 8 skins gets distinct section bg + title/help + root/content tint
         // accents match wallpaper consoleChipAccent / consoleFrameAccent
         when (skin) {
@@ -719,6 +727,18 @@ class MainActivity : AppCompatActivity() {
                 help?.setTextColor(0xFFA89870.toInt())
                 findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF060E1C.toInt())
             }
+            AppPrefs.CONSOLE_SKIN_JAXA -> {
+                section.setBackgroundResource(R.drawable.bg_console_nasa)
+                title?.setTextColor(0xFF6A9AD4.toInt())
+                help?.setTextColor(0xFF8AA0B8.toInt())
+                findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF080C14.toInt())
+            }
+            AppPrefs.CONSOLE_SKIN_ISRO -> {
+                section.setBackgroundResource(R.drawable.bg_console_mcc)
+                title?.setTextColor(0xFFFFB000.toInt())
+                help?.setTextColor(0xFF8AA0B0.toInt())
+                findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF0A0E14.toInt())
+            }
             else -> {
                 // MCC amber
                 section.setBackgroundResource(R.drawable.bg_console_mcc)
@@ -741,6 +761,8 @@ class MainActivity : AppCompatActivity() {
                 AppPrefs.CONSOLE_SKIN_ARIANE -> tel.setBackgroundResource(R.drawable.bg_console_ariane)
                 AppPrefs.CONSOLE_SKIN_RLAB -> tel.setBackgroundResource(R.drawable.bg_console_rlab)
                 AppPrefs.CONSOLE_SKIN_ULA -> tel.setBackgroundResource(R.drawable.bg_console_ula)
+                AppPrefs.CONSOLE_SKIN_JAXA -> tel.setBackgroundResource(R.drawable.bg_console_nasa)
+                AppPrefs.CONSOLE_SKIN_ISRO -> tel.setBackgroundResource(R.drawable.bg_console_mcc)
                 AppPrefs.CONSOLE_SKIN_MCC -> tel.setBackgroundResource(R.drawable.panel_console)
                 else -> tel.setBackgroundResource(R.drawable.bg_console_mcc)
             }
@@ -767,7 +789,8 @@ private fun wireConsoleSkin() {
         val ids = AppPrefs.CONSOLE_SKIN_IDS
         val btnIds = intArrayOf(
             R.id.btn_console_mcc, R.id.btn_console_ros, R.id.btn_console_spacex, R.id.btn_console_nasa,
-            R.id.btn_console_cnsa, R.id.btn_console_ariane, R.id.btn_console_rlab, R.id.btn_console_ula
+            R.id.btn_console_cnsa, R.id.btn_console_ariane, R.id.btn_console_rlab, R.id.btn_console_ula,
+            R.id.btn_console_jaxa, R.id.btn_console_isro
         )
         for (i in btnIds.indices) {
             val skinId = ids[i]

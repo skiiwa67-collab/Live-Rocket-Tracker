@@ -40,8 +40,8 @@ class AppPrefs(context: Context) {
         val HOLD_DUR_ALLOWED_MS = longArrayOf(HOLD_DUR_1H_MS, HOLD_DUR_2H_MS, HOLD_DUR_48H_MS)
         val ROCKER_LABELS_HOLD = arrayOf("1H", "2H", "48H")
         /** tip145: Settings + CMD flyout CONSOLE skins — 8 chips 2x4 (panel chrome only). */
-        val ROCKER_LABELS_CONSOLE = arrayOf("MCC", "ROS", "SPACEX", "NASA", "CNSA", "ARIANE", "R.LAB", "ULA")
-        val CONSOLE_SKIN_IDS = arrayOf("MCC", "ROS", "SPACEX", "NASA", "CNSA", "ARIANE", "R.LAB", "ULA")
+        val ROCKER_LABELS_CONSOLE = arrayOf("MCC", "ROS", "SPACEX", "NASA", "CNSA", "ARIANE", "R.LAB", "ULA", "JAXA", "ISRO")
+        val CONSOLE_SKIN_IDS = arrayOf("MCC", "ROS", "SPACEX", "NASA", "CNSA", "ARIANE", "R.LAB", "ULA", "JAXA", "ISRO")
         const val CONSOLE_SKIN_MCC = "MCC"
         const val CONSOLE_SKIN_ROS = "ROS"
         const val CONSOLE_SKIN_SPACEX = "SPACEX"
@@ -50,13 +50,16 @@ class AppPrefs(context: Context) {
         const val CONSOLE_SKIN_ARIANE = "ARIANE"
         const val CONSOLE_SKIN_RLAB = "R.LAB"
         const val CONSOLE_SKIN_ULA = "ULA"
+        const val CONSOLE_SKIN_JAXA = "JAXA"
+        const val CONSOLE_SKIN_ISRO = "ISRO"
         /** Legacy CLEAR maps to MCC. */
         const val CONSOLE_SKIN_CLEAR = "CLEAR"
 
         fun normalizeConsoleSkin(raw: String): String {
             return when (raw) {
                 CONSOLE_SKIN_MCC, CONSOLE_SKIN_ROS, CONSOLE_SKIN_SPACEX, CONSOLE_SKIN_NASA,
-                CONSOLE_SKIN_CNSA, CONSOLE_SKIN_ARIANE, CONSOLE_SKIN_RLAB, CONSOLE_SKIN_ULA -> raw
+                CONSOLE_SKIN_CNSA, CONSOLE_SKIN_ARIANE, CONSOLE_SKIN_RLAB, CONSOLE_SKIN_ULA,
+                CONSOLE_SKIN_JAXA, CONSOLE_SKIN_ISRO -> raw
                 CONSOLE_SKIN_CLEAR -> CONSOLE_SKIN_MCC
                 else -> CONSOLE_SKIN_MCC
             }
@@ -72,6 +75,8 @@ class AppPrefs(context: Context) {
             if (launch == null) return CONSOLE_SKIN_MCC
             // Prefer ULA before NASA-ish providers / forLaunch nasa fallback.
             if (launch.isUla()) return CONSOLE_SKIN_ULA
+            if (launch.isJaxa()) return CONSOLE_SKIN_JAXA
+            if (launch.isIsro()) return CONSOLE_SKIN_ISRO
             return when (TelemetrySkin.forLaunch(launch)) {
                 TelemetrySkin.spacex -> CONSOLE_SKIN_SPACEX
                 TelemetrySkin.roscosmos -> CONSOLE_SKIN_ROS

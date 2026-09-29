@@ -83,7 +83,7 @@
                 android:id="@+id/txt_console_help"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Settings look: 8 console skins (MCC ROS SPACEX NASA / CNSA ARIANE R.LAB ULA). Live preview. Same skins on CMD flyout."
+                android:text="Settings look: console skins. A third row appears when the set passes eight (JAXA, ISRO). Same skins on the CMD flyout."
                 android:textColor="#8AA0B0"
                 android:textSize="12sp"
                 android:paddingBottom="8dp"/>
@@ -233,6 +233,53 @@
                     android:paddingLeft="2dp"
                     android:paddingRight="2dp"
                     android:layout_margin="2dp"/>
+                </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/row_console_skin_3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="6dp">
+                <Button
+                    android:id="@+id/btn_console_jaxa"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:textSize="11sp"
+                    android:layout_weight="1"
+                    android:text="JAXA"
+                    android:textStyle="bold"
+                    android:textColor="#E8EEF8"
+                    android:background="@drawable/chip_console_idle_nasa"
+                    android:backgroundTint="@null"
+                    android:maxLines="1"
+                    android:ellipsize="none"
+                    android:paddingLeft="2dp"
+                    android:paddingRight="2dp"
+                    android:layout_margin="2dp"/>
+                <Button
+                    android:id="@+id/btn_console_isro"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:textSize="11sp"
+                    android:layout_weight="1"
+                    android:text="ISRO"
+                    android:textStyle="bold"
+                    android:textColor="#1A1200"
+                    android:background="@drawable/chip_console_idle_mcc"
+                    android:backgroundTint="@null"
+                    android:maxLines="1"
+                    android:ellipsize="none"
+                    android:paddingLeft="2dp"
+                    android:paddingRight="2dp"
+                    android:layout_margin="2dp"/>
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"/>
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"/>
                 </LinearLayout>
             </LinearLayout>
 </LinearLayout>

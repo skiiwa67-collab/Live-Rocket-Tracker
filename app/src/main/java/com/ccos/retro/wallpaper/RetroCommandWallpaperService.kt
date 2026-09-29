@@ -211,7 +211,7 @@ class RetroCommandWallpaperService : WallpaperService() {
         private val lampRockerRects = arrayOf(RectF(), RectF(), RectF())
         private val textRockerRects = arrayOf(RectF(), RectF(), RectF())
         private val holdRockerRects = arrayOf(RectF(), RectF(), RectF())
-        private val consoleRockerRects = Array(8) { RectF() }
+        private val consoleRockerRects = Array(12) { RectF() }
         private val extraRockerHits = mutableListOf<Pair<RectF, () -> Unit>>()
 
         /** Screen-relative size so panels stay readable on phones and tablets. */
@@ -317,22 +317,38 @@ class RetroCommandWallpaperService : WallpaperService() {
             hudPaint.textSize = size
             hudPaint.color = color
             hudPaint.textAlign = Paint.Align.CENTER
-            val words = text.split(' ')
-            var line = StringBuilder()
             var y = startY
-            fun flush() {
-                if (line.isNotEmpty()) {
-                    canvas.drawText(line.toString(), cx, y, hudPaint)
+            fun flushLine(s: String) {
+                if (s.isNotEmpty()) {
+                    canvas.drawText(s, cx, y, hudPaint)
                     y += size * lineGap
-                    line = StringBuilder()
                 }
             }
-            for (w in words) {
-                val trial = if (line.isEmpty()) w else "$line $w"
-                if (hudPaint.measureText(trial) > maxW && line.isNotEmpty()) flush()
-                if (line.isEmpty()) line.append(w) else line.append(' ').append(w)
+            for (part in text.split('\n')) {
+                val words = part.split(' ')
+                var line = StringBuilder()
+                fun flush() {
+                    if (line.isNotEmpty()) {
+                        flushLine(line.toString())
+                        line = StringBuilder()
+                    }
+                }
+                for (word in words) {
+                    var w = word
+                    while (w.isNotEmpty() && hudPaint.measureText(w) > maxW) {
+                        var cut = w.length
+                        while (cut > 1 && hudPaint.measureText(w.substring(0, cut)) > maxW) cut--
+                        flush()
+                        flushLine(w.substring(0, cut))
+                        w = w.substring(cut)
+                    }
+                    val trial = if (line.isEmpty()) w else "$line $w"
+                    if (hudPaint.measureText(trial) > maxW && line.isNotEmpty()) flush()
+                    if (w.isEmpty()) continue
+                    if (line.isEmpty()) line.append(w) else line.append(' ').append(w)
+                }
+                flush()
             }
-            flush()
             return y
         }
 
@@ -1084,15 +1100,19 @@ class RetroCommandWallpaperService : WallpaperService() {
         }
 
         /** tip145: CONSOLE 8 chips as 2 rows × 4 (settings + CMD flyout). */
-        private fun layoutConsoleTwoRows(rects: Array<RectF>, left: Float, top: Float, right: Float, h: Float, rowGap: Float = 8f) {
-            val gap = 8f
+        private fun layoutConsoleTwoRows(rects: Array<RectF>, left: Float, top: Float, right: Float, h: Float, rowGap: Float = -1f) {
+            val span = (right - left).coerceAtLeast(1f)
+            val gap = span * 0.02f
+            val step = if (rowGap >= 0f) rowGap else h * 0.18f
             val cols = 4
-            val w = (right - left - gap * (cols - 1)) / cols
-            for (i in rects.indices) {
+            val count = minOf(rects.size, AppPrefs.CONSOLE_SKIN_IDS.size)
+            val w = (span - gap * (cols - 1)) / cols
+            for (i in rects.indices) rects[i].setEmpty()
+            for (i in 0 until count) {
                 val col = i % cols
                 val row = i / cols
                 val x0 = left + col * (w + gap)
-                val y0 = top + row * (h + rowGap)
+                val y0 = top + row * (h + step)
                 rects[i].set(x0, y0, x0 + w, y0 + h)
             }
         }
@@ -1105,6 +1125,8 @@ class RetroCommandWallpaperService : WallpaperService() {
             AppPrefs.CONSOLE_SKIN_ARIANE -> Color.parseColor("#FFD100")
             AppPrefs.CONSOLE_SKIN_RLAB -> Color.parseColor("#FF5A1F")
             AppPrefs.CONSOLE_SKIN_ULA -> Color.parseColor("#F6A800")
+            AppPrefs.CONSOLE_SKIN_JAXA -> Color.parseColor("#E6002D")
+            AppPrefs.CONSOLE_SKIN_ISRO -> Color.parseColor("#FF671F")
             else -> Color.parseColor("#FFB000")
         }
 
@@ -1116,6 +1138,8 @@ class RetroCommandWallpaperService : WallpaperService() {
             AppPrefs.CONSOLE_SKIN_ARIANE -> Color.parseColor("#FFD100")
             AppPrefs.CONSOLE_SKIN_RLAB -> Color.parseColor("#FF5A1F")
             AppPrefs.CONSOLE_SKIN_ULA -> Color.parseColor("#F6A800")
+            AppPrefs.CONSOLE_SKIN_JAXA -> Color.parseColor("#E6002D")
+            AppPrefs.CONSOLE_SKIN_ISRO -> Color.parseColor("#FF671F")
             else -> Color.parseColor("#FFB000")
         }
 
@@ -1131,7 +1155,9 @@ class RetroCommandWallpaperService : WallpaperService() {
             strongSelected: Boolean = false
         ) {
             for (i in rects.indices) {
+                if (i >= labels.size) break
                 val r = rects[i]
+                if (r.isEmpty) continue
                 val on = i == selected
                 fillPaint.color = when {
                     on && strongSelected -> Color.argb(255, 48, 72, 96)
@@ -2065,6 +2091,42 @@ class RetroCommandWallpaperService : WallpaperService() {
             "PAD" -> "PAS"; "VID" -> "VIDÉO"; "MSK" -> "MISSION"; "AUTO" -> "AUTO"; else -> ""
         }
 
+        private fun jaFor(label: String): String = when (label) {
+            "CMD" -> "指令"; "CDT" -> "カウント"; "TEL" -> "テレメ"; "STS" -> "状態"
+            "PAD" -> "射点"; "VID" -> "映像"; "MSK" -> "任務"; "AUTO" -> "自動"; else -> ""
+        }
+
+        private fun hiFor(label: String): String = when (label) {
+            "CMD" -> "कमांड"; "CDT" -> "गिनती"; "TEL" -> "दूरमाप"; "STS" -> "स्थिति"
+            "PAD" -> "पैड"; "VID" -> "वीडियो"; "MSK" -> "मिशन"; "AUTO" -> "स्वतः"; else -> ""
+        }
+
+        private fun deFor(label: String): String = when (label) {
+            "CMD" -> "BEFEHL"; "CDT" -> "COUNT"; "TEL" -> "TELE"; "STS" -> "STATUS"
+            "PAD" -> "RAMPE"; "VID" -> "VIDEO"; "MSK" -> "MISSION"; "AUTO" -> "AUTO"; else -> ""
+        }
+
+        private fun koFor(label: String): String = when (label) {
+            "CMD" -> "명령"; "CDT" -> "카운트"; "TEL" -> "원격"; "STS" -> "상태"
+            "PAD" -> "발사장"; "VID" -> "영상"; "MSK" -> "임무"; "AUTO" -> "자동"; else -> ""
+        }
+
+        /** Second line comes from the catalog entry, not from the button style. English stays the first line. */
+        private fun localFor(label: String): String {
+            val lang = com.ccos.retro.event.VehicleCatalog.spec(telemetryModule.tracked).language
+            val local = when (lang) {
+                "zh" -> zhFor(label)
+                "ru" -> ruFor(label)
+                "fr" -> frFor(label)
+                "ja" -> jaFor(label)
+                "hi" -> hiFor(label)
+                "de" -> deFor(label)
+                "ko" -> koFor(label)
+                else -> ""
+            }
+            return if (local.isEmpty() || local == label) "" else local
+        }
+
         private fun drawBevelPlate(
             canvas: Canvas,
             r: RectF,
@@ -2183,7 +2245,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             canvas.drawCircle(r.right - 7f, r.bottom - 7f, rr, fillPaint)
             drawLedBar(canvas, r, active, skin.btnLampOn, lamp)
             drawFullFaceLabel(
-                canvas, r, label, "",
+                canvas, r, label, localFor(label),
                 if (active) Color.WHITE else Color.parseColor("#8A8A8A"),
                 Color.parseColor("#666666"), lamp
             )
@@ -2203,7 +2265,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             }
             drawLedBar(canvas, r, active, Color.parseColor("#C8102E"), lamp)
             drawFullFaceLabel(
-                canvas, r, label, "",
+                canvas, r, label, localFor(label),
                 if (active) Color.parseColor("#F0F6FF") else Color.parseColor("#7A8898"),
                 Color.parseColor("#5A6A80"), lamp
             )
@@ -2229,7 +2291,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             canvas.drawLine(r.right - 2f, r.bottom - 2f, r.right - m, r.bottom - 2f, strokePaint)
             drawLedBar(canvas, r, active, Color.parseColor("#FFD700"), lamp)
             drawFullFaceLabel(
-                canvas, r, label, zhFor(label),
+                canvas, r, label, localFor(label),
                 if (active) Color.parseColor("#F5E6C8") else Color.parseColor("#A08060"),
                 if (active) Color.parseColor("#FFD700") else Color.parseColor("#7A6040"),
                 lamp
@@ -2248,7 +2310,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             canvas.drawCircle(r.left + 11f, r.top + 11f, 4.2f, fillPaint)
             drawLedBar(canvas, r, active, Color.parseColor("#C41E3A"), lamp)
             drawFullFaceLabel(
-                canvas, r, label, ruFor(label),
+                canvas, r, label, localFor(label),
                 if (active) Color.parseColor("#F0E8D0") else Color.parseColor("#8A8070"),
                 if (active) Color.parseColor("#E8C547") else Color.parseColor("#6A6558"),
                 lamp
@@ -2269,7 +2331,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             }
             drawLedBar(canvas, r, active, Color.parseColor("#FFD100"), lamp)
             drawFullFaceLabel(
-                canvas, r, label, frFor(label),
+                canvas, r, label, localFor(label),
                 if (active) Color.WHITE else Color.parseColor("#8A98C0"),
                 if (active) Color.parseColor("#FFD100") else Color.parseColor("#5A6A90"),
                 lamp
@@ -2285,7 +2347,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             canvas.drawRoundRect(r, 5f, 5f, strokePaint)
             drawLedBar(canvas, r, active, skin.btnLampOn, lamp)
             drawFullFaceLabel(
-                canvas, r, label, "",
+                canvas, r, label, localFor(label),
                 if (active) skin.btnTextActive else skin.btnTextIdle,
                 skin.muted, lamp
             )
@@ -2458,7 +2520,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                 AppPrefs.CONSOLE_SKIN_IDS.forEachIndexed { i, skinId ->
                     extraRockerHits.add(consoleRockerRects[i] to { prefs.consoleSkin = skinId })
                 }
-                y = consoleRockerRects[4].bottom + sectionGap
+                y = consoleRockerRects[AppPrefs.CONSOLE_SKIN_IDS.lastIndex.coerceAtLeast(0)].bottom + sectionGap
                 y += labelSz + 8f
                 layoutRockerRow(textRockerRects, panelLeft, y, panelRight, rockerH)
                 y = textRockerRects[0].bottom + sectionGap
@@ -3476,6 +3538,50 @@ class RetroCommandWallpaperService : WallpaperService() {
         private fun missionEvents(launch: com.ccos.retro.data.LaunchSnapshot): List<Pair<Float, String>> =
             com.ccos.retro.event.FlightProfiles.events(launch)
 
+        private fun tapeGloss(title: String, launch: com.ccos.retro.data.LaunchSnapshot): String {
+            val lang = com.ccos.retro.event.VehicleCatalog.spec(launch).language
+            if (lang == "en") return title
+            val local = when (lang) {
+                "zh" -> mapOf(
+                    "PROP LOAD" to "加注", "LIVE FEED" to "直播", "COUNTDOWN" to "倒计时",
+                    "LIFTOFF" to "起飞", "MAX-Q" to "最大动压", "MECO" to "主机关机",
+                    "STAGE SEP" to "级间分离", "SECO" to "二级关机", "PAYLOAD DEPLOYMENT" to "载荷分离"
+                )
+                "ru" -> mapOf(
+                    "PROP LOAD" to "ЗАПРАВКА", "LIVE FEED" to "ЭФИР", "COUNTDOWN" to "ОТСЧЁТ",
+                    "LIFTOFF" to "СТАРТ", "MAX-Q" to "МАКС-Q", "MECO" to "ОТКЛ",
+                    "STAGE SEP" to "РАЗДЕЛЕНИЕ", "SECO" to "ВЫКЛ 2", "PAYLOAD DEPLOYMENT" to "ОТДЕЛЕНИЕ"
+                )
+                "ja" -> mapOf(
+                    "PROP LOAD" to "推進剤", "LIVE FEED" to "中継", "COUNTDOWN" to "カウント",
+                    "LIFTOFF" to "リフトオフ", "MAX-Q" to "最大動圧", "MECO" to "主機関停止",
+                    "STAGE SEP" to "分離", "SECO" to "第2段停止", "PAYLOAD DEPLOYMENT" to "衛星分離"
+                )
+                "hi" -> mapOf(
+                    "PROP LOAD" to "भरण", "LIVE FEED" to "प्रसारण", "COUNTDOWN" to "उलटी गिनती",
+                    "LIFTOFF" to "प्रक्षेपण", "MAX-Q" to "अधिकतम दाब", "MECO" to "इंजन बंद",
+                    "STAGE SEP" to "पृथक्करण", "SECO" to "दूसरा बंद", "PAYLOAD DEPLOYMENT" to "उपग्रह"
+                )
+                "fr" -> mapOf(
+                    "PROP LOAD" to "REMPLISSAGE", "LIVE FEED" to "DIRECT", "COUNTDOWN" to "COMPTE",
+                    "LIFTOFF" to "DÉCOLLAGE", "MAX-Q" to "MAX-Q", "MECO" to "EXTINCTION",
+                    "STAGE SEP" to "SÉPARATION", "SECO" to "EXT. 2", "PAYLOAD DEPLOYMENT" to "LARGAGE"
+                )
+                "de" -> mapOf(
+                    "PROP LOAD" to "BETANKUNG", "LIVE FEED" to "LIVE", "COUNTDOWN" to "COUNTDOWN",
+                    "LIFTOFF" to "START", "MAX-Q" to "MAX-Q", "MECO" to "ABSCHALTUNG",
+                    "STAGE SEP" to "TRENNUNG", "SECO" to "STUFE 2 AUS", "PAYLOAD DEPLOYMENT" to "AUSSETZEN"
+                )
+                "ko" -> mapOf(
+                    "PROP LOAD" to "추진제", "LIVE FEED" to "중계", "COUNTDOWN" to "카운트",
+                    "LIFTOFF" to "이륙", "MAX-Q" to "최대동압", "MECO" to "주엔진 정지",
+                    "STAGE SEP" to "분리", "SECO" to "2단 정지", "PAYLOAD DEPLOYMENT" to "위성 분리"
+                )
+                else -> emptyMap()
+            }[title]
+            return if (local.isNullOrEmpty() || local == title) title else "$title / $local"
+        }
+
         private fun drawEventTimeline(
             canvas: Canvas,
             tSec: Float,
@@ -3486,73 +3592,80 @@ class RetroCommandWallpaperService : WallpaperService() {
             bot: Float
         ) {
             telBold()
-            val events = missionEvents(launch)
-            val nearest = events.minByOrNull { abs(it.first - tSec) } ?: return
-            val close = abs(nearest.first - tSec) < 32f && tSec > -8f
-            val lastT = events.last().first
-            val win0 = if (close) nearest.first - 48f else 0f
-            val win1 = if (close) nearest.first + 48f else lastT
-            val span = (win1 - win0).coerceAtLeast(30f)
+            hudPaint.isFakeBoldText = false
+            val flight = missionEvents(launch)
+            if (flight.isEmpty()) return
+            val propStart = -1800f
             val left = fullLeft()
             val right = fullRight()
-            val h = (bot - top).coerceAtLeast(24f)
-            val failed = hudFailed(launch, tSec)
-            val title = when {
-                failed -> "FAIL"
-                close -> nearest.second
-                else -> currentMissionEvent(tSec, launch)
+            val tapeW = (right - left).coerceAtLeast(1f)
+            val tapeH = (bot - top).coerceAtLeast(1f)
+            val cx = (left + right) / 2f
+            if (tSec < propStart) {
+                hudPaint.textAlign = Paint.Align.CENTER
+                hudPaint.color = withLamp(skin.muted, lamp)
+                hudPaint.textSize = tapeH * 0.28f
+                canvas.drawText(tapeGloss("PROP LOAD", launch), cx, top + tapeH * 0.62f, hudPaint)
+                return
             }
-            val titleH = h * 0.38f
-            val lineY = top + titleH + h * 0.18f
-            val labelH = (bot - lineY - 4f).coerceAtLeast(14f)
-
-            hudPaint.textAlign = Paint.Align.CENTER
-            hudPaint.color = withLamp(when {
-                failed -> skin.danger
-                close -> skin.hold
-                else -> skin.text
-            }, lamp)
-            val scale01 = ((prefs.textScale - 2.8f) / 6.2f).coerceIn(0f, 1f)
-            hudPaint.textSize = telFit(title, (right - left) * 0.96f, titleH, 18f + scale01 * 28f)
-            canvas.drawText(title, width / 2f, top + titleH, hudPaint)
-
+            val events = ArrayList<Pair<Float, String>>(flight.size + 3)
+            events.add(propStart to tapeGloss("PROP LOAD", launch))
+            events.add(-1500f to tapeGloss("LIVE FEED", launch))
+            events.add(-600f to tapeGloss("COUNTDOWN", launch))
+            for (e in flight) events.add(e.first to tapeGloss(e.second, launch))
+            events.sortBy { it.first }
+            val lead = 5f
+            val topY = top + tapeH * 0.40f
+            val botY = top + tapeH * 0.86f
+            val midY = (topY + botY) / 2f
+            val minGap = tapeW * 0.18f
+            var window = 120f
+            fun xRaw(et: Float) = cx + ((et - tSec) / window) * (tapeW * 0.46f)
+            repeat(5) {
+                var crowded = false
+                val shown = events.filter { kotlin.math.abs(it.first - tSec) <= window }
+                for (i in shown.indices) {
+                    for (j in i + 1 until shown.size) {
+                        if (kotlin.math.abs(xRaw(shown[i].first) - xRaw(shown[j].first)) < minGap) crowded = true
+                    }
+                }
+                if (!crowded) return@repeat
+                window *= 1.35f
+            }
             strokePaint.style = Paint.Style.STROKE
-            strokePaint.strokeWidth = 6f
+            strokePaint.strokeWidth = tapeH * 0.035f
             strokePaint.color = withLamp(skin.muted, lamp)
-            canvas.drawLine(left, lineY, right, lineY, strokePaint)
-            val nowX = left + ((tSec - win0).coerceIn(0f, span) / span) * (right - left)
-            strokePaint.color = withLamp(skin.go, lamp)
-            canvas.drawLine(left, lineY, nowX, lineY, strokePaint)
+            canvas.drawLine(left, midY, right, midY, strokePaint)
             fillPaint.color = withLamp(skin.go, lamp)
-            canvas.drawCircle(nowX, lineY, 8f, fillPaint)
-
-            val inWindow = events.filter { it.first in (win0 - 4f)..(win1 + 4f) }
-            val visible = if (close) inWindow else {
-                val cur = inWindow.minByOrNull { abs(it.first - tSec) }
-                listOfNotNull(inWindow.firstOrNull(), cur, inWindow.getOrNull(inWindow.size / 2), inWindow.lastOrNull())
-                    .distinct()
-            }
-            val minGap = (right - left) * 0.22f
-            val labeled = mutableListOf<Pair<Float, String>>()
+            canvas.drawCircle(cx, midY, tapeH * 0.045f, fillPaint)
             val mark = canvas.save()
             canvas.clipRect(left, top, right, bot)
-            for ((et, label) in visible) {
-                val x = (left + ((et - win0) / span) * (right - left)).coerceIn(left + 8f, right - 8f)
-                val done = tSec >= et
-                fillPaint.color = withLamp(if (done) skin.go else skin.accent, lamp)
-                canvas.drawCircle(x, lineY, 7f, fillPaint)
-                if (label == title) continue
-                val clash = labeled.any { abs(it.first - x) < minGap }
-                if (clash) continue
-                labeled.add(x to label)
-            }
-            val slotW = ((right - left) / max(3, labeled.size + 1)).coerceAtLeast(36f)
-            for ((x, label) in labeled) {
+            val placed = ArrayList<Float>()
+            for ((et, label) in events) {
+                val dt = et - tSec
+                if (kotlin.math.abs(dt) > window) continue
+                val past = dt < -0.5f
+                val soon = dt in 0f..lead
+                val now = dt <= 0.5f && !past
+                val onTop = soon || now
+                val drawX = when {
+                    now -> cx
+                    past -> xRaw(et).coerceIn(left + tapeW * 0.04f, cx - tapeW * 0.04f)
+                    else -> xRaw(et).coerceIn(cx + tapeW * 0.04f, right - tapeW * 0.04f)
+                }
+                if (!onTop && placed.any { kotlin.math.abs(it - drawX) < minGap }) continue
+                placed.add(drawX)
+                val grow = when {
+                    now -> 1f
+                    soon -> 1f - (dt / lead)
+                    else -> 0f
+                }
+                val boxH = tapeH * if (onTop) (0.24f + 0.14f * grow) else 0.16f
                 hudPaint.textAlign = Paint.Align.CENTER
-                hudPaint.color = withLamp(skin.text, lamp)
-                hudPaint.textSize = telFit(label, slotW, labelH, 16f)
-                val tx = x.coerceIn(left + slotW * 0.5f, right - slotW * 0.5f)
-                canvas.drawText(label, tx, lineY + labelH * 0.85f, hudPaint)
+                hudPaint.color = withLamp(if (now) skin.hold else if (past) skin.muted else skin.text, lamp)
+                hudPaint.textSize = telFit(label, tapeW * 0.30f, boxH, boxH)
+                hudPaint.isFakeBoldText = false
+                canvas.drawText(label, drawX, if (onTop) topY else botY, hudPaint)
             }
             canvas.restoreToCount(mark)
         }
@@ -6680,7 +6793,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             var y = top + titleSize + su(0.04f)
             y += labelSz + 8f
             layoutConsoleTwoRows(consoleRockerRects, panelLeft + inset, y, panelRight - inset, rockerH * 0.90f)
-            y = consoleRockerRects[4].bottom + su(0.028f)
+            y = consoleRockerRects[AppPrefs.CONSOLE_SKIN_IDS.lastIndex.coerceAtLeast(0)].bottom + su(0.028f)
             y += labelSz + 8f
             layoutRockerRow(textRockerRects, panelLeft + inset, y, panelRight - inset, rockerH)
             y = textRockerRects[0].bottom + su(0.028f)

@@ -412,11 +412,12 @@ object MissionFacts {
         val known = classify(n, launch)
         val state = payloadState(tSec, sep, deploy, launch, known.kind)
         val bookGap = VehicleCatalog.needsUpdate(launch)
-        val note = when {
+        val rawNote = when {
             bookGap -> VehicleCatalog.UPDATE_BODY
             known.unknown -> unknownNote(launch)
             else -> known.note
         }
+        val note = JokeLines.beside(VehicleCatalog.spec(launch).language, rawNote)
         return MissionBrief(
             title = launch.missionName.ifBlank { launch.name }.uppercase(),
             vehicle = "${launch.rocketName}  ·  ${launch.provider}",

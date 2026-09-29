@@ -76,7 +76,9 @@ data class VehicleSpec(
     val s2Isp: String = "",
     val s1Name: String = "",
     val s2Name: String = "",
-    val s2EngineName: String = ""
+    val s2EngineName: String = "",
+    /** Catalog language. Skins read this. They do not own it. */
+    val language: String = "en"
 ) {
     fun pattern(stage: Int): EnginePattern = if (stage >= 2) s2Pattern else s1Pattern
     fun stageName(stage: Int, fallback: String): String {
@@ -1028,10 +1030,22 @@ object VehicleCatalog {
     fun blob(launch: LaunchSnapshot?): String =
         "${launch?.rocketName.orEmpty()} ${launch?.name.orEmpty()} ${launch?.missionName.orEmpty()} ${launch?.provider.orEmpty()}".lowercase()
 
+    fun languageCode(id: String): String = when (id) {
+        "lm5", "cz2d", "cz8a", "cz6a", "kz11", "cz12", "lm", "zq3", "kinetica1", "pallas1", "gravity1" -> "zh"
+        "soyuz", "proton" -> "ru"
+        "h3" -> "ja"
+        "lvm3", "pslv", "gslv", "isro" -> "hi"
+        "ariane" -> "fr"
+        "sr75" -> "de"
+        "nuri" -> "ko"
+        else -> "en"
+    }
+
     fun spec(launch: LaunchSnapshot?): VehicleSpec {
         val n = blob(launch)
-        if (n.isBlank()) return GENERIC
-        return all.firstOrNull { s -> s.tokens.any { it in n } } ?: GENERIC
+        if (n.isBlank()) return GENERIC.copy(language = "en")
+        val s = all.firstOrNull { row -> row.tokens.any { it in n } } ?: GENERIC
+        return s.copy(language = languageCode(s.id))
     }
 
     fun family(launch: LaunchSnapshot?): String = spec(launch).family
