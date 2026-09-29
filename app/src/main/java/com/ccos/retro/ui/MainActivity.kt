@@ -509,6 +509,7 @@ class MainActivity : AppCompatActivity() {
         val historic = prefs.telemetryListMode == "historical"
         findViewById<View>(R.id.row_horizon)?.visibility = if (historic) View.GONE else View.VISIBLE
         findViewById<View>(R.id.row_search)?.visibility = if (historic) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.box_historic_data)?.visibility = if (historic) View.VISIBLE else View.GONE
 
         styleChip(R.id.btn_list_current, !historic)
         styleChip(R.id.btn_list_historical, historic)
@@ -651,8 +652,8 @@ class MainActivity : AppCompatActivity() {
             R.drawable.chip_console_selected_arianespace,
             R.drawable.chip_console_selected_rocketlab,
             R.drawable.chip_console_selected_ula,
-            R.drawable.chip_console_selected_nasa,
-            R.drawable.chip_console_selected_mcc
+            R.drawable.chip_console_selected_jaxa,
+            R.drawable.chip_console_selected_isro
         )
         val idleBg = intArrayOf(
             R.drawable.chip_console_idle_mcc,
@@ -663,19 +664,19 @@ class MainActivity : AppCompatActivity() {
             R.drawable.chip_console_idle_arianespace,
             R.drawable.chip_console_idle_rocketlab,
             R.drawable.chip_console_idle_ula,
-            R.drawable.chip_console_idle_nasa,
-            R.drawable.chip_console_idle_mcc
+            R.drawable.chip_console_idle_jaxa,
+            R.drawable.chip_console_idle_isro
         )
         // selected text / idle text per pack tokens
         val selText = intArrayOf(
             0xFF1A1200.toInt(), 0xFFE8E0D0.toInt(), 0xFFF0F0F0.toInt(), 0xFFE8EEF8.toInt(),
             0xFFF5E6C8.toInt(), 0xFFFFFFFF.toInt(), 0xFFF2F2F2.toInt(), 0xFFFFFFFF.toInt(),
-            0xFFE8EEF8.toInt(), 0xFFFFB000.toInt()
+            0xFFFFFFFF.toInt(), 0xFFFFF4E0.toInt()
         )
         val idleText = intArrayOf(
             0xFF8A7050.toInt(), 0xFF6A7850.toInt(), 0xFF6A6A6A.toInt(), 0xFF6A7A90.toInt(),
             0xFF8A6060.toInt(), 0xFF6A7090.toInt(), 0xFF6A6A6A.toInt(), 0xFF5A6A88.toInt(),
-            0xFF6A7A90.toInt(), 0xFF8A7050.toInt()
+            0xFF8A6068.toInt(), 0xFF8A6848.toInt()
         )
         val skin = prefs.consoleSkin
         val sel = AppPrefs.consoleSkinIndex(skin)
@@ -728,16 +729,16 @@ class MainActivity : AppCompatActivity() {
                 findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF060E1C.toInt())
             }
             AppPrefs.CONSOLE_SKIN_JAXA -> {
-                section.setBackgroundResource(R.drawable.bg_console_nasa)
-                title?.setTextColor(0xFF6A9AD4.toInt())
-                help?.setTextColor(0xFF8AA0B8.toInt())
-                findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF080C14.toInt())
+                section.setBackgroundResource(R.drawable.bg_console_jaxa)
+                title?.setTextColor(0xFFE10600.toInt())
+                help?.setTextColor(0xFFB08080.toInt())
+                findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF100608.toInt())
             }
             AppPrefs.CONSOLE_SKIN_ISRO -> {
-                section.setBackgroundResource(R.drawable.bg_console_mcc)
-                title?.setTextColor(0xFFFFB000.toInt())
-                help?.setTextColor(0xFF8AA0B0.toInt())
-                findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF0A0E14.toInt())
+                section.setBackgroundResource(R.drawable.bg_console_isro)
+                title?.setTextColor(0xFFFF671F.toInt())
+                help?.setTextColor(0xFFC09878.toInt())
+                findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF100C08.toInt())
             }
             else -> {
                 // MCC amber
@@ -778,8 +779,8 @@ class MainActivity : AppCompatActivity() {
                 AppPrefs.CONSOLE_SKIN_ARIANE -> tel.setBackgroundResource(R.drawable.bg_console_ariane)
                 AppPrefs.CONSOLE_SKIN_RLAB -> tel.setBackgroundResource(R.drawable.bg_console_rlab)
                 AppPrefs.CONSOLE_SKIN_ULA -> tel.setBackgroundResource(R.drawable.bg_console_ula)
-                AppPrefs.CONSOLE_SKIN_JAXA -> tel.setBackgroundResource(R.drawable.bg_console_nasa)
-                AppPrefs.CONSOLE_SKIN_ISRO -> tel.setBackgroundResource(R.drawable.bg_console_mcc)
+                AppPrefs.CONSOLE_SKIN_JAXA -> tel.setBackgroundResource(R.drawable.bg_console_jaxa)
+                AppPrefs.CONSOLE_SKIN_ISRO -> tel.setBackgroundResource(R.drawable.bg_console_isro)
                 AppPrefs.CONSOLE_SKIN_MCC -> tel.setBackgroundResource(R.drawable.panel_console)
                 else -> tel.setBackgroundResource(R.drawable.bg_console_mcc)
             }
@@ -793,9 +794,12 @@ class MainActivity : AppCompatActivity() {
                 AppPrefs.CONSOLE_SKIN_ARIANE -> 0xFF0A1020.toInt()
                 AppPrefs.CONSOLE_SKIN_RLAB -> 0xFF101010.toInt()
                 AppPrefs.CONSOLE_SKIN_ULA -> 0xFF0A1830.toInt()
+                AppPrefs.CONSOLE_SKIN_JAXA -> 0xFF18080C.toInt()
+                AppPrefs.CONSOLE_SKIN_ISRO -> 0xFF181008.toInt()
                 else -> 0xFF0A0E14.toInt() // MCC
             }
         )
+        applySettingsBoard()
     }
 
 private fun wireConsoleSkin() {
@@ -814,6 +818,112 @@ private fun wireConsoleSkin() {
             findViewById<Button>(btnIds[i])?.setOnClickListener { pick(skinId) }
         }
         applyConsoleSkin()
+    }
+
+    private data class SettingsBoard(
+        val header: String,
+        val accent: Int,
+        val tracking: String,
+        val live: String,
+        val current: String,
+        val historic: String,
+        val historicButton: String,
+        val search: String,
+        val refresh: String,
+        val follow: String,
+        val auto: String,
+        val manual: String,
+        val units: String,
+        val home: String
+    )
+
+    private fun settingsBoard(skin: String): SettingsBoard {
+        fun line(en: String, local: String) = if (local.isEmpty()) en else "$en $local"
+        fun btn(en: String, local: String) = if (local.isEmpty()) en else "$en\n$local"
+        val local = when (skin) {
+            AppPrefs.CONSOLE_SKIN_ROS -> listOf(
+                "РОСКОСМОС", "СЛЕЖЕНИЕ", "ПРЯМОЙ", "ТЕКУЩИЙ", "ИСТОРИЯ", "ИСТОРИЯ",
+                "ПОИСК", "ОБНОВИТЬ", "СЛЕЖЕНИЕ", "АВТО", "РУЧНОЙ", "ЕДИНИЦЫ", "ЭКРАНЫ"
+            )
+            AppPrefs.CONSOLE_SKIN_CNSA -> listOf(
+                "CASC 中国航天", "跟踪", "实时", "当前", "历史", "历史",
+                "搜索历史", "刷新", "跟踪", "自动", "手动", "单位", "主屏"
+            )
+            AppPrefs.CONSOLE_SKIN_ARIANE -> listOf(
+                "ESA / ARIANESPACE", "SUIVI", "DIRECT", "ACTUEL", "HISTORIQUE", "HISTORIQUE",
+                "RECHERCHE", "ACTUALISER", "SUIVI", "AUTO", "MANUEL", "UNITÉS", "ÉCRANS"
+            )
+            AppPrefs.CONSOLE_SKIN_JAXA -> listOf(
+                "JAXA 宇宙航空", "追跡", "ライブ", "現在", "履歴", "履歴",
+                "検索", "更新", "追尾", "自動", "手動", "単位", "画面"
+            )
+            AppPrefs.CONSOLE_SKIN_ISRO -> listOf(
+                "ISRO इसरो", "ट्रैक", "लाइव", "वर्तमान", "इतिहास", "इतिहास",
+                "खोज", "ताज़ा", "अनुसरण", "स्वतः", "मैनुअल", "इकाई", "स्क्रीन"
+            )
+            AppPrefs.CONSOLE_SKIN_SPACEX -> listOf("SPACEX") + List(12) { "" }
+            AppPrefs.CONSOLE_SKIN_NASA -> listOf("NASA") + List(12) { "" }
+            AppPrefs.CONSOLE_SKIN_RLAB -> listOf("ROCKET LAB") + List(12) { "" }
+            AppPrefs.CONSOLE_SKIN_ULA -> listOf("ULA") + List(12) { "" }
+            else -> listOf("MCC") + List(12) { "" }
+        }
+        val accent = when (skin) {
+            AppPrefs.CONSOLE_SKIN_ROS -> 0xFFFFD100.toInt()
+            AppPrefs.CONSOLE_SKIN_SPACEX -> 0xFF00D26A.toInt()
+            AppPrefs.CONSOLE_SKIN_NASA -> 0xFF6A9AD4.toInt()
+            AppPrefs.CONSOLE_SKIN_CNSA -> 0xFFF2C14E.toInt()
+            AppPrefs.CONSOLE_SKIN_ARIANE -> 0xFFFFD100.toInt()
+            AppPrefs.CONSOLE_SKIN_RLAB -> 0xFFFF5A1F.toInt()
+            AppPrefs.CONSOLE_SKIN_ULA -> 0xFF6A9AD4.toInt()
+            AppPrefs.CONSOLE_SKIN_JAXA -> 0xFFE10600.toInt()
+            AppPrefs.CONSOLE_SKIN_ISRO -> 0xFFFF671F.toInt()
+            else -> 0xFFFFB000.toInt()
+        }
+        return SettingsBoard(
+            header = local[0],
+            accent = accent,
+            tracking = line("TRACKING", local[1]),
+            live = line("LIVE", local[2]),
+            current = btn("CURRENT", local[3]),
+            historic = line("HISTORIC", local[4]),
+            historicButton = btn("HISTORIC", local[5]),
+            search = line("SEARCH HISTORIC", local[6]),
+            refresh = btn("REFRESH", local[7]),
+            follow = line("FOLLOW", local[8]),
+            auto = btn("AUTO ON", local[9]),
+            manual = btn("MANUAL", local[10]),
+            units = line("UNITS", local[11]),
+            home = line("HOME SCREENS", local[12])
+        )
+    }
+
+    private fun applySettingsBoard() {
+        val b = settingsBoard(prefs.consoleSkin)
+        fun label(id: Int, text: String) {
+            findViewById<TextView>(id)?.apply {
+                this.text = text
+                setTextColor(b.accent)
+            }
+        }
+        fun button(id: Int, text: String) {
+            findViewById<Button>(id)?.apply {
+                this.text = text
+                isAllCaps = false
+            }
+        }
+        label(R.id.txt_agency_header, b.header)
+        label(R.id.txt_tracking_label, b.tracking)
+        label(R.id.txt_live_label, b.live)
+        label(R.id.txt_historic_label, b.historic)
+        label(R.id.txt_search_historic, b.search)
+        label(R.id.txt_follow_label, b.follow)
+        label(R.id.txt_units_label, b.units)
+        label(R.id.txt_home_screens, b.home)
+        button(R.id.btn_list_current, b.current)
+        button(R.id.btn_list_historical, b.historicButton)
+        button(R.id.btn_refresh_launches, b.refresh)
+        button(R.id.btn_auto_on, b.auto)
+        button(R.id.btn_auto_off, b.manual)
     }
 
 
