@@ -2228,9 +2228,8 @@ class RetroCommandWallpaperService : WallpaperService() {
             canvas.drawLine(r.right - 2f, r.bottom - m, r.right - 2f, r.bottom - 2f, strokePaint)
             canvas.drawLine(r.right - 2f, r.bottom - 2f, r.right - m, r.bottom - 2f, strokePaint)
             drawLedBar(canvas, r, active, Color.parseColor("#FFD700"), lamp)
-            // #48: Chris gold Soft-PASS = clean EN plates; zhFor kept for bilingual prefs later
             drawFullFaceLabel(
-                canvas, r, label, "",
+                canvas, r, label, zhFor(label),
                 if (active) Color.parseColor("#F5E6C8") else Color.parseColor("#A08060"),
                 if (active) Color.parseColor("#FFD700") else Color.parseColor("#7A6040"),
                 lamp
