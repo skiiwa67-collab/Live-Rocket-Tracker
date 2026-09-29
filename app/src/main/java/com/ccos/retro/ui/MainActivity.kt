@@ -189,7 +189,10 @@ class MainActivity : AppCompatActivity() {
                     val launch = launchList[position]
                     // Stamp 60: real USER id change always selectLaunch (AUTO off + stick THAT bird).
                     // Programmatic populate still blocked by suppressLaunchSelect.
-                    if (launch.id == prefs.telemetryLaunchId && launch.id == telemetryModule.tracked?.id) return
+                    val alreadyTracking = launch.id == prefs.telemetryLaunchId && launch.id == telemetryModule.tracked?.id
+                    // Historic tap of the bird already on screen must still enter replay (Flight 14).
+                    val historicReplay = prefs.telemetryListMode == "historical" && launch.isReplayable()
+                    if (alreadyTracking && !historicReplay) return
                     // Stamp 108: pass full snapshot so historic search picks (F13/USSF) stick.
                     // Keep HISTORICAL listMode — never flip to CURRENT on select.
                     telemetryModule.selectLaunch(launch.id, launch)
@@ -426,7 +429,8 @@ class MainActivity : AppCompatActivity() {
                     l.id.startsWith("demo-") -> "[DEMO] "
                     l.isHold() -> "[HOLD] "
                     l.isActiveWatch(now) && secs <= 0 -> "[LIVE] "
-                    secs < -LaunchWindow.PICKER_LOOKBACK_SEC -> "[PAST] "
+                    // A finished flight stays Past inside the 48h window (Flight 14). T+ is only a non-terminal clock.
+                    l.isTerminal() || secs < -LaunchWindow.PICKER_LOOKBACK_SEC -> "[PAST] "
                     secs < 0 -> "[T+] "
                     secs < 86400 -> "[${secs / 3600}h] "
                     else -> "[${secs / 86400}d] "
