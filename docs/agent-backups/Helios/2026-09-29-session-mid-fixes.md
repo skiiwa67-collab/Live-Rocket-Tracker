@@ -1,6 +1,10 @@
 # 2026-09-29 session mid — fixes and specs
 
-Logged 9:52 AM CT by Helios. This is the mirror record for work named today. It does not publish anything. Chris alone publishes. No Play Store action was taken from this note.
+Logged 9:52 AM CT by Helios. Corrected 9:55 AM CT.
+
+Correction, 9:55 AM CT. Chris is building the signed AAB himself from version 157. That number is one hundred fifty-seven. Do not write a decimal into it. The morning Alarm Pro v48 ship-lock stays as logged. He did not rename that one on this call.
+
+ This is the mirror record for work named today. It does not publish anything. Chris alone publishes. No Play Store action was taken from this note.
 
 Latest command-flyout spec wins over every earlier flyout note, including the ten-fix line that said to add an extra panel.
 
@@ -17,7 +21,7 @@ Chris is pushing a signed AAB to Play Console from the cold-soaked build. Two da
 
 Three separate notes. Do not collapse them.
 
-Morning, version 1.5.5: Starship Flight 14 tape must keep advancing when the app is backgrounded. Chris's diagnosis was a stopped view tick, a background service Android 26+ will not restart, and a swallowed Log.w. Chris held the Studio push for a Tinkabot check, then said go. No Play.
+Morning tape fix, before version 157: Starship Flight 14 tape must keep advancing when the app is backgrounded. Chris's diagnosis was a stopped view tick, a background service Android 26+ will not restart, and a swallowed Log.w. Chris held the Studio push for a Tinkabot check, then said go. No Play.
 
 Ten-fix review, commit `efe00ee` on branch `tip155-restore`: tape centers only on the event happening now. Tinkabot pass 2 called that pass. That commit was not on GitHub when last checked. Local review: `/workspace/agent-backups/tinkabot/2026-09-29-lrt-1562-pass2.md` and `/workspace/agent-backups/Helios/LRT-1562-fix-09-event-tape-2026-09-29.md`.
 
