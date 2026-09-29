@@ -1303,27 +1303,21 @@ class RetroCommandWallpaperService : WallpaperService() {
                 val r = rects[i]
                 if (r.isEmpty) continue
                 val on = i == selected
-                fillPaint.color = when {
-                    on && strongSelected -> Color.argb(255, 48, 72, 96)
-                    on -> Color.argb(230, 18, 28, 38)
-                    else -> Color.argb(210, 8, 12, 16)
+                fillPaint.color = if (on) {
+                    Color.argb(
+                        255,
+                        (Color.red(accent) * 0.34f).toInt().coerceIn(18, 255),
+                        (Color.green(accent) * 0.34f).toInt().coerceIn(12, 255),
+                        (Color.blue(accent) * 0.34f).toInt().coerceIn(16, 255)
+                    )
+                } else {
+                    Color.argb(210, 8, 12, 16)
                 }
                 canvas.drawRoundRect(r, 8f, 8f, fillPaint)
                 strokePaint.style = Paint.Style.STROKE
-                strokePaint.strokeWidth = when {
-                    on && strongSelected -> 6.5f
-                    on -> 4.5f
-                    else -> 3.2f
-                }
+                strokePaint.strokeWidth = if (on) 3.4f else 2.4f
                 strokePaint.color = if (on) accent else muted
                 canvas.drawRoundRect(r, 8f, 8f, strokePaint)
-                if (on && strongSelected) {
-                    strokePaint.strokeWidth = 2.2f
-                    strokePaint.color = Color.argb(200, Color.red(accent), Color.green(accent), Color.blue(accent))
-                    canvas.drawRoundRect(
-                        r.left + 3f, r.top + 3f, r.right - 3f, r.bottom - 3f, 6f, 6f, strokePaint
-                    )
-                }
                 val lampR = minOf(r.height() * 0.14f, r.width() * 0.07f).coerceAtLeast(3f)
                 val lampX = r.left + lampR + r.width() * 0.08f
                 if (on) {
@@ -7097,7 +7091,20 @@ class RetroCommandWallpaperService : WallpaperService() {
             drawModeChip(modeChipDigital, "DIGITAL", !prefs.telemetryAnalog)
             drawToggle(panelToggleUnits, prefs.useImperial, "MPH / MI", "KM/H")
             drawToggle(panelToggleExtra, prefs.extraScreens, "EXTRA PAGES ON", "EXTRA PAGES OFF")
-            drawToggle(panelToggleConsole, true, "ENTER CONSOLE", "ENTER CONSOLE")
+            fillPaint.color = withLamp(Color.argb(180, 8, 12, 16), lamp)
+            canvas.drawRoundRect(panelToggleConsole, 10f, 10f, fillPaint)
+            strokePaint.strokeWidth = 2f
+            strokePaint.color = withLamp(skin.muted, lamp)
+            canvas.drawRoundRect(panelToggleConsole, 10f, 10f, strokePaint)
+            hudPaint.color = withLamp(skin.muted, lamp)
+            hudPaint.textAlign = Paint.Align.CENTER
+            hudPaint.textSize = telFit("ENTER CONSOLE", panelToggleConsole.width() * 0.9f, panelToggleConsole.height() * 0.42f, 13f)
+            canvas.drawText(
+                "ENTER CONSOLE",
+                panelToggleConsole.centerX(),
+                panelToggleConsole.centerY() + hudPaint.textSize * 0.35f,
+                hudPaint
+            )
             if (prefs.extraScreens) {
                 val chipOn = booleanArrayOf(
                     prefs.extraScreenTraj, prefs.extraScreenStg,
@@ -7126,12 +7133,10 @@ class RetroCommandWallpaperService : WallpaperService() {
             hudPaint.color = Color.WHITE
             hudPaint.textSize = (labelSz * 0.92f)
             canvas.drawText((launch?.name ?: "NO TRACKED LAUNCH").take(28), width / 2f, footerTop + labelSz * 2.05f, hudPaint)
-            hudPaint.color = withLamp(skin.muted, lamp)
-            hudPaint.textSize = labelSz * 0.72f
-            canvas.drawText(
-                "CCOS HUD  |  CONSOLE = ${prefs.consoleSkin}  |  CMD x2 = SETTINGS",
-                width / 2f, bottom - su(0.018f), hudPaint
-            )
+            val hint = "CCOS HUD  |  CONSOLE = ${prefs.consoleSkin}  |  CMD x2 = SETTINGS"
+            hudPaint.color = Color.argb(110, 180, 190, 200)
+            hudPaint.textSize = labelSz * 0.48f
+            canvas.drawText(hint, width / 2f, bottom - su(0.012f), hudPaint)
             canvas.restore()
         }
 
