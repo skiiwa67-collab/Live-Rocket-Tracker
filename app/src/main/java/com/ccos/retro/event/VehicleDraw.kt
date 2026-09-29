@@ -1469,7 +1469,7 @@ object VehicleDraw {
             color = lampAlpha(skin.hold, lamp, 1f)
             textAlign = Paint.Align.CENTER
             textSize = (h * 0.10f).coerceIn(9f, 16f)
-            isFakeBoldText = true
+            isFakeBoldText = false
         }
         canvas.drawText(VehicleCatalog.UPDATE_HEAD, cx, y - h * 0.02f, textPaint)
         textPaint.color = lampAlpha(skin.text, lamp, 1f)

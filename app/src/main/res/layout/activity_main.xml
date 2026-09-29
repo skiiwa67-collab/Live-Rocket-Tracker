@@ -243,7 +243,7 @@
                 <Button
                     android:id="@+id/btn_console_jaxa"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="wrap_content"
                     android:textSize="11sp"
                     android:layout_weight="1"
                     android:text="JAXA"
@@ -259,7 +259,7 @@
                 <Button
                     android:id="@+id/btn_console_isro"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="wrap_content"
                     android:textSize="11sp"
                     android:layout_weight="1"
                     android:text="ISRO"
@@ -274,11 +274,11 @@
                     android:layout_margin="2dp"/>
                 <View
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"/>
                 <View
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"/>
                 </LinearLayout>
             </LinearLayout>

@@ -268,7 +268,7 @@ class RetroCommandWallpaperService : WallpaperService() {
         }
         private fun panelTitleSize(): Float = su(0.042f).coerceIn(28f, 48f)
         private fun panelLabelSize(): Float = su(0.032f).coerceIn(22f, 36f)
-        private fun panelRockerH(): Float = (height * 0.078f).coerceIn(56f, 96f)
+        private fun panelRockerH(): Float = height * 0.078f
         private fun panelToggleH(): Float = (height * 0.070f).coerceIn(52f, 88f)
 
         /** Scaled text size from Settings slider */
@@ -2102,8 +2102,8 @@ class RetroCommandWallpaperService : WallpaperService() {
         }
 
         private fun deFor(label: String): String = when (label) {
-            "CMD" -> "BEFEHL"; "CDT" -> "COUNT"; "TEL" -> "TELE"; "STS" -> "STATUS"
-            "PAD" -> "RAMPE"; "VID" -> "VIDEO"; "MSK" -> "MISSION"; "AUTO" -> "AUTO"; else -> ""
+            "CMD" -> "BEFEHL"; "CDT" -> "ABZÄHLUNG"; "TEL" -> "TELEMETRIE"; "STS" -> "ZUSTAND"
+            "PAD" -> "RAMPE"; "VID" -> "ÜBERTRAGUNG"; "MSK" -> "AUFTRAG"; "AUTO" -> "AUTOMATIK"; else -> ""
         }
 
         private fun koFor(label: String): String = when (label) {
@@ -3646,7 +3646,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                 if (kotlin.math.abs(dt) > window) continue
                 val past = dt < -0.5f
                 val soon = dt in 0f..lead
-                val now = dt <= 0.5f && !past
+                val now = dt <= 0f && !past
                 val onTop = soon || now
                 val drawX = when {
                     now -> cx
@@ -3663,7 +3663,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                 val boxH = tapeH * if (onTop) (0.24f + 0.14f * grow) else 0.16f
                 hudPaint.textAlign = Paint.Align.CENTER
                 hudPaint.color = withLamp(if (now) skin.hold else if (past) skin.muted else skin.text, lamp)
-                hudPaint.textSize = telFit(label, tapeW * 0.30f, boxH, boxH)
+                hudPaint.textSize = boxH
                 hudPaint.isFakeBoldText = false
                 canvas.drawText(label, drawX, if (onTop) topY else botY, hudPaint)
             }

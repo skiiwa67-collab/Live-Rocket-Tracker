@@ -752,6 +752,23 @@ class MainActivity : AppCompatActivity() {
             b?.text = labels[i]
             styleConsoleChip(b, i == sel, selectedBg[i], idleBg[i], selText[i], idleText[i])
         }
+        findViewById<LinearLayout>(R.id.row_console_skin_3)?.post {
+            val w = section.width
+            if (w <= 0) return@post
+            val row = findViewById<LinearLayout>(R.id.row_console_skin_3) ?: return@post
+            val h = (w * 0.10f).toInt()
+            for (i in 0 until row.childCount) {
+                val child = row.getChildAt(i)
+                val lp = child.layoutParams ?: continue
+                if (lp.height != h) {
+                    lp.height = h
+                    child.layoutParams = lp
+                }
+                if (child is android.widget.Button) {
+                    child.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, h * 0.32f)
+                }
+            }
+        }
         findViewById<View>(R.id.section_telemetry)?.let { tel ->
             when (skin) {
                 AppPrefs.CONSOLE_SKIN_ROS -> tel.setBackgroundResource(R.drawable.bg_console_ros)
