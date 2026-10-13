@@ -1,0 +1,11 @@
+# kinetica1 plume-anchor Soft-PASS 2026-09-23
+# Soft-FAIL stack/cutaway/shell/side/tank
+91eb3443802512f846b6a3fa2cd964a1  vehicle_kinetica1_flame_ship.png
+cfca95fce2f0df7a8279340f044797b5  vehicle_kinetica1_engine_ship.png
+91eb3443802512f846b6a3fa2cd964a1  vehicle_kinetica1_flame_s2.png
+91eb3443802512f846b6a3fa2cd964a1  vehicle_kinetica1_exhaust_ship.png
+a87a1fa366741ad370a581669593f517  compare_kinetica1_postsep.png
+bb6a356d26317a443628741658634982  _proof_kinetica1_postsep.png
+0f5111a272ddb2f9876784100e86bd46  lib_side_bell.py
+# stack Soft-FAIL unchanged 0c919bed7c069b980a6fdc1462a78d10
+# ship Soft-FAIL unchanged 24eced24ce5347dd5b541fc38e5af6f1

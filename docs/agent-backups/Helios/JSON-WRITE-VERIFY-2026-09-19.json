@@ -1,0 +1,111 @@
+{
+  "checked_at": "2026-09-19T06:32:04.524065-05:00",
+  "recent_lt_2h_count": 48,
+  "recent_sample": [
+    {
+      "path": "/workspace/agent-backups/helios/PERSISTENCE-FIX-2026-09-19.json",
+      "age_hours": 0.01,
+      "mtime": "2026-09-19T06:31:22.713521",
+      "bytes": 1332
+    },
+    {
+      "path": "/home/box/agent-data/agents/fe0b6c3f-adcf-483f-a7f9-335890abd80d/backups/PERSISTENCE-FIX-2026-09-19.json",
+      "age_hours": 0.01,
+      "mtime": "2026-09-19T06:31:22.713521",
+      "bytes": 1332
+    },
+    {
+      "path": "/workspace/agent-backups/helios/proxy-approvals-log.json",
+      "age_hours": 0.03,
+      "mtime": "2026-09-19T06:30:09.049600",
+      "bytes": 3853
+    },
+    {
+      "path": "/workspace/agent-backups/tinkabot/efficiency-addendum-2026-09-19.json",
+      "age_hours": 0.04,
+      "mtime": "2026-09-19T06:29:54.061616",
+      "bytes": 699
+    },
+    {
+      "path": "/workspace/agent-backups/helios/tinkabot-efficiency-plan.json",
+      "age_hours": 0.04,
+      "mtime": "2026-09-19T06:29:29.061643",
+      "bytes": 2089
+    },
+    {
+      "path": "/home/box/agent-data/agents/fe0b6c3f-adcf-483f-a7f9-335890abd80d/backups/proxy-approvals-log.json",
+      "age_hours": 0.04,
+      "mtime": "2026-09-19T06:29:45.101625",
+      "bytes": 2514
+    },
+    {
+      "path": "/home/box/agent-data/agents/9ca7f7d0-4648-4cfe-bc49-206401979b89/backups/efficiency-addendum-2026-09-19.json",
+      "age_hours": 0.04,
+      "mtime": "2026-09-19T06:29:54.061616",
+      "bytes": 699
+    },
+    {
+      "path": "/workspace/agent-backups/tinkabot/capability-audit-2026-09-19.json",
+      "age_hours": 0.05,
+      "mtime": "2026-09-19T06:29:09.909664",
+      "bytes": 1296
+    },
+    {
+      "path": "/home/box/agent-data/agents/9ca7f7d0-4648-4cfe-bc49-206401979b89/backups/capability-audit-2026-09-19.json",
+      "age_hours": 0.05,
+      "mtime": "2026-09-19T06:29:09.909664",
+      "bytes": 1296
+    },
+    {
+      "path": "/workspace/agent-backups/saxon/saxon-state.json",
+      "age_hours": 0.07,
+      "mtime": "2026-09-19T06:28:02.113738",
+      "bytes": 4337
+    },
+    {
+      "path": "/workspace/agent-backups/saxon/sessions/MID-20260919-062717.json",
+      "age_hours": 0.08,
+      "mtime": "2026-09-19T06:27:17.393788",
+      "bytes": 360
+    },
+    {
+      "path": "/workspace/agent-backups/saxon/sessions/MID-latest.json",
+      "age_hours": 0.08,
+      "mtime": "2026-09-19T06:27:17.393788",
+      "bytes": 360
+    },
+    {
+      "path": "/home/box/agent-data/agents/5a5c4480-3f5e-4bf5-b315-e2a02011fdfe/backups/TONIGHT-ART-STAGE-20260919-062659.json",
+      "age_hours": 0.08,
+      "mtime": "2026-09-19T06:26:59.857808",
+      "bytes": 7331
+    },
+    {
+      "path": "/home/box/agent-data/agents/ec74770f-4547-46a2-b58f-f31ddba60b48/backups/session-mid.json",
+      "age_hours": 0.17,
+      "mtime": "2026-09-19T06:22:04.582164",
+      "bytes": 3252
+    },
+    {
+      "path": "/workspace/agent-backups/da-vinci/TRIAGE-SIM-20260919-061834.json",
+      "age_hours": 0.22,
+      "mtime": "2026-09-19T06:18:34.950451",
+      "bytes": 2205
+    }
+  ],
+  "stale_2_24h_count": 0,
+  "skills_present": [
+    "chris-efficiency-defaults",
+    "dual-write-notion-and-github",
+    "durable-ship-persistence",
+    "getting-started",
+    "look-at-live-pages-first",
+    "lrt-emulator-extra-hud-page",
+    "lrt-fleet-vehicle-art-workflow",
+    "minime-agent-pager",
+    "session-json-multi-mirror-backup",
+    "team-triage-dump-on-degrade",
+    "token-and-voice-efficiency",
+    "tonight-minime-handoff"
+  ]
+}

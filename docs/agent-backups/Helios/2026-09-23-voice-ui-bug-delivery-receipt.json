@@ -1,0 +1,27 @@
+{
+  "at_ct": "2026-09-23 07:52 CT",
+  "method": "direct Gmail send_message; no approval cards",
+  "cursor": {
+    "to": "hi@cursor.com",
+    "message_id": "1a0ce530504c8412",
+    "thread_id": "1a0ce530504c8412",
+    "prior_ticket_cited": "T-G948"
+  },
+  "xai": {
+    "to": "support@x.ai",
+    "channel": "xAI Product Support email (x.ai/contact)",
+    "message_id": "1a0ce52f27c0f761",
+    "thread_id": "1a0ce52f27c0f761"
+  },
+  "report_path": "/workspace/agent-backups/Helios/2026-09-23-grok-voice-ui-bug-report.md",
+  "includes_root_cause": true,
+  "addendum_at_ct": "2026-09-23 07:54 CT",
+  "addendum": {
+    "subject": "BUG: VOICE PIPELINE PREEMPTS APPROVAL CARDS",
+    "cursor_followup_message_id": "1a0ce54be45a2e55",
+    "cursor_thread_id": "1a0ce530504c8412",
+    "xai_followup_message_id": "1a0ce54cac5f2dbf",
+    "xai_thread_id": "1a0ce52f27c0f761",
+    "prior_ticket_cited": "T-G948"
+  }
+}

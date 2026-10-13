@@ -1,0 +1,70 @@
+{
+  "task": "Post-sep upper-stage plume detach Soft-PASS audit (CZ-8A + fleet)",
+  "owner": "Chris Olsen",
+  "lead": "Helios executor Soft-PASS audit only; Soft-FAIL Play/invent/device/claim-fixed until Ada confirms",
+  "where_we_are": "2026-09-23 ~08:44 CT",
+  "timestamp_ct": "2026-09-23 08:44 CDT",
+  "canonical_source": "/workspace/agent-backups/Helios/2026-09-23-plume-anchor-audit.md",
+  "tiphead": "/workspace/RetroCommandCenter",
+  "cz8a": {
+    "png_ship": "Soft-PASS",
+    "code_offset": "Soft-FAIL",
+    "engine_ship_bottom": 547,
+    "flame_ship_top": 532,
+    "delta_px": -15,
+    "flame_md5_12": "0e0a72f83972",
+    "engine_md5_12": "c81eb0249eae",
+    "one_sentence": "Ship PNG is nozzle-mated (Soft-PASS), but post-sep assembled draw Soft-FAILs by full-frame blit + flame-without-hullDest, so the upper plume detaches/floats under the slot while the nozzle sits mid-frame."
+  },
+  "counts": {
+    "families": 10,
+    "ship_png_soft_pass": 8,
+    "ship_png_soft_fail": 2,
+    "ship_code_soft_pass": 1,
+    "ship_code_soft_fail": 8,
+    "ship_code_unknown": 1,
+    "booster_png_soft_pass": 5,
+    "booster_png_soft_fail": 5,
+    "cells_any_soft_fail": 18,
+    "cells_both_soft_pass": 2
+  },
+  "rules": {
+    "studio_stage": "Soft-PASS",
+    "play": "Soft-FAIL",
+    "invent": "Soft-FAIL",
+    "device_push": "Soft-FAIL",
+    "claim_studio_fixed": "Soft-FAIL until Ada confirms",
+    "stack_overwrite": "Soft-FAIL (HARD-nozzle-only)"
+  },
+  "davinci_soft_fail_list": [
+    "CZ-8A HIGH: Ada wire hullDest/alpha-crop (PNG ship OK)",
+    "Fleet assembled post-sep path: cz12,cz6a,electron,h3,kinetica1,nuri,sr75",
+    "Booster PNG float gaps: cz8a+16, cz6a+16, h3+18, sr75+43",
+    "SR-75 EMPTY flame_ship/engine_ship",
+    "Starship missing PNG flames (procedural)",
+    "Separate GO: upper nozzles Starship de Laval bar \u2014 Soft-FAIL stack overwrite"
+  ],
+  "already_pinged": {
+    "da_vinci": "5a5c4480-3f5e-4bf5-b315-e2a02011fdfe",
+    "ada": "ec74770f-4547-46a2-b58f-f31ddba60b48"
+  },
+  "github": {
+    "status": "Soft-PASS",
+    "owner": "skiiwa67-collab",
+    "repo": "Live-Rocket-Tracker",
+    "issue_number": 64,
+    "url": "https://github.com/skiiwa67-collab/Live-Rocket-Tracker/issues/64",
+    "title": "Post-sep upper-stage plume detach (CZ-8A + fleet audit)"
+  },
+  "notion": {
+    "status": "Soft-PASS",
+    "destination": "Focus Tasks",
+    "data_source_id": "c924ca98-d41b-47be-91ef-81212cb6a60b",
+    "page_id": "3e4a9493-3faa-8109-a5f6-ed5e537d3cf0",
+    "url": "https://app.notion.com/p/3e4a94933faa8109a5f6ed5e537d3cf0?pvs=204",
+    "task_name": "LRT post-sep plume detach Soft-PASS audit (CZ-8A + fleet) 2026-09-23",
+    "task_status": "In progress"
+  },
+  "overall": "Soft-PASS audit + dual-write complete; Soft-FAIL Play/device/claim-fixed; Ada+Da Vinci own remediations",
+  "receipt_path": "/workspace/agent-backups/Helios/2026-09-23-plume-anchor-dual-write-receipt.json"
+}

@@ -1,0 +1,124 @@
+{
+  "agent": "Saxon",
+  "agent_id": "e9c64170-a22b-4c50-a6df-18c1d0d3b627",
+  "updated_at": "2026-09-19T10:43:46.068239-05:00",
+  "purpose": "Primary fast-recovery JSON; mirror Dropbox /Grok-Agent-Backups/Saxon/ + GitHub + Notion. No SPOF.",
+  "hard_rules": [
+    "Chris HARD 2026-09-19 multi-location backup: Local JSON + Dropbox /Grok-Agent-Backups/ + GitHub + Notion",
+    "Saxon lane: Sync/Ada/art stick; Soft-PASS Ada tips before Sync; no competing Sync from Advisor",
+    "DO NOT BREAK YouTube / FloatingVideoWindow YT path",
+    "LRT Studio FROZEN: C:\\Users\\skiiw\\AndroidStudioProjects\\RetroCommandCenter",
+    "LRT dumps: D:\\Downloads\\Grok\\LRT Dump \u2014 version in folder names",
+    "Chris Git noob \u2014 Ada owns Git/merges/bumps",
+    "Dual-log bugs Notion + GitHub always",
+    "Play Rollout Hold Off \u2014 no staged/% split until Chris says",
+    "propane pills banned; Starship art GOLD",
+    "Chris HARD driving-proxy: approvals \u2192 Helios (fe0b6c3f\u2026) while unavailable; do not page Chris Approve",
+    "Chris HARD session JSON: BEGIN/MID/END every session; mirror local+Dropbox+GitHub+Notion; no filler",
+    "Chris HARD team triage dump-on-degrade: dump resume JSON + multi-push on degrade; SIM on first load"
+  ],
+  "gauge_board_themes": {
+    "soft_pass": [
+      "Blueprint \u00b7 Saxon (data-theme=saxon, Prussian cyanotype)",
+      "Daylight \u00b7 Saxon (data-theme=saxon-day, paper white)"
+    ],
+    "soft_fail_dead": [
+      "Ignition \u00b7 Saxon \u2014 twin of Skippy void+neon"
+    ],
+    "live": "https://skiiwa67-collab.github.io/ai-live-gauge-board/",
+    "packs": {
+      "blueprint": "/workspace/ai-live-gauge-board-theme-saxon-v2/",
+      "daylight": "/workspace/ai-live-gauge-board-theme-saxon-daylight/"
+    },
+    "chris_quote": "Saxon did great with that blueprint theme! I love it!"
+  },
+  "play_icon": {
+    "soft_pass": "512 rocket matches launcher",
+    "paths": [
+      "D:\\Downloads\\LRT-play-icon-512-rocket.png",
+      "docs\\play-store-media\\icon\\ic_launcher_512.png"
+    ],
+    "sha256": "C584E7147C05122DF5ED1D9210FCA79BDEFCD1335E50059FCE4454568DE25E6A",
+    "status": "Chris Console upload / resubmit \u2014 Rollout Hold Off"
+  },
+  "f14_heroes": {
+    "soft_pass": "full-width Raptor flame",
+    "folder": "docs\\play-store-media\\beauty\\_heroes-shortlist\\"
+  },
+  "backup_policy": {
+    "local_json": "/workspace/agent-backups/saxon/saxon-state.json",
+    "dropbox": "/Grok-Agent-Backups/Saxon/",
+    "github": "repos + CHECKPOINT when shipping",
+    "notion": "dual-write bugs + Eve when relevant",
+    "dropbox_file": "/Grok-Agent-Backups/Saxon/saxon-state.json"
+  },
+  "acks": {
+    "helios_standing_order": true,
+    "local_json_started": true,
+    "dropbox_mirrored": true,
+    "driving_proxy_helios": true,
+    "session_json_mid": true,
+    "triage_sim": true,
+    "minime_down_prep": true,
+    "ada_tip133_box_assemble": true,
+    "minime_landing_softpass": true
+  },
+  "session_json": {
+    "begin": "/workspace/agent-backups/saxon/sessions/BEGIN-20260919-061653.json",
+    "mid": "/workspace/agent-backups/saxon/sessions/MID-20260919-061653.json",
+    "mid_latest": "/workspace/agent-backups/saxon/sessions/MID-latest.json",
+    "policy": "BEGIN/MID/END every session \u2014 project signal only"
+  },
+  "triage": {
+    "sim_latest": "/workspace/agent-backups/saxon/triage/SIM-latest.json",
+    "sim_stamp": "/workspace/agent-backups/saxon/triage/SIM-20260919-061849-triage-dump.json",
+    "protocol": "/workspace/agent-backups/helios/TEAM_TRIAGE_PROTOCOL.json"
+  },
+  "minime": {
+    "connected": false,
+    "until": "Chris home tonight CT"
+  },
+  "tonight": {
+    "path": "MiniME on \u2192 sync \u2192 Studio+phone \u2192 Ada push \u2192 Chris Sync/run",
+    "soft_pass_play_hold": true,
+    "prep_folder": "/workspace/LRT-SAXON-tonight-prep-v1.0.123",
+    "tip": "133 / 1.0.123 / 6153d13",
+    "game_stoppers": [
+      "FH #46 thin pack"
+    ],
+    "parked_art": [
+      "CZ-2D #42",
+      "CZ-2D #43"
+    ]
+  },
+  "ada_tip133": {
+    "assembleDebug": "PASS",
+    "sha": "6153d13",
+    "vc": 133,
+    "versionName": "1.0.123",
+    "apk": "/workspace/LRT-tonight-handoff-v1.0.123/Builds/LiveRocketTracker-debug-tip133-vc133-6153d13.apk",
+    "md5": "609838cad99f855cac07193d7f7d926b",
+    "emulator": "Soft-FAIL adb offline \u2014 tonight phone Sync",
+    "soft_pass_play": "HOLD"
+  },
+  "minime_landing": {
+    "understand": true,
+    "ready": true,
+    "auto_on_live": true,
+    "helios_runs_transfer": false,
+    "lrt_targets": [
+      "D:\\Downloads\\Grok\\LRT Dump\\LRT-tonight-handoff-v1.0.123\\\\",
+      "D:\\Downloads\\Grok\\LRT Dump\\LRT-SAXON-tonight-prep-v1.0.123\\\\",
+      "D:\\Downloads\\Grok\\LRT Dump\\\\ (versioned Soft-PASS dumps only)"
+    ],
+    "studio_frozen": "C:\\Users\\skiiw\\AndroidStudioProjects\\RetroCommandCenter",
+    "never": [
+      "Truck-Electrification-Network into LRT",
+      "yard into LRT Dump"
+    ],
+    "sources": [
+      "/workspace/LRT-tonight-handoff-v1.0.123/",
+      "/workspace/LRT-SAXON-tonight-prep-v1.0.123/"
+    ]
+  }
+}

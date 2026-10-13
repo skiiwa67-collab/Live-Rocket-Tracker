@@ -1,0 +1,47 @@
+{
+  "schema": "tinkabot-helios-efficiency-plan/v1",
+  "at": "2026-09-19T06:28:11.304525-05:00",
+  "goal": "smoother team, less breakage before Chris home",
+  "already_have": [
+    "Dropbox MCP",
+    "Notion MCP",
+    "Gmail",
+    "Google Drive",
+    "X",
+    "Calendar",
+    "Playwright/Chrome/Browser-use",
+    "gh CLI on box (skiiwa67-collab)",
+    "skills: dual-write, triage dump-on-degrade, routines, pstack installed"
+  ],
+  "gaps_causing_breakage": [
+    "No official GitHub MCP (gh CLI Soft-FAIL auth on MiniME; new-repo Auto-review needs Chris tap)",
+    "MiniME offline blocks CopyFromBox Sync \u2014 no alternate phone-test path (emulator Soft-FAIL)",
+    "Dropbox Helios writes sometimes Auto-review blocked while driving-proxy cannot tap Approve",
+    "pstack installed but /setup-pstack never ran \u2014 no pstack-models.mdc",
+    "No single team status board skill that rolls Ada/Da Vinci Soft-PASS into one Notion page"
+  ],
+  "implement_now_no_chris": [
+    "Install GitHub Cursor plugin if auth can wait for tonight",
+    "Write tonight-minime-handoff skill (checklist)",
+    "Write team-status Soft-PASS rollup skill",
+    "Ensure agent-backups paths documented in TEAM_TRIAGE_PROTOCOL",
+    "Ask tinkabot to wrap LL2 or gauge-board status as thin MCP if useful"
+  ],
+  "defer_until_chris_home": [
+    "Auto-review Approve for Dropbox Helios writes / new private grok-agent-backups repo",
+    "/setup-pstack model budget",
+    "MiniME Sync + Studio phone Soft-PASS"
+  ],
+  "priorities_chris_2026_09_19": {
+    "token_efficiency": "fewer wakes, priority false FYIs, one-line Soft-PASS, skills over re-explain",
+    "voice_efficiency": "infer from HARD prefs/session JSON; one-line confirm; stop re-blather",
+    "proactive_guidance": "flag better paths unprompted for non-SWE boss"
+  },
+  "implemented_helios_now": [
+    "skill: Token and voice efficiency",
+    "skill: Tonight MiniME handoff",
+    "skill: Team triage dump-on-degrade",
+    "fleet FYI priority:false efficiency HARD to Ada/Da Vinci/Saxon/Skippy"
+  ],
+  "updated_at": "2026-09-19T06:29:29.066918-05:00"
+}

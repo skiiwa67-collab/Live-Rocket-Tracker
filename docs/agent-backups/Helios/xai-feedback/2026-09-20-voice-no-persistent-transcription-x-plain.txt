@@ -1,0 +1,45 @@
+Voice chat sessions lose all context after the call ends — no persistent transcription for the assistant
+
+Product: Grok Bot / xAI voice chat  
+Type: Product gap / bug feedback (user-filed)  
+Severity: High  
+Date: 2026-09-20  
+Filed by: Chris Olsen (manual archive workaround in progress via Dropbox)
+
+Summary
+
+Voice conversations are not persisted in a queryable history the way typed chat is. Once a voice session ends, the assistant has no usable memory of what was said on that call. Continuity across voice sessions depends entirely on the user manually archiving transcripts (e.g. Dropbox), which is a stopgap — not a product solution.
+
+Steps to reproduce
+
+1. Start a voice call with the assistant.
+2. Discuss a concrete topic in detail (decisions, bugs, project state, standing instructions).
+3. End the call.
+4. Start a new voice call (or later session).
+5. Ask the assistant about the prior topic / what was decided on the previous call.
+
+Expected behavior
+
+Voice transcriptions are stored in the same queryable conversation history as typed messages, so the assistant can recall prior voice context across sessions the same way it recalls typed chat.
+
+Actual behavior
+
+Zero retention for assistant-queryable voice context after the call ends. The assistant cannot answer from the prior voice session unless the user has manually exported and re-supplied that context. Users are forced into external archives (Dropbox, markdown dumps, etc.) as a workaround.
+
+Impact
+
+High. Breaks continuity for anyone who works primarily by voice (driving, hands-busy workflows). Forces manual archiving and re-briefing. Undermines trust in long-running multi-session voice work. Typed chat works for history; voice fails the same expectation.
+
+Severity
+
+High — core continuity feature missing for the voice product surface.
+
+Suggested fix
+
+Persist voice transcriptions in the same queryable store as typed messages (same thread/history model), so assistants and users can search and reference prior voice content without a manual export pipeline.
+
+Notes
+
+- User is filing this as a product gap, not a one-off device glitch.
+- Manual Dropbox export of voice session markdown is in use as a temporary stopgap only.
+- Related desktop issues already filed separately (live voice handshake fails on PC; missing post-call feedback prompt on desktop vs phone).

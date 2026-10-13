@@ -1,0 +1,104 @@
+{
+  "pack": "/workspace/agent-backups/Da-Vinci/tip153-fuel-cutouts-20260923",
+  "gold": {
+    "gravity1_side_stack": "c78f781a40a01676fdb57ae5343ba07b",
+    "electron_stack": "d8ab6a86858da2237a18838c4c4dc91e",
+    "gravity1_side_verified": "c78f781a40a01676fdb57ae5343ba07b",
+    "electron_stack_verified": "d8ab6a86858da2237a18838c4c4dc91e"
+  },
+  "family_status": {
+    "gravity1": "PASS",
+    "cz8a": "PASS",
+    "cz6a": "PASS",
+    "electron": "PASS",
+    "f9": "PASS",
+    "starship": "PASS",
+    "ariane": "PASS",
+    "sr75": "PASS",
+    "nuri": "PASS",
+    "gslv": "PASS",
+    "h3": "PASS",
+    "cz2d": "PASS",
+    "kz11": "PASS",
+    "atlas": "PASS",
+    "cz12": "PASS",
+    "fh": "PASS",
+    "firefly": "PASS",
+    "glenn": "PASS",
+    "isro": "PASS",
+    "kinetica1": "PASS",
+    "lm5": "PASS",
+    "lvm3": "PASS",
+    "pallas1": "PASS",
+    "proton": "PASS",
+    "pslv": "PASS",
+    "sls": "PASS",
+    "soyuz": "PASS",
+    "vulcan": "PASS",
+    "zq3": "PASS"
+  },
+  "fail_remaining": [],
+  "pass_families": [
+    "gravity1",
+    "cz8a",
+    "cz6a",
+    "electron",
+    "f9",
+    "starship",
+    "ariane",
+    "sr75",
+    "nuri",
+    "gslv",
+    "h3",
+    "cz2d",
+    "kz11",
+    "atlas",
+    "cz12",
+    "fh",
+    "firefly",
+    "glenn",
+    "isro",
+    "kinetica1",
+    "lm5",
+    "lvm3",
+    "pallas1",
+    "proton",
+    "pslv",
+    "sls",
+    "soyuz",
+    "vulcan",
+    "zq3"
+  ],
+  "punched_count": 61,
+  "preview_fillunder_board_md5": "2008e1146bb26627e801939d84267798",
+  "preview_gravity1_fillunder_md5": "bda9b1cf5d4c598ae6a9436566d3ce26",
+  "g1": {
+    "s1": {
+      "md5": "6962af66b28c6a41fbbe571145e4d6ed",
+      "fuel_clear": 91.8,
+      "before": 91.8
+    },
+    "s2": {
+      "md5": "aac9bf5dc8245f04e2f6e02883c73acb",
+      "fuel_clear": 94.3,
+      "before": 89.9
+    },
+    "s3": {
+      "md5": "db0011c43b8207707cdaab8af6e04528",
+      "fuel_clear": 91.9,
+      "before": 89.4
+    },
+    "booster": {
+      "md5": "d23e8d6f341221e4369077091792e6d1",
+      "fuel_clear": 92.4,
+      "before": 0.0
+    },
+    "ship": {
+      "md5": "ec6002351608c9c67ae7e439ea5cb8fa",
+      "fuel_clear": 93.4,
+      "before": 0.0
+    }
+  },
+  "soft_fail_hud_copy": true,
+  "hud_g1_s2_unchanged": "0cceb567adc983592d0205d7e1cb2ee0"
+}

@@ -1,0 +1,31 @@
+{
+  "schema": "hard-no-agent-play-publish/v1",
+  "at_ct": "2026-09-23 07:36 CT",
+  "rule": "/workspace/agent-backups/Helios/HARD-no-agent-play-publish.md",
+  "notion": "https://app.notion.com/p/3e4a94933faa814599a5e717f91dba62",
+  "github": "https://github.com/skiiwa67-collab/Live-Rocket-Tracker/issues/58",
+  "acks_soft_pass": [
+    "Ada",
+    "Da Vinci",
+    "DropBox Organizer",
+    "Power Pod",
+    "Saxon",
+    "Skippy the Magnificent",
+    "Strip Electrical",
+    "Yard Software",
+    "tinkabot"
+  ],
+  "acks_pending": [],
+  "notify_soft_fail": [
+    "DFW Node room Soft-FAIL",
+    "New Bot Soft-FAIL not messageable"
+  ],
+  "ada_tip139": {
+    "studio_soft_pass": "MiniME RetroCommandCenter stamp-85 @ 113ad7f \u00b7 139/1.0.129 \u00b7 ALL FOUR on disk",
+    "play_submit": "Soft-FAIL STOPPED never started",
+    "signed_aab": "Soft-FAIL BLOCKER no signingConfigs; need Chris A Studio Generate Signed Bundle OR B secret card passwords+alias",
+    "stage_only": "Soft-PASS after AAB Soft-PASS; Soft-FAIL Publish forever"
+  },
+  "signed_aab_path": "A",
+  "signed_aab_note": "Chris Soft-PASS Generate Signed App Bundle in Studio with lrt-upload.jks; Soft-FAIL Ada secret passwords; Soft-FAIL agent Play publish; Soft-PASS stage Console draft after AAB Soft-PASS"
+}

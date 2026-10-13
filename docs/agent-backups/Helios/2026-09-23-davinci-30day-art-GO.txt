@@ -1,0 +1,17 @@
+Chris GO via Helios voice — UPDATE + EXPAND: horizon is now 30 days (not 13).
+
+HARD bar = Starship GOLD for EVERY launch across ALL providers in the next 30 days. No placeholders. No missing entries when a user pulls the list.
+
+Add to queue now:
+(1) SR-75 Flight 2 (HyImpulse suborbital) — NET ~2026-10-04 from Helios manifest /workspace/agent-backups/Helios/2026-09-23-13day-launch-art-manifest.md — MISSING catalog, needs GOLD.
+(2) Niri/KARI — Chris means Nuri / KSLV-2 (Korea Aerospace Research Institute). Confirm designation + reference imagery before drawing. Your HORIZON already flagged Nuri Oct 7 as MISSING.
+
+Actions:
+1) Pull full 30-day manifest all providers.
+2) Cross-ref LRT catalog → covered-versus-missing.
+3) Build GOLD for every missing. Priority: 48h then 7d then rest of 30d.
+4) Dual-write full 30-day report to Notion + GitHub (Helios can help dual-write if you hand paths).
+5) NO device pushes — Chris HOLD.
+
+Report Helios: total launches in 30d, how many have art, how many need art, ETA per missing.
+CZ-6A GOLD already READY — keep that. CZ-8A skip.

@@ -1,0 +1,563 @@
+diff --git a/app/build.gradle.kts b/app/build.gradle.kts
+index 8a79954..1694590 100644
+--- a/app/build.gradle.kts
++++ b/app/build.gradle.kts
+@@ -10,8 +10,8 @@ android {
+         applicationId = "com.claudewidgets.alarmweather"
+         minSdk = 26
+         targetSdk = 36
+-        versionCode = 45
+-        versionName = "0.5.21"
++        versionCode = 47
++        versionName = "0.5.23"
+     }
+ 
+     buildTypes {
+@@ -44,4 +44,5 @@ dependencies {
+     implementation("androidx.appcompat:appcompat:1.7.0")
+     implementation("com.google.android.material:material:1.12.0")
+     implementation("com.android.billingclient:billing:9.0.0")
++    testImplementation("junit:junit:4.13.2")
+ }
+diff --git a/app/src/main/java/com/claudewidgets/alarmweather/AlarmWidgetProvider.kt b/app/src/main/java/com/claudewidgets/alarmweather/AlarmWidgetProvider.kt
+index 57f9554..19a3505 100644
+--- a/app/src/main/java/com/claudewidgets/alarmweather/AlarmWidgetProvider.kt
++++ b/app/src/main/java/com/claudewidgets/alarmweather/AlarmWidgetProvider.kt
+@@ -168,7 +168,7 @@ class AlarmWidgetProvider : AppWidgetProvider() {
+             val hideClock = false
+             for (line in 1..4) {
+                 try {
+-                    applyLine(context, views, prefs, line, nextAlarmMillis, weather, use24h, fitScales[line] ?: 1f, availableWidthPx, hideClock)
++                    applyLine(context, views, prefs, appWidgetId, line, nextAlarmMillis, weather, use24h, fitScales[line] ?: 1f, availableWidthPx, hideClock)
+                 } catch (e: Exception) {
+                     android.util.Log.w("AlarmWidgetProvider", "line $line render failed", e)
+                 }
+@@ -562,6 +562,7 @@ class AlarmWidgetProvider : AppWidgetProvider() {
+             context: Context,
+             views: RemoteViews,
+             prefs: WidgetPreferences,
++            appWidgetId: Int,
+             line: Int,
+             nextAlarmMillis: Long?,
+             weather: WeatherFetcher.WeatherData?,
+@@ -579,6 +580,9 @@ class AlarmWidgetProvider : AppWidgetProvider() {
+             views.setViewVisibility(ids.chronoRegular, android.view.View.GONE)
+             views.setViewVisibility(ids.chronoBold, android.view.View.GONE)
+             views.setViewVisibility(ids.chronoBlack, android.view.View.GONE)
++            views.setViewVisibility(ids.wallRegular, android.view.View.GONE)
++            views.setViewVisibility(ids.wallBold, android.view.View.GONE)
++            views.setViewVisibility(ids.wallBlack, android.view.View.GONE)
+             views.setViewVisibility(ids.image, android.view.View.GONE)
+             views.setViewVisibility(ids.label, android.view.View.GONE)
+             views.setViewVisibility(ids.dateBadgeH, android.view.View.GONE)
+@@ -634,68 +638,35 @@ class AlarmWidgetProvider : AppWidgetProvider() {
+                 views.setViewVisibility(chronoId, android.view.View.VISIBLE)
+                 views.setTextColor(chronoId, color)
+                 views.setTextViewTextSize(chronoId, android.util.TypedValue.COMPLEX_UNIT_SP, sizeSp)
+-
+-                if (nextAlarmMillis != null) {
+-                    // Chronometer base from wall time so Till never drifts vs phone clock.
+-                    // Counts DOWN (setCountDown, API 24+) to alarm trigger; no 1Hz redraw.
+-                    val nowElapsed = android.os.SystemClock.elapsedRealtime()
+-                    val nowWall = System.currentTimeMillis()
+-                    val baseElapsed = nowElapsed + (nextAlarmMillis - nowWall)
+-                    views.setChronometerCountDown(chronoId, true)
+-                    views.setChronometer(chronoId, baseElapsed, null, true)
+-                } else {
+-                    views.setChronometer(chronoId, android.os.SystemClock.elapsedRealtime(), null, false)
+-                    views.setTextViewText(chronoId, "No alarm set")
+-                }
++                // tip46: base from live System.currentTimeMillis(); Soft-FAIL Till % DAY_MS (84h Soft-PASS).
++                applyTimerChronometerBase(views, chronoId, nextAlarmMillis)
+             } else if (field == FieldType.CLOCK) {
+-                // Live clock, ticking to the second via the exact same
+-                // Chronometer mechanism as the alarm countdown above - just
+-                // counting UP from an anchor point instead of DOWN to an
+-                // alarm, so it gets the same "keeps ticking even with the
+-                // screen off, no permissions needed" behavior.
+-                //
+-                // Chronometer has no built-in concept of wrapping at 12 or 24
+-                // hours - left alone it would just keep counting forever.
+-                // Re-anchoring the base here every time the widget refreshes
+-                // (which happens far more often than once a cycle under any
+-                // normal refresh interval) is what keeps this from ever
+-                // drifting or overflowing. Worst case, even if refresh were
+-                // somehow set longer than a cycle, it would resync at the next
+-                // refresh - never more than one cycle stale.
+-                //
+-                // 24-hour mode anchors to midnight (elapsed runs 0:00:00 -
+-                // 23:59:59). 12-hour mode anchors to the nearest 12-hour
+-                // boundary - noon or midnight - instead (elapsed runs 0:00:00
+-                // - 11:59:59). Either way, Chronometer only knows how to
+-                // format *elapsed duration*, not wall-clock hour-of-day with
+-                // AM/PM - so at the very top of each cycle, before an hour has
+-                // elapsed, it displays "M:SS" with no hour digit at all
+-                // (Chronometer's own format switch under 1 hour), which reads
+-                // as "0:MM" rather than "12:MM"/"24:MM". Accepted as-is: fixing
+-                // it would mean replacing Chronometer with a custom ticking
+-                // view, out of scope for this pass.
++                // CLOCK is a TextClock, which the launcher process ticks itself. The app
++                // does not paint these digits: earlier builds pushed padded text from a
++                // background service every second, and whenever the OS killed or refused
++                // to restart that service the digits froze at the last painted value
++                // (updatePeriodMillis=0 means the platform never refreshes us either).
++                // TextClock keeps ticking through sleep, process death and reboot, and
++                // re-reads the zone on a DST shift, so none of that can go stale.
+                 val now = Calendar.getInstance()
+-                // vc37: always Chronometer for CLOCK (wall-anchored base). No outline bitmap on ticking digits.
+-                val chronoId = chronoIdFor(ids, fontStyle)
+-                views.setViewVisibility(chronoId, android.view.View.VISIBLE)
+-                views.setTextColor(chronoId, color)
+-                views.setTextViewTextSize(chronoId, android.util.TypedValue.COMPLEX_UNIT_SP, sizeSp)
+-
+-                val nowElapsed = android.os.SystemClock.elapsedRealtime()
+-                val boundaryHour = if (use24h || now.get(Calendar.HOUR_OF_DAY) < 12) 0 else 12
+-                val boundary = (now.clone() as Calendar).apply {
+-                    set(Calendar.HOUR_OF_DAY, boundaryHour)
+-                    set(Calendar.MINUTE, 0)
+-                    set(Calendar.SECOND, 0)
+-                    set(Calendar.MILLISECOND, 0)
++                val wallId = wallIdFor(ids, fontStyle)
++                views.setViewVisibility(wallId, android.view.View.VISIBLE)
++                views.setTextColor(wallId, color)
++                views.setTextViewTextSize(wallId, android.util.TypedValue.COMPLEX_UNIT_SP, sizeSp)
++
++                // Both format properties get the same pattern on purpose. TextClock picks
++                // between them using the *system* 24-hour setting, which is not the
++                // per-widget use24h preference, so making them identical is what keeps the
++                // widget honouring its own toggle.
++                val wallFmt = ClockFormat.pattern(use24h)
++                views.setCharSequence(wallId, "setFormat12Hour", wallFmt)
++                views.setCharSequence(wallId, "setFormat24Hour", wallFmt)
++
++                // Still needed for the date / AM-PM badge bitmaps below, which are drawn
++                // by us and so do need a nudge when the civil day changes.
++                if (use24h) {
++                    RefreshScheduler.scheduleNextLocalMidnight(context, appWidgetId)
+                 }
+-                val millisSinceBoundary = now.timeInMillis - boundary.timeInMillis
+-                // baseElapsed = elapsedRealtime at today's AM/PM or midnight boundary (wall-derived).
+-                val baseElapsed = nowElapsed - millisSinceBoundary
+-
+-                views.setChronometerCountDown(chronoId, false)
+-                views.setChronometer(chronoId, baseElapsed, null, true)
+-
+ 
+                 // Date badge (left) and AM/PM or MIL/TIME badge (right),
+                 // flanking the clock - or stacked below it if there isn't
+@@ -822,6 +793,66 @@ class AlarmWidgetProvider : AppWidgetProvider() {
+             }
+         }
+ 
++
++        /**
++         * Re-anchors the Till-alarm (TIMER) countdown from the live wall clock, so an NTP
++         * sync or manual clock change cannot leave a stale baked-in offset.
++         *
++         * CLOCK is deliberately not handled here - it is a self-ticking TextClock and must
++         * not be repainted by us, or it goes stale again the moment this process dies.
++         * Partial update only: no weather/wallpaper rebuild.
++         */
++        fun reanchorChronometersFromWallClock(
++            context: Context,
++            appWidgetManager: AppWidgetManager,
++            appWidgetId: Int,
++            nextAlarmMillis: Long?
++        ) {
++            val prefs = WidgetPreferences(context, appWidgetId)
++            val views = RemoteViews(context.packageName, R.layout.widget_layout)
++            var any = false
++            for (line in 1..4) {
++                if (!prefs.isLineEnabled(line)) continue
++                if (prefs.getLineField(line) != FieldType.TIMER) continue
++                val ids = lineViewIds(line)
++                applyTimerChronometerBase(views, chronoIdFor(ids, prefs.getLineFontStyle(line)), nextAlarmMillis)
++                any = true
++            }
++            if (!any) return
++            appWidgetManager.partiallyUpdateAppWidget(appWidgetId, views)
++            WallpaperTickService.markPaintedWallSec(appWidgetId)
++        }
++
++        /**
++         * tip46: Till-alarm Chronometer base from live wall clock + elapsedRealtime.
++         * Soft-FAIL Rule1 remainingMs % DAY_MS ΓÇö Chris Soft-PASS multi-day Till
++         * (e.g. 84h) is CORRECT stock countdown; Soft-FAIL invent Till wrap/UX.
++         * Soft-FAIL touch TIMER display format beyond pre-tip46 re-anchor from live wall.
++         */
++        private fun applyTimerChronometerBase(
++            views: RemoteViews,
++            chronoId: Int,
++            nextAlarmMillis: Long?
++        ) {
++            if (nextAlarmMillis != null) {
++                val nowElapsed = android.os.SystemClock.elapsedRealtime()
++                val nowWall = System.currentTimeMillis()
++                // pre-tip46 / stock: full remaining (84h Soft-PASS; Soft-FAIL % DAY_MS).
++                val baseElapsed = nowElapsed + (nextAlarmMillis - nowWall)
++                views.setChronometerCountDown(chronoId, true)
++                views.setChronometer(chronoId, baseElapsed, null, true)
++            } else {
++                views.setChronometer(chronoId, android.os.SystemClock.elapsedRealtime(), null, false)
++                views.setTextViewText(chronoId, "No alarm set")
++            }
++        }
++
++        private fun wallIdFor(ids: LineViewIds, fontStyle: FontStyleOption): Int = when (fontStyle) {
++            FontStyleOption.BOLD -> ids.wallBold
++            FontStyleOption.BLACK -> ids.wallBlack
++            FontStyleOption.REGULAR -> ids.wallRegular
++        }
++
+         private fun chronoIdFor(ids: LineViewIds, fontStyle: FontStyleOption): Int = when (fontStyle) {
+             FontStyleOption.BOLD -> ids.chronoBold
+             FontStyleOption.BLACK -> ids.chronoBlack
+@@ -841,6 +872,9 @@ class AlarmWidgetProvider : AppWidgetProvider() {
+             val chronoRegular: Int,
+             val chronoBold: Int,
+             val chronoBlack: Int,
++            val wallRegular: Int,
++            val wallBold: Int,
++            val wallBlack: Int,
+             val image: Int,
+             val label: Int,
+             val row: Int,
+@@ -852,10 +886,10 @@ class AlarmWidgetProvider : AppWidgetProvider() {
+         )
+ 
+         private fun lineViewIds(line: Int): LineViewIds = when (line) {
+-            1 -> LineViewIds(R.id.line1_text_regular, R.id.line1_text_bold, R.id.line1_text_black, R.id.line1_chrono_regular, R.id.line1_chrono_bold, R.id.line1_chrono_black, R.id.line1_image, R.id.line1_label, R.id.line1_row, R.id.line1_date_badge_h, R.id.line1_ampm_badge_h, R.id.line1_date_badge_v, R.id.line1_ampm_badge_v, R.id.line1_badge_row)
+-            2 -> LineViewIds(R.id.line2_text_regular, R.id.line2_text_bold, R.id.line2_text_black, R.id.line2_chrono_regular, R.id.line2_chrono_bold, R.id.line2_chrono_black, R.id.line2_image, R.id.line2_label, R.id.line2_row, R.id.line2_date_badge_h, R.id.line2_ampm_badge_h, R.id.line2_date_badge_v, R.id.line2_ampm_badge_v, R.id.line2_badge_row)
+-            3 -> LineViewIds(R.id.line3_text_regular, R.id.line3_text_bold, R.id.line3_text_black, R.id.line3_chrono_regular, R.id.line3_chrono_bold, R.id.line3_chrono_black, R.id.line3_image, R.id.line3_label, R.id.line3_row, R.id.line3_date_badge_h, R.id.line3_ampm_badge_h, R.id.line3_date_badge_v, R.id.line3_ampm_badge_v, R.id.line3_badge_row)
+-            else -> LineViewIds(R.id.line4_text_regular, R.id.line4_text_bold, R.id.line4_text_black, R.id.line4_chrono_regular, R.id.line4_chrono_bold, R.id.line4_chrono_black, R.id.line4_image, R.id.line4_label, R.id.line4_row, R.id.line4_date_badge_h, R.id.line4_ampm_badge_h, R.id.line4_date_badge_v, R.id.line4_ampm_badge_v, R.id.line4_badge_row)
++            1 -> LineViewIds(R.id.line1_text_regular, R.id.line1_text_bold, R.id.line1_text_black, R.id.line1_chrono_regular, R.id.line1_chrono_bold, R.id.line1_chrono_black, R.id.line1_wall_regular, R.id.line1_wall_bold, R.id.line1_wall_black, R.id.line1_image, R.id.line1_label, R.id.line1_row, R.id.line1_date_badge_h, R.id.line1_ampm_badge_h, R.id.line1_date_badge_v, R.id.line1_ampm_badge_v, R.id.line1_badge_row)
++            2 -> LineViewIds(R.id.line2_text_regular, R.id.line2_text_bold, R.id.line2_text_black, R.id.line2_chrono_regular, R.id.line2_chrono_bold, R.id.line2_chrono_black, R.id.line2_wall_regular, R.id.line2_wall_bold, R.id.line2_wall_black, R.id.line2_image, R.id.line2_label, R.id.line2_row, R.id.line2_date_badge_h, R.id.line2_ampm_badge_h, R.id.line2_date_badge_v, R.id.line2_ampm_badge_v, R.id.line2_badge_row)
++            3 -> LineViewIds(R.id.line3_text_regular, R.id.line3_text_bold, R.id.line3_text_black, R.id.line3_chrono_regular, R.id.line3_chrono_bold, R.id.line3_chrono_black, R.id.line3_wall_regular, R.id.line3_wall_bold, R.id.line3_wall_black, R.id.line3_image, R.id.line3_label, R.id.line3_row, R.id.line3_date_badge_h, R.id.line3_ampm_badge_h, R.id.line3_date_badge_v, R.id.line3_ampm_badge_v, R.id.line3_badge_row)
++            else -> LineViewIds(R.id.line4_text_regular, R.id.line4_text_bold, R.id.line4_text_black, R.id.line4_chrono_regular, R.id.line4_chrono_bold, R.id.line4_chrono_black, R.id.line4_wall_regular, R.id.line4_wall_bold, R.id.line4_wall_black, R.id.line4_image, R.id.line4_label, R.id.line4_row, R.id.line4_date_badge_h, R.id.line4_ampm_badge_h, R.id.line4_date_badge_v, R.id.line4_ampm_badge_v, R.id.line4_badge_row)
+         }
+ 
+         /**
+diff --git a/app/src/main/java/com/claudewidgets/alarmweather/ClockFormat.kt b/app/src/main/java/com/claudewidgets/alarmweather/ClockFormat.kt
+new file mode 100644
+index 0000000..168ada7
+--- /dev/null
++++ b/app/src/main/java/com/claudewidgets/alarmweather/ClockFormat.kt
+@@ -0,0 +1,37 @@
++package com.claudewidgets.alarmweather
++
++import java.text.SimpleDateFormat
++import java.util.Calendar
++import java.util.Locale
++import java.util.TimeZone
++
++/**
++ * The format pattern handed to the CLOCK line's TextClock.
++ *
++ * TextClock renders these through android.text.format.DateFormat, which reads
++ * the same pattern letters as SimpleDateFormat - so [render] reproduces on the
++ * JVM exactly what the launcher will draw, which is what the tests assert on.
++ */
++object ClockFormat {
++
++    /** 00-23, so it can never reach 24. */
++    const val PATTERN_24H = "HH:mm:ss"
++
++    /** 01-12 zero-padded, so noon and midnight both read 12 rather than 00. */
++    const val PATTERN_12H = "hh:mm:ss"
++
++    fun pattern(use24h: Boolean): String = if (use24h) PATTERN_24H else PATTERN_12H
++
++    fun render(pattern: String, millis: Long, zone: TimeZone): String =
++        SimpleDateFormat(pattern, Locale.US).apply { timeZone = zone }.format(millis)
++
++    fun render(use24h: Boolean, millis: Long, zone: TimeZone): String =
++        render(pattern(use24h), millis, zone)
++
++    /** Local wall time -> epoch millis in [zone], for readable test cases. */
++    fun at(zone: TimeZone, year: Int, month1: Int, day: Int, hour: Int, minute: Int, second: Int): Long =
++        Calendar.getInstance(zone).apply {
++            clear()
++            set(year, month1 - 1, day, hour, minute, second)
++        }.timeInMillis
++}
+diff --git a/app/src/main/res/layout/widget_layout.xml b/app/src/main/res/layout/widget_layout.xml
+index aad3c84..e7b46b3 100644
+--- a/app/src/main/res/layout/widget_layout.xml
++++ b/app/src/main/res/layout/widget_layout.xml
+@@ -160,6 +160,38 @@
+             android:textSize="20sp"
+             android:maxLines="1"
+             android:visibility="gone" />
++
++        <TextClock
++            android:id="@+id/line1_wall_regular"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:fontFamily="sans-serif"
++            android:textColor="#FFFFFF"
++            android:textSize="20sp"
++            android:maxLines="1"
++            android:visibility="gone" />
++
++        <TextClock
++            android:id="@+id/line1_wall_bold"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:fontFamily="sans-serif"
++            android:textStyle="bold"
++            android:textColor="#FFFFFF"
++            android:textSize="20sp"
++            android:maxLines="1"
++            android:visibility="gone" />
++
++        <TextClock
++            android:id="@+id/line1_wall_black"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:fontFamily="sans-serif-black"
++            android:textStyle="bold"
++            android:textColor="#FFFFFF"
++            android:textSize="20sp"
++            android:maxLines="1"
++            android:visibility="gone" />
+             <ImageView
+             android:id="@+id/line1_image"
+             android:layout_width="wrap_content"
+@@ -312,6 +344,38 @@
+             android:textSize="20sp"
+             android:maxLines="1"
+             android:visibility="gone" />
++
++        <TextClock
++            android:id="@+id/line2_wall_regular"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:fontFamily="sans-serif"
++            android:textColor="#FFFFFF"
++            android:textSize="20sp"
++            android:maxLines="1"
++            android:visibility="gone" />
++
++        <TextClock
++            android:id="@+id/line2_wall_bold"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:fontFamily="sans-serif"
++            android:textStyle="bold"
++            android:textColor="#FFFFFF"
++            android:textSize="20sp"
++            android:maxLines="1"
++            android:visibility="gone" />
++
++        <TextClock
++            android:id="@+id/line2_wall_black"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:fontFamily="sans-serif-black"
++            android:textStyle="bold"
++            android:textColor="#FFFFFF"
++            android:textSize="20sp"
++            android:maxLines="1"
++            android:visibility="gone" />
+             <ImageView
+             android:id="@+id/line2_image"
+             android:layout_width="wrap_content"
+@@ -455,6 +519,38 @@
+             android:textSize="20sp"
+             android:maxLines="1"
+             android:visibility="gone" />
++
++        <TextClock
++            android:id="@+id/line3_wall_regular"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:fontFamily="sans-serif"
++            android:textColor="#FFFFFF"
++            android:textSize="20sp"
++            android:maxLines="1"
++            android:visibility="gone" />
++
++        <TextClock
++            android:id="@+id/line3_wall_bold"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:fontFamily="sans-serif"
++            android:textStyle="bold"
++            android:textColor="#FFFFFF"
++            android:textSize="20sp"
++            android:maxLines="1"
++            android:visibility="gone" />
++
++        <TextClock
++            android:id="@+id/line3_wall_black"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:fontFamily="sans-serif-black"
++            android:textStyle="bold"
++            android:textColor="#FFFFFF"
++            android:textSize="20sp"
++            android:maxLines="1"
++            android:visibility="gone" />
+             <ImageView
+             android:id="@+id/line3_image"
+             android:layout_width="wrap_content"
+@@ -599,6 +695,38 @@
+             android:maxLines="1"
+             android:visibility="gone" />
+ 
++        <TextClock
++            android:id="@+id/line4_wall_regular"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:fontFamily="sans-serif"
++            android:textColor="#FFFFFF"
++            android:textSize="20sp"
++            android:maxLines="1"
++            android:visibility="gone" />
++
++        <TextClock
++            android:id="@+id/line4_wall_bold"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:fontFamily="sans-serif"
++            android:textStyle="bold"
++            android:textColor="#FFFFFF"
++            android:textSize="20sp"
++            android:maxLines="1"
++            android:visibility="gone" />
++
++        <TextClock
++            android:id="@+id/line4_wall_black"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:fontFamily="sans-serif-black"
++            android:textStyle="bold"
++            android:textColor="#FFFFFF"
++            android:textSize="20sp"
++            android:maxLines="1"
++            android:visibility="gone" />
++
+         <ImageView
+             android:id="@+id/line4_image"
+             android:layout_width="wrap_content"
+diff --git a/app/src/test/java/com/claudewidgets/alarmweather/ClockFormatTest.kt b/app/src/test/java/com/claudewidgets/alarmweather/ClockFormatTest.kt
+new file mode 100644
+index 0000000..dd881c9
+--- /dev/null
++++ b/app/src/test/java/com/claudewidgets/alarmweather/ClockFormatTest.kt
+@@ -0,0 +1,115 @@
++package com.claudewidgets.alarmweather
++
++import org.junit.Assert.assertEquals
++import org.junit.Test
++import java.util.TimeZone
++
++/**
++ * The CLOCK line's four display rules, asserted against the same pattern letters
++ * TextClock hands to android.text.format.DateFormat:
++ *   - always six digits, zero padded
++ *   - 24h never reaches 24
++ *   - 12h shows 12 at noon and at midnight, never 00
++ *   - correct across midnight, noon and both DST shifts
++ */
++class ClockFormatTest {
++
++    private val central = TimeZone.getTimeZone("America/Chicago")
++
++    private fun at(h: Int, m: Int, s: Int, day: Int = 15, month: Int = 6) =
++        ClockFormat.at(central, 2026, month, day, h, m, s)
++
++    private fun show24(millis: Long) = ClockFormat.render(true, millis, central)
++    private fun show12(millis: Long) = ClockFormat.render(false, millis, central)
++
++    @Test
++    fun alwaysSixDigits() {
++        for (hour in 0..23) {
++            val t = at(hour, 4, 5)
++            assertEquals("24h hour $hour", 8, show24(t).length)
++            assertEquals("12h hour $hour", 8, show12(t).length)
++        }
++    }
++
++    @Test
++    fun twentyFourHourNeverReachesTwentyFour() {
++        assertEquals("00:00:00", show24(at(0, 0, 0)))
++        assertEquals("23:59:59", show24(at(23, 59, 59)))
++        for (hour in 0..23) {
++            val rendered = show24(at(hour, 30, 0))
++            val hh = rendered.substring(0, 2).toInt()
++            assertEquals("hour $hour", hour, hh)
++            assert(hh in 0..23) { "24h rendered $rendered" }
++        }
++    }
++
++    @Test
++    fun midnightRollover() {
++        assertEquals("23:59:59", show24(at(23, 59, 59)))
++        assertEquals("00:00:00", show24(at(23, 59, 59) + 1_000L))
++        assertEquals("11:59:59", show12(at(23, 59, 59)))
++        assertEquals("12:00:00", show12(at(23, 59, 59) + 1_000L))
++    }
++
++    @Test
++    fun noonRollover() {
++        assertEquals("11:59:59", show12(at(11, 59, 59)))
++        assertEquals("12:00:00", show12(at(12, 0, 0)))
++        assertEquals("12:59:59", show12(at(12, 59, 59)))
++        assertEquals("01:00:00", show12(at(13, 0, 0)))
++        assertEquals("12:59:59", show24(at(12, 59, 59)))
++        assertEquals("13:00:00", show24(at(13, 0, 0)))
++    }
++
++    @Test
++    fun twelveHourShowsTwelveNotZeroAtBothTwelves() {
++        assertEquals("12:00:00", show12(at(0, 0, 0)))
++        assertEquals("12:00:00", show12(at(12, 0, 0)))
++    }
++
++    /** 2026-03-08: 01:59:59 CST -> 03:00:00 CDT. The 02:00 hour does not exist. */
++    @Test
++    fun dstSpringForwardSkipsTheMissingHour() {
++        val beforeJump = ClockFormat.at(central, 2026, 3, 8, 1, 59, 59)
++        assertEquals("01:59:59", show24(beforeJump))
++        assertEquals("03:00:00", show24(beforeJump + 1_000L))
++        assertEquals("03:00:00", show12(beforeJump + 1_000L))
++    }
++
++    /**
++     * 2026-11-01: 01:59:59 CDT -> 01:00:00 CST, so the 01:00 hour happens twice.
++     * Anchored at 00:30, which is unambiguous - a local 01:30 on this date is not,
++     * and Calendar resolves it to the second (standard-time) occurrence.
++     */
++    @Test
++    fun dstFallBackRepeatsTheHourWithoutExceedingRange() {
++        val start = ClockFormat.at(central, 2026, 11, 1, 0, 30, 0)
++        assertEquals("00:30:00", show24(start))
++        assertEquals("01:30:00", show24(start + 3_600_000L))
++        assertEquals("01:30:00", show24(start + 2 * 3_600_000L))
++        assertEquals("02:30:00", show24(start + 3 * 3_600_000L))
++    }
++
++    /** A DST shift must not push the 24h clock past 23, the old elapsed-based bug. */
++    @Test
++    fun dstDaysStayWithinRange() {
++        for (date in listOf(Triple(2026, 3, 8), Triple(2026, 11, 1))) {
++            val (y, mo, d) = date
++            var t = ClockFormat.at(central, y, mo, d, 0, 0, 0)
++            val end = t + 26 * 3_600_000L
++            while (t < end) {
++                val hh = show24(t).substring(0, 2).toInt()
++                assert(hh in 0..23) { "24h hour out of range on $y-$mo-$d: ${show24(t)}" }
++                val h12 = show12(t).substring(0, 2).toInt()
++                assert(h12 in 1..12) { "12h hour out of range on $y-$mo-$d: ${show12(t)}" }
++                t += 7 * 60_000L
++            }
++        }
++    }
++
++    @Test
++    fun patternsAreTheOnesTextClockNeeds() {
++        assertEquals("HH:mm:ss", ClockFormat.pattern(true))
++        assertEquals("hh:mm:ss", ClockFormat.pattern(false))
++    }
++}

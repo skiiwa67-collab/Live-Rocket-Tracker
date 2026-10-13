@@ -1,0 +1,117 @@
+JVM 17.0.20.1 tzdata 2026b
+columns: local-time isDST | per app mode: TextClock(AOSP port, system24h=on) ClockFormat.kt expected
+== 23:59:59->00:00:00 midnight
+  2026-06-15 23:59:55 true   app24: TextClock=23:59:55 ClockFormat=23:59:55 exp=23:59:55 OK   app12: TextClock=11:59:55 ClockFormat=11:59:55 exp=11:59:55 OK
+  2026-06-15 23:59:56 true   app24: TextClock=23:59:56 ClockFormat=23:59:56 exp=23:59:56 OK   app12: TextClock=11:59:56 ClockFormat=11:59:56 exp=11:59:56 OK
+  2026-06-15 23:59:57 true   app24: TextClock=23:59:57 ClockFormat=23:59:57 exp=23:59:57 OK   app12: TextClock=11:59:57 ClockFormat=11:59:57 exp=11:59:57 OK
+  2026-06-15 23:59:58 true   app24: TextClock=23:59:58 ClockFormat=23:59:58 exp=23:59:58 OK   app12: TextClock=11:59:58 ClockFormat=11:59:58 exp=11:59:58 OK
+  2026-06-15 23:59:59 true   app24: TextClock=23:59:59 ClockFormat=23:59:59 exp=23:59:59 OK   app12: TextClock=11:59:59 ClockFormat=11:59:59 exp=11:59:59 OK
+  2026-06-16 00:00 true   app24: TextClock=00:00:00 ClockFormat=00:00:00 exp=00:00:00 OK   app12: TextClock=12:00:00 ClockFormat=12:00:00 exp=12:00:00 OK
+  2026-06-16 00:00:01 true   app24: TextClock=00:00:01 ClockFormat=00:00:01 exp=00:00:01 OK   app12: TextClock=12:00:01 ClockFormat=12:00:01 exp=12:00:01 OK
+  2026-06-16 00:00:02 true   app24: TextClock=00:00:02 ClockFormat=00:00:02 exp=00:00:02 OK   app12: TextClock=12:00:02 ClockFormat=12:00:02 exp=12:00:02 OK
+  2026-06-16 00:00:03 true   app24: TextClock=00:00:03 ClockFormat=00:00:03 exp=00:00:03 OK   app12: TextClock=12:00:03 ClockFormat=12:00:03 exp=12:00:03 OK
+  2026-06-16 00:00:04 true   app24: TextClock=00:00:04 ClockFormat=00:00:04 exp=00:00:04 OK   app12: TextClock=12:00:04 ClockFormat=12:00:04 exp=12:00:04 OK
+  2026-06-16 00:00:05 true   app24: TextClock=00:00:05 ClockFormat=00:00:05 exp=00:00:05 OK   app12: TextClock=12:00:05 ClockFormat=12:00:05 exp=12:00:05 OK
+== 00:59:59->01:00:00
+  2026-06-16 00:59:55 true   app24: TextClock=00:59:55 ClockFormat=00:59:55 exp=00:59:55 OK   app12: TextClock=12:59:55 ClockFormat=12:59:55 exp=12:59:55 OK
+  2026-06-16 00:59:56 true   app24: TextClock=00:59:56 ClockFormat=00:59:56 exp=00:59:56 OK   app12: TextClock=12:59:56 ClockFormat=12:59:56 exp=12:59:56 OK
+  2026-06-16 00:59:57 true   app24: TextClock=00:59:57 ClockFormat=00:59:57 exp=00:59:57 OK   app12: TextClock=12:59:57 ClockFormat=12:59:57 exp=12:59:57 OK
+  2026-06-16 00:59:58 true   app24: TextClock=00:59:58 ClockFormat=00:59:58 exp=00:59:58 OK   app12: TextClock=12:59:58 ClockFormat=12:59:58 exp=12:59:58 OK
+  2026-06-16 00:59:59 true   app24: TextClock=00:59:59 ClockFormat=00:59:59 exp=00:59:59 OK   app12: TextClock=12:59:59 ClockFormat=12:59:59 exp=12:59:59 OK
+  2026-06-16 01:00 true   app24: TextClock=01:00:00 ClockFormat=01:00:00 exp=01:00:00 OK   app12: TextClock=01:00:00 ClockFormat=01:00:00 exp=01:00:00 OK
+  2026-06-16 01:00:01 true   app24: TextClock=01:00:01 ClockFormat=01:00:01 exp=01:00:01 OK   app12: TextClock=01:00:01 ClockFormat=01:00:01 exp=01:00:01 OK
+  2026-06-16 01:00:02 true   app24: TextClock=01:00:02 ClockFormat=01:00:02 exp=01:00:02 OK   app12: TextClock=01:00:02 ClockFormat=01:00:02 exp=01:00:02 OK
+  2026-06-16 01:00:03 true   app24: TextClock=01:00:03 ClockFormat=01:00:03 exp=01:00:03 OK   app12: TextClock=01:00:03 ClockFormat=01:00:03 exp=01:00:03 OK
+  2026-06-16 01:00:04 true   app24: TextClock=01:00:04 ClockFormat=01:00:04 exp=01:00:04 OK   app12: TextClock=01:00:04 ClockFormat=01:00:04 exp=01:00:04 OK
+  2026-06-16 01:00:05 true   app24: TextClock=01:00:05 ClockFormat=01:00:05 exp=01:00:05 OK   app12: TextClock=01:00:05 ClockFormat=01:00:05 exp=01:00:05 OK
+== 09:59:59->10:00:00
+  2026-06-16 09:59:55 true   app24: TextClock=09:59:55 ClockFormat=09:59:55 exp=09:59:55 OK   app12: TextClock=09:59:55 ClockFormat=09:59:55 exp=09:59:55 OK
+  2026-06-16 09:59:56 true   app24: TextClock=09:59:56 ClockFormat=09:59:56 exp=09:59:56 OK   app12: TextClock=09:59:56 ClockFormat=09:59:56 exp=09:59:56 OK
+  2026-06-16 09:59:57 true   app24: TextClock=09:59:57 ClockFormat=09:59:57 exp=09:59:57 OK   app12: TextClock=09:59:57 ClockFormat=09:59:57 exp=09:59:57 OK
+  2026-06-16 09:59:58 true   app24: TextClock=09:59:58 ClockFormat=09:59:58 exp=09:59:58 OK   app12: TextClock=09:59:58 ClockFormat=09:59:58 exp=09:59:58 OK
+  2026-06-16 09:59:59 true   app24: TextClock=09:59:59 ClockFormat=09:59:59 exp=09:59:59 OK   app12: TextClock=09:59:59 ClockFormat=09:59:59 exp=09:59:59 OK
+  2026-06-16 10:00 true   app24: TextClock=10:00:00 ClockFormat=10:00:00 exp=10:00:00 OK   app12: TextClock=10:00:00 ClockFormat=10:00:00 exp=10:00:00 OK
+  2026-06-16 10:00:01 true   app24: TextClock=10:00:01 ClockFormat=10:00:01 exp=10:00:01 OK   app12: TextClock=10:00:01 ClockFormat=10:00:01 exp=10:00:01 OK
+  2026-06-16 10:00:02 true   app24: TextClock=10:00:02 ClockFormat=10:00:02 exp=10:00:02 OK   app12: TextClock=10:00:02 ClockFormat=10:00:02 exp=10:00:02 OK
+  2026-06-16 10:00:03 true   app24: TextClock=10:00:03 ClockFormat=10:00:03 exp=10:00:03 OK   app12: TextClock=10:00:03 ClockFormat=10:00:03 exp=10:00:03 OK
+  2026-06-16 10:00:04 true   app24: TextClock=10:00:04 ClockFormat=10:00:04 exp=10:00:04 OK   app12: TextClock=10:00:04 ClockFormat=10:00:04 exp=10:00:04 OK
+  2026-06-16 10:00:05 true   app24: TextClock=10:00:05 ClockFormat=10:00:05 exp=10:00:05 OK   app12: TextClock=10:00:05 ClockFormat=10:00:05 exp=10:00:05 OK
+== 11:59:59->12:00:00 noon
+  2026-06-16 11:59:55 true   app24: TextClock=11:59:55 ClockFormat=11:59:55 exp=11:59:55 OK   app12: TextClock=11:59:55 ClockFormat=11:59:55 exp=11:59:55 OK
+  2026-06-16 11:59:56 true   app24: TextClock=11:59:56 ClockFormat=11:59:56 exp=11:59:56 OK   app12: TextClock=11:59:56 ClockFormat=11:59:56 exp=11:59:56 OK
+  2026-06-16 11:59:57 true   app24: TextClock=11:59:57 ClockFormat=11:59:57 exp=11:59:57 OK   app12: TextClock=11:59:57 ClockFormat=11:59:57 exp=11:59:57 OK
+  2026-06-16 11:59:58 true   app24: TextClock=11:59:58 ClockFormat=11:59:58 exp=11:59:58 OK   app12: TextClock=11:59:58 ClockFormat=11:59:58 exp=11:59:58 OK
+  2026-06-16 11:59:59 true   app24: TextClock=11:59:59 ClockFormat=11:59:59 exp=11:59:59 OK   app12: TextClock=11:59:59 ClockFormat=11:59:59 exp=11:59:59 OK
+  2026-06-16 12:00 true   app24: TextClock=12:00:00 ClockFormat=12:00:00 exp=12:00:00 OK   app12: TextClock=12:00:00 ClockFormat=12:00:00 exp=12:00:00 OK
+  2026-06-16 12:00:01 true   app24: TextClock=12:00:01 ClockFormat=12:00:01 exp=12:00:01 OK   app12: TextClock=12:00:01 ClockFormat=12:00:01 exp=12:00:01 OK
+  2026-06-16 12:00:02 true   app24: TextClock=12:00:02 ClockFormat=12:00:02 exp=12:00:02 OK   app12: TextClock=12:00:02 ClockFormat=12:00:02 exp=12:00:02 OK
+  2026-06-16 12:00:03 true   app24: TextClock=12:00:03 ClockFormat=12:00:03 exp=12:00:03 OK   app12: TextClock=12:00:03 ClockFormat=12:00:03 exp=12:00:03 OK
+  2026-06-16 12:00:04 true   app24: TextClock=12:00:04 ClockFormat=12:00:04 exp=12:00:04 OK   app12: TextClock=12:00:04 ClockFormat=12:00:04 exp=12:00:04 OK
+  2026-06-16 12:00:05 true   app24: TextClock=12:00:05 ClockFormat=12:00:05 exp=12:00:05 OK   app12: TextClock=12:00:05 ClockFormat=12:00:05 exp=12:00:05 OK
+== 12:59:59->13:00:00 (12h 12->01)
+  2026-06-16 12:59:55 true   app24: TextClock=12:59:55 ClockFormat=12:59:55 exp=12:59:55 OK   app12: TextClock=12:59:55 ClockFormat=12:59:55 exp=12:59:55 OK
+  2026-06-16 12:59:56 true   app24: TextClock=12:59:56 ClockFormat=12:59:56 exp=12:59:56 OK   app12: TextClock=12:59:56 ClockFormat=12:59:56 exp=12:59:56 OK
+  2026-06-16 12:59:57 true   app24: TextClock=12:59:57 ClockFormat=12:59:57 exp=12:59:57 OK   app12: TextClock=12:59:57 ClockFormat=12:59:57 exp=12:59:57 OK
+  2026-06-16 12:59:58 true   app24: TextClock=12:59:58 ClockFormat=12:59:58 exp=12:59:58 OK   app12: TextClock=12:59:58 ClockFormat=12:59:58 exp=12:59:58 OK
+  2026-06-16 12:59:59 true   app24: TextClock=12:59:59 ClockFormat=12:59:59 exp=12:59:59 OK   app12: TextClock=12:59:59 ClockFormat=12:59:59 exp=12:59:59 OK
+  2026-06-16 13:00 true   app24: TextClock=13:00:00 ClockFormat=13:00:00 exp=13:00:00 OK   app12: TextClock=01:00:00 ClockFormat=01:00:00 exp=01:00:00 OK
+  2026-06-16 13:00:01 true   app24: TextClock=13:00:01 ClockFormat=13:00:01 exp=13:00:01 OK   app12: TextClock=01:00:01 ClockFormat=01:00:01 exp=01:00:01 OK
+  2026-06-16 13:00:02 true   app24: TextClock=13:00:02 ClockFormat=13:00:02 exp=13:00:02 OK   app12: TextClock=01:00:02 ClockFormat=01:00:02 exp=01:00:02 OK
+  2026-06-16 13:00:03 true   app24: TextClock=13:00:03 ClockFormat=13:00:03 exp=13:00:03 OK   app12: TextClock=01:00:03 ClockFormat=01:00:03 exp=01:00:03 OK
+  2026-06-16 13:00:04 true   app24: TextClock=13:00:04 ClockFormat=13:00:04 exp=13:00:04 OK   app12: TextClock=01:00:04 ClockFormat=01:00:04 exp=01:00:04 OK
+  2026-06-16 13:00:05 true   app24: TextClock=13:00:05 ClockFormat=13:00:05 exp=13:00:05 OK   app12: TextClock=01:00:05 ClockFormat=01:00:05 exp=01:00:05 OK
+== DST spring-forward 2026-03-08 01:59:59 CST->03:00:00 CDT
+  2026-03-08 01:59:55 false   app24: TextClock=01:59:55 ClockFormat=01:59:55 exp=01:59:55 OK   app12: TextClock=01:59:55 ClockFormat=01:59:55 exp=01:59:55 OK
+  2026-03-08 01:59:56 false   app24: TextClock=01:59:56 ClockFormat=01:59:56 exp=01:59:56 OK   app12: TextClock=01:59:56 ClockFormat=01:59:56 exp=01:59:56 OK
+  2026-03-08 01:59:57 false   app24: TextClock=01:59:57 ClockFormat=01:59:57 exp=01:59:57 OK   app12: TextClock=01:59:57 ClockFormat=01:59:57 exp=01:59:57 OK
+  2026-03-08 01:59:58 false   app24: TextClock=01:59:58 ClockFormat=01:59:58 exp=01:59:58 OK   app12: TextClock=01:59:58 ClockFormat=01:59:58 exp=01:59:58 OK
+  2026-03-08 01:59:59 false   app24: TextClock=01:59:59 ClockFormat=01:59:59 exp=01:59:59 OK   app12: TextClock=01:59:59 ClockFormat=01:59:59 exp=01:59:59 OK
+  2026-03-08 03:00 true   app24: TextClock=03:00:00 ClockFormat=03:00:00 exp=03:00:00 OK   app12: TextClock=03:00:00 ClockFormat=03:00:00 exp=03:00:00 OK
+  2026-03-08 03:00:01 true   app24: TextClock=03:00:01 ClockFormat=03:00:01 exp=03:00:01 OK   app12: TextClock=03:00:01 ClockFormat=03:00:01 exp=03:00:01 OK
+  2026-03-08 03:00:02 true   app24: TextClock=03:00:02 ClockFormat=03:00:02 exp=03:00:02 OK   app12: TextClock=03:00:02 ClockFormat=03:00:02 exp=03:00:02 OK
+  2026-03-08 03:00:03 true   app24: TextClock=03:00:03 ClockFormat=03:00:03 exp=03:00:03 OK   app12: TextClock=03:00:03 ClockFormat=03:00:03 exp=03:00:03 OK
+  2026-03-08 03:00:04 true   app24: TextClock=03:00:04 ClockFormat=03:00:04 exp=03:00:04 OK   app12: TextClock=03:00:04 ClockFormat=03:00:04 exp=03:00:04 OK
+  2026-03-08 03:00:05 true   app24: TextClock=03:00:05 ClockFormat=03:00:05 exp=03:00:05 OK   app12: TextClock=03:00:05 ClockFormat=03:00:05 exp=03:00:05 OK
+== DST fall-back 2026-11-01 01:59:59 CDT->01:00:00 CST
+  2026-11-01 01:59:55 true   app24: TextClock=01:59:55 ClockFormat=01:59:55 exp=01:59:55 OK   app12: TextClock=01:59:55 ClockFormat=01:59:55 exp=01:59:55 OK
+  2026-11-01 01:59:56 true   app24: TextClock=01:59:56 ClockFormat=01:59:56 exp=01:59:56 OK   app12: TextClock=01:59:56 ClockFormat=01:59:56 exp=01:59:56 OK
+  2026-11-01 01:59:57 true   app24: TextClock=01:59:57 ClockFormat=01:59:57 exp=01:59:57 OK   app12: TextClock=01:59:57 ClockFormat=01:59:57 exp=01:59:57 OK
+  2026-11-01 01:59:58 true   app24: TextClock=01:59:58 ClockFormat=01:59:58 exp=01:59:58 OK   app12: TextClock=01:59:58 ClockFormat=01:59:58 exp=01:59:58 OK
+  2026-11-01 01:59:59 true   app24: TextClock=01:59:59 ClockFormat=01:59:59 exp=01:59:59 OK   app12: TextClock=01:59:59 ClockFormat=01:59:59 exp=01:59:59 OK
+  2026-11-01 01:00 false   app24: TextClock=01:00:00 ClockFormat=01:00:00 exp=01:00:00 OK   app12: TextClock=01:00:00 ClockFormat=01:00:00 exp=01:00:00 OK
+  2026-11-01 01:00:01 false   app24: TextClock=01:00:01 ClockFormat=01:00:01 exp=01:00:01 OK   app12: TextClock=01:00:01 ClockFormat=01:00:01 exp=01:00:01 OK
+  2026-11-01 01:00:02 false   app24: TextClock=01:00:02 ClockFormat=01:00:02 exp=01:00:02 OK   app12: TextClock=01:00:02 ClockFormat=01:00:02 exp=01:00:02 OK
+  2026-11-01 01:00:03 false   app24: TextClock=01:00:03 ClockFormat=01:00:03 exp=01:00:03 OK   app12: TextClock=01:00:03 ClockFormat=01:00:03 exp=01:00:03 OK
+  2026-11-01 01:00:04 false   app24: TextClock=01:00:04 ClockFormat=01:00:04 exp=01:00:04 OK   app12: TextClock=01:00:04 ClockFormat=01:00:04 exp=01:00:04 OK
+  2026-11-01 01:00:05 false   app24: TextClock=01:00:05 ClockFormat=01:00:05 exp=01:00:05 OK   app12: TextClock=01:00:05 ClockFormat=01:00:05 exp=01:00:05 OK
+== full-day sweeps, every second (silent): 2026-03-08, 2026-06-16, 2026-11-01, 2026-12-31->2027-01-01
+== slot-trick counterfactuals at 2026-06-16 13:05:09 CDT
+  app12, only fmt12 set, system24=ON  -> chooseFormat=hh:mm:ss -> 01:05:09 (abc falls back to fmt12: OK)
+  app12, layout default fmt24 (unset attrs -> null) -> same fallback, OK
+  app24, both slots HH:mm:ss, system24=OFF -> 13:05:09
+  app12, both slots hh:mm:ss, system24=ON  -> 01:05:09
+  old 9fa4b0f pattern h:mm:ss at 09:05:09 -> 9:05:09 (len 7, drops zero)
+== locale-digit risk (AOSP zeroPad uses Locale.getDefault()):
+  en-US -> 09:05:09
+  ar-EG -> ٠٩:٠٥:٠٩
+  fa-IR -> ۰۹:۰۵:۰۹
+  hi-IN -> 09:05:09
+  bn-BD -> ০৯:০৫:০৯
+== Chris requirement: app toggle overrides system 24h. 4 combos, both slots = pattern(use24h)
+  app=12h(default) system=12h chosen=hh:mm:ss : 12:00:00 12:05:09 09:05:09 12:00:00 01:05:09 11:59:59  PASS
+  app=12h(default) system=24h chosen=hh:mm:ss : 12:00:00 12:05:09 09:05:09 12:00:00 01:05:09 11:59:59  PASS
+  app=24h system=12h chosen=HH:mm:ss : 00:00:00 00:05:09 09:05:09 12:00:00 13:05:09 23:59:59  PASS
+  app=24h system=24h chosen=HH:mm:ss : 00:00:00 00:05:09 09:05:09 12:00:00 13:05:09 23:59:59  PASS
+== PASS/FAIL table
+| 23:59:59->00:00:00 midnight | 11 s x 2 modes x 2 system-24h | PASS |
+| 00:59:59->01:00:00 | 11 s x 2 modes x 2 system-24h | PASS |
+| 09:59:59->10:00:00 | 11 s x 2 modes x 2 system-24h | PASS |
+| 11:59:59->12:00:00 noon | 11 s x 2 modes x 2 system-24h | PASS |
+| 12:59:59->13:00:00 (12h 12->01) | 11 s x 2 modes x 2 system-24h | PASS |
+| DST spring-forward 2026-03-08 01:59:59 CST->03:00:00 CDT | 11 s x 2 modes x 2 system-24h | PASS |
+| DST fall-back 2026-11-01 01:59:59 CDT->01:00:00 CST | 11 s x 2 modes x 2 system-24h | PASS |
+| full day 2026-03-08 (23h day) every s | 82800 s x 2 modes x 2 system-24h | PASS |
+| full day 2026-06-16 every s | 86400 s x 2 modes x 2 system-24h | PASS |
+| full day 2026-11-01 (25h day) every s | 90000 s x 2 modes x 2 system-24h | PASS |
+| 2026-12-31 23:00 -> 2027-01-01 01:00 every s | 7201 s x 2 modes x 2 system-24h | PASS |
+TOTAL checks=1065916 fails=0

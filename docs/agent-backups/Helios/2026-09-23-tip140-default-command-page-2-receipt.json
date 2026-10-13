@@ -1,0 +1,9 @@
+{
+  "schema": "tip140-default-command-page-2/v1",
+  "at_ct": "2026-09-23 07:38 CT",
+  "spec": "/workspace/agent-backups/Helios/2026-09-23-tip140-default-command-page-2.md",
+  "notion": "https://app.notion.com/p/3e4a94933faa81df80e3db2cb1147847",
+  "github": "https://github.com/skiiwa67-collab/Live-Rocket-Tracker/issues/59",
+  "ada": "Soft-PASS GO tip140 Soft-FAIL tip139 Soft-FAIL device until Chris go",
+  "verdict": "Soft-PASS pref default page 2 Soft-FAIL force launcher scroll Soft-PASS"
+}

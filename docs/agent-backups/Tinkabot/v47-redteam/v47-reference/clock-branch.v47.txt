@@ -1,0 +1,26 @@
+            } else if (field == FieldType.CLOCK) {
+                // CLOCK is a TextClock, which the launcher process ticks itself. The app
+                // does not paint these digits: earlier builds pushed padded text from a
+                // background service every second, and whenever the OS killed or refused
+                // to restart that service the digits froze at the last painted value
+                // (updatePeriodMillis=0 means the platform never refreshes us either).
+                // TextClock keeps ticking through sleep, process death and reboot, and
+                // re-reads the zone on a DST shift, so none of that can go stale.
+                val now = Calendar.getInstance()
+                val wallId = wallIdFor(ids, fontStyle)
+                views.setViewVisibility(wallId, android.view.View.VISIBLE)
+                views.setTextColor(wallId, color)
+                views.setTextViewTextSize(wallId, android.util.TypedValue.COMPLEX_UNIT_SP, sizeSp)
+
+                // Both format properties get the same pattern on purpose. TextClock picks
+                // between them using the *system* 24-hour setting, which is not the
+                // per-widget use24h preference, so making them identical is what keeps the
+                // widget honouring its own toggle.
+                val wallFmt = ClockFormat.pattern(use24h)
+                views.setCharSequence(wallId, "setFormat12Hour", wallFmt)
+                views.setCharSequence(wallId, "setFormat24Hour", wallFmt)
+
+                // Still needed for the date / AM-PM badge bitmaps below, which are drawn
+                // by us and so do need a nudge when the civil day changes.
+                if (use24h) {
+                    RefreshScheduler.scheduleNextLocalMidnight(context, appWidgetId)

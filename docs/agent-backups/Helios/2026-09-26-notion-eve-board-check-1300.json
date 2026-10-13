@@ -1,0 +1,21 @@
+{
+  "routine": "Notion Eve board check",
+  "ran_at_ct": "2026-09-26 13:00 CDT",
+  "baseline_after": "2026-09-26T08:06:48 CDT (prior run succeeded); disk snapshot 2026-09-26-notion-eve-board-check-0807.json",
+  "new_ideas_since_baseline": [],
+  "ideas_newest_createdTime": "2026-09-23T12:20:08Z",
+  "eve_source_ideas": [
+    {"name": "Local LLM UI Comparison", "status": "Parked", "created": "2026-09-15T20:13:38Z"},
+    {"name": "DFW Localized 911 Routing Map (Proof of Concept)", "status": "Active", "created": "2026-09-11T07:47:47Z"}
+  ],
+  "eve_elon_dump_last_edited": "2026-09-01T22:59:19.698Z",
+  "focus_tasks_created_since_2026-09-26T13:00Z": [],
+  "focus_newest_createdTime": "2026-09-23T18:15:34Z",
+  "pages_created_since_2026-09-26": [
+    "Helios voice Soft-PASS — 2026-09-26 LRT live lag + RUD MCC (Helios dual-write from call-8620ea3f; last_edited 2026-09-26T14:19:27Z — not Eve handoff)"
+  ],
+  "lrt_alarm_pages_created_or_edited_by_eve": [],
+  "action": "stay_quiet",
+  "wake_parent": false,
+  "steve_ping": false
+}

@@ -1,0 +1,35 @@
+{
+  "schema": "helios-triage-dump/v1",
+  "trigger": "SIMULATED \u2014 protocol validation 2026-09-19 voice",
+  "trigger_at": "2026-09-19T06:17:52.737606-05:00",
+  "agent": "Helios",
+  "agent_id": "fe0b6c3f-adcf-483f-a7f9-335890abd80d",
+  "resume_packet": {
+    "standing_orders": [
+      "multi-location backup HARD",
+      "session begin/mid/end JSON HARD",
+      "driving-proxy approvals HARD",
+      "team triage dump-on-degrade HARD",
+      "Soft-PASS/Play Soft-FAIL HOLD (FH#46 CZ-2D#42/#43)"
+    ],
+    "lrt": {
+      "themes": [
+        "MCC",
+        "Roscosmos",
+        "SpaceX",
+        "NASA",
+        "CNSA",
+        "Arianespace",
+        "TBD RL",
+        "TBD ULA"
+      ],
+      "tip": "133 stamp-85 6153d13",
+      "handoff": "Ada tip133 MiniME offline",
+      "soft_fail_sheet": "/workspace/lrt-softfail-review-2026-09-19/"
+    },
+    "pstack": "installed; setup-pstack NOT run",
+    "truck_software": "exploring \u2014 capture going forward",
+    "github_backups": "safer path docs/agent-backups/ on Live-Rocket-Tracker until Chris creates dedicated repo"
+  },
+  "test_result": "SIM Soft-PASS if this file lands local+Dropbox"
+}

@@ -1,0 +1,33 @@
+== WallpaperTickService.kt @870b657 (unchanged vs a977c6a: yes)
+101:        const val TICK_MS = 250L
+106:        private const val KEEP_ALIVE_MS = 1000L
+142:        fun startIfNeeded(context: Context) {
+144:                if (anyWallpaperOn(context)) start(context) else stop(context)
+190:                if (!anyWallpaperOn(context)) {
+240:                if (!anyWallpaperOn(context)) return
+266:                    if (type == WidgetPreferences.WALLPAPER_OFF) continue
+267:                    if (!ProAccess.isProUnlocked(context)) continue
+306:                    mgr.partiallyUpdateAppWidget(id, views)
+307:                    maybeRefreshCustomFontClock(context, mgr, id, prefs)
+321:        private fun maybeRefreshCustomFontClock(
+339:            if (last != 0L && absDrift >= 60L) {
+== other callers that start the service
+app/src/main/java/com/claudewidgets/alarmweather/WallpaperKeepAliveReceiver.kt:13:        WallpaperTickService.scheduleKeepAlive(context)
+app/src/main/java/com/claudewidgets/alarmweather/WallpaperKeepAliveReceiver.kt:14:        WallpaperTickService.startIfNeeded(context)
+app/src/main/java/com/claudewidgets/alarmweather/WallpaperKeepAliveReceiver.kt:15:        WallpaperTickService.sampleIfSamplerStale(context)
+app/src/main/java/com/claudewidgets/alarmweather/WidgetConfigureActivity.kt:540:            WallpaperTickService.startIfNeeded(this)
+app/src/main/java/com/claudewidgets/alarmweather/WidgetConfigureActivity.kt:878:            WallpaperTickService.startIfNeeded(this)
+app/src/main/java/com/claudewidgets/alarmweather/WakeRefreshHelper.kt:53:            WallpaperTickService.startIfNeeded(app)
+app/src/main/java/com/claudewidgets/alarmweather/WakeRefreshHelper.kt:54:            WallpaperTickService.scheduleKeepAlive(app)
+app/src/main/java/com/claudewidgets/alarmweather/WakeRefreshHelper.kt:59:                WallpaperTickService.startIfNeeded(app)
+app/src/main/java/com/claudewidgets/alarmweather/WakeRefreshHelper.kt:60:                WallpaperTickService.scheduleKeepAlive(app)
+app/src/main/java/com/claudewidgets/alarmweather/SpeakNowReceiver.kt:59:                WallpaperTickService.startIfNeeded(appContext)
+== WallpaperKeepAliveReceiver
+12:    override fun onReceive(context: Context, intent: Intent?) {
+13-        WallpaperTickService.scheduleKeepAlive(context)
+14-        WallpaperTickService.startIfNeeded(context)
+15-        WallpaperTickService.sampleIfSamplerStale(context)
+16-    }
+17-}
+== APKs in clone/build outputs
+(none tracked)

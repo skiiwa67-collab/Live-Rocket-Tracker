@@ -1,0 +1,44 @@
+{
+  "type": "MID",
+  "agent": "Saxon",
+  "agent_id": "e9c64170-a22b-4c50-a6df-18c1d0d3b627",
+  "at": "2026-09-19T06:16:53.911417-05:00",
+  "delta_since_begin": [
+    "ACK Helios multi-backup; local /workspace/agent-backups/saxon/saxon-state.json",
+    "Dropbox mirror /Grok-Agent-Backups/Saxon/saxon-state.json",
+    "ACK driving-proxy \u2192 Helios",
+    "Session BEGIN/MID JSON scheme started"
+  ],
+  "projects": {
+    "LRT": {
+      "studio": "C:\\\\Users\\\\skiiw\\\\AndroidStudioProjects\\\\RetroCommandCenter",
+      "play_icon_soft_pass": true,
+      "f14_heroes_soft_pass": true,
+      "rollout_hold_off": true,
+      "open": [
+        "Play Console icon upload/resubmit",
+        "tip132+ Soft-FAIL art when Chris free"
+      ]
+    },
+    "ai-live-gauge-board": {
+      "soft_pass": [
+        "Blueprint \u00b7 Saxon (saxon)",
+        "Daylight \u00b7 Saxon (saxon-day)"
+      ],
+      "dead": [
+        "Ignition \u00b7 Saxon"
+      ],
+      "live": "https://skiiwa67-collab.github.io/ai-live-gauge-board/"
+    },
+    "truck_software": {
+      "signal": "no active Saxon work this session \u2014 Yard/Power Pod lanes own"
+    }
+  },
+  "blockers": [
+    "Chris driving \u2014 Soft-PASS/Play HOLD until free"
+  ],
+  "next": [
+    "END JSON on session close",
+    "mirror mid to Dropbox"
+  ]
+}

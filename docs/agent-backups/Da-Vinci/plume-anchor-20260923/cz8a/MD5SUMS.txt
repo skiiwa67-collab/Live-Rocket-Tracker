@@ -1,0 +1,16 @@
+# cz8a plume-anchor Soft-PASS 2026-09-23
+# Soft-FAIL stack/cutaway/shell/side/tank overwrite
+2455d7b3a2ccca1096130921c1eef253  vehicle_cz8a_flame_ship.png
+2455d7b3a2ccca1096130921c1eef253  vehicle_cz8a_flame_s2.png
+2455d7b3a2ccca1096130921c1eef253  vehicle_cz8a_exhaust_ship.png
+6f9b1caf943987f14856de61fdba5db7  vehicle_cz8a_engine_ship.png
+1af13bc002fdfe8520e4d2824e8c2200  compare_cz8a_postsep.png
+02682df952013f7bf73be6d75c497754  _proof_cz8a_postsep.png
+0f5111a272ddb2f9876784100e86bd46  lib_side_bell.py
+0e0a72f8397215c3a5441f96bbdc9b77  vehicle_cz8a_flame_ship_OLD.png
+# body Soft-FAIL proof (untouched — mirrored from hud-assets snapshot)
+144a453138f0cae79ad86107eb77a39f  vehicle_cz8a_ship.png
+# hud-assets stack Soft-FAIL unchanged
+a38272674c951621882f086e7dd85b4d  /workspace/hud-assets/vehicle_cz8a_stack.png
+144a453138f0cae79ad86107eb77a39f  /workspace/hud-assets/vehicle_cz8a_ship.png
+559a33d75ec9c9d761045c73385e2a72  /workspace/hud-assets/vehicle_cz8a_cutaway.png

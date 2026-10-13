@@ -1,0 +1,41 @@
+{
+  "schema": "team-triage-protocol/v1",
+  "name": "Team Triage Protocol \u2014 dump before die",
+  "activated_at": "2026-09-19T06:17:52.737606-05:00",
+  "why": "Prevent repeat of ~1TB chat wipe that took down all agents. Last backup must be complete enough for another agent to resume.",
+  "triggers": [
+    "delayed messages / agent timing out / peer failing",
+    "voice degradation",
+    "GitHub AI dashboard (ai-live-gauge-board) DEG/MAJ/ERR or Cursor/Cloudflare/GitHub degrading",
+    "disk / memory / network issues on box or MiniME",
+    "API error spikes",
+    "Auto-review / connector / MCP outages cascading"
+  ],
+  "immediate_actions": [
+    "1. Dump JSON with ALL relevant project state: decisions, bugs, art, deploy, API setups, standing orders, team assignments \u2014 no filler",
+    "2. Push simultaneously: local + Dropbox /Grok-Agent-Backups/<Agent>/ + GitHub (existing repo docs/agent-backups/ until dedicated repo Soft-PASS) + Notion",
+    "3. Log the trigger event (what/when/severity) into triage log + proxy log if approvals involved",
+    "4. Continue operating if possible; if not, ensure last dump is resume-complete and notify Helios + peers"
+  ],
+  "dashboard_monitoring": {
+    "url": "https://skiiwa67-collab.github.io/ai-live-gauge-board/",
+    "cadence": "periodically during long work; always on Soft-FAIL of peer",
+    "on_degrade": "treat as trigger \u2192 dump+push; attempt reroute jobs to healthy agents before escalating"
+  },
+  "escalation": {
+    "notify": [
+      "all agents via SendToAgent priority",
+      "Chris if available"
+    ],
+    "if_chris_unavailable": "operate under driving-proxy auto-approve (Helios); Soft-PASS/Play Soft-FAIL ship still HOLD unless Helios logs exception"
+  },
+  "owners": [
+    "Helios",
+    "Ada",
+    "Da Vinci",
+    "Saxon",
+    "Skippy",
+    "tinkabot",
+    "future agents"
+  ]
+}

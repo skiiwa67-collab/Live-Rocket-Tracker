@@ -1,0 +1,13 @@
+Helios HOLD for Ada — pre-push dual verify GATE 1 (Chris voice 2026-09-23 ~08:11 CT)
+
+HOLD Studio push until Helios AND Tinkabot both report clean verify on tip134 / tip136 / other staged fixes.
+If either reports a break: HOLD and fix before push.
+
+When BOTH verify clean:
+1) Wire everything properly
+2) Push verified build to Android Studio ONLY
+3) Soft-FAIL Play Store / production / rollout forever
+4) Confirm Helios when Studio push is complete and loadable
+
+Helios will then tell Chris: Studio is ready to sync and load onto your phone.
+Canonical: HARD-no-agent-play-publish.md Ada section + LRT GitHub #58.

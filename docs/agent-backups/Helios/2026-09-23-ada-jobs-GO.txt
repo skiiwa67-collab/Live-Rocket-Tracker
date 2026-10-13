@@ -1,0 +1,7 @@
+Chris GO via Helios voice:
+
+1) PIPELINE STATUS: What version are you building or queuing after tip138? List every tip in the pipeline with a one-line description. Phone is on 138 / 1.0.128. What is next and is anything staged?
+
+2) AUDIT with Da Vinci + Saxon: Confirm gold art path for H3-24 (Martian Moons eXploration), Nuri/KARI, SR-75 Flight 2, CZ-6A. You check LRT Git/Studio for broken builds or regressions from recent tips. Dual-write audit notes with Helios to Notion + GitHub.
+
+HARD: HOLD all device pushes until Chris explicitly clears. No adb. No Studio install to phone.

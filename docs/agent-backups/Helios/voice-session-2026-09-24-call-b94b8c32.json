@@ -1,0 +1,19 @@
+{
+  "call": "call-b94b8c32-0d50-4f3e-b106-af61aec5b106",
+  "date": "2026-09-24",
+  "ended": "~14:55 CT",
+  "topic": "Lumen Keel (Godot 4.7.2) — repo move, export pipeline, first gameplay wave",
+  "done": [
+    "New private canonical repo github.com/skiiwa67-collab/Lumen-Keel (HEAD 87cd17e pre-Cursor)",
+    "tools/export_windows.bat: single plain LumenKeel.exe, versioned archives in builds/, 2-day prune",
+    "Scaling fix verified on 3440x1440 primary (screenshot 14:49)",
+    "Cursor bc-f16a201b first wave: lighting + F flashlight, Title>New Game>hangar spawn, player 6-DOF thrust"
+  ],
+  "final_direction": "KEEP planet Vesper, orbital physics, gravity, collision. Only give player enough thrust/flight-assist to not be pulled in. Ship as 0.2.0. Cursor told to wind down, push clean to Lumen-Keel main, then STOP.",
+  "pending": [
+    "Verify Cursor final push (run-0b5597a7), build on MiniME via zip workaround, brief Chris next session",
+    "LRT lumen-keel folder removal awaiting Chris go (approval was interrupted, nothing pushed)",
+    "MiniME git has no GitHub auth for private repo",
+    "Queued after wave 1: pilot chair, keybind remap, Esc pause menu, quit/clean exit, 4K DPI, semver display"
+  ]
+}

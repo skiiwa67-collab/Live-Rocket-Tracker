@@ -1,0 +1,16 @@
+{
+  "schema": "tinkabot-session-backup/v1",
+  "agent": "tinkabot",
+  "agent_id": "9ca7f7d0-4648-4cfe-bc49-206401979b89",
+  "session_point": "begin",
+  "updated_at": "2026-09-19T06:32:12-0500",
+  "boot": ["team-triage-dump-on-degrade", "soft-pass-must-persist", "session-json-multi-mirror-backup", "chris-efficiency-defaults"],
+  "standing_orders": ["Soft-PASS ≠ ship without skill+routine+multi-mirror+HARD memory", "Helios proxy while Chris unavailable", "Play HOLD", "ll2 unpublished"],
+  "lane": "API→Agent Plugin",
+  "durable": {
+    "ll2": "/workspace/ll2-agent-plugin",
+    "dropbox": "/Grok-Agent-Backups/tinkabot/",
+    "skills": ["soft-pass-must-persist", "team-triage-dump-on-degrade", "session-json-multi-mirror-backup", "chris-efficiency-defaults"]
+  },
+  "persistence_root_cause": "chat wipe; Soft-PASS only in transcript dies; /workspace without mirrors incomplete"
+}

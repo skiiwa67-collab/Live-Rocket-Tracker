@@ -1,0 +1,60 @@
+{
+  "task": "tip139 ALL FOUR Helios Soft-PASS dual-write",
+  "owner": "Chris Olsen",
+  "lead": "tip139 / 1.0.129 ALL FOUR Helios Soft-PASS \u2014 CZ-6A, SR-75, Nuri/KSLV-2, H3-24 MMX. Ada Soft-PASS GO rebuild WITH art (BUILD ONLY). Soft-FAIL phone/Studio until Chris go. Soft-FAIL interrupt during CZ-8A window.",
+  "where_we_are": "2026-09-23 ~07:26 CT",
+  "timestamp_ct": "2026-09-23 07:26 CDT",
+  "canonical_source": "/workspace/agent-backups/Helios/2026-09-23-tip139-ALLFOUR-contents.md",
+  "art_review": "/workspace/agent-backups/Helios/2026-09-23-tip139-art-review.md",
+  "rules": {
+    "invent": "Soft-FAIL",
+    "device_pushes": "Soft-FAIL",
+    "adb": "Soft-FAIL / Do NOT adb",
+    "message_chris": "Soft-FAIL / Do NOT message Chris",
+    "tip139": "BUILD ONLY / HOLD device+Studio until Chris go",
+    "cz8a_window": "Soft-FAIL interrupt during CZ-8A live window"
+  },
+  "all_four_gate": "Soft-PASS",
+  "vehicles": {
+    "cz6a": {
+      "status": "PASS",
+      "stack_md5": "17ad81c62235dd204a535e6f2519e50e"
+    },
+    "sr75": {
+      "status": "PASS",
+      "stack_md5": "4cb9b75bac4ea7b8c92166181460718d"
+    },
+    "nuri": {
+      "status": "PASS",
+      "stack_md5": "9b055e356a44dd7a70a5ba74f8550693"
+    },
+    "h3": {
+      "status": "PASS",
+      "stack_md5": "0716e244a5ca17668ed908ca4c640673"
+    }
+  },
+  "hold_device_note": "Soft-PASS art + Ada BUILD ONLY. Soft-FAIL phone/Studio until Chris go. Soft-FAIL interrupt during CZ-8A window. Held back: none.",
+  "notion": {
+    "status": "Soft-PASS",
+    "destination": "Focus Tasks",
+    "data_source_id": "c924ca98-d41b-47be-91ef-81212cb6a60b",
+    "page_id": "3e4a9493-3faa-813d-8c0a-f02091ef9280",
+    "notion_url": "https://app.notion.com/p/3e4a94933faa813d8c0af02091ef9280",
+    "task_name": "LRT tip139 ALL FOUR Soft-PASS 2026-09-23",
+    "task_status": "In progress"
+  },
+  "github": {
+    "status": "Soft-PASS",
+    "mode": "issue_backup",
+    "reason": "cursor CloudAgent unavailable; preferred docs/SHIP_LOCK_tip139_ALLFOUR.md commit not possible",
+    "preferred_path": "docs/SHIP_LOCK_tip139_ALLFOUR.md",
+    "preferred_path_status": "Soft-FAIL",
+    "owner": "skiiwa67-collab",
+    "repo": "Live-Rocket-Tracker",
+    "issue_number": 55,
+    "github_url_or_issue": "https://github.com/skiiwa67-collab/Live-Rocket-Tracker/issues/55",
+    "title": "tip139 ALL FOUR Helios Soft-PASS 2026-09-23"
+  },
+  "overall": "Soft-PASS",
+  "receipt_path": "/workspace/agent-backups/Helios/2026-09-23-tip139-allfour-dual-write-receipt.json"
+}

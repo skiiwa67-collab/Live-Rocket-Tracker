@@ -1,0 +1,163 @@
+[
+  {
+    "id": "ss14_lift",
+    "t_sec": 0,
+    "title": "LIFTOFF",
+    "detail": "Starbase — Super Heavy / Starship",
+    "severity": "INFO"
+  },
+  {
+    "id": "ss14_maxq",
+    "t_sec": 58,
+    "title": "MAX-Q",
+    "detail": "Peak aerodynamic pressure",
+    "severity": "INFO"
+  },
+  {
+    "id": "ss14_meco",
+    "t_sec": 140,
+    "title": "BOOSTER MECO",
+    "detail": "Super Heavy most engines cut off",
+    "severity": "INFO"
+  },
+  {
+    "id": "ss14_hot",
+    "t_sec": 142,
+    "title": "HOT-STAGE",
+    "detail": "Ship Raptor ignition and stage separation",
+    "severity": "INFO"
+  },
+  {
+    "id": "ss14_bb",
+    "t_sec": 147,
+    "title": "BOOSTBACK START",
+    "detail": "Super Heavy boostback burn start",
+    "severity": "INFO"
+  },
+  {
+    "id": "ss14_bb_end",
+    "t_sec": 187,
+    "title": "BOOSTBACK END",
+    "detail": "Super Heavy boostback burn shutdown",
+    "severity": "INFO"
+  },
+  {
+    "id": "ss14_lb",
+    "t_sec": 396,
+    "title": "LANDING BURN",
+    "detail": "Super Heavy landing burn start",
+    "severity": "WATCH"
+  },
+  {
+    "id": "ss14_lb_end",
+    "t_sec": 421,
+    "title": "LANDING BURN END",
+    "detail": "Super Heavy landing burn shutdown",
+    "severity": "INFO"
+  },
+  {
+    "id": "ss14_seco",
+    "t_sec": 491,
+    "title": "SHIP CUTOFF",
+    "detail": "Starship engine cutoff",
+    "severity": "INFO"
+  },
+  {
+    "id": "ss14_oib",
+    "t_sec": 1517,
+    "title": "ORBIT INSERTION BURN",
+    "detail": "Starship orbit insertion burn start",
+    "severity": "WATCH"
+  },
+  {
+    "id": "ss14_oib_end",
+    "t_sec": 1536,
+    "title": "ORBIT INSERTION END",
+    "detail": "Starship orbit insertion burn shutdown",
+    "severity": "INFO"
+  },
+  {
+    "id": "ss14_dep",
+    "t_sec": 2047,
+    "title": "PAYLOAD DEPLOY START",
+    "detail": "Payload deploy start",
+    "severity": "WATCH"
+  },
+  {
+    "id": "ss14_dep_done",
+    "t_sec": 3879,
+    "title": "PAYLOAD DEPLOY COMPLETE",
+    "detail": "Payload deploy complete",
+    "severity": "INFO"
+  },
+  {
+    "id": "ss14_deorbit",
+    "t_sec": 31957,
+    "title": "DEORBIT BURN",
+    "detail": "Starship deorbit burn start",
+    "severity": "WATCH"
+  },
+  {
+    "id": "ss14_deorbit_end",
+    "t_sec": 31968,
+    "title": "DEORBIT BURN END",
+    "detail": "Starship deorbit burn shutdown",
+    "severity": "INFO"
+  },
+  {
+    "id": "ss14_entry",
+    "t_sec": 34136,
+    "title": "REENTRY",
+    "detail": "Starship atmospheric entry",
+    "severity": "WATCH"
+  },
+  {
+    "id": "ss14_transonic",
+    "t_sec": 35249,
+    "title": "TRANSONIC",
+    "detail": "Starship is transonic",
+    "severity": "INFO"
+  },
+  {
+    "id": "ss14_subsonic",
+    "t_sec": 35287,
+    "title": "SUBSONIC",
+    "detail": "Starship is subsonic",
+    "severity": "INFO"
+  },
+  {
+    "id": "ss14_land_burn",
+    "t_sec": 35411,
+    "title": "LANDING BURN",
+    "detail": "Ship landing burn start",
+    "severity": "WATCH"
+  },
+  {
+    "id": "ss14_flip",
+    "t_sec": 35413,
+    "title": "LANDING FLIP",
+    "detail": "Landing flip",
+    "severity": "INFO"
+  },
+  {
+    "id": "ss14_3to2",
+    "t_sec": 35421,
+    "title": "LANDING BURN 3→2",
+    "detail": "Landing burn 3 to 2 engines",
+    "severity": "INFO"
+  },
+  {
+    "id": "ss14_2to1",
+    "t_sec": 35428,
+    "title": "LANDING BURN 2→1",
+    "detail": "Landing burn 2 to 1 engine",
+    "severity": "INFO"
+  },
+  {
+    "id": "ss14_splash",
+    "t_sec": 35430,
+    "title": "SHIP SPLASHDOWN",
+    "detail": "Starship splashdown (planned)",
+    "severity": "INFO"
+  }
+]

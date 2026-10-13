@@ -1,0 +1,84 @@
+WHO PAYS — STRATEGIC ASSET
+Christopher Olsen. Locked 2026-08-20 from his own words.
+
+This is the money rule for BOTH projects.
+  Trucking: C:\Users\skiiw\Projects\Truck-Electrification-Network
+  911:      C:\Users\skiiw\Projects\Modernized-911-Disaster-Logistics
+Do not merge the folders. Same payer. Same reason. Different payload.
+
+================================================================
+THE RULE
+================================================================
+Carriers and retailers will not absorb metro-scale solar, batteries,
+landing-gear strips, or phone/vehicle mesh radios. LTL runs on pennies
+a mile. A Walmart DC will not volunteer to become a city power plant
+on its own capex.
+
+So you do not ask them to.
+
+Government pays for the MESH and the POWER NODES because both are a
+strategic asset:
+  - 911 mode on phones + emergency radios (information mesh)
+  - warehouse / trailer / strip / pack nodes (energy mesh)
+
+When the grid dies, yards still have kWh and phones still talk.
+That is dual-use infrastructure. Same class as a highway, a levee,
+or STARLINK kits for disaster comms. Not a gift to a trucking company.
+
+The company gets a dock that still works.
+The country gets a distributed plant and a comms mesh it did not have
+to permit as a new power station or a new cell network.
+
+================================================================
+WHAT GOVERNMENT BUYS (the plant, not the freight)
+================================================================
+Pays (THIS project, the power node):
+  - rooftop / trailer-skin PV at NODE-CLASS sites
+  - building packs + snap-in trailer modules at those sites
+  - landing-gear strips (the bus)
+
+Does NOT pay here:
+  - radios. Phones and emergency-vehicle radios already exist.
+    That mesh is the 911 project. Do not put it in the trucking HUD.
+
+Does not pay (unless a later program says so):
+  - the company's freight, drivers, or tractors
+  - inventing a new map app to replace Google/TomTom
+  - every warehouse in the 1.1B SF DFW market
+
+Node-class first: named LTL docks and big DCs we already have numbers
+for. Estes DFW four yards are the prototype. Do not spray panels on
+every industrial roof and call it strategy.
+
+================================================================
+WHY THIS IS NOT A FANTASY SUBSIDY
+================================================================
+Do not invent a bill, a dollar figure, or a named agency appropriation.
+Those are unpublished.
+
+The logic is first-principles:
+  A warehouse service drop cannot charge a fleet. Already locked.
+  So the plant has to live on the site. Roofs + skins + packs + strips.
+  That plant is useless as a private science project and valuable as
+  a city node when ERCOT North is in trouble or a quake kills cell.
+  Public pays for public-option capacity. Private uses it every day
+  so it is maintained.
+
+Existing public language that RHymes (not a claim we have the money):
+  FEMA disaster comms / resilience, DOE grid-resilience, DoD dual-use
+  microgrids, IRA-style energy credits. Use those as doors to knock on.
+  Do not write "the government already funded this."
+
+================================================================
+HUD / SIM MUST SHOW THIS
+================================================================
+A slider or plate: WHO PAYS = public node / private freight.
+Outage beat: grid = 0, public-funded nodes still move kWh.
+Do not show a carrier eating a $X million solar invoice.
+Do not invent the $X.
+
+911 overlay later: same plate. Radios are public. Routes are public.
+The freight still belongs to Estes / Walmart / whoever.
+
+
+UPDATED 2026-08-20: Government does not buy radios. Subsidies = warehouse + trucks + hybrid-axle write-off. See HYBRID-MPG.txt.

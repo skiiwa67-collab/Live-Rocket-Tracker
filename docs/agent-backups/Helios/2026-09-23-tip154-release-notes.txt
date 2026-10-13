@@ -1,0 +1,15 @@
+LRT tip154 Play / listing release notes (2026-09-23)
+Exclude: disclaimer, nozzles (nozzles = tip155+), internal items.
+
+=== BULLETED (243 chars) ===
+Live Rocket Tracker 154
+• Plus wrap at end of event tape
+• AUTO handoff to next upcoming
+• 5 new settings chrome themes
+• Flyout auto-selects launch skin
+• Lock timer 1h / 2h / 48h
+• Plume fixes under nozzles
+• Real-time 1:1 (2–5s; 30s sparse)
+
+=== PLAIN (223 chars) ===
+Live Rocket Tracker 154: Plus wrap at end of tape; AUTO handoff to next upcoming; 5 settings chrome themes; flyout auto-selects launch skin; lock timer 1h/2h/48h; plume fixes under nozzles; real-time 1:1 (2–5s, 30s sparse).

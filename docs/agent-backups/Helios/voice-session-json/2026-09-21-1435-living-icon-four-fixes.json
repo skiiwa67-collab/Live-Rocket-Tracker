@@ -1,0 +1,45 @@
+{
+  "schema": "voice-session-extract/v1",
+  "agent": "Helios",
+  "started": "2026-09-21T14:18:00-05:00",
+  "ended": "2026-09-21T14:55:00-05:00",
+  "slug": "living-icon-four-fixes",
+  "call_id": "voice:call-57f2f419-a0f2-409e-90c6-67e28e5cfe34",
+  "tags": [
+    "Living Icon",
+    "Helios-profile",
+    "voice-continuity",
+    "LRT",
+    "Alarm Pro",
+    "Soft-PASS"
+  ],
+  "decisions": [
+    "Helios profile Soft-PASS non-Elon rewrite",
+    "Mood remount Soft-PASS thrilled\u2192calm md5 2932a5cb",
+    "Pages Soft-PASS docs/status/feed.json commit 46f4344 has_pages true",
+    "Searchable voice export Soft-PASS required every call",
+    "Chris hang-up Soft-PASS keep working leftover Soft-FAILs at customer"
+  ],
+  "product_details": [
+    "Helios pack+personality+avatar Soft-PASS fully local",
+    "Ada/Da Vinci/Tinkabot packs+avatars Soft-PASS local; personality.json Soft-FAIL"
+  ],
+  "bugs": [],
+  "hypotheses": [],
+  "actions": [
+    "Dropbox living-icon folder Soft-FAIL create+mirror feed",
+    "Write personality.json Soft-PASS for Ada Da Vinci Tinkabot if GO already (Chris keep working)",
+    "Finish Dropbox voice-export gaps 08 09 11 14"
+  ],
+  "ops_knowledge": [
+    "Runtime remount Soft-PASS local paths only \u2014 GitHub/Dropbox are mirrors not GIF source",
+    "Platform Soft-PASS one avatar GIF; mood switch Soft-PASS needs remount loop"
+  ],
+  "paths": {
+    "local": "/workspace/agent-backups/helios/voice-session-json/2026-09-21-1435-living-icon-four-fixes.json",
+    "searchable_md": "/workspace/agent-backups/helios/voice-session-json/2026-09-21-1435-living-icon-four-fixes.searchable.md",
+    "voice_export_md": "/workspace/agent-backups/helios/voice-exports/2026-09-21/20-1435-living-icon-four-fixes.md",
+    "summary_md": "/workspace/agent-backups/helios/voice-call-summaries/2026-09-21-1435-living-icon-four-fixes.md"
+  },
+  "summary_md": "/workspace/agent-backups/helios/voice-call-summaries/2026-09-21-1435-living-icon-four-fixes.md"
+}

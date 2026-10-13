@@ -1,0 +1,83 @@
+{
+  "schema": "tinkabot-session-backup/v1",
+  "agent": "tinkabot",
+  "agent_id": "9ca7f7d0-4648-4cfe-bc49-206401979b89",
+  "session_point": "begin",
+  "updated_at": "2026-10-01T08:29:04-05:00",
+  "boot": [
+    "verification-gate",
+    "team-triage-dump-on-degrade",
+    "soft-pass-must-persist",
+    "session-json-multi-mirror-backup",
+    "chris-efficiency-defaults",
+    "voice-call-continuity-log"
+  ],
+  "standing_orders": [
+    "Soft-PASS ≠ ship without skill+routine+multi-mirror+HARD memory",
+    "Helios proxy while Chris unavailable",
+    "Play HOLD — Soft-FAIL agent Play publish forever",
+    "verification-gate before past Soft-PASS claims",
+    "NO SILENT FAILURES — Soft-FAIL Helios on triage/mirror break",
+    "ll2 unpublished",
+    "voice-call-continuity-log at every voice end + pool v2",
+    "continuous persona self-improve; tinkabot owns stack+tool distribution",
+    "Soft-FAIL Studio/device until Chris go",
+    "tinkabot chooses own face/mood/icon; no agent changes another face"
+  ],
+  "lane": "API→Agent Plugin + fleet stack/tool distribution",
+  "projects": {
+    "ll2-agent-plugin": "/workspace/ll2-agent-plugin",
+    "living-icon-status-feed": "/workspace/living-icon/status/feed.json",
+    "living-icon-packages": "/workspace/living-icon/packages/",
+    "verification-gate": "/home/box/agent-data/workflows/verification-gate/",
+    "voice-continuity-pool": "/workspace/agent-backups/team/voice-continuity-pool.json",
+    "voice-session-extract-schema": "/workspace/agent-backups/team/VOICE_SESSION_EXTRACT_SCHEMA.md",
+    "tip139-programming-audit": "/workspace/agent-backups/tinkabot/2026-09-23-tip139-programming-audit.md",
+    "prepush-dual-verify": "/workspace/agent-backups/tinkabot/2026-09-23-prepush-dual-verify.md",
+    "tip46-alarm-pro-clock-audit": "/workspace/agent-backups/tinkabot/2026-09-23-tip46-alarm-pro-clock-audit.md",
+    "alarm-pro-clock-freeze-dig": "/workspace/agent-backups/tinkabot/2026-09-26-alarm-pro-clock-freeze-dig.md",
+    "v48-acceptance-checklist": "/workspace/agent-backups/tinkabot/v48-acceptance-checklist.md",
+    "v48-acceptance-verify": "/workspace/agent-backups/tinkabot/2026-09-26-v48-acceptance-verify.md",
+    "lrt-155-event-tape-sanity": "/workspace/agent-backups/tinkabot/2026-09-29-lrt-155-event-tape-sanity.md",
+    "lrt-155-pause-resume-restore": "/workspace/agent-backups/tinkabot/2026-09-29-lrt-155-pause-resume-restore.md",
+    "lrt-1562-pass1": "/workspace/agent-backups/tinkabot/2026-09-29-lrt-1562-pass1.md",
+    "lrt-1562-pass2": "/workspace/agent-backups/tinkabot/2026-09-29-lrt-1562-pass2.md",
+    "lrt-1562-review-list": "/workspace/agent-backups/tinkabot/2026-09-29-lrt-1562-review-list.md",
+    "play-publish-gate": "/workspace/agent-backups/Helios/HARD-no-agent-play-publish.md"
+  },
+  "signal": {
+    "lrt_1562_pass1": "read-only review tip155-restore HEAD 70093e9 vc155/1.0.145; FAIL items: event-tape early center lock, telFit 10px floor, deFor English seconds, bookGap fakeBold, JAXA/ISRO 40dp height; path /workspace/agent-backups/tinkabot/2026-09-29-lrt-1562-pass1.md",
+    "lrt_1562_pass2": "PASS tip155-restore HEAD efe00ee; five pass-1 fails fixed; items 1-10 PASS source-only Soft-FAIL device; Soft-FAIL phone/Play; path /workspace/agent-backups/tinkabot/2026-09-29-lrt-1562-pass2.md",
+    "lrt_155_pause_resume": "PASS restore b367256 on stamp-85; Soft-FAIL phone/Play; path /workspace/agent-backups/tinkabot/2026-09-29-lrt-155-pause-resume-restore.md",
+    "lrt_155_event_tape": "FAIL sanity 351e364 stamp-85; Soft-FAIL Studio/phone/Play; path /workspace/agent-backups/tinkabot/2026-09-29-lrt-155-event-tape-sanity.md",
+    "tip139_art": "Helios Soft-PASS all four packs 2026-09-23; Soft-FAIL device/Studio until Chris go",
+    "tip46": "Chris cancel Soft-FAIL further tip46 work Soft-FAIL Play; Helios PASS stands at 8bd76cb",
+    "alarm_pro_v48": "Ada Studio v48 only ship candidate; verify vs v48-acceptance-checklist; Soft-FAIL phone/Play until Chris go",
+    "alarm_pro_clock_freeze": "Soft-PASS dig path; Helios owns Ada handoff; Soft-FAIL further dig Soft-FAIL Play",
+    "prepush_dual_verify": "PASS Soft-PASS path /workspace/agent-backups/tinkabot/2026-09-23-prepush-dual-verify.md",
+    "studio_play": "HOLD Soft-FAIL until Chris go; Soft-FAIL Play forever"
+  },
+  "durable": {
+    "local": "/workspace/agent-backups/tinkabot/",
+    "agent_backups": "/home/box/agent-data/agents/9ca7f7d0-4648-4cfe-bc49-206401979b89/backups/",
+    "dropbox": "/Grok-Agent-Backups/tinkabot/",
+    "skills": [
+      "verification-gate",
+      "soft-pass-must-persist",
+      "team-triage-dump-on-degrade",
+      "session-json-multi-mirror-backup",
+      "chris-efficiency-defaults",
+      "living-icon-status-feed",
+      "voice-call-continuity-log"
+    ],
+    "routine": "tinkabot-session-begin-triage"
+  },
+  "mirrors": {
+    "local": "ok",
+    "dropbox": "/Grok-Agent-Backups/tinkabot/session-begin-2026-10-01.json",
+    "notion": "https://app.notion.com/p/3eca94933faa81cea259e7495c4d82bc",
+    "github": "blocked Dropbox-first (no Chris page)"
+  },
+  "soft_pass_hold": true,
+  "trigger": "routine tinkabot session-begin triage 2026-10-01T13:28:37Z"
+}

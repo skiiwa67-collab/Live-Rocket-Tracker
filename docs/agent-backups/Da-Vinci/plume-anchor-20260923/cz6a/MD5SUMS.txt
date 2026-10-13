@@ -1,0 +1,11 @@
+# cz6a plume-anchor Soft-PASS 2026-09-23
+# Soft-FAIL stack/cutaway/shell/side/tank
+11e49ba47e45457a6e1da88effe5aad9  vehicle_cz6a_flame_ship.png
+f1b8ed16263c977302f996d6ba1d9ac9  vehicle_cz6a_engine_ship.png
+11e49ba47e45457a6e1da88effe5aad9  vehicle_cz6a_flame_s2.png
+11e49ba47e45457a6e1da88effe5aad9  vehicle_cz6a_exhaust_ship.png
+db9a202904a0deaecf5c4fd3627a3ced  compare_cz6a_postsep.png
+4963a958807bb706ca2f05bc7e1dab12  _proof_cz6a_postsep.png
+0f5111a272ddb2f9876784100e86bd46  lib_side_bell.py
+# stack Soft-FAIL unchanged 0290f8c22f3d409d2e768d55ddc3a8e9
+# ship Soft-FAIL unchanged 20c417d8163f6c9877c3f26255d18a10

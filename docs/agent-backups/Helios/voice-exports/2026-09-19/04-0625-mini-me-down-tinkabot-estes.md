@@ -1,0 +1,94 @@
+# mini-me-down-tinkabot-estes
+
+- **callId**: `call-610cec88-bc2f-4248-b803-eb2ac298d286`
+- **started**: 2026-09-19 06:25:41 CDT
+- **ended**: 2026-09-19 06:34:45 CDT
+- **duration**: 9m 3s (543917 ms)
+- **ending**: hung-up
+- **model**: grok-voice-3.0
+- **agentId**: `fe0b6c3f-adcf-483f-a7f9-335890abd80d`
+
+## Transcript
+
+**user**: Ilios, I see Ada talking about maybe being down. Let the team know that Mini-Me is going to be down until I go home tonight. So that's the reason I'm wanting y'all to install what you need to install on your local terminals to build the software and do everything you need to do so that all I have to do is come home, turn on Mini-Me, y'all sync with my Mini-Me computer, I hook up, I turn on Android Studio, I plug in my phone, and then I, she can, and then you can push or Ada can push her what she's built for me to my version of Android Studio, and then I can sync and run it.
+
+**assistant**: I'll get the word out that Mini-Me's down until you're home tonight, and that everyone's installing what they need locally so the only thing left for you is syncing and running.
+
+**assistant**: Message is on its way to Ada and the team in your voice. Once they've got their local setups ready, the handoff when you walk in should be pretty seamless — just plug in and run. You want me to check in with them later to make sure everyone's actually got what they need installed?
+
+**assistant**: Quick update — it went to Ada, Da Vinci, Saxon, and Skippy, with an FYI to tinkabot. Everyone knows the drill now.
+
+**user**: Want you to query Tinkabot and find out what he can add to the team to help us. Um, I can't do research while I'm driving, so I need him to figure out how he can become useful with the tools he has accessible, and I want you to work with him to implement said tools. I am a complete noob, so y'all need to do all this stuff yourself, plus I don't have access to my computer. So, y'all need to do this yourself so that when I get home, what I'm trying to do is set the team up to be more um efficient and more, I don't want to say focused, but where there's less problems. Things don't break as often.
+
+**assistant**: Putting Tinkabot to work on that — he'll audit his own tools and propose what he can add, and we'll implement it together without touching your machine.
+
+**assistant**: That's running now — Tinkabot's looking at his own toolkit and we'll build out whatever gaps he finds, all on our end. Anything specific you're hoping he picks up, or should he just go wide?
+
+**user**: Yes, so, I think we're still burning tokens at a prodigious rate. I think there's ways that, there's, there's better, there's more efficient ways to spin up bots to use tokens more efficiently. There's also, because of when I'm talking in voice, you know I'm using a lot of I'm trying to explain things, and the problem is is I'm blathering on about explaining things, and one of the ways that I think will help is I need, I need you to, and I need the whole team to tell me, hey, this, there might be a better way to do something that I'm not aware of because I'm not a software developer. I'm I'm a thinker, I'm really good at figuring out problems and thinking, but when it comes to deep diving software development, I'm not that guy. So, I need y'all to help me figure out better ways to do everything we're doing.
+
+**assistant**: Heard — and Tinkabot's already on it.
+
+**assistant**: Folded all three in — token burn, tighter voice loops, and the team flagging better approaches before you have to ask. That's the kind of thing that compounds — every drive gets shorter, every setup gets cleaner. I'll have a real update for you when Tinkabot comes back with what's actually running.
+
+**assistant**: One thing's already live: a token-and-voice efficiency skill, the Mini-Me handoff skill, and the fleet's been told to keep replies short. Tinkabot's still digging into the cheaper workflows, and I'll bring you his proposals the moment they land. Anything else you want me to steer them toward while you've got the wheel?
+
+**assistant**: Tinkabot's first pass is in. He's got a few things already running — an LL2 plugin scaffold proved out on his box, a session-json multi-mirror skill, and backups wired to Dropbox, GitHub, and Notion. The bigger stuff he's holding for you tonight: GitHub MCP PAT, loading LL2 into Cursor, a slash setup-pstack command, and the Mini-Me sync itself. Nothing for you to touch while you're driving. Want me to have him keep pushing on the token-cheap workflows while the rest waits?
+
+**user**: Um, yes, he can do that, but also, so some of this stuff, he already set up. I tried to get y'all to set it up before, and it always seems to get lost in translation. You do it for one or two sessions, and then it disappears. And if he can solve that problem where literally this never goes away, things that I, that we get implemented, like our triage system, that needs to be always going, period, because that triage system would have saved me and you a whole lot of talking.
+
+**assistant**: That's the real failure mode — stuff that only sticks for a session or two.
+
+**user**: Well, it wouldn't have failed if I hadn't had to delete, and if we had had a proper triage system already set up. And there were already JSON files that were supposed to be being built. I had already had all of y'all supposedly doing that, and I asked you to do it, and I think you're doing it, and then we come back and find out it's not happening like I I thought it would happen, or you're not doing it anymore. And I don't know that because no one ever tells me.
+
+**assistant**: You're right, and that's on us — not just the tech.
+
+**user**: So, using P stack and the whole team, there's a, let's try out something. Um, I want to get into this com- this company. I work for Estes. It's a trucking company in L uh uh L less than a lo- a truckload, LTL trucking uh trucking company. And there's a couple of ways that I I think I can get into their software department. The first one is the UI design on the tablets the drivers use, like I'm using right now, is horrid. Um, there's a thing called um uh misfolds that happens because the driver hooks up to the wrong trailer and then pulls the wrong trailer, and I've done quite a few of those, and one of the reasons it happens is because the UI on the tablet is not clear. Sometimes the numbers match, except for one number, and the driver misfolds. So what I'm wanting to do is use that error, that problem, um, as a way into the company by redesigning the UI, and I'm going to take a screenshot of the UI for you so you can see what it looks like, and I'll tell you exactly what I want. But there's a couple of things that I need to know. I have uh the company's name is Samsara. That's the company that uh is doing our ELDs and where the software that I'm talking about lives, and I don't know what they use to program that. I don't know their development stack. So I need to know how they're building their software and their UI systems as well as all the back end. I need to know how all that works, and I need it broken down Barney style, so I don't have to spend a month trying to figure out how to use their stuff. Um, how y'all can use their stuff. Uh, and then on the other side, I want to I want to uh leverage Starlink. I want to be one of the first trucking companies get um Estes to buy into a tracking and um emergency mode system for our trucks ran by Starlink that in emergency systems or emergency routing systems uh our trucks use Starlink. They're always on. We can always communicate, no matter what. Um, currently everybody uses Qualcomm, but it's janky as hell, old as hell, and it sucks. So I want to I want our company to switch over to Starlink communications.
+
+**assistant**: Two big plays — the Samsara tablet UI redesign as your wedge into Estes, and Starlink as the comms upgrade over Qualcomm. I'll have the team dig into Samsara's stack and map both paths.
+
+**user**: Sounds good. I'm almost to the yard, so that's enough.
+
+**assistant**: Drive safe — I'll have the Samsara and Starlink breakdown ready when you want it.
+
+## Nudges
+
+```json
+[
+  {
+    "id": "nudge-4oe2fnza6h",
+    "request": "Send a message to the team (including Ada) on behalf of the boss: Mini-Me will be down until the boss gets home tonight, and that is the reason the team should install everything they need to install on their local terminals now — to build the software and do everything they need to do — so that when the boss comes home, the only steps left are: turn on Mini-Me, the team syncs with the boss's Mini-Me computer, the boss hooks up, turns on Android Studio, plugs in their phone, Ada pushes what she's built to the boss's version of Android Studio, and then the boss syncs and runs it. Keep the message concise and in the boss's voice.",
+    "atMs": 1789817187359,
+    "answer": null
+  },
+  {
+    "id": "nudge-5ucd55hz75",
+    "request": "Query Tinkabot and work with him to figure out what tools and capabilities he can add to the team to make things more efficient and reduce breakage. The boss cannot do research while driving and has no access to his computer right now, so Tinkabot and you must do all of this yourselves — no involvement from the boss required. Specifically: have Tinkabot assess the tools he currently has accessible, identify gaps where he could become more useful, propose concrete additions, and then implement those tools together. The goal is a smoother, more reliable team setup so that when the boss gets home, fewer things break and the workflow just works. Report back what Tinkabot proposed, what was implemented, and what remains. Do not ask the boss any questions — handle everything autonomously.",
+    "atMs": 1789817265824,
+    "answer": null
+  },
+  {
+    "id": "nudge-6dt68kh3wt",
+    "request": "Add these priorities to the Tinkabot assessment and implementation work already in progress: (1) Token efficiency — find ways to spin up bots and run workflows that burn far fewer tokens; the current rate is prodigious and unsustainable. (2) Voice-mode efficiency — the boss talks a lot while driving to explain things, and the team should infer intent from less input and stop him from having to blather; suggest and implement better ways to capture what he means with fewer words. (3) Proactive guidance — because the boss is a thinker, not a software developer, the whole team (you and Tinkabot especially) should actively flag better ways to do everything we're doing that he may not be aware of, rather than waiting to be asked. Goal: fewer problems, less breakage, smoother operation by the time he's home. Implement what you can autonomously; report proposals and what's live.",
+    "atMs": 1789817352199,
+    "answer": null
+  },
+  {
+    "id": "nudge-i7cj9du3zc",
+    "request": "Critical new priority from the boss, add to the Tinkabot work: solve the persistence problem. Implementations keep getting lost after one or two sessions — they need to survive permanently, not vanish. Specifically, the triage system must be always-on, period, because it would have saved the boss and the team a lot of back-and-forth. The boss has tried getting this set up before and it keeps disappearing. Tinkabot should figure out why things don't stick (session-scoped skills, missing durable storage, no boot-time reload, etc.) and implement a fix so that once something is built and agreed upon, it is permanently active across every session, every reboot, every context — no re-implementation needed. Treat durability as a first-class requirement: anything we ship must outlive the session it was created in. Report what was causing the loss and what permanent mechanism is now in place. Do all of this autonomously; the boss has no computer access while driving.",
+    "atMs": 1789817465391,
+    "answer": null
+  },
+  {
+    "id": "nudge-acg3529nle",
+    "request": "Add to the Tinkabot durability work: the boss is frustrated that setups (triage system, JSON file building) were supposedly running, then silently stopped, with no one reporting the failure. Two fixes needed: (1) Anything that stops working must immediately surface a report to the boss — no silent failures, ever. If a scheduled job, a mirror, or the triage system goes quiet, someone tells him within the same session. (2) Verify the JSON files the boss says were already supposed to be building are actually being written right now, and if not, restart them permanently. The boss should never have to discover that something stopped by asking. Implement proactive status reporting as a standing behavior for the whole team.",
+    "atMs": 1789817503169,
+    "answer": null
+  },
+  {
+    "id": "nudge-2rnc8z1m62",
+    "request": "Research and report back, broken down simply (Barney-style, no jargon, no month-long learning curve) on two things the boss needs:\n\n1) SAMSARA — the ELD/fleet software company whose tablet UI the boss uses at Estes (an LTL trucking company). The boss wants to know: what programming languages, frameworks, and tools does Samsara use to build its driver-facing tablet UI and its backend systems? How does the whole stack work end to end? How could the boss (or the team) build on top of or integrate with Samsara's systems — APIs, SDKs, partner programs, white-label options? Specifically, the boss has a real problem: \"misfolds\" — drivers hook up to the wrong trailer because the tablet UI shows numbers that are nearly identical except for one digit, causing costly errors. He wants to redesign that UI to prevent misfolds. What would it take to propose and build a better UI for that screen?\n\n2) STARLINK FOR TRUCKING — the boss wants Estes to adopt Starlink as its truck communications system, replacing the old Qualcomm units currently in use (which he calls janky and ancient). Research: Does Starlink offer fleet/trucking solutions? What hardware, plans, and APIs exist for in-motion vehicle use? Can it support always-on tracking and emergency routing/emergency mode? How does it compare to Qualcomm's MCP (Mobile Communications Platform) for fleets? What would a pitch to Estes leadership look like — cost, coverage, reliability, emergency features? Is there a path for a single employee to champion this internally?\n\nReport both clearly and simply. The boss is a thinker, not a developer, so keep it accessible. He will send a screenshot of the current Samsara UI later — note that and be ready to analyze it when it arrives. Do all research autonomously; the boss is driving and has no computer access.",
+    "atMs": 1789817661173,
+    "answer": null
+  }
+]
+```

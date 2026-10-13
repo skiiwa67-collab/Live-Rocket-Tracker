@@ -1,0 +1,44 @@
+{
+  "status": "Soft-PASS dual-write complete",
+  "recorded_at": "2026-09-23T09:09:57-05:00",
+  "timezone": "America/Chicago",
+  "owner": "Chris Olsen",
+  "canonical_local": "/workspace/agent-backups/Helios/2026-09-23-console-8-preset-audit.md",
+  "audit_verdict": {
+    "theme_roster": "Soft-PASS memory roster from 2026-09-19: MCC, Roscosmos, CLEAR -> SpaceX, NASA, CNSA, Arianespace, Rocket Lab, ULA",
+    "shipped_console_rockers": [
+      "MCC",
+      "ROS",
+      "CLEAR"
+    ],
+    "shipped_console_rocker_count": 3,
+    "eight_preset_row_wire_ready": "Soft-FAIL",
+    "agency_telemetry_skins": 10,
+    "theme_dumps": "HELD",
+    "play_publish": "Soft-FAIL",
+    "eight_box_shipped_claim": "Soft-FAIL \u2014 do not claim shipped"
+  },
+  "notion": {
+    "status": "created",
+    "database": "Focus Tasks",
+    "page_id": "3e4a9493-3faa-81da-91b7-ce8476ebbf3a",
+    "page_url": "https://app.notion.com/p/3e4a94933faa81da91b7ce8476ebbf3a?pvs=204",
+    "task_status": "In progress"
+  },
+  "github": {
+    "status": "created",
+    "owner": "skiiwa67-collab",
+    "repo": "Live-Rocket-Tracker",
+    "issue_number": 66,
+    "issue_url": "https://github.com/skiiwa67-collab/Live-Rocket-Tracker/issues/66",
+    "docs_url": "https://github.com/skiiwa67-collab/Live-Rocket-Tracker/blob/main/docs/agent-backups/Helios/2026-09-23-console-8-preset-audit.md",
+    "commit_url": "https://github.com/skiiwa67-collab/Live-Rocket-Tracker/commit/7e21aa22bd3c3cd8d81fbd1822dd13c1c4ce1d13",
+    "commit_sha": "7e21aa22bd3c3cd8d81fbd1822dd13c1c4ce1d13"
+  },
+  "hard_holds": [
+    "Do not invent or re-import missing eight-preset art",
+    "Play publish remains Soft-FAIL",
+    "Do not claim an eight-box console shipped"
+  ],
+  "receipt_path": "/workspace/agent-backups/Helios/2026-09-23-console-8-preset-dual-write-receipt.json"
+}

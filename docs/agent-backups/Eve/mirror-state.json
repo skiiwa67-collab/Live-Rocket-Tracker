@@ -1,0 +1,155 @@
+{
+  "schema": "eve-mirror-state/v1",
+  "owner": "Helios",
+  "updated_at": "2026-10-08T07:03:00-05:00",
+  "watch": {
+    "github": [
+      {
+        "repo": "skiiwa67-collab/Live-Rocket-Tracker",
+        "path": "docs/agent-backups/Eve",
+        "role": "primary"
+      },
+      {
+        "repo": "skiiwa67-collab/matter-translator",
+        "path": "docs/agent-backups/eve",
+        "role": "legacy"
+      }
+    ],
+    "notion": {
+      "search_query": "Eve session-",
+      "parent_data_source": "collection://b70dd5a7-33d0-4555-aed3-79fc8fc74fbb"
+    },
+    "dropbox_target": "/Grok-Agent-Backups/Eve/"
+  },
+  "mirrored": [
+    {
+      "session_key": "2026-10-08-0542-begin",
+      "session_point": "begin",
+      "chris_done": false,
+      "sources": {
+        "github": [
+          {
+            "repo": "skiiwa67-collab/matter-translator",
+            "path": "docs/agent-backups/eve/2026-10-08-eve-session-begin.md",
+            "commit": "ff795511f66cdabf1362f622611eca849ffa0d12",
+            "blob_sha": "9dadde118d1811e2feeb2f76e106a8e52491d309",
+            "committed_at": "2026-10-08T06:22:02-05:00"
+          }
+        ],
+        "notion_page_ids": [
+          "3f3a9493-3faa-8105-92af-f6d5636409b1",
+          "3f3a9493-3faa-8132-bc59-fd6bbd9168dd"
+        ]
+      },
+      "local_path": "/workspace/agent-backups/Eve/2026-10-08-0622-eve-session-begin.json",
+      "dropbox": {
+        "path": "/Grok-Agent-Backups/Eve/2026-10-08-0622-eve-session-begin.json",
+        "file_id": "id:P3PTAQvTajAAAAAAAAALqQ",
+        "size": 5638,
+        "content_hash": "facc37d59de2bb8475d248dcedb505b44adb7abf8b8974fba3557f7a5a5e6fa6",
+        "server_modified": "2026-10-08T07:09:42-05:00",
+        "verified": "get_file_metadata + download_link content_hash matches local file"
+      },
+      "mirrored_at": "2026-10-08T07:02:06-05:00"
+    }
+  ],
+  "docs": [
+    {
+      "local_path": "/workspace/agent-backups/Eve/EVE-BACKUP-PROTOCOL.md",
+      "dropbox": {
+        "path": "/Grok-Agent-Backups/Eve/EVE-BACKUP-PROTOCOL.md",
+        "file_id": "id:P3PTAQvTajAAAAAAAAALqw",
+        "size": 3702,
+        "content_hash": "bed818f6aa2f5a54122b6fa9bb52a7051fc414f02719ce4265c8fbd446f405b3",
+        "server_modified": "2026-10-08T07:10:01-05:00"
+      }
+    },
+    {
+      "local_path": "/workspace/agent-backups/Eve/EVE-BACKUP-SCHEMA.md",
+      "dropbox": {
+        "path": "/Grok-Agent-Backups/Eve/EVE-BACKUP-SCHEMA.md",
+        "file_id": "id:P3PTAQvTajAAAAAAAAALqg",
+        "size": 4309,
+        "content_hash": "4b8a6e52c5d01d662a5c4a0dc2f81ed971de14994c617c0cddafba2109460dc4",
+        "server_modified": "2026-10-08T07:09:54-05:00"
+      }
+    }
+  ],
+  "dropbox_folder": {
+    "path": "/Grok-Agent-Backups/Eve",
+    "file_id": "id:P3PTAQvTajAAAAAAAAALpQ",
+    "created_at": "2026-10-08T07:01:39-05:00"
+  },
+  "failures": [],
+  "corrections": [
+    {
+      "at": "2026-10-08T07:10:30-05:00",
+      "by": "Helios",
+      "reason": "Chris: begin_timestamp unknown (null); summary key open->open_items",
+      "replaced_old_ids": [
+        "id:P3PTAQvTajAAAAAAAAALpg",
+        "id:P3PTAQvTajAAAAAAAAALpw",
+        "id:P3PTAQvTajAAAAAAAAALqA"
+      ],
+      "new_files": {
+        "2026-10-08-0622-eve-session-begin.json": {
+          "dropbox_path": "/Grok-Agent-Backups/Eve/2026-10-08-0622-eve-session-begin.json",
+          "file_id": "id:P3PTAQvTajAAAAAAAAALqQ",
+          "size": 5638,
+          "content_hash": "facc37d59de2bb8475d248dcedb505b44adb7abf8b8974fba3557f7a5a5e6fa6",
+          "server_modified": "2026-10-08T07:09:42-05:00",
+          "verified": "size+content_hash match local"
+        },
+        "EVE-BACKUP-SCHEMA.md": {
+          "dropbox_path": "/Grok-Agent-Backups/Eve/EVE-BACKUP-SCHEMA.md",
+          "file_id": "id:P3PTAQvTajAAAAAAAAALqg",
+          "size": 4309,
+          "content_hash": "4b8a6e52c5d01d662a5c4a0dc2f81ed971de14994c617c0cddafba2109460dc4",
+          "server_modified": "2026-10-08T07:09:54-05:00",
+          "verified": "size+content_hash match local"
+        },
+        "EVE-BACKUP-PROTOCOL.md": {
+          "dropbox_path": "/Grok-Agent-Backups/Eve/EVE-BACKUP-PROTOCOL.md",
+          "file_id": "id:P3PTAQvTajAAAAAAAAALqw",
+          "size": 3702,
+          "content_hash": "bed818f6aa2f5a54122b6fa9bb52a7051fc414f02719ce4265c8fbd446f405b3",
+          "server_modified": "2026-10-08T07:10:01-05:00",
+          "verified": "size+content_hash match local"
+        }
+      }
+    }
+  ],
+  "audit_originals": [
+    {
+      "dropbox_path": "/Grok-Agent-Backups/Eve/2026-10-08-0622-eve-session-begin.ORIGINAL-0702.json",
+      "file_id": "id:P3PTAQvTajAAAAAAAAALpg",
+      "size": 5346,
+      "restored_from_rev": "65d53002c9e7d55678714",
+      "rev": "65d53213120ae55678714",
+      "content_hash": "6b7727bd323f8eb688f6a0a0c8e550c7a3e87f258d6f84c7e00c373b63a6026d",
+      "restored_at": "2026-10-08T07:11:20-05:00",
+      "note": "original 07:02 CT mirror with begin_timestamp 05:42 estimate; kept for audit at Chris's request"
+    },
+    {
+      "dropbox_path": "/Grok-Agent-Backups/Eve/EVE-BACKUP-PROTOCOL.ORIGINAL-0702.md",
+      "file_id": "id:P3PTAQvTajAAAAAAAAALpw",
+      "size": 3524,
+      "restored_from_rev": "65d53014f1a1055678714",
+      "rev": "65d532154484555678714",
+      "restored_at": "2026-10-08T07:11:23-05:00"
+    },
+    {
+      "dropbox_path": "/Grok-Agent-Backups/Eve/EVE-BACKUP-SCHEMA.ORIGINAL-0702.md",
+      "file_id": "id:P3PTAQvTajAAAAAAAAALqA",
+      "size": 3719,
+      "restored_from_rev": "65d530309bb3355678714",
+      "rev": "65d532175f5f455678714",
+      "restored_at": "2026-10-08T07:11:25-05:00"
+    }
+  ],
+  "consolidation_2026_10_13": {
+    "github_primary": "skiiwa67-collab/Live-Rocket-Tracker docs/agent-backups/Eve (created 2026-10-13 with copy of matter-translator 2026-10-08-eve-session-begin.md)",
+    "github_legacy_watched": "skiiwa67-collab/matter-translator docs/agent-backups/eve (kept, still watched)",
+    "index": "/workspace/agent-backups/BACKUP-INDEX.md"
+  }
+}

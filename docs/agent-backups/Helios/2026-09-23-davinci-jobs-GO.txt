@@ -1,0 +1,9 @@
+Chris GO via Helios voice:
+
+Build GOLD (Starship package quality, no placeholders) for these four if missing:
+1) Long March 6A — already READY GOLD; keep
+2) SR-75 Flight 2 (HyImpulse, NET ~Oct 4)
+3) Nuri / KSLV-2 (KARI, ~13 days)
+4) H3-24 Martian Moons eXploration (~26 days)
+
+Then full 30-day covered-versus-missing audit. Verify every art asset renders in HUD. Saxon will independent-review. Report Helios: covered vs missing 30 days, broken items, ETA per missing. NO device pushes — HOLD.

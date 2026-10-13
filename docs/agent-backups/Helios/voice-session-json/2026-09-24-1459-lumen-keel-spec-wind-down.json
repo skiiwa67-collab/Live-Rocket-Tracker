@@ -1,0 +1,79 @@
+{
+  "schema": "voice-session-extract/v1",
+  "agent": "Helios",
+  "started": "2026-09-24T14:30:00-05:00",
+  "ended": "2026-09-24T15:00:00-05:00",
+  "slug": "lumen-keel-spec-wind-down",
+  "calls": [
+    "call-b94b8c32-0d50-4f3e-b106-af61aec5b106",
+    "call-9e2c38bc-c759-4ef6-9223-af93374828a5"
+  ],
+  "tags": [
+    "Lumen-Keel",
+    "Godot",
+    "Cursor",
+    "bc-f16a201b",
+    "master-spec",
+    "correction",
+    "zero-G",
+    "thrusters",
+    "Vesper",
+    "Kite-Anchorage",
+    "Harrow",
+    "MiniME",
+    "export",
+    "wind-down"
+  ],
+  "decisions": [
+    "Lumen Keel canonical repo is github.com/skiiwa67-collab/Lumen-Keel (private, main).",
+    "Keep planet Vesper, gravity, orbital mechanics, and collision; it is a real body.",
+    "CORRECTION: no thrust on the player in the station scene. Chris is a human on foot inside an orbiting station. Thrust belongs to the ship later, after undocking.",
+    "Chris's master design spec is the source of truth: docs/DESIGN_SPEC.md (GitHub canonical), Notion 'Lumen Keel' page as fallback/living doc.",
+    "Cursor wound down ~2:59 PM CT: one safe final commit, then stop. M1 to M9 cancelled until Chris returns.",
+    "Chris away 4 days (2026-09-24 to ~09-28); may add content via Eve or Helios into Notion Future additions."
+  ],
+  "product_details": [
+    "Godot 4.7.2 GDScript; Harrow system; planet Vesper; Kite Anchorage station.",
+    "MiniME build D:\\Games\\Mine\\LumenKeel.exe v0.1.0 from 430e5a8, 2:47 PM CT; export tools/export_windows.bat, archives in builds/, 2-day prune."
+  ],
+  "bugs": [
+    {
+      "id": "LK-dark-scene",
+      "status": "open",
+      "note": "v0.1.0 scene nearly black, gray sphere, planet HUD values while on foot"
+    },
+    {
+      "id": "LK-player-thrust",
+      "status": "open",
+      "note": "player movement model wrong for station scene; must be on-foot FPS"
+    },
+    {
+      "id": "LK-no-version",
+      "status": "open",
+      "note": "no config/version in project.godot"
+    },
+    {
+      "id": "LK-miniMe-git-auth",
+      "status": "open",
+      "note": "MiniME git can't clone private repo; zip workaround"
+    }
+  ],
+  "hypotheses": [],
+  "actions": [
+    "Helios: verify Cursor final wind-down push, then sync plus build on MiniME only if Chris asks (no new builds requested).",
+    "Helios/Eve: capture Chris additions into Notion Lumen Keel page; reconcile into GitHub DESIGN_SPEC.md.",
+    "Pending Chris go: remove Live-Rocket-Tracker/lumen-keel.",
+    "Chris: sign MiniME git into GitHub or make repo public."
+  ],
+  "ops_knowledge": [
+    "MiniME Shell is PowerShell; CopyFromBox reaches only C:\\Users\\skiiw.",
+    "Launch export bat via Python subprocess with cwd due to space in path."
+  ],
+  "paths": {
+    "local": "/workspace/agent-backups/Helios/voice-session-json/2026-09-24-1459-lumen-keel-spec-wind-down.json",
+    "dropbox": "/Grok-Agent-Backups/Helios/voice-session-json/2026-09-24-1459-lumen-keel-spec-wind-down.json",
+    "github": "https://github.com/skiiwa67-collab/Lumen-Keel/blob/main/docs/agent-backups/Helios/voice-session-json/2026-09-24-1459-lumen-keel-spec-wind-down.json",
+    "notion": "https://app.notion.com/p/3e5a94933faa81c3ab70d32751c9a951"
+  },
+  "summary_md": "/workspace/agent-backups/Helios/voice-call-summaries/2026-09-24-1459-lumen-keel-spec-wind-down.md"
+}

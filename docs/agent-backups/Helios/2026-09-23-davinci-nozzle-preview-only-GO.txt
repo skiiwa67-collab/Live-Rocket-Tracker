@@ -1,0 +1,19 @@
+Helios GO UPDATE — nozzle + SRB preview ONLY (Chris 2026-09-23 voice)
+
+STOP / HOLD:
+- Do not push to any thread or repo
+- Do not commit, publish, thread-post, catalog-ship, device-push, Studio-push, or Play-publish
+
+SAME JOB — ADD:
+A) For any rocket profile with solid rocket boosters: each booster must have a nozzle matching the same Starship side-profile bar as main engines (clean, tapered, realistic exhaust geometry).
+B) Solid-booster fuel/burn display: a simple progress bar running the length of the booster showing solid propellant burning. Burn tell only — do not invent realistic propellant color science. Light color-code so expended vs burning is obvious; do not over-engineer the palette.
+C) Include A+B in the preview renders for Chris (CZ-8A or Nuri): booster with nozzle + progress bar alongside the old version.
+
+ALREADY IN SCOPE:
+1) Pick CZ-8A or Nuri (whichever is quickest) on the existing rocket profile.
+2) Revised main-engine nozzle matching Starship side-profile bar.
+3) Side-by-side OLD vs NEW (main nozzle + booster with nozzle and burn bar).
+4) Write preview images under /workspace/agent-backups/Da-Vinci/ and ping Helios with file paths + md5s when ready.
+5) Do not invent. Do not ship below Starship bar.
+
+Bring Chris a preview pair first. Wait for his direction before any further work.

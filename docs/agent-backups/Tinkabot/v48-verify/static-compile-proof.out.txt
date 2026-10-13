@@ -1,0 +1,73 @@
+== tracked source files
+app/src/main/java/com/claudewidgets/alarmweather/AlarmAnimationReceiver.kt
+app/src/main/java/com/claudewidgets/alarmweather/AlarmChangeReceiver.kt
+app/src/main/java/com/claudewidgets/alarmweather/AlarmWeatherApp.kt
+app/src/main/java/com/claudewidgets/alarmweather/AlarmWidgetProvider.kt
+app/src/main/java/com/claudewidgets/alarmweather/AnimationClock.kt
+app/src/main/java/com/claudewidgets/alarmweather/AnimationScheduler.kt
+app/src/main/java/com/claudewidgets/alarmweather/AppInfoActivity.kt
+app/src/main/java/com/claudewidgets/alarmweather/BootReceiver.kt
+app/src/main/java/com/claudewidgets/alarmweather/ClockFormat.kt
+app/src/main/java/com/claudewidgets/alarmweather/ColorPickerView.kt
+app/src/main/java/com/claudewidgets/alarmweather/ColorWheelView.kt
+app/src/main/java/com/claudewidgets/alarmweather/FieldType.kt
+app/src/main/java/com/claudewidgets/alarmweather/FramePreviewView.kt
+app/src/main/java/com/claudewidgets/alarmweather/FrameRenderer.kt
+app/src/main/java/com/claudewidgets/alarmweather/LocationHelper.kt
+app/src/main/java/com/claudewidgets/alarmweather/OutlinedTextRenderer.kt
+app/src/main/java/com/claudewidgets/alarmweather/ParticleOverlayView.kt
+app/src/main/java/com/claudewidgets/alarmweather/ProAccess.kt
+app/src/main/java/com/claudewidgets/alarmweather/ProBillingManager.kt
+app/src/main/java/com/claudewidgets/alarmweather/RefreshReceiver.kt
+app/src/main/java/com/claudewidgets/alarmweather/RefreshScheduler.kt
+app/src/main/java/com/claudewidgets/alarmweather/SpeakNowReceiver.kt
+app/src/main/java/com/claudewidgets/alarmweather/TimeChangeReceiver.kt
+app/src/main/java/com/claudewidgets/alarmweather/TtsLanguagePacks.kt
+app/src/main/java/com/claudewidgets/alarmweather/WakeRefreshHelper.kt
+app/src/main/java/com/claudewidgets/alarmweather/WallpaperKeepAliveReceiver.kt
+app/src/main/java/com/claudewidgets/alarmweather/WallpaperTickService.kt
+app/src/main/java/com/claudewidgets/alarmweather/WeatherFetcher.kt
+app/src/main/java/com/claudewidgets/alarmweather/WeatherTts.kt
+app/src/main/java/com/claudewidgets/alarmweather/WidgetConfigureActivity.kt
+app/src/main/java/com/claudewidgets/alarmweather/WidgetFonts.kt
+app/src/main/java/com/claudewidgets/alarmweather/WidgetNamedPresets.kt
+app/src/main/java/com/claudewidgets/alarmweather/WidgetPreferences.kt
+app/src/test/java/com/claudewidgets/alarmweather/ClockFormatTest.kt
+== untracked/ignored files in clone (should be none)
+== declared top-level types in package (tracked)
+AlarmAnimationReceiver AlarmChangeReceiver AlarmWeatherApp AlarmWidgetProvider AnimationClock AnimationScheduler AppInfoActivity BootReceiver ClockFormat ClockFormatTest ColorPickerView ColorWheelView FieldType FontStyleOption FramePreviewView FrameRenderer LocationHelper OutlinedTextRenderer ParticleOverlayView ProAccess ProBillingManager RefreshReceiver RefreshScheduler SpeakNowReceiver TimeChangeReceiver TtsLanguagePacks WakeRefreshHelper WallpaperKeepAliveReceiver WallpaperTickService WeatherFetcher WeatherTts WidgetConfigureActivity WidgetFonts WidgetNamedPresets WidgetPreferences 
+== imports not from platform/libs (should be none)
+rc=1
+== package-internal imports
+== PascalCase identifiers used as receivers (X.) that are NOT declared in package and NOT platform (heuristic)
+ALL AdapterView AlarmClock BuildConfig Effect Gravity Math PeriodicWorkRequest SharedPreferences String System 
+== symbols changed in v48 commit: definition sites
+object ClockFormat                       app/src/main/java/com/claudewidgets/alarmweather/ClockFormat.kt:15:object ClockFormat {
+fun pattern                              app/src/main/java/com/claudewidgets/alarmweather/ClockFormat.kt:23:    fun pattern(use24h: Boolean): String = if (use24h) PATTERN_24H else PATTERN_12H
+fun cancelDayRoll                        app/src/main/java/com/claudewidgets/alarmweather/RefreshScheduler.kt:86:    fun cancelDayRoll(context: Context, appWidgetId: Int) {
+fun scheduleNextLocalMidnight            app/src/main/java/com/claudewidgets/alarmweather/RefreshScheduler.kt:68:    fun scheduleNextLocalMidnight(context: Context, appWidgetId: Int) {
+private fun dayRollPendingIntent         app/src/main/java/com/claudewidgets/alarmweather/RefreshScheduler.kt:91:    private fun dayRollPendingIntent(context: Context, appWidgetId: Int): PendingIntent {
+const val ACTION_DAY_ROLL                app/src/main/java/com/claudewidgets/alarmweather/RefreshReceiver.kt:32:        const val ACTION_DAY_ROLL = "com.claudewidgets.alarmweather.ACTION_DAY_ROLL"
+private fun wallIdFor                    app/src/main/java/com/claudewidgets/alarmweather/AlarmWidgetProvider.kt:809:        private fun wallIdFor(ids: LineViewIds, fontStyle: FontStyleOption): Int = when (fontStyle) {
+val wallRegular                          app/src/main/java/com/claudewidgets/alarmweather/AlarmWidgetProvider.kt:834:            val wallRegular: Int,
+line1_wall_regular layout=1 provider=1
+line1_wall_bold layout=1 provider=1
+line1_wall_black layout=1 provider=1
+line2_wall_regular layout=1 provider=1
+line2_wall_bold layout=1 provider=1
+line2_wall_black layout=1 provider=1
+line3_wall_regular layout=1 provider=1
+line3_wall_bold layout=1 provider=1
+line3_wall_black layout=1 provider=1
+line4_wall_regular layout=1 provider=1
+line4_wall_bold layout=1 provider=1
+line4_wall_black layout=1 provider=1
+== removed symbols: remaining references (should be none)
+rc=1
+== applyLine call arity: definition params vs call
+172:                    applyLine(context, views, prefs, appWidgetId, line, nextAlarmMillis, weather, use24h, fitScales[line] ?: 1f, availableWidthPx, hideClock)
+562:        private fun applyLine(
+== ClockFormatTest references
+      4 app/src/test/java/com/claudewidgets/alarmweather/ClockFormatTest.kt:ClockFormat.at
+      2 app/src/test/java/com/claudewidgets/alarmweather/ClockFormatTest.kt:ClockFormat.pattern
+      2 app/src/test/java/com/claudewidgets/alarmweather/ClockFormatTest.kt:ClockFormat.render

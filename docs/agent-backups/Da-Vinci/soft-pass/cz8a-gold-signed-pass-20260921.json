@@ -1,0 +1,17 @@
+{
+  "schema": "soft-pass-lock/v1",
+  "agent": "Da Vinci",
+  "date": "2026-09-21",
+  "vehicle": "CZ-8A / Long March 8A",
+  "status": "SIGNED_PASS",
+  "signal": "Chris heart reaction on Soft-PASS ready message",
+  "assets": {
+    "stack": {"path": "/workspace/hud-assets/vehicle_cz8a_stack.png", "md5": "9095cc3da325c44d5520e268096468a1"},
+    "cutaway": {"path": "/workspace/hud-assets/vehicle_cz8a_cutaway.png", "md5": "8164e1604bba2579ecfb76bc391b0acf"},
+    "shell": {"path": "/workspace/hud-assets/vehicle_cz8a_shell.png", "md5": "38e95ebad37685b015392628c32818d6"},
+    "proof": {"path": "/workspace/hud-assets/_proof_cz8a_gold.png", "md5": "223837646b2a1e40f4207481b7e4590f"},
+    "ready": "/workspace/lrt-cz8a-gold-20260921/READY.md"
+  },
+  "git_owner": "Ada",
+  "note": "GOLD Soft-FAIL rebuild Soft-PASS; Ada wires drawables"
+}

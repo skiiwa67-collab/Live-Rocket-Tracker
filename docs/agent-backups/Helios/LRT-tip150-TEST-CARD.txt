@@ -1,0 +1,30 @@
+LRT tip150 TEST CARD — Studio only (no phone / Play until Chris go)
+Build: tip150 @ 150/1.0.140 (plus wrap + AUTO end-of-tape + settings chrome)
+Date: 2026-09-23 CT (rev 2 — items 3+4 verified, removed)
+
+VERIFIED (Chris done — do not retest)
+- Settings chrome for NASA / CNSA / Ariane / R.LAB / ULA
+- Flyout 8-chip auto-select by launch
+
+IMMEDIATE (do these now)
+
+1. Plus wrap — Open Soyuz 2.1b Progress SIM. Tap + until the last event (SECO / end of tape). One more + must jump back to the start of the launch, not freeze at MPH ~17163.
+
+2. AUTO handoff (end-of-tape) — On a finished Soyuz sim, tap AUTO. App must leave Soyuz and track the next upcoming launch (e.g. Long March ~17h).
+
+3. Lock timer — Set LCK to 1h, 2h, and 48h. Confirm each duration holds and unlocks on schedule (or clears when you turn LCK off).
+
+4. Disclaimer — Main screen still shows ENTERTAINMENT ONLY under the title. Wallpaper tip136 entertainment text still present.
+
+5. Plumes — Fire a few families (Falcon, Electron, CZ, H3 if handy). Plume sits under nozzle, not floating or missing.
+
+6. Nozzles — Side profile nozzles look Starship-bar clean (no empty / stub flame packs from tip145 pack).
+
+Phone / adb / Play: Soft-FAIL until Chris says go after IMMEDIATE items are green AND tip151 open bugs close.
+
+OPEN BUGS (tip151 — Soft-FAIL phone until fixed)
+A. Stage fit — 2nd stage (and others) do not fit STG boxes. Full catalog pass: Ada draw bounds + Da Vinci art if aspect wrong. Flagged: Electron STG2 clipped; Gravity-1 stages cropped/underscaled.
+B. AUTO sim-to-live — AUTO works on live; on mid-sim/historic it stays stuck (does not switch to Live Auto / next upcoming). tip150 only handoffs at tape end — tip151 must leave sim immediately when AUTO turns on.
+
+REAL-TIME ONLY (not for Chris right now — next launch ~17h out)
+R1. Realtime 1:1 clock — Team sim/stress before ship; Chris verifies on a real live launch. Soft-FAIL phone go until team PASS; Chris live check is final gate.

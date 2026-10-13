@@ -1,0 +1,24 @@
+{
+  "routine": "Notion Eve board check",
+  "run_at_ct": "2026-09-23T08:40:00-05:00",
+  "prior_run_ct": "2026-09-22T19:18:04-05:00",
+  "outcome": "quiet",
+  "eve_dumps_new": false,
+  "eve_elon_dump_last_edited": "2026-09-01T22:59:19.698Z",
+  "eve_ideas_unchanged": [
+    "Local LLM UI Comparison (Parked 2026-09-15)",
+    "DFW Localized 911 Routing Map (Active 2026-09-11)"
+  ],
+  "chris_ideas_since_prior": [
+    {"createdTime": "2026-09-23T12:07:11Z", "name": "LRT tip137 — PAD version mark larger", "status": "Shipped", "note": "Helios dual-write same session"},
+    {"createdTime": "2026-09-23T12:10:39Z", "name": "LRT tip138 — blank HUD after fast adb", "status": "Shipped", "note": "Helios dual-write same session"},
+    {"createdTime": "2026-09-23T12:18:02Z", "name": "LRT audit 2026-09-23 — post tip138", "status": "Active", "note": "Helios dual-write same session"},
+    {"createdTime": "2026-09-23T12:20:08Z", "name": "LRT tip139 BUILD ONLY — gold HELD", "status": "Shipped", "note": "Helios dual-write same session"}
+  ],
+  "wake_parent": false,
+  "steve_ping": false,
+  "baseline_next": {
+    "ideas_newest_createdTime": "2026-09-23T12:20:08Z",
+    "focus_newest_createdTime": "2026-09-23T13:39:50Z"
+  }
+}

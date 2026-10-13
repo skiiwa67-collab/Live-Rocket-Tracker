@@ -1,0 +1,131 @@
+PAD — LANDING-GEAR ENERGY FACE
+SPEC. Invented hardware. Does not exist in the field.
+Christopher Olsen. Locked 2026-08-20. Gen 1 activation = MECHANICAL.
+
+================================================================
+WHAT IT IS
+================================================================
+A rubber strip laid parallel to the dock doors —
+a run along the door line. Layout only.
+Recessed in the slab. Flush with the concrete.
+Wear face even with the yard so forklifts roll over it.
+Not a raised bar.
+
+Housing plus a consumable wear face.
+Landing-gear 10 × 10 cushion feet land ON TOP of the
+flush face. The face compresses and becomes active.
+HV conduit runs UP INSIDE the landing-gear legs.
+Not a cassette under the foot. The shoe sits on the strip.
+Not poured-in copper. Not a charger bolted to a dock wall.
+Doors do not switch the pad. No doors on the mechanism.
+
+Landing gear walks. Forklifts chew the yard. The face dies.
+You snap the cassette out. You snap a new one in.
+
+Two shoes on one strip. Same cassette family for a 53-ft van
+and a 28-ft pup.
+
+================================================================
+THE PATH
+================================================================
+BANK
+  → PAD FACE (flush rubber cassette in the slab)
+  → GEAR SHOE ON TOP OF THE FLUSH FACE
+  → HV CONDUIT UP INSIDE THE LANDING-GEAR LEG
+  → TRAILER JUNCTION
+  → SNAP-IN MODULES
+  → POWER POD / BEV PACK
+  and back to the building.
+
+Building bank feeds a pad bus under the slab.
+Multiple tie-ins. Not one feeder.
+
+LAYOUT (not the switch):
+The rubber strip runs parallel to the dock doors.
+A run along the door line. Doors do not switch the pad.
+No doors on the mechanism drawing.
+
+MECHANISM:
+Shoe sits on top of the flush face. Weight compresses the
+face. That segment conducts. Conduit runs up inside
+the legs. The pad is recessed — even with the yard.
+
+Trailer-skin PV can feed the modules without the pad.
+The pad also lets the modules backfeed the bank.
+
+================================================================
+WEIGHT IS THE SWITCH
+================================================================
+Only the loaded segment conducts.
+Idle pads stay dark.
+
+================================================================
+GEN 1 ACTIVATION — LOCKED MECHANICAL
+================================================================
+Close is a mechanical plunger / rocker / contact under gear weight.
+
+The pressure-conductive material does not exist.
+Do not wait for it. Do not draw it as the hero.
+
+Later families, one note only, not Gen 1:
+  - pressure-conductive material
+  - hybrid (material plus mechanical)
+
+================================================================
+STATUS LIGHTS
+================================================================
+CONDUCTING   loaded segment closed, path live
+IDLE         no weight, dark
+WORN         cassette due for snap-out
+FAULT        do not use that segment
+
+================================================================
+FOOT ANALOG
+================================================================
+Published Jost-class 10 × 10 in cushion foot (Hale 53-ft spec).
+Two shoes on one strip.
+Lateral spacing = trailer frame width.
+SPEC pending tape on a real van and a pup.
+
+================================================================
+ENVIRONMENT AND CLASS
+================================================================
+Wet, oil, ice. DFW yard.
+No volts. No amps.
+HV orange interconnect class only.
+
+================================================================
+THE COMPANY
+================================================================
+Make the cassette.
+Replace the cassette.
+Recycle the worn face.
+
+================================================================
+GEOMETRY LOCK — CHRIS RED LINE  2026-08-20
+================================================================
+Photo lock: dock apron, bays 66-61, red line on the concrete.
+
+The strip sits ON that red line.
+Parallel to the dock doors.
+On the apron. Where spotted-trailer landing-gear shoes sit.
+NOT at the dock plate / bumpers.
+NOT under the trailer body.
+
+The red line is the trench centerline and the install jig.
+Full door-run. Flush modular recycled-tire cassettes.
+Lamps on the strip.
+
+Artist composites the strip onto the real red-line photo.
+No generated jack. No generated warehouse.
+
+Locked files:
+  hud-assets/chris-redline-apron.png
+  hud-assets/chris-gear-down-lot.png
+
+================================================================
+SHOE FACE — BOTH TYPES  2026-08-20
+================================================================
+Chris lot photo: round sand feet, not only Jost 10x10 / 12x12 square.
+One cassette SKU. Face takes both. No second cassette.
+Contact is shoe area on the flush wear face, not shoe shape.

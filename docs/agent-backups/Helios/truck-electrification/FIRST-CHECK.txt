@@ -1,0 +1,68 @@
+FIRST CHECK — NOT A COMPANY YET
+Christopher Olsen. 2026-08-20.
+
+You cannot staff this. You should not. The HUD exists so someone
+else says "this works" and funds the first node.
+
+================================================================
+THE SEQUENCE (do not skip)
+================================================================
+1. Show CARRY-HUD.html. Phone or laptop. Flip OUTAGE.
+2. Get ONE believer. Money, doors, or both.
+3. Build ONE node. His yard. Loop 820. 201 trailer doors.
+4. Film it. Then you earn the right to talk about teams.
+
+Do not hire lawyers, freight experts, hardware teams, or trailer
+OEMs before step 3. That is a burn rate looking for a mission.
+
+================================================================
+WHAT THE FIRST CHECK BUYS
+================================================================
+A prototype node at Estes Loop 820 (his terminal), paid as a
+PUBLIC STRATEGIC ASSET, not as Estes capex.
+
+  - landing-gear strip on a few doors (not 201 on day one)
+  - a handful of trailer-skin + snap-in packs
+  - one building pack
+  - roof only if the check is big enough; skins + strip first
+    because they move and they prove the bus
+  - node radio (the mesh hop the 911 side will use later)
+  - the show stays current (HUD + MP4 of the real dock)
+
+It does NOT buy:
+  - a 200-person company
+  - solar on every DFW roof
+  - a new map to replace Google
+  - lawyers on retainer
+  - Kenworth production of the Power Pod
+
+Those come after a node you can walk someone through.
+
+================================================================
+WHO WRITES THAT CHECK (honest)
+================================================================
+Not the carrier's maintenance budget. They will not eat a metro
+solar-plus-battery invoice. Locked in WHO-PAYS.txt.
+
+First doors to knock on (doors, not a cleared appropriation):
+  - grid resilience / DOE-class dual-use microgrid
+  - FEMA / disaster comms (the mesh is the 911 twin)
+  - DoD dual-use node language
+  - a mayor or county that already eats outage risk
+  - a private believer who funds a public-use prototype
+
+Do not invent a dollar figure. Do not claim a bill exists.
+The HUD is the meeting. The yard is the ask. The team is later.
+
+================================================================
+WHAT CHRIS DOES
+================================================================
+Open the HUD. Walk it into the room. Tell the truth.
+  Service drop cannot charge a fleet.
+  Plant lives on the site.
+  Public pays the node. Private hauls freight.
+  Grid dies. Node does not.
+  911 plugs in later. Different project. Same node.
+
+He does not become the engineer, the lawyer, or the OEM.
+He is the guy who works the prototype dock and can show the math.

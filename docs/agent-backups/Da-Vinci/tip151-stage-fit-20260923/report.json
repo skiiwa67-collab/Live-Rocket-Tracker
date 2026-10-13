@@ -1,0 +1,259 @@
+{
+  "items": [
+    {
+      "asset": "vehicle_electron_s2.png",
+      "before": {
+        "canvas": [
+          424,
+          1200
+        ],
+        "bb": [
+          182,
+          238,
+          242,
+          422
+        ],
+        "bwh": [
+          61,
+          185
+        ],
+        "asp": 3.033,
+        "top_pad": 238,
+        "bot_pad": 777,
+        "opaque": 9331
+      },
+      "after": {
+        "canvas": [
+          424,
+          1200
+        ],
+        "bb": [
+          133,
+          156,
+          290,
+          400
+        ],
+        "bwh": [
+          158,
+          245
+        ],
+        "asp": 1.551,
+        "top_pad": 156,
+        "bot_pad": 799,
+        "opaque": 32226
+      },
+      "before_md5": "7cc527e09709164065069b722750653b",
+      "after_md5": "033df399dced71b089c0c44157269fe8",
+      "note": "anisotropic HUD plate fit asp 3.033\u21921.551; GOLD stack untouched"
+    },
+    {
+      "asset": "vehicle_gravity1_s2.png",
+      "before": {
+        "canvas": [
+          424,
+          1200
+        ],
+        "bb": [
+          64,
+          443,
+          360,
+          686
+        ],
+        "bwh": [
+          297,
+          244
+        ],
+        "asp": 0.822,
+        "top_pad": 443,
+        "bot_pad": 513,
+        "opaque": 42160
+      },
+      "after": {
+        "canvas": [
+          424,
+          1200
+        ],
+        "bb": [
+          136,
+          438,
+          286,
+          695
+        ],
+        "bwh": [
+          151,
+          258
+        ],
+        "asp": 1.709,
+        "top_pad": 438,
+        "bot_pad": 504,
+        "opaque": 34131
+      },
+      "before_md5": "faed4d90ba372c844fd14515e5cd5d18",
+      "after_md5": "0cceb567adc983592d0205d7e1cb2ee0",
+      "nat_asp_core": 1.951,
+      "seams": {
+        "body_top": 40,
+        "fairing_bot": 337,
+        "s3_bot": 453,
+        "s2_bot": 668,
+        "body_bot": 1033
+      }
+    },
+    {
+      "asset": "vehicle_gravity1_s1.png",
+      "before": {
+        "canvas": [
+          424,
+          1200
+        ],
+        "bb": [
+          64,
+          669,
+          360,
+          1033
+        ],
+        "bwh": [
+          297,
+          365
+        ],
+        "asp": 1.229,
+        "top_pad": 669,
+        "bot_pad": 166,
+        "opaque": 106076
+      },
+      "after": {
+        "canvas": [
+          424,
+          1200
+        ],
+        "bb": [
+          101,
+          688,
+          321,
+          1007
+        ],
+        "bwh": [
+          221,
+          320
+        ],
+        "asp": 1.448,
+        "top_pad": 688,
+        "bot_pad": 192,
+        "opaque": 69098
+      },
+      "before_md5": "0f147b073a3ab67aa289b71dfcbc5ecd",
+      "after_md5": "6638905cfa0cb545a9b900082f967154",
+      "nat_asp_core": 1.244,
+      "seams": {
+        "body_top": 40,
+        "fairing_bot": 337,
+        "s3_bot": 453,
+        "s2_bot": 668,
+        "body_bot": 1033
+      }
+    },
+    {
+      "asset": "vehicle_gravity1_s3.png",
+      "before": {
+        "canvas": [
+          424,
+          1200
+        ],
+        "bb": [
+          130,
+          336,
+          294,
+          686
+        ],
+        "bwh": [
+          165,
+          351
+        ],
+        "asp": 2.127,
+        "top_pad": 336,
+        "bot_pad": 513,
+        "opaque": 14586
+      },
+      "after": {
+        "canvas": [
+          424,
+          1200
+        ],
+        "bb": [
+          133,
+          286,
+          290,
+          523
+        ],
+        "bwh": [
+          158,
+          238
+        ],
+        "asp": 1.506,
+        "top_pad": 286,
+        "bot_pad": 676,
+        "opaque": 29961
+      },
+      "before_md5": "f265f0ada5eb1ec8bb6c5bec9424cfbc",
+      "after_md5": "cae31922d84a64e10d8934ded4f4287b",
+      "nat_asp_core": 1.195,
+      "seams": {
+        "body_top": 40,
+        "fairing_bot": 337,
+        "s3_bot": 453,
+        "s2_bot": 668,
+        "body_bot": 1033
+      }
+    },
+    {
+      "asset": "vehicle_gravity1_s4.png",
+      "before": {
+        "canvas": [
+          424,
+          1200
+        ],
+        "bb": [
+          130,
+          336,
+          294,
+          686
+        ],
+        "bwh": [
+          165,
+          351
+        ],
+        "asp": 2.127,
+        "top_pad": 336,
+        "bot_pad": 513,
+        "opaque": 14586
+      },
+      "after": {
+        "canvas": [
+          424,
+          1200
+        ],
+        "bb": [
+          133,
+          286,
+          290,
+          523
+        ],
+        "bwh": [
+          158,
+          238
+        ],
+        "asp": 1.506,
+        "top_pad": 286,
+        "bot_pad": 676,
+        "opaque": 29961
+      },
+      "before_md5": "cae1ac2a7964548cb7d8c5f1a457d051",
+      "after_md5": "cae31922d84a64e10d8934ded4f4287b",
+      "note": "alias of rebuilt s3 (baseline Soft-FAIL invent liquid S4)"
+    }
+  ],
+  "preview": "/workspace/agent-backups/Da-Vinci/tip151-stage-fit-20260923/preview_stage_fit_board.png",
+  "preview_md5": "da2757292e33aa8ae6948ad450d6084e",
+  "ready_md5": "8534558650ea69c9b9cbf9b6a60d6741",
+  "stack_gold": "d8ab6a86858da2237a18838c4c4dc91e"
+}

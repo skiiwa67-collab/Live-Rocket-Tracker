@@ -1,0 +1,69 @@
+## A1
+/workspace/agent-backups/tinkabot/v47-redteam/v47-reference/ClockFormat.kt /workspace/tmp/Alarm-Pro-v48/app/src/main/java/com/claudewidgets/alarmweather/ClockFormat.kt differ: byte 39, line 1
+## A2
+app/src/main/java/com/claudewidgets/alarmweather/ClockFormat.kt
+TRACKED
+## A3
+/workspace/agent-backups/tinkabot/v47-redteam/v47-reference/widget_layout.xml /workspace/tmp/Alarm-Pro-v48/app/src/main/res/layout/widget_layout.xml differ: byte 39, line 1
+12
+12
+## A4
+IDENTICAL
+## A5
+IDENTICAL_wallIdFor
+IDENTICAL_wallids
+## A6
+414:    fun is24HourFormat(): Boolean = prefs.getBoolean("use_24_hour_format", false)
+346:        use24hSwitch.isChecked = prefs.is24HourFormat()
+768:            putBoolean("use_24_hour_format", use24)
+## A7
+536:                AlarmWidgetProvider.updateAppWidget(this, appWidgetManager, id, nextAlarm, WeatherFetcher.forDisplay(idPrefs))
+556:                                AlarmWidgetProvider.updateAppWidget(appContext, mgr, id, nextAlarm, real)
+874:                AlarmWidgetProvider.updateAppWidget(
+## A8
+638:                val chronoId = chronoIdFor(ids, fontStyle)
+649:                    views.setChronometerCountDown(chronoId, true)
+## A9
+/workspace/agent-backups/tinkabot/v47-redteam/v47-reference/ClockFormatTest.kt app/src/test/java/com/claudewidgets/alarmweather/ClockFormatTest.kt differ: byte 39, line 1
+app/src/test/java/com/claudewidgets/alarmweather/ClockFormatTest.kt
+## A10
+13:        versionCode = 48
+14:        versionName = "0.5.24"
+47:    testImplementation("junit:junit:4.13.2")
+## B1
+rc=1
+## B2
+rc=2
+## B3
+rc=1
+## B4
+rc=1
+## B5
+rc=1
+## B6
+rc=1
+rc_fs=1
+## B7
+rc=1
+rc=1
+## B8
+rc=1
+## B9
+rc=1
+rc=1
+## B10
+agent-build-init-vc33.gradle
+agent-build-init-vc35.gradle
+agent-build-init-vc36.gradle
+agent-build-init-vc37.gradle
+agent-build-init.gradle
+## C1
+app/src/main/java/com/claudewidgets/alarmweather/AlarmWidgetProvider.kt:70:            RefreshScheduler.cancelDayRoll(context, appWidgetId)
+app/src/main/java/com/claudewidgets/alarmweather/RefreshScheduler.kt:86:    fun cancelDayRoll(context: Context, appWidgetId: Int) {
+app/src/main/java/com/claudewidgets/alarmweather/RefreshScheduler.kt:93:            action = RefreshReceiver.ACTION_DAY_ROLL
+app/src/main/java/com/claudewidgets/alarmweather/RefreshScheduler.kt:95:            data = Uri.parse("alarmweatherwidget://dayroll/$appWidgetId")
+app/src/main/java/com/claudewidgets/alarmweather/RefreshScheduler.kt:98:        return PendingIntent.getBroadcast(context, 10_000 + appWidgetId, intent, flags)
+app/src/main/java/com/claudewidgets/alarmweather/RefreshReceiver.kt:32:        const val ACTION_DAY_ROLL = "com.claudewidgets.alarmweather.ACTION_DAY_ROLL"
+app/src/main/java/com/claudewidgets/alarmweather/RefreshReceiver.kt:38:        if (action != ACTION_REFRESH && action != ACTION_DAY_ROLL) return
+app/src/main/java/com/claudewidgets/alarmweather/RefreshReceiver.kt:49:                if (appWidgetManager.getAppWidgetInfo(appWidgetId) == null) return@Thread
+## WTS diff vs a977c6a

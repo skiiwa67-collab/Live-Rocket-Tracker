@@ -1,0 +1,9 @@
+Chris GO via Helios — tip139 art gate. Priority GOLD before Ada cutoff:
+1) H3-24 Martian Moons eXploration — Soft-FAIL missing GOLD stack
+2) Nuri / KSLV-2 (KARI) — Soft-FAIL missing
+3) SR-75 Flight 2 HyImpulse — PNGs present; bring to GOLD READY
+4) CZ-6A — keep READY; Helios reviewing before pack
+
+Bar: Starship GOLD only. Soft-FAIL placeholders. Soft-FAIL device pushes.
+When each asset is GOLD READY, Soft-PASS Helios paths + md5s for review. Helios PASS required before Ada packs into tip139.
+HOLD device push. Dual-write when HORIZON-30D / tip139 art list lands.

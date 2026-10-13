@@ -1,0 +1,41 @@
+{
+  "task": "LRT HORIZON-30D art audit dual-write",
+  "owner": "Chris Olsen",
+  "where_we_are": "2026-09-23 ~07:19 CT",
+  "timestamp_ct": "2026-09-23 ~07:20 CT",
+  "canonical_source": "/workspace/agent-backups/Helios/2026-09-23-30day-launch-art-manifest.md",
+  "rules": {
+    "invent_nets": "Soft-FAIL",
+    "device_pushes": "Soft-FAIL",
+    "tip139": "BUILD ONLY / HOLD device+Studio until Chris go"
+  },
+  "summary": {
+    "window": "2026-09-23 → 2026-10-23 CT",
+    "total_launches": 13,
+    "covered": 11,
+    "missing": 2,
+    "missing_vehicles": ["HyImpulse SR75 Flight 2", "Nuri/KSLV-2 NeonSat-2 to 6 (Chris: Niri)"],
+    "buckets": { "48h": "2/0 missing", "7d": "3/0 missing", "30d": "8/2 missing" }
+  },
+  "notion": {
+    "status": "Soft-PASS",
+    "destination": "Focus Tasks",
+    "data_source_id": "c924ca98-d41b-47be-91ef-81212cb6a60b",
+    "page_id": "3e4a9493-3faa-81b4-9ac3-f445e9e02f10",
+    "notion_url": "https://app.notion.com/p/3e4a94933faa81b49ac3f445e9e02f10",
+    "task_name": "LRT HORIZON-30D art audit 2026-09-23",
+    "task_status": "In progress"
+  },
+  "github": {
+    "status": "Soft-PASS",
+    "mode": "issue_backup",
+    "reason": "cursor CloudAgent unavailable; preferred docs/HORIZON_30D_2026-09-23.md commit not possible",
+    "owner": "skiiwa67-collab",
+    "repo": "Live-Rocket-Tracker",
+    "issue_number": 54,
+    "github_url_or_issue": "https://github.com/skiiwa67-collab/Live-Rocket-Tracker/issues/54",
+    "title": "HORIZON-30D art audit 2026-09-23"
+  },
+  "overall": "Soft-PASS",
+  "receipt_path": "/workspace/agent-backups/Helios/2026-09-23-horizon30d-dual-write-receipt.json"
+}

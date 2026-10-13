@@ -1,0 +1,9 @@
+Chris CORRECTION STOP — Soft-FAIL direct Play Store publish.
+
+READ_FILE /workspace/agent-backups/Helios/HARD-play-store-publish-gate.md
+
+STOP any tip139 direct Play publish if started.
+Soft-PASS instead: Studio-first + stage tip139 / 1.0.129 in Play Console for Chris review only.
+Soft-FAIL publish / rollout / production push until Chris explicit publish go after he reviews.
+Soft-FAIL direct adb.
+Soft-PASS Helios: confirm you stopped any direct submit; confirm staging path Soft-PASS (Studio + Console draft/stage).

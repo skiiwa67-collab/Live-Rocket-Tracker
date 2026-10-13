@@ -1,0 +1,112 @@
+== ClockFormat.kt
+--: line 2: file: command not found
+IDENTICAL after CRLF->LF normalisation
+sha256(LF-normalised) ref=1c15b3acad483a9f v48=1c15b3acad483a9f
+== widget_layout.xml
+--: line 2: file: command not found
+IDENTICAL after CRLF->LF normalisation
+sha256(LF-normalised) ref=e5c27e226b6ff26c v48=e5c27e226b6ff26c
+== ClockFormatTest.kt
+--: line 2: file: command not found
+IDENTICAL after CRLF->LF normalisation
+sha256(LF-normalised) ref=e7e9c3dbc6cfdd5b v48=e7e9c3dbc6cfdd5b
+== AlarmWidgetProvider.kt
+--: line 2: file: command not found
+DIFFERS after normalisation:
+69a70
+>             RefreshScheduler.cancelDayRoll(context, appWidgetId)
+641,642c642,654
+<                 // tip46: base from live System.currentTimeMillis(); Soft-FAIL Till % DAY_MS (84h Soft-PASS).
+<                 applyTimerChronometerBase(views, chronoId, nextAlarmMillis)
+---
+> 
+>                 if (nextAlarmMillis != null) {
+>                     // Chronometer base from wall time so Till never drifts vs phone clock.
+>                     // Counts DOWN (setCountDown, API 24+) to alarm trigger; no 1Hz redraw.
+>                     val nowElapsed = android.os.SystemClock.elapsedRealtime()
+>                     val nowWall = System.currentTimeMillis()
+>                     val baseElapsed = nowElapsed + (nextAlarmMillis - nowWall)
+>                     views.setChronometerCountDown(chronoId, true)
+>                     views.setChronometer(chronoId, baseElapsed, null, true)
+>                 } else {
+>                     views.setChronometer(chronoId, android.os.SystemClock.elapsedRealtime(), null, false)
+>                     views.setTextViewText(chronoId, "No alarm set")
+>                 }
+796,848d807
+< 
+<         /**
+<          * Re-anchors the Till-alarm (TIMER) countdown from the live wall clock, so an NTP
+<          * sync or manual clock change cannot leave a stale baked-in offset.
+<          *
+<          * CLOCK is deliberately not handled here - it is a self-ticking TextClock and must
+<          * not be repainted by us, or it goes stale again the moment this process dies.
+<          * Partial update only: no weather/wallpaper rebuild.
+<          */
+<         fun reanchorChronometersFromWallClock(
+<             context: Context,
+<             appWidgetManager: AppWidgetManager,
+<             appWidgetId: Int,
+<             nextAlarmMillis: Long?
+<         ) {
+<             val prefs = WidgetPreferences(context, appWidgetId)
+<             val views = RemoteViews(context.packageName, R.layout.widget_layout)
+<             var any = false
+<             for (line in 1..4) {
+<                 if (!prefs.isLineEnabled(line)) continue
+<                 if (prefs.getLineField(line) != FieldType.TIMER) continue
+<                 val ids = lineViewIds(line)
+<                 applyTimerChronometerBase(views, chronoIdFor(ids, prefs.getLineFontStyle(line)), nextAlarmMillis)
+<                 any = true
+<             }
+<             if (!any) return
+<             appWidgetManager.partiallyUpdateAppWidget(appWidgetId, views)
+<             WallpaperTickService.markPaintedWallSec(appWidgetId)
+<         }
+< 
+<         /**
+<          * tip46: Till-alarm Chronometer base from live wall clock + elapsedRealtime.
+<          * Soft-FAIL Rule1 remainingMs % DAY_MS — Chris Soft-PASS multi-day Till
+<          * (e.g. 84h) is CORRECT stock countdown; Soft-FAIL invent Till wrap/UX.
+<          * Soft-FAIL touch TIMER display format beyond pre-tip46 re-anchor from live wall.
+<          */
+<         private fun applyTimerChronometerBase(
+<             views: RemoteViews,
+<             chronoId: Int,
+<             nextAlarmMillis: Long?
+<         ) {
+<             if (nextAlarmMillis != null) {
+<                 val nowElapsed = android.os.SystemClock.elapsedRealtime()
+<                 val nowWall = System.currentTimeMillis()
+<                 // pre-tip46 / stock: full remaining (84h Soft-PASS; Soft-FAIL % DAY_MS).
+<                 val baseElapsed = nowElapsed + (nextAlarmMillis - nowWall)
+<                 views.setChronometerCountDown(chronoId, true)
+<                 views.setChronometer(chronoId, baseElapsed, null, true)
+<             } else {
+<                 views.setChronometer(chronoId, android.os.SystemClock.elapsedRealtime(), null, false)
+<                 views.setTextViewText(chronoId, "No alarm set")
+<             }
+<         }
+sha256(LF-normalised) ref=cf13024e9275dddc v48=058947fcf104dedb
+== WidgetPreferences.kt
+--: line 2: file: command not found
+DIFFERS after normalisation:
+417,427d416
+< 
+<     fun widgetId(): Int = appWidgetId
+< 
+<     fun hasClockLine(): Boolean = (1..4).any { ln ->
+<         isLineEnabled(ln) && getLineField(ln) == FieldType.CLOCK
+<     }
+< 
+<     fun getClockAnchorBoundaryMillis(): Long = prefs.getLong("clock_anchor_boundary_ms", 0L)
+< 
+<     fun setClockAnchorBoundaryMillis(value: Long) =
+<         prefs.edit().putLong("clock_anchor_boundary_ms", value).apply()
+sha256(LF-normalised) ref=8fb0b75044209ba0 v48=23377445449d84e7
+== WidgetConfigureActivity.kt
+--: line 2: file: command not found
+IDENTICAL after CRLF->LF normalisation
+sha256(LF-normalised) ref=b288699f8ad8bc55 v48=b288699f8ad8bc55
+== git eol attrs
+i/lf    w/lf    attr/                 	app/src/main/java/com/claudewidgets/alarmweather/ClockFormat.kt
+i/lf    w/lf    attr/                 	app/src/main/res/layout/widget_layout.xml

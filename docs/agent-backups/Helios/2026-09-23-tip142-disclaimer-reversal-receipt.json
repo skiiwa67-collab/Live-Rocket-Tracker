@@ -1,0 +1,29 @@
+{
+  "status": "REVERSED_BLOCKED",
+  "timestamp_ct": "2026-09-23T09:18:01-05:00",
+  "decision": "Do not ship the tip142 ENTERTAINMENT ONLY disclaimer in any LRT user-facing UI.",
+  "canonical_local_path": "/workspace/agent-backups/Helios/2026-09-23-disclaimer-REMOVED-from-UI.md",
+  "canonical_sha256": "c18a0bec42a6e90de108d58c58d75bfd71cf956971088e3ae0da389f147d5ac9",
+  "docs_mirror_local_path": "/workspace/Live-Rocket-Tracker/docs/agent-backups/Helios/2026-09-23-disclaimer-REMOVED-from-UI.md",
+  "docs_mirror_status": "created locally; not committed or pushed",
+  "ada_revert": {
+    "status": "UNVERIFIED",
+    "claim_made": false,
+    "reason": "Local tip142 APK still contains disclaimer copy and identifiers; a clean post-revert build has not been verified."
+  },
+  "tip142_apk_audit": {
+    "status": "FAIL",
+    "artifact": "/workspace/LRT-tip142-1.0.132/LiveRocketTracker-tip142-1.0.132-debug.apk",
+    "sha256": "346820ef895580d2dee97c2903675ed951adae9b4c35c7c9c4d042224724bc51",
+    "findings": ["ENTERTAINMENT ONLY", "We sync launches as close to real time as public sources allow", "box_disclaimer_main", "disclaimer_main_title", "disclaimer_main_body"]
+  },
+  "soft_fail": {
+    "play": true,
+    "adb_device_push": true,
+    "phone_validation": true,
+    "publish": true
+  },
+  "notion_url": "https://app.notion.com/p/3e4a94933faa81b99113cae6251c9ad6?pvs=204",
+  "github_issue_url": "https://github.com/skiiwa67-collab/Live-Rocket-Tracker/issues/65",
+  "github_issue_comment_url": "https://github.com/skiiwa67-collab/Live-Rocket-Tracker/issues/65#issuecomment-5796496868"
+}

@@ -1,0 +1,2 @@
+Soft-PASS already WAVE1 — catalog Soft-PASS skip rebuild (bar OK).
+Source: /workspace/agent-backups/Da-Vinci/nozzle-wave1-20260923/nuri

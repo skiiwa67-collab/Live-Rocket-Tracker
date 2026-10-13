@@ -1,0 +1,22 @@
+{
+  "routine": "Notion Eve board check",
+  "ran_at_ct": "2026-09-25 13:04 CDT",
+  "baseline_after": "2026-09-25T08:07 CDT (prior run succeeded); prior snapshot 2026-09-24-notion-eve-board-check-1907.json",
+  "new_ideas_since_baseline": [],
+  "eve_source_ideas": [
+    {"name": "Local LLM UI Comparison", "status": "Parked", "created": "2026-09-15T20:13:38Z"},
+    {"name": "DFW Localized 911 Routing Map (Proof of Concept)", "status": "Active", "created": "2026-09-11T07:47:47Z"}
+  ],
+  "eve_elon_dump_last_edited": "2026-09-01T22:59:19.698Z",
+  "focus_tasks_created_since_2026-09-24T13Z": [],
+  "pages_created_since_2026-09-24": [
+    "Helios voice session michael-tg13113 (Helios dual-write, not Eve)",
+    "Helios voice session play-console-pricing (Helios dual-write)",
+    "Helios voice continuity pool 0741 (Helios dual-write)",
+    "Helios voice session youship-frontier (Helios dual-write)",
+    "Lumen Keel living doc (Helios; last_edited 2026-09-24T20:01:35Z — already noted prior run)"
+  ],
+  "lrt_alarm_pages_created_today": [],
+  "action": "stay_quiet",
+  "wake_parent": false
+}

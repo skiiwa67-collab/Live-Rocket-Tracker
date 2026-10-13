@@ -1,0 +1,22 @@
+{
+  "schema": "helios-voice-bot-failed-to-respond/v1",
+  "at_ct": "2026-09-23 07:44 CT",
+  "old_call_id": "voice:call-09ae6f43-e3d3-475f-9cfb-bcbe284f891c",
+  "new_call_id": "voice:call-79900f6d-f2b1-4c85-9495-9cd5ae42cacc",
+  "ui_banner": "Bot failed to respond. Something went wrong while generating the reply.",
+  "local_backups_search": "Soft-PASS scanned /workspace/agent-backups/Helios + team/voice-continuity-pool.json",
+  "crash_dump_found": false,
+  "network_drop_evidence": false,
+  "tool_timeout_evidence": false,
+  "pool_last_mtime_ct": "2026-09-23 06:52 CT (stale vs ~07:42 failure; Soft-FAIL mid-call continuity write yet)",
+  "session_tool_errors_soft_pass": [
+    "SendToUser failed: Invalid arguments: type: Required (malformed tool call)",
+    "SendToAgent failed: Bad control character in string literal in JSON"
+  ],
+  "most_likely_cause": "Agent turn Soft-FAIL: malformed SendToUser tool call (missing required type) during tip140 verify mid-turn; UI showed generating then failed. Soft-FAIL invent process crash. Soft-PASS recoverable: new call id Soft-PASS, tip140 Soft-PASS READY Soft-PASS still Soft-PASS.",
+  "recoverable": true,
+  "dropbox_github_check": {
+    "dropbox": "Soft-PASS searched /Grok-Agent-Backups. Soft-FAIL crash dump near 07:42 CT. Matches are older voice-export folders only.",
+    "github": "Soft-FAIL invent. Soft-PASS no crash issue filed for this event."
+  }
+}

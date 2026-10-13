@@ -1,0 +1,12 @@
+{
+  "schema": "voice-continuity-mirror-receipt/v1",
+  "agent": "Helios",
+  "slug": "youship-frontier-x-screenshot-post",
+  "at": "2026-09-24T08:54:00-05:00",
+  "mirrors": {
+    "local_json_md_pool": "Soft-PASS",
+    "github": "Soft-PASS stamp-85",
+    "dropbox_json_md_sidecar": "Soft-PASS",
+    "notion": "Soft-PASS https://app.notion.com/p/3e5a94933faa81b8bbcfebf63c740465"
+  }
+}

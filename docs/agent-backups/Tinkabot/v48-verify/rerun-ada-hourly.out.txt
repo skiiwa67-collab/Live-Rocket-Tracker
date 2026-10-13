@@ -1,0 +1,90 @@
+
+=== re-anchor fires 0s after the top of the hour ===
+24h 23:59:59 -> 00:00:01
+  wall+   -1s  shows   23:59:59  expected 23:59:59  OK
+  wall+   +0s  shows   00:00:00  expected 00:00:00  OK
+  wall+   +1s  shows   00:00:01  expected 00:00:01  OK
+  wall+  +60s  shows   00:01:00  expected 00:01:00  OK
+  wall+ +299s  shows   00:04:59  expected 00:04:59  OK
+  wall+ +301s  shows   00:05:01  expected 00:05:01  OK
+24h 00:59:59 -> 01:00:00
+  wall+   -1s  shows   00:59:59  expected 00:59:59  OK
+  wall+   +0s  shows   01:00:00  expected 01:00:00  OK
+  wall+   +1s  shows   01:00:01  expected 01:00:01  OK
+  wall+  +60s  shows   01:01:00  expected 01:01:00  OK
+  wall+ +299s  shows   01:04:59  expected 01:04:59  OK
+  wall+ +301s  shows   01:05:01  expected 01:05:01  OK
+24h 09:59:59 -> 10:00:00
+  wall+   -1s  shows   09:59:59  expected 09:59:59  OK
+  wall+   +0s  shows   10:00:00  expected 10:00:00  OK
+  wall+   +1s  shows   10:00:01  expected 10:00:01  OK
+  wall+  +60s  shows   10:01:00  expected 10:01:00  OK
+  wall+ +299s  shows   10:04:59  expected 10:04:59  OK
+  wall+ +301s  shows   10:05:01  expected 10:05:01  OK
+12h 11:59:59 -> 12:00:00 (AM->PM)
+  wall+   -1s  shows   11:59:59  expected 11:59:59  OK
+  wall+   +0s  shows   12:00:00  expected 12:00:00  OK
+  wall+   +1s  shows   12:00:01  expected 12:00:01  OK
+  wall+  +60s  shows   12:01:00  expected 12:01:00  OK
+  wall+ +299s  shows   12:04:59  expected 12:04:59  OK
+  wall+ +301s  shows   12:05:01  expected 12:05:01  OK
+12h 12:59:59 -> 01:00:00 (PM)
+  wall+   -1s  shows   12:59:59  expected 12:59:59  OK
+  wall+   +0s  shows   01:00:00  expected 01:00:00  OK
+  wall+   +1s  shows   01:00:01  expected 01:00:01  OK
+  wall+  +60s  shows   01:01:00  expected 01:01:00  OK
+  wall+ +299s  shows   01:04:59  expected 01:04:59  OK
+  wall+ +301s  shows   01:05:01  expected 01:05:01  OK
+12h 09:59:59 -> 10:00:00
+  wall+   -1s  shows   09:59:59  expected 09:59:59  OK
+  wall+   +0s  shows   10:00:00  expected 10:00:00  OK
+  wall+   +1s  shows   10:00:01  expected 10:00:01  OK
+  wall+  +60s  shows   10:01:00  expected 10:01:00  OK
+  wall+ +299s  shows   10:04:59  expected 10:04:59  OK
+  wall+ +301s  shows   10:05:01  expected 10:05:01  OK
+
+=== re-anchor fires 300s after the top of the hour ===
+24h 23:59:59 -> 00:00:01
+  wall+   -1s  shows   23:59:59  expected 23:59:59  OK
+  wall+   +0s  shows   24:00:00  expected 00:00:00  WRONG
+  wall+   +1s  shows   24:00:01  expected 00:00:01  WRONG
+  wall+  +60s  shows   24:01:00  expected 00:01:00  WRONG
+  wall+ +299s  shows   24:04:59  expected 00:04:59  WRONG
+  wall+ +301s  shows   00:05:01  expected 00:05:01  OK
+24h 00:59:59 -> 01:00:00
+  wall+   -1s  shows   00:59:59  expected 00:59:59  OK
+  wall+   +0s  shows 00:1:00:00  expected 01:00:00  WRONG
+  wall+   +1s  shows 00:1:00:01  expected 01:00:01  WRONG
+  wall+  +60s  shows 00:1:01:00  expected 01:01:00  WRONG
+  wall+ +299s  shows 00:1:04:59  expected 01:04:59  WRONG
+  wall+ +301s  shows   01:05:01  expected 01:05:01  OK
+24h 09:59:59 -> 10:00:00
+  wall+   -1s  shows   09:59:59  expected 09:59:59  OK
+  wall+   +0s  shows  010:00:00  expected 10:00:00  WRONG
+  wall+   +1s  shows  010:00:01  expected 10:00:01  WRONG
+  wall+  +60s  shows  010:01:00  expected 10:01:00  WRONG
+  wall+ +299s  shows  010:04:59  expected 10:04:59  WRONG
+  wall+ +301s  shows   10:05:01  expected 10:05:01  OK
+12h 11:59:59 -> 12:00:00 (AM->PM)
+  wall+   -1s  shows   11:59:59  expected 11:59:59  OK
+  wall+   +0s  shows   12:00:00  expected 12:00:00  OK
+  wall+   +1s  shows   12:00:01  expected 12:00:01  OK
+  wall+  +60s  shows   12:01:00  expected 12:01:00  OK
+  wall+ +299s  shows   12:04:59  expected 12:04:59  OK
+  wall+ +301s  shows   12:05:01  expected 12:05:01  OK
+12h 12:59:59 -> 01:00:00 (PM)
+  wall+   -1s  shows   12:59:59  expected 12:59:59  OK
+  wall+   +0s  shows   13:00:00  expected 01:00:00  WRONG
+  wall+   +1s  shows   13:00:01  expected 01:00:01  WRONG
+  wall+  +60s  shows   13:01:00  expected 01:01:00  WRONG
+  wall+ +299s  shows   13:04:59  expected 01:04:59  WRONG
+  wall+ +301s  shows   01:05:01  expected 01:05:01  OK
+12h 09:59:59 -> 10:00:00
+  wall+   -1s  shows   09:59:59  expected 09:59:59  OK
+  wall+   +0s  shows  010:00:00  expected 10:00:00  WRONG
+  wall+   +1s  shows  010:00:01  expected 10:00:01  WRONG
+  wall+  +60s  shows  010:01:00  expected 10:01:00  WRONG
+  wall+ +299s  shows  010:04:59  expected 10:04:59  WRONG
+  wall+ +301s  shows   10:05:01  expected 10:05:01  OK
+
+TOTAL WRONG: 20

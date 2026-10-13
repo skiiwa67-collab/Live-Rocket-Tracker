@@ -1,0 +1,23 @@
+{
+  "schema": "tinkabot-efficiency-addendum/v1",
+  "updated_at": "2026-09-19T06:29:54-0500",
+  "live": [
+    "skill: chris-efficiency-defaults",
+    "skill: session-json-multi-mirror-backup",
+    "skill: team-triage-dump-on-degrade",
+    "ll2-agent-plugin @ /workspace/ll2-agent-plugin",
+    "profile memory: token/voice HARD prefs"
+  ],
+  "proposed": [
+    "peers read chris-efficiency-defaults at session begin",
+    "Soft-PASS = path bullets only",
+    "LL2 in Cursor IDE for NET checks"
+  ],
+  "deferred": [
+    "GitHub push of this addendum — Auto-review blocked; no Chris page while driving",
+    "GitHub marketplace MCP PAT",
+    "/setup-pstack",
+    "ll2 publish",
+    "MiniME sync"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "routine": "Notion Eve board check",
+  "run_at_ct": "2026-09-23T13:24:45-05:00",
+  "prior_run_ct": "2026-09-23T08:40:00-05:00",
+  "outcome": "quiet",
+  "eve_dumps_new": false,
+  "eve_elon_dump_last_edited": "2026-09-01T22:59:19.698Z",
+  "ideas_new_since_prior": [],
+  "eve_ideas_unchanged": [
+    "Local LLM UI Comparison (Parked 2026-09-15)",
+    "DFW Localized 911 Routing Map (Active 2026-09-11)"
+  ],
+  "focus_new_since_prior_helios_dual_write_only": [
+    {"createdTime": "2026-09-23T13:43:37Z", "name": "Helios: plume-anchor audit — CZ-8A post-sep detach", "status": "In progress"},
+    {"createdTime": "2026-09-23T13:44:18Z", "name": "LRT post-sep plume detach Soft-PASS audit (CZ-8A + fleet) 2026-09-23", "status": "In progress"},
+    {"createdTime": "2026-09-23T13:52:38Z", "name": "LRT tip142 main-screen ENTERTAINMENT ONLY disclaimer Soft-PASS", "status": "In progress"},
+    {"createdTime": "2026-09-23T14:09:51Z", "name": "Helios console 8-preset audit — 3 rockers shipped, 8-theme plan not wire-ready", "status": "In progress"},
+    {"createdTime": "2026-09-23T16:51:33Z", "name": "LRT nozzle patches today: tip154 Electron oval-cut DONE + tip155+ fleet future", "status": "Not started"},
+    {"createdTime": "2026-09-23T17:04:12Z", "name": "DONE tip46 @ 8bd76cb main (Helios PASS; Soft-FAIL Play)", "status": "Done"},
+    {"createdTime": "2026-09-23T17:53:33Z", "name": "STANDING: Studio git-fetch root cause (Gradle Sync ≠ git pull)", "status": "Not started"},
+    {"createdTime": "2026-09-23T18:15:34Z", "name": "Alarm Pro: font setting skips main clock HH:MM:SS", "status": "Not started"}
+  ],
+  "note": "Focus rows are Helios/fleet dual-writes from same-day session — not Eve dumps. Stay quiet per routine.",
+  "wake_parent": false,
+  "steve_ping": false,
+  "baseline_next": {
+    "ideas_newest_createdTime": "2026-09-23T12:20:08Z",
+    "focus_newest_createdTime": "2026-09-23T18:15:34Z",
+    "eve_elon_dump_last_edited": "2026-09-01T22:59:19.698Z"
+  }
+}

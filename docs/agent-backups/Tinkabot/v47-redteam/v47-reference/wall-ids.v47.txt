@@ -1,0 +1,13 @@
+583:            views.setViewVisibility(ids.wallRegular, android.view.View.GONE)
+584:            views.setViewVisibility(ids.wallBold, android.view.View.GONE)
+585:            views.setViewVisibility(ids.wallBlack, android.view.View.GONE)
+851:            FontStyleOption.BOLD -> ids.wallBold
+852:            FontStyleOption.BLACK -> ids.wallBlack
+853:            FontStyleOption.REGULAR -> ids.wallRegular
+875:            val wallRegular: Int,
+876:            val wallBold: Int,
+877:            val wallBlack: Int,
+889:            1 -> LineViewIds(R.id.line1_text_regular, R.id.line1_text_bold, R.id.line1_text_black, R.id.line1_chrono_regular, R.id.line1_chrono_bold, R.id.line1_chrono_black, R.id.line1_wall_regular, R.id.line1_wall_bold, R.id.line1_wall_black, R.id.line1_image, R.id.line1_label, R.id.line1_row, R.id.line1_date_badge_h, R.id.line1_ampm_badge_h, R.id.line1_date_badge_v, R.id.line1_ampm_badge_v, R.id.line1_badge_row)
+890:            2 -> LineViewIds(R.id.line2_text_regular, R.id.line2_text_bold, R.id.line2_text_black, R.id.line2_chrono_regular, R.id.line2_chrono_bold, R.id.line2_chrono_black, R.id.line2_wall_regular, R.id.line2_wall_bold, R.id.line2_wall_black, R.id.line2_image, R.id.line2_label, R.id.line2_row, R.id.line2_date_badge_h, R.id.line2_ampm_badge_h, R.id.line2_date_badge_v, R.id.line2_ampm_badge_v, R.id.line2_badge_row)
+891:            3 -> LineViewIds(R.id.line3_text_regular, R.id.line3_text_bold, R.id.line3_text_black, R.id.line3_chrono_regular, R.id.line3_chrono_bold, R.id.line3_chrono_black, R.id.line3_wall_regular, R.id.line3_wall_bold, R.id.line3_wall_black, R.id.line3_image, R.id.line3_label, R.id.line3_row, R.id.line3_date_badge_h, R.id.line3_ampm_badge_h, R.id.line3_date_badge_v, R.id.line3_ampm_badge_v, R.id.line3_badge_row)
+892:            else -> LineViewIds(R.id.line4_text_regular, R.id.line4_text_bold, R.id.line4_text_black, R.id.line4_chrono_regular, R.id.line4_chrono_bold, R.id.line4_chrono_black, R.id.line4_wall_regular, R.id.line4_wall_bold, R.id.line4_wall_black, R.id.line4_image, R.id.line4_label, R.id.line4_row, R.id.line4_date_badge_h, R.id.line4_ampm_badge_h, R.id.line4_date_badge_v, R.id.line4_ampm_badge_v, R.id.line4_badge_row)

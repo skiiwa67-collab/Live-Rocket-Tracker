@@ -1,0 +1,101 @@
+HYBRID AXLE — WHAT FUEL MILEAGE ACTUALLY DOES
+Christopher Olsen. 2026-08-20.
+His architecture: tandem tractor. Diesel keeps one rear drive axle.
+Snap-on dual-motor Power Pod on the other. Trailer packs feed the pod.
+Nobody has published THAT exact Kenworth-style pod. Do not invent one.
+These are the closest published Class 8 numbers, labeled.
+
+================================================================
+WHO PAYS (updated from his words)
+================================================================
+Radios: already bought. Consumer phones. Ambulance / fire radios
+came with those fleets. Government does not buy radios. 911 project.
+
+Government money on the TRUCKING side:
+  - subsidy to electrify the warehouse (roof, packs, strip)
+  - subsidy to electrify trucks
+  - tax write-off for a PERCENTAGE of the fleet that gets the
+    partial-motor / hybrid second axle (diesel stays)
+
+Private still hauls freight. Public buys the plant and the hybrid kit.
+
+================================================================
+DIESEL BASELINE (published, not his truck)
+================================================================
+NACFE / FHWA Class 8 national average: about 6.0 to 6.4 mpg.
+NACFE regional-haul typical: about 6.0 mpg.
+NACFE Run on Less Regional demo: 8.3 mpg (best-practice, not average).
+NACFE Run on Less linehaul demo: 10.1 mpg vs 6.4 national.
+
+His day is P&D / blind haul / shuttle, 180–280 miles, DFW huge.
+That is stop-go. EST diesel on a day like that: 5.5–7 mpg.
+Label EST. We did not datalog his Kenworth.
+
+================================================================
+HYBRID / SECOND-AXLE ANALOGS (published)
+================================================================
+1) Eaton parallel hybrid Class 8, Coca-Cola, NREL 13-month field
+   https://www.nrel.gov/docs/fy12osti/53502.pdf
+   In service: hybrid group 5.63 mpg, +13.7% vs the diesel pair.
+   Chassis dyno: +30.3% WVU City, +22% CILCC.
+   Highway-ish CARB HHDDT: statistically no difference.
+   This is the honest "in a real fleet" number: teens of percent,
+   and the win is the city cycle.
+
+2) UC Davis Class 8 hybrid simulation (various fuels)
+   Diesel hybrid vs diesel: +24% day-drive, +10% short-haul,
+   +3–6% long-haul.
+   Same story. Duty cycle is the whole game.
+
+3) SAE 02-19-04-0025 (2026) P2 / P2-P3 / P4 Class 8
+   P2 blended charge-depleting+sustaining: +12–14% real-world cycles.
+   Charge-sustaining only: +4–6%.
+   Closest "second electric path on a diesel truck" paper.
+
+4) Range Energy RA-01 — electric DRIVE AXLE ON THE TRAILER
+   MVTS on-road, 25.5 mi urban/highway loop, ~59,000 lb, 60 mph:
+   +36.3% (3.82 mpg) system ON vs OFF.
+   Stop/go slice +36.9%. Steady slice +35.3%.
+   Battery was charged before the test. That is not free diesel.
+   Long-haul they have said 10–20% in interviews.
+   Architecture is a powered trailer, not his tractor pod.
+   Useful as "a second driven axle helps a lot." Not his mpg.
+
+5) Revoy electric DOLLY claiming 20–35 mpg
+   Vendor claim, 575 kWh swappable dolly, 22,000 lb.
+   Different machine. Do not use as the Power Pod number.
+
+================================================================
+WHAT THAT MEANS ON A DAY LIKE HIS (EST, labeled)
+================================================================
+Pick 230 miles (middle of 180–280). Diesel EST 6.0 mpg:
+  230 / 6.0 = 38.3 gallons.
+
+If the pod behaves like the Coca-Cola in-service hybrid (+13.7%):
+  6.8 mpg → 33.7 gal. Save ~4.6 gal / day.
+
+If it behaves like the city-cycle hybrids (+25% EST):
+  7.5 mpg → 30.7 gal. Save ~7.6 gal / day.
+
+If it behaves like highway-only (+5%):
+  6.3 mpg → 36.5 gal. Save ~1.8 gal / day. Almost nothing.
+
+His DFW day is the city-cycle case. That is why the write-off
+should hit P&D / shuttle / blind-haul first, not linehaul.
+(Linehaul was a dictation mixup. His work is not that.)
+
+We have NOT measured a diesel+pod Kenworth. When we have a
+prototype, we datalog HIS 180–280 and replace this EST band.
+
+================================================================
+FIRST PRINCIPLES
+================================================================
+Fuel is burned to make heat and motion. In P&D you throw the
+motion away at every light and every dock. Regen puts it back
+in the pack. The second axle is a motor-generator. Highway
+cruise has almost nothing to regen, so the diesel still does
+almost all the work. Tesla Semi at Pepsi / Frito-Lay is the
+other end: no diesel, ~2 kWh/mi. Different product.
+
+Best part is no part: do not hybrid the linehaul fleet first.
+Hybrid the trucks that stop.

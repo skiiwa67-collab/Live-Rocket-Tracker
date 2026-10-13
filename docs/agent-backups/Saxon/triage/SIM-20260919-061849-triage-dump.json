@@ -1,0 +1,63 @@
+{
+  "schema": "saxon-triage-dump/v1",
+  "trigger": "SIMULATED \u2014 protocol validation 2026-09-19 (Helios TEAM TRIAGE SIM TEST)",
+  "trigger_at": "2026-09-19T06:18:49.897270-05:00",
+  "severity": "SIM",
+  "agent": "Saxon",
+  "agent_id": "e9c64170-a22b-4c50-a6df-18c1d0d3b627",
+  "resume_packet": {
+    "standing_orders": [
+      "multi-location backup HARD (local+Dropbox+GitHub+Notion)",
+      "session BEGIN/MID/END JSON HARD",
+      "driving-proxy approvals \u2192 Helios HARD",
+      "team triage dump-on-degrade HARD",
+      "DO NOT BREAK YouTube",
+      "Play Rollout Hold Off",
+      "Soft-PASS/Play Soft-FAIL ship HOLD while Chris driving"
+    ],
+    "lane": "Sync/Ada/art stick; Soft-PASS Ada tips before Sync",
+    "lrt": {
+      "studio": "C:\\\\Users\\\\skiiw\\\\AndroidStudioProjects\\\\RetroCommandCenter",
+      "dumps": "D:\\\\Downloads\\\\Grok\\\\LRT Dump (versioned folders)",
+      "play_icon": {
+        "soft_pass": true,
+        "sha256": "C584E7147C05122DF5ED1D9210FCA79BDEFCD1335E50059FCE4454568DE25E6A",
+        "path": "docs\\\\play-store-media\\\\icon\\\\ic_launcher_512.png"
+      },
+      "f14_heroes_soft_pass": true,
+      "open": [
+        "Play Console icon upload/resubmit",
+        "tip132+ Soft-FAIL art when Chris free"
+      ]
+    },
+    "ai_live_gauge_board": {
+      "soft_pass": [
+        "Blueprint \u00b7 Saxon (saxon)",
+        "Daylight \u00b7 Saxon (saxon-day)"
+      ],
+      "dead": [
+        "Ignition \u00b7 Saxon"
+      ],
+      "live": "https://skiiwa67-collab.github.io/ai-live-gauge-board/",
+      "packs": {
+        "blueprint": "/workspace/ai-live-gauge-board-theme-saxon-v2/",
+        "daylight": "/workspace/ai-live-gauge-board-theme-saxon-daylight/"
+      }
+    },
+    "truck_software": "no active Saxon ownership \u2014 Yard/Power Pod/Strip Electrical",
+    "state_json": "/workspace/agent-backups/saxon/saxon-state.json",
+    "session_mid": "/workspace/agent-backups/saxon/sessions/MID-latest.json",
+    "peers": {
+      "helios": "fe0b6c3f-adcf-483f-a7f9-335890abd80d",
+      "ada": "ec74770f-4547-46a2-b58f-f31ddba60b48",
+      "da_vinci": "5a5c4480-3f5e-4bf5-b315-e2a02011fdfe"
+    }
+  },
+  "push": {
+    "local": true,
+    "dropbox": "pending",
+    "github": "pending SIM \u2014 docs/agent-backups/Saxon/ on Live-Rocket-Tracker",
+    "notion": "pending SIM \u2014 dual-write if page exists"
+  },
+  "test_result": "SIM Soft-PASS if this file lands local+Dropbox"
+}

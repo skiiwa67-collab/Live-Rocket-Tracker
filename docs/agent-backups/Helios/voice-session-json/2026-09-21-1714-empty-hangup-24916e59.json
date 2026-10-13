@@ -1,0 +1,23 @@
+{
+  "schema": "voice-session-extract/v1",
+  "agent": "Helios",
+  "started": "2026-09-21T17:14:22-05:00",
+  "ended": "2026-09-21T17:14:27-05:00",
+  "slug": "empty-hangup-24916e59",
+  "call_id": "voice:call-24916e59-d771-49f5-be02-7751ab79807d",
+  "tags": [
+    "empty-call"
+  ],
+  "decisions": [],
+  "product_details": [],
+  "bugs": [],
+  "hypotheses": [],
+  "actions": [],
+  "ops_knowledge": [
+    "Soft-PASS empty hang-up ~4.7s; turns=[]; no Soft-PASS work owed"
+  ],
+  "paths": {
+    "local": "/workspace/agent-backups/helios/voice-session-json/2026-09-21-1714-empty-hangup-24916e59.json"
+  },
+  "summary_md": "/workspace/agent-backups/helios/voice-call-summaries/2026-09-21-1714-empty-hangup-24916e59.md"
+}

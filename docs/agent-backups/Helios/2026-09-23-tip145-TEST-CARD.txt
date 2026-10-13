@@ -1,0 +1,24 @@
+LRT tip145 / tip146 TEST CARD
+Where we are: 2026-09-23 09:35 CT
+Build target: tip145 base 577d134 → tip146 gap-close when Ada lands it
+Studio only — do not phone-sync; Play stays off
+
+1. Eight company chips — Open CMD flyout. Look for 2×4: MCC, ROS, SpaceX, NASA, CNSA, Ariane, Rocket Lab, ULA. Chips must fit and scale with the flyout (relative layout), not clip into unreadable stubs.
+
+2. Lock timer — Open LCK TIMER row. Look for exactly 1H, 2H, 48H (no 6H/24H).
+
+3. Disclaimer — Open main app Settings/home under the Live Rocket Tracker title. Look for ENTERTAINMENT ONLY block visible and readable.
+
+4. Console skin auto-reset — Pick a non-default chip (e.g. SpaceX), then advance/select the next launch. Look for chrome snapping back (override must not stick forever across launches).
+
+5. Live trail delay — Run a live/near-NET bird. Look for sim 2–5 seconds behind real/NET signals, never ahead; on sparse feeds lag may stretch toward ~30 seconds but still never ahead.
+
+6. Stage-two plume — After stage sep, watch STG2. Look for plume sealed to the nozzle (no floating gap under the hull).
+
+7. Nozzles — Flip a few catalog birds (incl. older packs / Long March family). Look for clean de Laval bells, not blunt/janky stubs.
+
+8. CZ-6A catalog — Select the Long March 6A upcoming. Look for cz6a art/stack (not generic lm fallback look).
+
+9. Hold-scrub — If wired: when LL2 shows Hold/scrub/NET slip, look for sim pausing or backing up — not fake liftoff while the real bird is held.
+
+Wallpaper tip136 entertainment lines should still be present. tip138 cold retry / fetch queue / 5s lag / hullDest / cmd page 2 / Electron GOLD must not regress.

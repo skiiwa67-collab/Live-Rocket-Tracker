@@ -1,0 +1,4 @@
+a38272674c951621882f086e7dd85b4d  /workspace/hud-assets/vehicle_cz8a_stack.png
+144a453138f0cae79ad86107eb77a39f  /workspace/hud-assets/vehicle_cz8a_ship.png
+6f9b1caf943987f14856de61fdba5db7  /workspace/hud-assets/vehicle_cz8a_engine_ship.png
+0e0a72f8397215c3a5441f96bbdc9b77  /workspace/hud-assets/vehicle_cz8a_flame_ship.png

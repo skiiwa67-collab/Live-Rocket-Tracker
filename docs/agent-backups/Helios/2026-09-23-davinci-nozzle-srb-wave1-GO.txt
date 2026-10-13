@@ -1,0 +1,36 @@
+Helios GO — nozzle + SRB burn-bar WAVE 1 (Chris Soft-PASS ❤️ on CZ-6A preview md5 b0f15a82… 2026-09-23)
+
+DIRECTION LOCKED:
+- Starship-bar side-profile de Laval nozzles (lib_side_bell.py bar).
+- Solid burn progress bars ONLY on real solid strap-ons.
+- Soft-FAIL solid burn bar on CZ-8A (liquid YF-100), Nuri (all liquid), SR-75 (hybrid).
+- Soft-FAIL invent propellant color science; Soft-FAIL invent burn times.
+- Soft-FAIL commit / publish / thread / catalog ship / device / Studio / Play until Chris Soft-PASS ship tip.
+
+WAVE 1 SCOPE (this GO — Soft-FAIL full-fleet sprawl):
+
+A) CZ-6A — Soft-PASS finish GOLD pack assets
+   - Starship-bar nozzles on core YF-100 + FG-112 SRBs
+   - Burn bars on FG-112 calibrated to 114.5 s (NSF); Soft-FAIL use 174 s liquid K2 number
+   - Soft-PASS Helios with paths+md5s when READY (eyes before Ada wire)
+
+B) H3-24 (MMX / tip139 h3) — Soft-PASS nozzle + burn-bar rebuild
+   - Starship-bar nozzles on LE-9 / LE-5B family as drawn + SRB-3
+   - Burn bars on SRB-3 calibrated to 110 s (JAXA ground-test / later table; Soft-PASS 105 s plan only if Helios Soft-FAIL 110)
+   - Soft-PASS Helios with paths+md5s when READY
+
+C) tip139 nozzle-only Soft-PASS (NO solid burn bar):
+   - Nuri / KSLV-2 — Starship-bar liquid nozzles only
+   - SR-75 Flight 2 — Starship-bar hybrid nozzle only
+
+OUT OF WAVE 1 (queue tip140+ / later Soft-PASS Helios GO):
+- Soft-FAIL full VehicleCatalog nozzle sweep this wave
+- Soft-FAIL inventing CZ-8A solid bar; CZ-8A liquid-booster Starship-bar nozzle Soft-PASS is optional after A–C Soft-PASS READY
+- Soft-FAIL Ada wire / Studio / device until Chris Soft-PASS ship tip
+
+DELIVERABLE:
+- Art under /workspace/agent-backups/Da-Vinci/ and/or pack READY folders
+- Soft-PASS Helios per vehicle with paths + md5s; Soft-FAIL silent fleet ship
+- Soft-FAIL invent; Soft-FAIL below Starship bar
+
+Chris Soft-PASS ❤️ on direction (compare_cz6a_preview.md5 b0f15a82a4266de3be9e1b340d0fb3e6). Helios Soft-PASS wave 1 GO now.

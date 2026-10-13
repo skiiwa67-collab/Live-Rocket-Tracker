@@ -1,0 +1,142 @@
+{
+  "schema": "tip139-art-review/v1",
+  "reviewed_at_ct": "2026-09-23 07:25 CT",
+  "reviewer": "Helios",
+  "bar": "Starship / CZ-8A GOLD",
+  "chris_hard": "tip139 requires ALL FOUR PASS before any tip139 art push: h3, nuri, sr75, cz6a",
+  "vehicles": [
+    {
+      "id": "cz6a",
+      "name": "Long March 6A",
+      "status": "PASS",
+      "paths": {
+        "stack": "/workspace/hud-assets/vehicle_cz6a_stack.png",
+        "cutaway": "/workspace/hud-assets/vehicle_cz6a_cutaway.png",
+        "shell": "/workspace/hud-assets/vehicle_cz6a_shell.png",
+        "proof": "/workspace/hud-assets/_proof_cz6a.png",
+        "ready": "/workspace/lrt-cz6a-pack-20260923/READY.md"
+      },
+      "md5s": {
+        "stack": "17ad81c62235dd204a535e6f2519e50e",
+        "cutaway": "6dd047856ac7bfb7c538d350d77f8d41",
+        "shell": "037d0d9310b1813b7cf0e806e12b44d5",
+        "proof": "6fdd88e99b2a278d07a76a214444d327"
+      },
+      "findings": [
+        "Proof sheet matches CZ-8A GOLD layout: shell/cutaway/s1/ship/stack+flame/SRB + phone-slot mocks.",
+        "Orange LM hull + 4 solid SRBs + kerolox fills (cyan/amber) coherent with MANIFEST published facts.",
+        "Measured md5s match READY.md claims for stack/cutaway/shell/proof.",
+        "Vector SS\u00d76 + LANCZOS feel; Soft-FAIL propane-pill not observed on proof.",
+        "Catalog wire still Ada-owned (cz6a MISSING) \u2014 art PASS only, not catalog ship."
+      ],
+      "ada_wire_ok": true,
+      "tip139_eligible": true
+    },
+    {
+      "id": "sr75",
+      "name": "HyImpulse SR75 Flight 2",
+      "status": "PASS",
+      "paths": {
+        "stack": "/workspace/hud-assets/vehicle_sr75_stack.png",
+        "cutaway": "/workspace/hud-assets/vehicle_sr75_cutaway.png",
+        "shell": "/workspace/hud-assets/vehicle_sr75_shell.png",
+        "proof": "/workspace/hud-assets/_proof_sr75.png",
+        "ready": "/workspace/lrt-sr75-pack-20260923/READY.md"
+      },
+      "md5s": {
+        "stack": "4cb9b75bac4ea7b8c92166181460718d",
+        "cutaway": "957417a271334d47c873e85e852d6bd2",
+        "shell": "e606603e8b384e2dbaf948a20696a11f",
+        "proof": "b584d56069e25cf65e2172451578f624"
+      },
+      "findings": [
+        "Proof sheet matches Starship/CZ-8A GOLD layout with white composite hull, aft fins, hybrid paraffin/LOX fills.",
+        "Single HyPLOX-75 plume + shell/cutaway/stack trio present; phone-slot mocks Soft-PASS.",
+        "Measured md5s match Da Vinci READY claims (stack 4cb9b75b\u2026).",
+        "Single-stage suborbital proportions coherent with MANIFEST (~12.5 m / \u00d80.64 m).",
+        "Catalog wire still Ada-owned (sr75 MISSING) \u2014 art PASS only."
+      ],
+      "ada_wire_ok": true,
+      "tip139_eligible": true
+    },
+    {
+      "id": "nuri",
+      "name": "Nuri / KSLV-2 (KARI)",
+      "status": "PASS",
+      "paths": {
+        "stack": "/workspace/hud-assets/vehicle_nuri_stack.png",
+        "cutaway": "/workspace/hud-assets/vehicle_nuri_cutaway.png",
+        "shell": "/workspace/hud-assets/vehicle_nuri_shell.png",
+        "proof": "/workspace/hud-assets/_proof_nuri.png",
+        "ready": "/workspace/lrt-nuri-pack-20260923/READY.md",
+        "vehiclespec": "/workspace/lrt-nuri-pack-20260923/ADA_VEHICLESPEC.md"
+      },
+      "md5s": {
+        "stack": "9b055e356a44dd7a70a5ba74f8550693",
+        "cutaway": "36adc443daf67c643ed1f00b492cb497",
+        "shell": "bebeff2a52a31921d421b6c525107419",
+        "proof": "304015dc7fad2d43b7e49764ede92b6d"
+      },
+      "findings": [
+        "Proof sheet matches Starship/CZ-8A GOLD layout: shell/cutaway/s1/ship/stack+flame/upper + phone-slot mocks.",
+        "3-stage kerolox white hull Soft-PASS; LOX cyan + fuel amber fills Soft-PASS; 4\u00d7KRE-075 plume Soft-PASS; no SRBs Soft-PASS.",
+        "Measured md5s match Da Vinci READY claims.",
+        "Proportions coherent with READY published facts (47.2 m / S1 \u00d83.5 m).",
+        "Catalog id=nuri MISSING \u2014 Ada wire after all-four Soft-PASS."
+      ],
+      "ada_wire_ok": true,
+      "tip139_eligible": true,
+      "reviewed_at_ct": "2026-09-23 07:25 CT"
+    },
+    {
+      "id": "h3",
+      "name": "H3-24 Martian Moons eXploration (MMX)",
+      "status": "PASS",
+      "paths": {
+        "stack": "/workspace/hud-assets/vehicle_h3_stack.png",
+        "cutaway": "/workspace/hud-assets/vehicle_h3_cutaway.png",
+        "shell": "/workspace/hud-assets/vehicle_h3_shell.png",
+        "proof": "/workspace/hud-assets/_proof_h3.png",
+        "ready": "/workspace/lrt-h3-pack-20260923/READY.md"
+      },
+      "md5s": {
+        "stack": "0716e244a5ca17668ed908ca4c640673",
+        "cutaway": "de1c01cbdef94ff56ac9c950d45c243a",
+        "shell": "38b6a173c2fbd6f8c69d653c95abe36f",
+        "proof": "32131fd2cdf5b3d54b4c5714aa73caa8"
+      },
+      "findings": [
+        "Proof sheet matches Starship/CZ-8A GOLD layout: shell/cutaway/s1/ship/stack+flame/SRB + phone-slot mocks.",
+        "White H3 hull + 4\u00d7 orange SRB-3 + hydrolox fills (LOX cyan + LH2 pale) coherent with READY published facts (63 m / \u00d85.2 m).",
+        "Measured md5s match Da Vinci READY claims for stack/cutaway/shell/proof.",
+        "Catalog id=h3 already Soft-PASS in VehicleCatalog \u2014 art PASS confirms Ada refresh path.",
+        "Vector SS\u00d76 + LANCZOS feel Soft-PASS; Soft-FAIL propane-pill not observed on proof."
+      ],
+      "ada_wire_ok": true,
+      "tip139_eligible": true,
+      "reviewed_at_ct": "2026-09-23 07:25 CT"
+    }
+  ],
+  "held_missing": [],
+  "tip139_eligible": [
+    "cz6a",
+    "sr75",
+    "nuri",
+    "h3"
+  ],
+  "all_four_gate": true,
+  "quiet_cz8a_window": true,
+  "device_studio_hold": true,
+  "updates": [
+    {
+      "at_ct": "2026-09-23 07:25 CT",
+      "vehicle": "nuri",
+      "status": "PASS"
+    },
+    {
+      "at_ct": "2026-09-23 07:25 CT",
+      "gate": "all_four",
+      "status": "Soft-PASS"
+    }
+  ]
+}

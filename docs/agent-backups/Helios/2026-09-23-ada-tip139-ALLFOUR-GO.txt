@@ -1,0 +1,12 @@
+Chris HARD via Helios voice — tip139 ALL FOUR or wait.
+
+REQUIRED packs (Helios Soft-PASS review each before pack entry):
+1) H3-24 Martian Moons eXploration — GOLD required (existing vehicle_h3_* PARTIAL Soft-FAIL without stack/cutaway)
+2) Nuri / KARI / KSLV-2 — GOLD required
+3) SR-75 Flight 2 HyImpulse — GOLD required
+4) Long March 6A — GOLD READY pack exists; Helios review then wire
+
+HARD: tip139 does NOT ship with fewer than four. If any Soft-FAIL bar, Da Vinci rebuilds; tip139 waits.
+HARD: DO NOT push phone or Studio. Build/stage only when all four Helios-PASS. Dual-write tip139 contents to Notion+GitHub when all four confirmed.
+HARD: Soft-FAIL catalog updates / art ship / device / Studio during CZ-8A live window (~next 60 min from ~07:20 CT 2026-09-23). Chris watching — Soft-FAIL interrupt him.
+Base tip138 already has pad font + fetch race fix.

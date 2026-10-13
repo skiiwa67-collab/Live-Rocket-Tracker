@@ -1,0 +1,18 @@
+Chris EXPLICIT GO via Helios voice — tip139 / 1.0.129 Play Store timing baseline.
+
+Contents Soft-PASS:
+- ALL FOUR GOLD: CZ-6A, SR-75 Flight 2, H3-24 MMX, Nuri/KSLV-2
+- tip137 pad font bump Soft-PASS
+- tip138 fetch race / cold retry Soft-PASS
+- versionCode 139 / versionName 1.0.129
+- stamp-85 @ 113ad7f
+- audited Soft-PASS: Tinkabot + Helios BOTH PASS
+
+HARD FLOW:
+1) Soft-FAIL direct adb to Motorola / any device.
+2) Studio-first: get stamp-85 tip139 into Android Studio so Chris can sync/install himself if he wants.
+3) THEN Play Store submission (signed AAB) — timing baseline for how long Play review takes before a launch.
+4) Soft-PASS Helios immediately with: Play submission confirmation, estimated review time if shown, EXACT submission timestamp CT.
+5) Dual-write Play submission timing record Notion + GitHub.
+
+Chris installs from Studio or Play himself. Soft-FAIL device push by agents.

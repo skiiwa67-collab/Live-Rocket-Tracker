@@ -1,0 +1,101 @@
+{
+  "agent": "Power Pod",
+  "agent_id": "8b062242-aff5-4aea-b5fa-1665562c2cd9",
+  "softpass_date": "2026-09-19",
+  "tz": "America/Chicago",
+  "label": "SPEC/EST \u2014 not live telemetry",
+  "home_windows": "C:\\Users\\skiiw\\Projects\\Truck-Electrification-Network",
+  "box_mirror": "/workspace/christopher-olsen-projects/04-truck-electrification-network/",
+  "local_json": "/workspace/Grok-Agent-Backups/power-pod/softpass-power-pod-2026-09-19.json",
+  "pitch_url": "https://skiiwa67-collab.github.io/yard-energy-console/",
+  "key_files": [
+    "POWER-POD.txt",
+    "HYBRID-MPG.txt",
+    "PAD-SPEC.txt",
+    "ROUTER-SPEC.txt",
+    "STRIP.txt",
+    "WHO-PAYS.txt",
+    "CARRY-HUD-SEND.html",
+    "hud-assets/"
+  ],
+  "system_picture": {
+    "hardware": {
+      "axle1": "diesel keeps ONE rear drive axle",
+      "axle2": "two Tesla-class compact drive units, one per wheel \u2014 those ARE the Power Pods",
+      "tesla": "physics analog only (Semi / Model S\u2013class plug motors). NOT a Tesla PO. No badge.",
+      "cooling_hv": "Orange HV class, liquid cool, bolted serviceable snap-on",
+      "energy_source": "snap-in trailer battery modules (and/or small tractor junction). NOT a wall plug on the cab."
+    },
+    "energy_paths": {
+      "dock": "bank under slab \u2192 pad face \u2192 shoe \u2192 jumper UP inside landing-gear legs \u2192 trailer junction \u2192 snap-in modules \u2192 hitch hop \u2192 Power Pod / BEV pack. Skin PV \u2192 modules with pad idle.",
+      "road": "axle-2 pods propel + regen into same modules. Regen is NOT the dock path. Do not paint lightning at wheels as the pad.",
+      "gen1_hitch": "manual HV hitch hop + HVIL interlock. HVIL open = pods offline, no green. Auto-mate is Gen 2.",
+      "gen1_charge_money": "charge the DROPPED trailer on the pad (never crosses fifth wheel). That ships first."
+    },
+    "fleet_tags": [
+      "BEV SEMI (own drive, no diesel, no pods)",
+      "DIESEL DOUBLES (bare diesel)",
+      "DIESEL+POD (only tractor that takes pods)"
+    ],
+    "software_half": {
+      "propulsion_regen": "on axle 2",
+      "slip": "per-wheel torque/slip; electric ms; PWM tens of kHz; traction loop slower than PWM, far faster than air ABS/engine brake 10\u201350 Hz",
+      "diesel_limit": "diesel axle cannot torque-vector; pods can (ice/snow/wet DFW/light trailer/split-mu)",
+      "logging": "log slip/torque; insurance discount is a PATH if log trustworthy; no % invented",
+      "yard_consumes": "torque, slip, SOC (dash until log)"
+    },
+    "ui_locks": {
+      "soc": "dash until log \u2014 no fake 73",
+      "colors": "slip-working green; pod red = fault not ice; ice is weather",
+      "hero": "pods only on DIESEL+POD tractor; two units axle 2; no center lump; orange cable not halo"
+    },
+    "mpg": {
+      "kit_published": null,
+      "closest_analog": "NREL Coca-Cola Eaton hybrid +13.7% in-service; +22\u201330% city EST; ~0\u20136% highway",
+      "duty": "DFW P&D/shuttle 180\u2013280 mi = city case",
+      "other_analogs_file": "HYBRID-MPG.txt (Range Energy trailer axle, UC Davis, SAE P2 \u2014 labeled, not kit mpg)"
+    }
+  },
+  "pad_interface_consumed_not_owned": {
+    "owner": "Strip Electrical",
+    "gen1": "mechanical plunger/rocker; rubber = recycled-tire crumb housing not conductor",
+    "lamps": "CONDUCTING green / IDLE dim / WORN amber / FAULT red",
+    "pod_takes": "module SOC after pad path"
+  },
+  "open_unknown": [
+    "motor kW",
+    "pack kWh",
+    "any V/A/kV",
+    "hitch pinout",
+    "insurance %",
+    "kit mpg (no published number)",
+    "signed Jost/SAF HV SKU",
+    "auto-mate Gen 2 timeline"
+  ],
+  "do_not_invent": [
+    "volts/amps/kV",
+    "fake SOC",
+    "Tesla PO/badge",
+    "insurance %",
+    "kit mpg",
+    "wall plug on cab",
+    "lightning at wheels as pad",
+    "pods on dolly/pup/BEV/straight diesel",
+    "price"
+  ],
+  "published_hitch_analogs": {
+    "manual_hv_plug": "ACEA ePTO Connection 1.0.0 (ISO 23316-2); trailer HV sources/e-axles still out of scope",
+    "sae_j3253": "ePTO \u2014 does NOT cover Class 8 tractor\u2194semi (tabled)",
+    "iso_13044_2": "FACS auto fifth-wheel electrical+air at 24V \u2014 not HV",
+    "alt_arch": "Trailer Dynamics / Range Energy put e-axle ON trailer (skip HV hop)",
+    "auto_hv_fifth_wheel": "patents only (e.g. US12208655, US11981376) \u2014 no production analog named"
+  },
+  "todos_open": [
+    "Gen 1 manual hitch hop + green/no-green HVIL interlock \u2014 SPEC detail pending",
+    "Gen 2 fifth-wheel auto HV mate \u2014 on the board, not Gen 1 blocker",
+    "tape real van + pup for lateral foot spacing (Strip owns; pod consumes spacing for hop)",
+    "trustworthy slip/torque log schema for insurance path",
+    "module kWh / pod kW once defendable \u2014 remain UNKNOWN until then"
+  ],
+  "who_pays_truck_side": "warehouse electrify + truck electrify + hybrid-axle write-off (not radios)"
+}

@@ -1,0 +1,9 @@
+{
+  "type": "ACK",
+  "agent": "Saxon",
+  "rule": "HARD-saxon-skippy-art-overflow",
+  "at": "2026-09-23T07:23:22.018031-05:00",
+  "role": "PRIMARY art reviewer/overflow",
+  "skippy": "SECONDARY at capacity only",
+  "quiet_chris": "CZ-8A Soft-FAIL interrupt"
+}

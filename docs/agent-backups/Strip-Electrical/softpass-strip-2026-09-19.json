@@ -1,0 +1,54 @@
+{
+  "agent": "Strip Electrical",
+  "project": "Truck-Electrification-Network / DFW Node",
+  "home": "C:\\Users\\skiiw\\Projects\\Truck-Electrification-Network",
+  "spec_path_box": "/workspace/strip-spec/GEN1-PAD-SPEC.md",
+  "spec_path_user": "C:\\Users\\skiiw\\Projects\\Truck-Electrification-Network\\GEN1-PAD-SPEC.md",
+  "label": "SPEC",
+  "status": "SPEC not live. DFW Node stays dark.",
+  "locked_2026_08_20": {
+    "owner": "Strip Electrical — pad physics / volts / trench only. Not Power Pod motors. Not 911 mesh.",
+    "form": "Flush modular snap-out cassettes in recessed slab pan. Recycled-tire crumb housing. Full door-run parallel to doors at landing-gear line.",
+    "trench_band": "Chris two-line lock on dock photo bays 66–60, trailer on 62. Green=one cassette edge, red=other. Band between lines under shoes. Not skinny centerline bar. Not dock plate.",
+    "activation_gen1": "WEIGHT. Mechanical plunger/rocker inside cassette. Rubber does not conduct. Material + hybrid later gens only.",
+    "power_path": "building powerpacks ↔ pad (bidirectional) → shoe → jumper UP INSIDE landing-gear tubes → trailer modules → Power Pod/BEV. Skin PV→modules with pad idle.",
+    "laterals": "Fatter pipe from band back to dock wall at intervals set by ampacity/drop/fault zone. Cassette=contact bus. Laterals=tie-ins.",
+    "sku": "One cassette face. Round sand foot + square plate. No second SKU. Seam dead. Shoe on joint does not close.",
+    "lamps": "Per bay: CONDUCTING green, IDLE dim, WORN amber, FAULT red. Ice=weather. Island=yard verb not pad lamp.",
+    "first_believer": "ONE cassette + ONE lateral + ONE bay (trailer on 62). Not full 66–60 band first.",
+    "voltage_inherited": {
+      "roof_PV": "1000/1500 V string typical → powerpacks",
+      "powerpack_2_4HR_analog": "960 VDC max / 66 A / 55 kW",
+      "megapack_2_analog": "<1230 VDC",
+      "site_AC": "480 VAC not the pad",
+      "pad_inout": "same DC class as powerpacks",
+      "semi_megacharger_analog": "180–1000 VDC; CARB 822/548 kWh",
+      "not_pad_amps": "NOT Megacharger 1100 A"
+    }
+  },
+  "do_not_invent": ["pad volts", "pad amps/AWG", "lateral spacing", "cassette length", "band width green-to-red", "wall-to-band offset", "53 vs pup gear offset", "round shoe diameter", "SKU price", "swap minutes", "Tesla PO"],
+  "published_analogs": {
+    "jost_feet": "10x10 and 12x12 in",
+    "jost_travel": "14 / 17 / 19 in"
+  },
+  "open_todos": [
+    "Tape wall-to-band offset on real van and pup",
+    "Tape left-right foot spacing / round shoe diameter",
+    "Defend contact patch + fault current before pad V/A",
+    "Drain/slope design for flush pan + in-tube water",
+    "First-believer bay 62 install plan"
+  ],
+  "consumers": {
+    "Yard Software": "conducting/idle/worn/fault per bay",
+    "Power Pod": "module energy after pad; not wall plug",
+    "Steve/Artist": "HUD stills; no fake kV; flush not raised bar"
+  },
+  "hard_chris": [
+    "EST on estimates. SPEC on uninvented hardware.",
+    "22.0 MWh and 201 doors EST chips not dashes.",
+    "No Tesla PO/logos. No radios/911 mesh.",
+    "No illegal doubles stills. SOC dash until measured.",
+    "MiniME pager once only when Chris must look: Hey, Strip Electrical has something to say.",
+    "Driving proxy: route approvals to Helios when Chris unavailable."
+  ]
+}

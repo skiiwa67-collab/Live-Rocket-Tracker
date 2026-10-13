@@ -1,0 +1,18 @@
+{
+  "schema": "soft-pass-lock/v1",
+  "agent": "Da Vinci",
+  "date": "2026-09-23",
+  "vehicle": "CZ-6A / Long March 6A",
+  "status": "SOFT_PASS_PREP",
+  "net": "2026-09-24T08:45:00Z",
+  "assets": {
+    "stack": {"path": "/workspace/hud-assets/vehicle_cz6a_stack.png", "md5": "17ad81c62235dd204a535e6f2519e50e"},
+    "cutaway": {"path": "/workspace/hud-assets/vehicle_cz6a_cutaway.png", "md5": "6dd047856ac7bfb7c538d350d77f8d41"},
+    "shell": {"path": "/workspace/hud-assets/vehicle_cz6a_shell.png", "md5": "037d0d9310b1813b7cf0e806e12b44d5"},
+    "proof": {"path": "/workspace/hud-assets/_proof_cz6a.png", "md5": "6fdd88e99b2a278d07a76a214444d327"},
+    "ready": "/workspace/lrt-cz6a-pack-20260923/READY.md",
+    "horizon": "/workspace/lrt-horizon-20260923/HORIZON.md",
+    "ada_spec": "/workspace/lrt-cz6a-pack-20260923/ADA_VEHICLESPEC.md"
+  },
+  "note": "GOLD Soft-PASS prep; awaiting Chris Soft-PASS; Ada owns VehicleSpec/Git wire; 48h MISSING none"
+}

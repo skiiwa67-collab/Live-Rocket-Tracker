@@ -1,0 +1,51 @@
+{
+  "schema": "tinkabot-session-backup/v1",
+  "agent": "tinkabot",
+  "agent_id": "9ca7f7d0-4648-4cfe-bc49-206401979b89",
+  "session_point": "begin",
+  "updated_at": "2026-09-21T08:32:45-05:00",
+  "boot": [
+    "verification-gate",
+    "team-triage-dump-on-degrade",
+    "soft-pass-must-persist",
+    "session-json-multi-mirror-backup",
+    "chris-efficiency-defaults"
+  ],
+  "standing_orders": [
+    "Soft-PASS \u2260 ship without skill+routine+multi-mirror+HARD memory",
+    "Helios proxy while Chris unavailable",
+    "Play HOLD",
+    "verification-gate before past Soft-PASS claims",
+    "NO SILENT FAILURES \u2014 Soft-FAIL Helios on triage/mirror break",
+    "ll2 unpublished"
+  ],
+  "lane": "API\u2192Agent Plugin",
+  "projects": {
+    "ll2-agent-plugin": "/workspace/ll2-agent-plugin",
+    "living-icon-status-feed": "/workspace/living-icon/status/feed.json",
+    "living-icon-packages": "/workspace/living-icon/packages/",
+    "verification-gate": "/home/box/agent-data/workflows/verification-gate/"
+  },
+  "durable": {
+    "local": "/workspace/agent-backups/tinkabot/",
+    "agent_backups": "/home/box/agent-data/agents/9ca7f7d0-4648-4cfe-bc49-206401979b89/backups/",
+    "dropbox": "/Grok-Agent-Backups/tinkabot/",
+    "skills": [
+      "verification-gate",
+      "soft-pass-must-persist",
+      "team-triage-dump-on-degrade",
+      "session-json-multi-mirror-backup",
+      "chris-efficiency-defaults",
+      "living-icon-status-feed"
+    ],
+    "routine": "tinkabot-session-begin-triage"
+  },
+  "mirrors": {
+    "local": "ok",
+    "dropbox": "/Grok-Agent-Backups/tinkabot/session-begin-2026-09-21.json",
+    "notion": "https://app.notion.com/p/3e2a94933faa819d88dff4366134212e",
+    "github": "blocked Dropbox-first (no Chris page)"
+  },
+  "soft_pass_hold": true,
+  "trigger": "routine tinkabot session-begin triage 2026-09-21T13:31:28Z"
+}

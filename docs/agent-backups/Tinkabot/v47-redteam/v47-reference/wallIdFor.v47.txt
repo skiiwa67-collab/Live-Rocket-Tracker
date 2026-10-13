@@ -1,0 +1,5 @@
+        private fun wallIdFor(ids: LineViewIds, fontStyle: FontStyleOption): Int = when (fontStyle) {
+            FontStyleOption.BOLD -> ids.wallBold
+            FontStyleOption.BLACK -> ids.wallBlack
+            FontStyleOption.REGULAR -> ids.wallRegular
+        }

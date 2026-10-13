@@ -1,0 +1,13 @@
+{
+  "type": "MID",
+  "agent": "Saxon",
+  "at": "2026-09-19T06:27:17.396434-05:00",
+  "delta": [
+    "MiniME DOWN confirmed ListMachines connected=false",
+    "ACK Helios Soft-PASS/Play HOLD",
+    "Tonight prep pack written",
+    "Ada pinged: build on box terminal; Saxon Sync lane"
+  ],
+  "prep": "/workspace/LRT-SAXON-tonight-prep-v1.0.123",
+  "hold": true
+}

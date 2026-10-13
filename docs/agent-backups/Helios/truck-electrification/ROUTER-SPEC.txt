@@ -1,0 +1,40 @@
+YARD SOFTWARE — POWER ROUTER
+Christopher Olsen. Locked 2026-08-20 from DFW Node (+ cassette-ID dispatch 2026-08-20).
+I spec watts. Strip Electrical owns the busbar. Power Pod owns the axle. Steve paints CARRY-HUD-SEND.html. One file.
+
+PATH
+Roof PV → building bank → pad cassette (weight-on only)
+  → shoe on top of the flush face
+  → conduit UP INSIDE the landing-gear legs
+  → trailer junction → snap-in modules → Power Pod / BEV pack
+  and back to the building.
+Skin PV → modules still works with pad idle.
+CONDUCTING pad also lets modules backfeed the bank.
+Gen 1 close = mechanical. I read the lamp.
+
+PAD LAMPS — one per snap-in cassette
+CONDUCTING green | IDLE dim | WORN amber | FAULT red
+Full-length flush run parallel to dock doors. One bay dead ≠ yard dead.
+Both shoes or no watts. Ice = weather not a lamp.
+Housing = recycled-tire rubber. No price on HUD.
+
+DISPATCH KEY — YARD FIRST
+Watts go to a CONDUCTING cassette ID. Not a door number.
+Doors = layout. Weight = switch.
+Gen 1 ship = YARD-only. City verbs parked until real interconnect.
+
+CITY — Estes DFW four-yard prototype
+ARL ↔ Dallas ↔ GRP ↔ Lone Star
+Verbs: EXPORT / CHARGE / ISLAND (amber = legal isolated, not pad fault)
+No MW. No signed interconnect. Cell first, sat hop when cell dies. Not radios. Not 911.
+
+HUD CHIPS — do not invent
+201 doors EST | 22.0 MWh EST | SOC dash until log | live doors/201 EST
+
+INPUTS
+Strip: per-cassette state | Pod: torque/slip/module SOC (dash) | Fleet: BEV SEMI · DIESEL DOUBLES · DIESEL+POD
+No volts/amps invented.
+
+WHO PAYS
+Public node plant (warehouse electrify + truck + hybrid-axle write-off). Private freight.
+No radios in this HUD.

@@ -1,0 +1,14 @@
+Chris HARD via Helios voice — tip139 ALL FOUR + year QUEUE.
+
+tip139 must include ALL FOUR GOLD packs before any tip139 push:
+1) H3-24 MMX — GOLD rebuild (PARTIAL Soft-FAIL: parts exist, no stack/cutaway)
+2) Nuri / KSLV-2 — GOLD
+3) SR-75 Flight 2 — finish READY/md5s/mirror then Helios review
+4) CZ-6A — KEEP READY; Helios reviewing
+
+If any Soft-FAIL Starship GOLD bar: rebuild; tip139 waits. Soft-FAIL placeholders.
+
+YEAR SWEEP: expand beyond 30d toward ~1 year launch art coverage — QUEUE ONLY for tip140+.
+During CZ-8A live window (~60 min from ~07:20 CT): Soft-FAIL ship art, Soft-FAIL catalog updates, Soft-FAIL device/Studio pushes. Soft-FAIL interrupt Chris (he is watching live).
+HOLD device push until Chris says go.
+Soft-PASS Helios paths+md5s per pack for review. Dual-write when all four confirmed.

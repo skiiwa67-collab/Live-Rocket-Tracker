@@ -1,0 +1,117 @@
+DFW trucking network — daily power (verified vs EST)
+Updated 2026-08-20. Christopher Olsen. Do not invent beyond what is labeled EST.
+
+UNITS
+- Instantaneous power: GW (what the array can put out in the sun)
+- Daily energy: GWh/day (what actually matters for a dock that runs today)
+- 1 TW = 1,000 GW. 1 TWh/day = 1,000 GWh/day.
+- A truck burns energy per mile (kWh/mi), not per year.
+
+VERIFIED — WAREHOUSE / LIVE SPACE
+- Partners Real Estate, DFW Industrial Q2 2026 (properties over 10,000 SF):
+  Inventory 1,116,136,543 SF. Vacancy 8.7%. Occupied 1,019,032,664 SF.
+  Warehouse/Distribution 887,989,567 SF, vacancy 9.7%, occupied 801,854,579 SF.
+  Source: https://partnersrealestate.com/wp-content/uploads/2026/05/Q2_2026_Dallas-Industrial.pdf
+- Newmark Q2 2026: market total about 1,170,016,147 SF (different universe).
+- Metroport / CoStar mid-year 2026 (as of 2026-08-03): more than 1.25 billion SF.
+  Logistics 937.0M SF (75%). Specialized industrial 185.4M. Flex 127.3M.
+  Vacancy 8.1%. Existing average building 48,600 SF. UC buildings avg 149,000 SF.
+  Source: https://metroportcre.com/dallas-fort-worth-industrial-market-report-mid-year-2026/
+- JLL Q4 2025 (narrower set): 5,720 industrial buildings, 929,304,126 SF.
+  Warehouse & Distribution 5,021 buildings, 807,336,446 SF.
+  Source: JLL DFW industrial Q4 2025 / Q1 2026 packet.
+
+"How many warehouses" depends on the set. Broker W/D is about 5,000 buildings.
+CoStar "industrial" is the 1.1–1.25 billion SF market. Parcel scrapers count tens of
+thousands of small industrial properties. Those are not the same thing.
+
+VERIFIED — SUN (not a sales flyer)
+- NREL ATB commercial PV: DFW sits in GHI bins about 4.75–5.25 kWh/m2/day,
+  mean DC capacity factor about 16.3–17.1%.
+  Mid used here: 1,490 kWh/kW-year = 4.08 kWh/kW-day. Label EST.
+- NREL PVWatts API was not reachable from this machine. Do not treat 1,490 as a site study.
+
+VERIFIED — FREIGHT (not a trailer-in-the-sun count)
+- NCTCOG Freight North Texas 2022: 464 million tons shipped FROM the region in 2020.
+  About 84.6% of goods to/from the region move by truck.
+  Daily outbound tons EST: 464e6 / 365 = 1.27 million tons/day (all modes).
+  Truck share of that tonnage EST: 1.07 million tons/day.
+- Intermodal LIFT CAPACITY (not actual daily lifts): Alliance 1,000,000; Dallas Intermodal
+  Wilmer/Hutchins 387,000; Mesquite 225,000; KCS Wylie 342,000. Combined 1,954,000/year.
+  That is capacity, not measured daily volume.
+- NCTCOG TAFT 10-county roadway VMT: 234,338,499 miles/day (2023), 266,052,869 (2026).
+  That is ALL vehicles. Published truck-only VMT for DFW was not in the pages pulled.
+- Progress North Texas 2023 headline: "North Texans travel almost 100 million miles a day."
+  Different geography than the 10-county TAFT total. Do not mix them.
+- TxDMV Aug 2024: 197,757 TOKEN TRAILER plates (semitrailer >6,000 lb). Statewide, not DFW.
+- No published count of "trailers rolling around DFW today catching sun."
+
+VERIFIED — GRID SCALE (so terawatts can be killed honestly)
+- ERCOT North zone peak load: 31,980 MW (Feb 2025). Source: Potomac/ERCOT monthly.
+- ERCOT system peak: 82,772 MW (18 Jun 2026). Source: ERCOT Monthly Operational Overview June 2026.
+
+HIS HAUL PHYSICS (from his HTML CONFIG, not invented)
+- 2.0 kWh per mile loaded, level ground. Planning reserve 30%. No regen in planning.
+- Trailer roof in his writeup: about 375 sq ft.
+
+DAILY ROOF ENERGY — EST, assumptions stated
+Usable-roof fraction and W/SF are NOT published for DFW. Bands:
+
+  conservative: 40% of Partners W/D footprint * 10 W/SF = 3.55 GW DC → 14.5 GWh/day
+  mid:         55% * 12 W/SF                         = 5.86 GW DC → 23.9 GWh/day
+  aggressive:  65% * 15 W/SF                         = 8.66 GW DC → 35.3 GWh/day
+  mid logistics (CoStar 937M SF, 55% * 12 W):          6.18 GW DC → 25.2 GWh/day
+
+Daily energy = nameplate kW * 4.08 kWh/kW-day.
+
+NOT TERAWATTS. Mid case is about 24 GWh per day.
+1 TW running 24 hours would be 24,000 GWh/day. Off by about 1,000×.
+The mix-up is power (GW) vs energy (GWh/day) vs yearly TWh.
+
+TRAILER SOLAR — EST, statewide plates only
+375 SF * 12 W/SF = 4.5 kW per trailer EST.
+197,757 Texas token trailers * 4.5 kW = 0.89 GW IF every plate is a 53-ft box in full sun.
+Daily: 3.6 GWh/day. That is ALL TEXAS, not DFW, and moving/parked/shaded is not published.
+
+TRUCK USE PER MILE — his number
+2.0 kWh/mi.
+Mid roofs 23.9 GWh/day ÷ 2.0 kWh/mi = 12.0 million truck-miles per day of energy.
+Conservative 7.2 million. Aggressive 17.7 million.
+
+What that is NOT: a published DFW truck-mile count. It is how many miles the roofs can feed
+at his 2.0 kWh/mi. Until NCTCOG/FAF truck VMT is pulled, do not claim the fleet uses X GWh/day.
+
+Per truck-day (miles/day is NOT published; leave as a slider for the Unity sim):
+  200 mi/day local  * 2.0 = 400 kWh/truck-day. Mid roofs ≈ 60,000 truck-days.
+  400 mi/day regional * 2.0 = 800 kWh/truck-day. Mid roofs ≈ 30,000 truck-days.
+  600 mi/day long    * 2.0 = 1,200 kWh/truck-day. Mid roofs ≈ 20,000 truck-days.
+
+THE POINT
+Warehouse roofs in DFW are a several-gigawatt plant and a couple-dozen GWh per day.
+That is nuclear-plant scale, no new utility feeder. It is not a terawatt.
+The strip + trailer + industrial bank is how that daily energy actually reaches a truck
+without melting the building service drop.
+
+UNITY SIM SHOULD TICK THIS DAILY
+- Sun → roof GWh today
+- Trailer skin GWh today (only trailers in sun, EST)
+- Bank SOC
+- Miles run * 2.0 kWh/mi (grade table on CA)
+- Mixed fleet (diesel / diesel+pod / full electric)
+- Outage: grid = 0, nodes still move
+
+ESTES YARD CELL (Chris, 2026-08-20)
+- His terminal: about 180 dock doors (he said this; "mount mowers" was speech-to-text).
+- Rule: 2–3 trailers per door → 360–540 trailers. His ~500 sits in the middle.
+- Mix: 53-ft and 28-ft pups. Do not count every roof as 375 SF.
+- Pup usable roof EST: 198 SF (same usable fraction as 375 on a 53).
+- Mid 12 W/SF, 4.08 kWh/kW-day, 2.0 kWh/mi:
+  180 doors × 2.5 = 450 trailers, 30% pup EST → 7.1 MWh/day → ~3,550 truck-mi/day
+  all 53 → 8.3 MWh/day; 50% pup → 6.3; all pup → 4.4
+- Published Estes DFW (do not assume 180 doors on each):
+  Dallas DLT 3925 Singleton Blvd
+  Arlington/FW ARL 5200 E Loop 820 S (press: 203-door, 200k SF, 2023)
+  Grand Prairie GRP 300 N Belt Line, Irving (119 doors, opened 2021; Estes 4th DFW terminal then)
+  Logistics 3254 W Trinity, Grand Prairie (not an LTL door count)
+- If his 180 IS the FW yard: 180 + 119 at 2.5x and 30% pup ≈ 747 trailers, ~12 MWh/day skins.
+- Estes Texas 17 terminals (2023 press). Not all DFW. Do not 17× this yard.

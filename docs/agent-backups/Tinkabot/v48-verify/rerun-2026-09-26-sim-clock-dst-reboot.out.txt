@@ -1,0 +1,19 @@
+== DST spring-forward 2026-03-08 (02:00->03:00 CT); anchor AT now (fresh re-anchor)
+  24h base_dd05a67     03:30 CDT shows   02:30:00 expected 03:30:00 WRONG
+  24h base_wallfields  03:30 CDT shows   03:30:00 expected 03:30:00 OK
+  12h base_dd05a67     03:30 CDT shows   02:30:00 expected 03:30:00 WRONG
+  12h base_wallfields  03:30 CDT shows   03:30:00 expected 03:30:00 OK
+== DST fall-back 2026-11-01 (02:00 CDT->01:00 CST); fresh anchor at 01:30 CST (2nd pass) and 09:00
+  24h base_dd05a67     01:30 CST shows   02:30:00 expected 01:30:00 WRONG
+  24h base_dd05a67     09:00 CST shows  010:00:00 expected 09:00:00 WRONG
+  24h base_wallfields  01:30 CST shows   01:30:00 expected 01:30:00 OK
+  24h base_wallfields  09:00 CST shows   09:00:00 expected 09:00:00 OK
+  12h base_dd05a67     01:30 CST shows   02:30:00 expected 01:30:00 WRONG
+  12h base_dd05a67     09:00 CST shows  010:00:00 expected 09:00:00 WRONG
+  12h base_wallfields  01:30 CST shows   01:30:00 expected 01:30:00 OK
+  12h base_wallfields  09:00 CST shows   09:00:00 expected 09:00:00 OK
+== DST spring-forward, anchored 01:59:00 CST, NO re-anchor, view at 03:00:30 CDT (wall-field base)
+  24h shows 02:00:30 expected 03:00:30  (stale by 1h until next re-anchor)
+== Reboot: last RemoteViews base from old uptime; elapsedRealtime restarts near 0
+  launcher re-inflates cached Chronometer: shows −96:59:20 (negative) until BOOT_COMPLETED re-render
+TOTAL WRONG for wall-field base with fresh anchor: 0

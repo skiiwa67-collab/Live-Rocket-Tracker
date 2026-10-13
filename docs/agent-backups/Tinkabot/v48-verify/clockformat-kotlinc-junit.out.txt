@@ -1,0 +1,11 @@
+info: kotlinc-jvm 2.2.20 (JRE 17.0.20.1+1)
+== kotlinc compile of tracked v48 ClockFormat.kt + ClockFormatTest.kt (JVM)
+kotlinc rc=0
+== JUnit run
+JUnit version 4.13.2
+.........
+Time: 0.089
+
+OK (9 tests)
+
+junit rc=0

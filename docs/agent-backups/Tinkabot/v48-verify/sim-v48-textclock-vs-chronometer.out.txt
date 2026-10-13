@@ -1,0 +1,48 @@
+== A. tinkabot DST/reboot scenarios (old = dd05a67/a977c6a real-ms Chronometer base)
+  spring-forward 03:30 CDT, fresh anchor                     24h v47=03:30:00 old=  02:30:00 exp=03:30:00 v47:OK old:WRONG
+  fall-back 01:30 CST (2nd pass), fresh anchor               24h v47=01:30:00 old=  02:30:00 exp=01:30:00 v47:OK old:WRONG
+  fall-back 09:00 CST, fresh anchor                          24h v47=09:00:00 old= 010:00:00 exp=09:00:00 v47:OK old:WRONG
+  spring-forward anchored 01:59 CST, NO re-anchor, view 03:00:30 24h v47=03:00:30 old=  02:00:30 exp=03:00:30 v47:OK old:WRONG
+  fall-back anchored 01:59 CDT, NO re-anchor, view 01:00:30 CST 24h v47=01:00:30 old=  02:00:30 exp=01:00:30 v47:OK old:WRONG
+  spring-forward 03:30 CDT, fresh anchor                     12h v47=03:30:00 old=  02:30:00 exp=03:30:00 v47:OK old:WRONG
+  fall-back 01:30 CST (2nd pass), fresh anchor               12h v47=01:30:00 old=  02:30:00 exp=01:30:00 v47:OK old:WRONG
+  fall-back 09:00 CST, fresh anchor                          12h v47=09:00:00 old= 010:00:00 exp=09:00:00 v47:OK old:WRONG
+  spring-forward anchored 01:59 CST, NO re-anchor, view 03:00:30 12h v47=03:00:30 old=  02:00:30 exp=03:00:30 v47:OK old:WRONG
+  fall-back anchored 01:59 CDT, NO re-anchor, view 01:00:30 CST 12h v47=01:00:30 old=  02:00:30 exp=01:00:30 v47:OK old:WRONG
+== B. reboot: launcher re-inflates cached RemoteViews 40 s after boot, app process not yet run
+  24h v47 TextClock=23:00:40 exp=23:00:40 OK   (old cached Chronometer: −96:59:20 per prior sim)
+  12h v47 TextClock=11:00:40 exp=11:00:40 OK   (old cached Chronometer: −96:59:20 per prior sim)
+== C. Ada hourly re-anchor cases, re-anchor 0 s and 300 s late (old = Helios per-hour prefix Chronometer)
+  late=300s 24h 23:59:59->00:00    wall   +0s v47=00:00:00 old=  24:00:00 exp=00:00:00 v47:OK old:WRONG
+  late=300s 24h 23:59:59->00:00    wall   +1s v47=00:00:01 old=  24:00:01 exp=00:00:01 v47:OK old:WRONG
+  late=300s 24h 23:59:59->00:00    wall  +60s v47=00:01:00 old=  24:01:00 exp=00:01:00 v47:OK old:WRONG
+  late=300s 24h 23:59:59->00:00    wall +299s v47=00:04:59 old=  24:04:59 exp=00:04:59 v47:OK old:WRONG
+  late=300s 24h 00:59:59->01:00    wall   +0s v47=01:00:00 old=00:1:00:00 exp=01:00:00 v47:OK old:WRONG
+  late=300s 24h 00:59:59->01:00    wall   +1s v47=01:00:01 old=00:1:00:01 exp=01:00:01 v47:OK old:WRONG
+  late=300s 24h 00:59:59->01:00    wall  +60s v47=01:01:00 old=00:1:01:00 exp=01:01:00 v47:OK old:WRONG
+  late=300s 24h 00:59:59->01:00    wall +299s v47=01:04:59 old=00:1:04:59 exp=01:04:59 v47:OK old:WRONG
+  late=300s 24h 09:59:59->10:00    wall   +0s v47=10:00:00 old= 010:00:00 exp=10:00:00 v47:OK old:WRONG
+  late=300s 24h 09:59:59->10:00    wall   +1s v47=10:00:01 old= 010:00:01 exp=10:00:01 v47:OK old:WRONG
+  late=300s 24h 09:59:59->10:00    wall  +60s v47=10:01:00 old= 010:01:00 exp=10:01:00 v47:OK old:WRONG
+  late=300s 24h 09:59:59->10:00    wall +299s v47=10:04:59 old= 010:04:59 exp=10:04:59 v47:OK old:WRONG
+  late=300s 12h 12:59:59->01:00    wall   +0s v47=01:00:00 old=  13:00:00 exp=01:00:00 v47:OK old:WRONG
+  late=300s 12h 12:59:59->01:00    wall   +1s v47=01:00:01 old=  13:00:01 exp=01:00:01 v47:OK old:WRONG
+  late=300s 12h 12:59:59->01:00    wall  +60s v47=01:01:00 old=  13:01:00 exp=01:01:00 v47:OK old:WRONG
+  late=300s 12h 12:59:59->01:00    wall +299s v47=01:04:59 old=  13:04:59 exp=01:04:59 v47:OK old:WRONG
+  late=300s 12h 09:59:59->10:00    wall   +0s v47=10:00:00 old= 010:00:00 exp=10:00:00 v47:OK old:WRONG
+  late=300s 12h 09:59:59->10:00    wall   +1s v47=10:00:01 old= 010:00:01 exp=10:00:01 v47:OK old:WRONG
+  late=300s 12h 09:59:59->10:00    wall  +60s v47=10:01:00 old= 010:01:00 exp=10:01:00 v47:OK old:WRONG
+  late=300s 12h 09:59:59->10:00    wall +299s v47=10:04:59 old= 010:04:59 exp=10:04:59 v47:OK old:WRONG
+  (C) old WRONG=20  (matches Ada's recorded TOTAL WRONG: 20)  v47 fails so far=0
+== D. Ada wake cases: phone asleep across midnight, no app code runs (Doze), first frame at 00:07:00
+  24h v47 first frame=00:07:00 exp=00:07:00 OK  (old stale frame 24h: 24:07:00)
+  12h v47 first frame=12:07:00 exp=12:07:00 OK  (old stale frame 24h: 24:07:00)
+== E. Doze / process death: NO app updates for 72 h; TextClock sampled every 7 s by host
+  samples=74058 fails=0 (window spans 2026-11-01 fall-back)
+== F. Host tick phase (not format): API 26-30 TextClock reschedules at uptimeMillis%1000 boundaries
+   (TextClock.java android-8.0.0_r1:178-181, android-11.0.0_r1:193-198); API 31+ schedules at wall-second
+   boundaries (android-12.0.0_r1:197-211). Worst-case display lag vs wall clock on API 26-30:
+   analytic: lag = (wall_ms - uptime_ms) mod 1000, a fixed per-boot phase in [0, 1000) ms. Seconds digit changes late by that phase;
+   the format is never wrong. API 31+: ~0 ms + handler latency. (Not simulated numerically.)
+
+TOTAL v47 TextClock FAILS: 0   (old Chronometer WRONG in A: 10)

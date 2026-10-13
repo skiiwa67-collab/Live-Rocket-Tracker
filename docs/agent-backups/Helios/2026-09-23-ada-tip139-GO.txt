@@ -1,0 +1,14 @@
+Chris GO via Helios voice — tip139 / 1.0.129 BUILD ONLY.
+
+Base: tip138 (stamp 138 / 1.0.128) already includes pad font bump and fetch race fix.
+
+Pack ONLY Da Vinci GOLD art after Helios review PASS:
+1) H3-24 Martian Moons eXploration
+2) Nuri / KSLV-2 (KARI)
+3) SR-75 Flight 2 (HyImpulse)
+4) Long March 6A — READY pack at /workspace/lrt-cz6a-pack-20260923; wire only after Helios PASS
+5) any other 30-day GOLD completed before cutoff
+
+CRITICAL: Helios reviews EVERY art asset before pack entry. Below Starship GOLD bar = hold out. Da Vinci rebuild then Helios re-review then enter.
+
+HARD: DO NOT push to phone or Studio. Build only. Stage APK. Report: version, full contents, art passed vs held back. HOLD device push until Chris says go. Dual-write Notion + GitHub ship-lock.

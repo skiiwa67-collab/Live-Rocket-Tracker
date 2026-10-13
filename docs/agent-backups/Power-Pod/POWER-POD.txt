@@ -1,0 +1,33 @@
+POWER POD
+Christopher Olsen. Locked 2026-08-20.
+
+WHAT IT IS
+Two snap-on Tesla-class drive units on the SECOND tandem axle.
+One motor per wheel. Diesel keeps the other drive axle.
+Fed from snap-in trailer modules. That pair is the Power Pod.
+
+TESLA ANALOG (public, not a PO)
+Production Semi: three independent motors, Plaid-class carbon-sleeved
+rotors (same family as Model S/X Plaid). Torque axle = two motors.
+Efficiency axle = one. Early 2017 deck said four; production is three.
+Chris’s kit is the torque-axle idea bolted onto a diesel tandem:
+two wheel pods, diesel still does the other axle.
+Do not claim Tesla will sell him motors. Physics analog only.
+
+SOFTWARE IS HALF THE PRODUCT
+- Propulsion and regen on that axle
+- Per-wheel torque / slip on ice, snow, wet, light trailer
+- Diesel + air brakes: order of 10–50 Hz, air is slow
+- Inverter PWM: typically tens of kHz (not a million slip updates)
+- Traction loop: milliseconds. Different universe from air.
+- Log events. Insurance discount is a path IF the log is real.
+  Do not invent a filed product or a percent.
+
+MIXED YARD
+BEV Semi-class (no diesel). Diesel doubles. Diesel + Power Pods.
+Same strip. Same software.
+
+MPG
+No published number for this kit. Closest: NREL Coca-Cola Eaton
+hybrid +13.7% in-service, +22–30% city, ~0–6% highway.
+His DFW day 180–280 mi is the city case.

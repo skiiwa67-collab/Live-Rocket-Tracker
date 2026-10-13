@@ -1,0 +1,274 @@
+{
+  "pack": "/workspace/agent-backups/Da-Vinci/tip152-gravity1-identity-20260923",
+  "gold_side_md5": "c78f781a40a01676fdb57ae5343ba07b",
+  "soft_fail": [
+    "Soft-FAIL invent liquid S4 (s4=s3 alias)",
+    "Soft-FAIL overwrite stack/side/cutaway/shell/engines/flames",
+    "Soft-FAIL Ada wire / ship / phone / Play / adb",
+    "Soft-FAIL aspect-only squash / core_only SRB strip",
+    "Soft-FAIL opaque decorative hatch over fuel region",
+    "Soft-FAIL copy hud-assets / lrt / drawable until Helios+Chris Soft-PASS"
+  ],
+  "items": [
+    {
+      "asset": "vehicle_gravity1_s1.png",
+      "before_md5": "0f147b073a3ab67aa289b71dfcbc5ecd",
+      "bad_tip151_md5": "6638905cfa0cb545a9b900082f967154",
+      "new_md5": "6962af66b28c6a41fbbe571145e4d6ed",
+      "before": {
+        "bb": [
+          64,
+          669,
+          361,
+          1034
+        ],
+        "bwh": [
+          297,
+          365
+        ],
+        "asp": 1.229,
+        "top_pad": 669,
+        "bot_pad": 166,
+        "opaque": 106076
+      },
+      "bad_tip151": {
+        "bb": [
+          101,
+          688,
+          322,
+          1008
+        ],
+        "bwh": [
+          221,
+          320
+        ],
+        "asp": 1.448,
+        "top_pad": 688,
+        "bot_pad": 192,
+        "opaque": 69098
+      },
+      "after": {
+        "bb": [
+          64,
+          669,
+          361,
+          1034
+        ],
+        "bwh": [
+          297,
+          365
+        ],
+        "asp": 1.229,
+        "top_pad": 669,
+        "bot_pad": 166,
+        "opaque": 97206
+      },
+      "center_clear_c50": {
+        "before": 0.0,
+        "bad": 0.0,
+        "new": 20.2
+      },
+      "fuel_vis_pct": {
+        "before": 0.0,
+        "bad": 0.0,
+        "new": 94.7,
+        "new_booster_fills": 92.5
+      }
+    },
+    {
+      "asset": "vehicle_gravity1_s2.png",
+      "before_md5": "faed4d90ba372c844fd14515e5cd5d18",
+      "bad_tip151_md5": "0cceb567adc983592d0205d7e1cb2ee0",
+      "new_md5": "4e246859c58a2b6e36ecfa4d164599fd",
+      "before": {
+        "bb": [
+          64,
+          443,
+          361,
+          687
+        ],
+        "bwh": [
+          297,
+          244
+        ],
+        "asp": 0.822,
+        "top_pad": 443,
+        "bot_pad": 513,
+        "opaque": 42160
+      },
+      "bad_tip151": {
+        "bb": [
+          136,
+          438,
+          287,
+          696
+        ],
+        "bwh": [
+          151,
+          258
+        ],
+        "asp": 1.709,
+        "top_pad": 438,
+        "bot_pad": 504,
+        "opaque": 34131
+      },
+      "after": {
+        "bb": [
+          64,
+          443,
+          361,
+          687
+        ],
+        "bwh": [
+          297,
+          244
+        ],
+        "asp": 0.822,
+        "top_pad": 443,
+        "bot_pad": 513,
+        "opaque": 38043
+      },
+      "center_clear_c50": {
+        "before": 17.5,
+        "bad": 0.0,
+        "new": 42.4
+      },
+      "fuel_vis_pct": {
+        "before": 0.0,
+        "bad": 0.0,
+        "new": 92.2,
+        "new_booster_fills": null
+      }
+    },
+    {
+      "asset": "vehicle_gravity1_s3.png",
+      "before_md5": "f265f0ada5eb1ec8bb6c5bec9424cfbc",
+      "bad_tip151_md5": "cae31922d84a64e10d8934ded4f4287b",
+      "new_md5": "dc532102efb67377fbf47ec80477ccf8",
+      "before": {
+        "bb": [
+          130,
+          336,
+          295,
+          687
+        ],
+        "bwh": [
+          165,
+          351
+        ],
+        "asp": 2.127,
+        "top_pad": 336,
+        "bot_pad": 513,
+        "opaque": 14586
+      },
+      "bad_tip151": {
+        "bb": [
+          133,
+          286,
+          291,
+          524
+        ],
+        "bwh": [
+          158,
+          238
+        ],
+        "asp": 1.506,
+        "top_pad": 286,
+        "bot_pad": 676,
+        "opaque": 29961
+      },
+      "after": {
+        "bb": [
+          130,
+          336,
+          295,
+          687
+        ],
+        "bwh": [
+          165,
+          351
+        ],
+        "asp": 2.127,
+        "top_pad": 336,
+        "bot_pad": 513,
+        "opaque": 12764
+      },
+      "center_clear_c50": {
+        "before": 75.8,
+        "bad": 0.0,
+        "new": 76.6
+      },
+      "fuel_vis_pct": {
+        "before": 0.0,
+        "bad": 0.0,
+        "new": 92.0,
+        "new_booster_fills": null
+      }
+    },
+    {
+      "asset": "vehicle_gravity1_s4.png",
+      "before_md5": "cae1ac2a7964548cb7d8c5f1a457d051",
+      "bad_tip151_md5": "cae31922d84a64e10d8934ded4f4287b",
+      "new_md5": "dc532102efb67377fbf47ec80477ccf8",
+      "before": {
+        "bb": [
+          130,
+          336,
+          295,
+          687
+        ],
+        "bwh": [
+          165,
+          351
+        ],
+        "asp": 2.127,
+        "top_pad": 336,
+        "bot_pad": 513,
+        "opaque": 14586
+      },
+      "bad_tip151": {
+        "bb": [
+          133,
+          286,
+          291,
+          524
+        ],
+        "bwh": [
+          158,
+          238
+        ],
+        "asp": 1.506,
+        "top_pad": 286,
+        "bot_pad": 676,
+        "opaque": 29961
+      },
+      "after": {
+        "bb": [
+          130,
+          336,
+          295,
+          687
+        ],
+        "bwh": [
+          165,
+          351
+        ],
+        "asp": 2.127,
+        "top_pad": 336,
+        "bot_pad": 513,
+        "opaque": 12764
+      },
+      "center_clear_c50": {
+        "before": 75.8,
+        "bad": 0.0,
+        "new": 76.6
+      },
+      "fuel_vis_pct": {
+        "before": null,
+        "bad": null,
+        "new": null,
+        "new_booster_fills": null
+      }
+    }
+  ]
+}

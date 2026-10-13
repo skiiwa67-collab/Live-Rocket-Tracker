@@ -1,0 +1,21 @@
+{
+  "when": "2026-09-26T09:19:00-05:00",
+  "agent": "Helios",
+  "slug": "lrt-live-lag-rud",
+  "mirrors": {
+    "local_json": "Soft-PASS",
+    "local_md": "Soft-PASS",
+    "local_design": "Soft-PASS /workspace/agent-backups/Helios/2026-09-26-lrt-live-sync-v2.1-post-net-gate-rud.md",
+    "local_pool": "Soft-PASS /workspace/agent-backups/team/voice-continuity-pool.json",
+    "github_json": "Soft-PASS docs/agent-backups/Helios/voice-session-json/2026-09-26-0912-lrt-live-lag-rud.json",
+    "github_md": "Soft-PASS",
+    "github_design": "Soft-PASS",
+    "github_pool": "Soft-PASS docs/agent-backups/team/voice-continuity-pool.json",
+    "dropbox_design": "Soft-PASS /Grok-Agent-Backups/Helios/2026-09-26-lrt-live-sync-v2.1-post-net-gate-rud.md",
+    "dropbox_md": "Soft-PASS voice-call-summaries",
+    "dropbox_json": "Soft-PASS voice-session-json",
+    "dropbox_canonical_pool": "Soft-FAIL ALREADY_EXISTS — wrote dated sidecar /Grok-Agent-Backups/team/voice-continuity-pool-2026-09-26-0912-lrt-live-lag-rud.json",
+    "notion_draft": "Soft-PASS private draft https://app.notion.com/p/3e7a94933faa812fadf1fd82eddcec6e",
+    "notion_focus_v2": "Soft-PASS prepended on https://app.notion.com/p/3e4a94933faa819595afe92456360ebe"
+  }
+}

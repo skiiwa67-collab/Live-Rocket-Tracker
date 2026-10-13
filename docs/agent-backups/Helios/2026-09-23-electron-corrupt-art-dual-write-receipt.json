@@ -1,0 +1,63 @@
+{
+  "task": "tip140 Electron Stamp120 corrupt-art dual-write",
+  "owner": "Chris Olsen",
+  "where_we_are": "2026-09-23 ~08:23 CT incident; dual-write 08:30 CDT",
+  "timestamp_ct": "2026-09-23 08:30:30 CDT",
+  "measured": {
+    "tiphead": "cead451",
+    "versionCode": 140,
+    "versionName": "1.0.130",
+    "vehicle_electron_diff": "15/15 DIFF vs Stamp 120 GOLD",
+    "tank_s1_fuel_md5": "db981820… solid yellow blob",
+    "tank_s1_ox_md5": "d5e134d7… solid cyan blob",
+    "stack_tiphead_md5": "22c997d3… / 168909 bytes",
+    "stack_gold_md5": "d8ab6a86858da2237a18838c4c4dc91e / 47598 bytes"
+  },
+  "restore": {
+    "pack": "/workspace/agent-backups/Helios/electron-stamp120-restore-20260923/",
+    "gold_files": 29,
+    "suggested_tip": "tip141 / 1.0.131",
+    "ada_gate": "Studio ONLY until Chris go",
+    "davinci_gate": "restore GOLD hud-assets and lrt-electron-pack; Soft-FAIL nozzle-only overwrites"
+  },
+  "rules": {
+    "play_publish": "Soft-FAIL",
+    "adb_device_push": "Soft-FAIL",
+    "claim_art_fixed_on_device": "Soft-FAIL until Chris explicit clear",
+    "liftoff_stage_sep_overlap": "separate queue"
+  },
+  "github": {
+    "status": "Soft-PASS",
+    "owner": "skiiwa67-collab",
+    "repo": "Live-Rocket-Tracker",
+    "issue_number": 61,
+    "url": "https://github.com/skiiwa67-collab/Live-Rocket-Tracker/issues/61"
+  },
+  "notion": {
+    "status": "Soft-PASS",
+    "destination": "Focus Tasks",
+    "data_source_id": "c924ca98-d41b-47be-91ef-81212cb6a60b",
+    "page_id": "3e4a9493-3faa-81b3-b7f0-f5f42cbefede",
+    "url": "https://app.notion.com/p/3e4a94933faa81b3b7f0f5f42cbefede?pvs=204",
+    "task_name": "LRT tip140 Electron Stamp120 art corrupt — restore GOLD tip141",
+    "task_status": "In progress"
+  },
+  "overall": "Soft-PASS tip141 Studio-ready GOLD restore complete; Soft-FAIL Play/adb/device publish and phone-fixed claim pending Chris go",
+  "receipt_path": "/workspace/agent-backups/Helios/2026-09-23-electron-corrupt-art-dual-write-receipt.json",
+  "tip141": {
+    "status": "Soft-PASS Studio loadable",
+    "studio_path": "C:\\Users\\skiiw\\AndroidStudioProjects\\RetroCommandCenter",
+    "studio_commit": "cdc1bbe",
+    "versionCode": 141,
+    "versionName": "1.0.131",
+    "vehicle_electron_stack_md5": "d8ab6a86858da2237a18838c4c4dc91e",
+    "md5sums": "29/29 Soft-PASS",
+    "apk_path": "/workspace/LRT-tip141-1.0.131/LiveRocketTracker-tip141-1.0.131-debug.apk",
+    "apk_md5": "3b1fee9053347468913d2d831441de33",
+    "play_adb_device": "Soft-FAIL until Chris go",
+    "phone_art_verification": "not claimed",
+    "github_comment_url": "https://github.com/skiiwa67-collab/Live-Rocket-Tracker/issues/61#issuecomment-5795820002",
+    "notion_url": "https://app.notion.com/p/3e4a94933faa81b3b7f0f5f42cbefede?pvs=204"
+  },
+  "timestamp_tip141_ct": "2026-09-23 08:34 CDT"
+}

@@ -1,0 +1,56 @@
+{
+  "schema": "voice-session-extract/v1",
+  "agent": "Helios",
+  "call_id": "voice:call-97dcc99b-0e86-414d-b4b2-7309eb19a2d5",
+  "slug": "2026-09-23-0652-pc-voice-fixed-continuity-test",
+  "ended_at": "2026-09-23T06:52:24-05:00",
+  "timezone": "America/Chicago",
+  "tags": [
+    "voice",
+    "continuity",
+    "PC-TTS",
+    "Cursor-bug",
+    "xAI",
+    "Helios"
+  ],
+  "decisions": [
+    "PC voice Soft-PASS fixed after platform update (Chris can talk to Helios on PC).",
+    "Continuity Soft-FAIL still open; Chris will shut Helios down for a short memory test on PC; full drive Soft-PASS deferred ~2 days."
+  ],
+  "product_details": {},
+  "bugs": [
+    {
+      "id": "PC-TTS",
+      "status": "Soft-PASS fixed",
+      "note": "PC voice output/talk Soft-PASS after update"
+    },
+    {
+      "id": "voice-continuity",
+      "status": "Soft-FAIL open",
+      "note": "conversation continuity across shut-down; filed with xAI + Cursor; test pending"
+    }
+  ],
+  "hypotheses": [
+    "PC continuity test may Soft-FAIL vs drive Soft-PASS path"
+  ],
+  "actions": [
+    "Write end-of-call searchable export + session JSON + pool",
+    "On next wake: Soft-PASS recall PC-voice-fixed + continuity-test intent without re-ask"
+  ],
+  "ops_knowledge": [
+    "Chris off work ~2 days; drive Soft-PASS continuity test later"
+  ],
+  "paths": {
+    "searchable_md": "/workspace/agent-backups/Helios/voice-session-json/2026-09-23-0652-pc-voice-fixed-continuity-test.searchable.md",
+    "summary_md": "/workspace/agent-backups/Helios/voice-call-summaries/2026-09-23-0652-pc-voice-fixed-continuity-test.md",
+    "export_md": "/workspace/agent-backups/Helios/voice-exports/2026-09-23/01-0652-pc-voice-fixed-continuity-test.md",
+    "json": "/workspace/agent-backups/Helios/voice-session-json/2026-09-23-0652-pc-voice-fixed-continuity-test.json"
+  },
+  "verbatim_softpass": [
+    "Helios, can you hear me?",
+    "I'm talking to you on my PC, so they did an update, and it looks like it fixed that part.",
+    "I couldn't talk to you on the PC.",
+    "continuity of conversations was broken \u2014 bug posted to xAI and Cursor",
+    "shut you down and see if you remember what we were just chatting about"
+  ]
+}

@@ -1,0 +1,5 @@
+Chris GO via Helios voice: Independent review.
+
+Da Vinci builds GOLD for H3-24, Nuri/KARI, SR-75 Flight 2, CZ-6A and audits 30-day art coverage. Ada checks LRT Git/Studio for broken builds/regressions from recent tips.
+
+You: independent review of BOTH — code integrity (Ada) and art quality (Da Vinci, Starship GOLD bar). Report Helios findings. NO device pushes — HOLD.

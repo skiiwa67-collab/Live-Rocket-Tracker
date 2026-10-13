@@ -1,0 +1,17 @@
+{
+  "schema": "voice-continuity-mirror-receipt/v1",
+  "agent": "Helios",
+  "slug": "michael-tg13113-unify-account-x",
+  "at": "2026-09-24T08:09:00-05:00",
+  "mirrors": {
+    "local_json": "Soft-PASS",
+    "local_md": "Soft-PASS",
+    "local_pool": "Soft-PASS",
+    "github_json_md_pool": "Soft-PASS stamp-85 Live-Rocket-Tracker",
+    "dropbox_json": "Soft-PASS",
+    "dropbox_md": "Soft-PASS",
+    "dropbox_pool_canonical": "skipped \u2014 use dated sidecar (prior ALREADY_EXISTS pattern)",
+    "dropbox_pool_sidecar": "Soft-PASS /Grok-Agent-Backups/team/voice-continuity-pool-2026-09-24-0807-michael-tg13113-unify-account-x.json",
+    "notion": "Soft-PASS https://app.notion.com/p/3e5a94933faa8169939fe10574256c86"
+  }
+}

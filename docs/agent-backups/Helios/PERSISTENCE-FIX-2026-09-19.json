@@ -1,0 +1,25 @@
+{
+  "schema": "persistence-root-cause-and-fix/v1",
+  "at": "2026-09-19T06:31:22.719538-05:00",
+  "why_things_vanish": [
+    "Chat transcripts wipe (1TB incident) \u2014 conversation is NOT durable truth",
+    "Instructions only in a live chat die with that chat / summary",
+    "Agent delete nukes transcript; copy keeps persona not history",
+    "Box /workspace scratch can be treated as ephemeral vs skills/memory/routines",
+    "Marketplace plugins stick on account; local ~/.cursor wraps may not load in Grok Bot",
+    "Auto-review blocks can leave 'done' work only on one surface (local but not GH)"
+  ],
+  "what_DOES_stick": [
+    "update_state memory (profile/log) \u2014 agent + shared user",
+    "update_state skills \u2192 /home/box/agent-data/workflows (all assistants)",
+    "update_state routines \u2014 server-kept, fire while away",
+    "Dropbox /Grok-Agent-Backups/",
+    "GitHub docs/agent-backups/ on Live-Rocket-Tracker",
+    "Notion Soft-FAIL / checkpoint pages",
+    "Installed Cursor plugins (pstack)"
+  ],
+  "permanent_mechanism": {
+    "triage": "skill team-triage-dump-on-degrade + HARD shared user memory + routine periodic dashboard Soft-FAIL check + Dropbox/GH/Notion protocol mirror",
+    "rule": "Ship = skill and/or routine + multi-mirror JSON + profile HARD. Chat Soft-PASS alone is NOT ship."
+  }
+}

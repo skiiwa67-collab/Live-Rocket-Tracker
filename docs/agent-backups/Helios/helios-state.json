@@ -1,0 +1,58 @@
+{
+  "agent": "Helios / Elon Musk #1 (Advisor) copy",
+  "agent_id": "fe0b6c3f-adcf-483f-a7f9-335890abd80d",
+  "updated_at": "2026-09-19T06:13:18.649003-05:00",
+  "purpose": "Primary fast-recovery JSON; also mirror to Dropbox + GitHub + Notion. No single point of failure after ~1TB chat wipe.",
+  "hard_rules": [
+    "Chris Git noob \u2014 Ada owns Git/merges/bumps; Chris Syncs when told",
+    "Dual-log bugs Notion + GitHub always",
+    "LRT Studio FROZEN: C:\\Users\\skiiw\\AndroidStudioProjects\\RetroCommandCenter",
+    "LRT dumps: D:\\Downloads\\Grok\\LRT Dump versioned folders",
+    "Soft-PASS/Play HOLD while Chris driving until he says available"
+  ],
+  "lrt_themes_final": {
+    "slots": [
+      "MCC (default favorite)",
+      "Roscosmos",
+      "SpaceX (ex-Clear)",
+      "NASA",
+      "CNSA/China",
+      "Arianespace",
+      "TBD~Rocket Lab",
+      "TBD~ULA"
+    ],
+    "surfaces": [
+      "Command flyout wallpaper",
+      "Live Tracker settings top"
+    ],
+    "behavior": "auto-default live provider; manual override sticks"
+  },
+  "soft_fails": {
+    "sheet": "/workspace/lrt-softfail-review-2026-09-19/VISUAL_SOFT_FAIL_SHEET.md",
+    "game_stoppers": [
+      "FH tip133 #46",
+      "CZ-2D #42",
+      "CLEAR\u2192SpaceX rocker not drawn"
+    ],
+    "soft_pass": [
+      "Starship F14",
+      "Starship HUD GOLD"
+    ],
+    "parked": [
+      "#43 plume",
+      "NASA/CNSA/Arianespace rockers missing",
+      "theme dumps HELD"
+    ]
+  },
+  "tonight_handoff": {
+    "ada": "tip133 box build; MiniME offline Sync BLOCKER; dump /workspace/LRT-tonight-handoff-v1.0.123/",
+    "da_vinci": "SAFE Starship F14; FH pack compare-only"
+  },
+  "backup_policy": {
+    "local_json": "primary fast recovery per agent",
+    "dropbox": "/Grok-Agent-Backups (pending Chris confirm path tonight)",
+    "github": "repos + CHECKPOINT.md",
+    "notion": "Eve / Soft-FAIL pages / week checkpoint"
+  },
+  "dropbox_account": "skiiwa67@gmail.com (Chris Olsen) \u2014 MCP connected Soft-PASS"
+}

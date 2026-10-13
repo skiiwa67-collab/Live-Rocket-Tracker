@@ -1,0 +1,34 @@
+== TIMER branch 870b657 vs a977c6a
+IDENTICAL
+            if (field == FieldType.TIMER) {
+                // vc37: CLOCK+TIMER always Chronometer (launcher self-ticks). No outline bitmap path.
+                val chronoId = chronoIdFor(ids, fontStyle)
+636:            if (field == FieldType.TIMER) {
+== Till-related files unchanged vs a977c6a
+TimeChangeReceiver: unchanged
+AlarmChangeReceiver: unchanged
+BootReceiver: unchanged
+WakeRefreshHelper: unchanged
+WallpaperTickService: unchanged
+WidgetPreferences: unchanged
+WidgetConfigureActivity: unchanged
+AnimationScheduler: unchanged
+AndroidManifest: unchanged
+proguard-rules: unchanged
+== c075 branch files mixed? compare v48 changed files vs 5a47eae file list
+app/build.gradle.kts
+app/src/main/java/com/claudewidgets/alarmweather/AlarmWidgetProvider.kt
+app/src/main/java/com/claudewidgets/alarmweather/ClockFormat.kt
+app/src/main/java/com/claudewidgets/alarmweather/RefreshReceiver.kt
+app/src/main/java/com/claudewidgets/alarmweather/RefreshScheduler.kt
+app/src/main/res/layout/widget_layout.xml
+app/src/test/java/com/claudewidgets/alarmweather/ClockFormatTest.kt
+-- 5a47eae touched:
+app/build.gradle.kts
+app/src/main/java/com/claudewidgets/alarmweather/AlarmWidgetProvider.kt
+app/src/main/java/com/claudewidgets/alarmweather/RefreshScheduler.kt
+app/src/main/java/com/claudewidgets/alarmweather/WakeRefreshHelper.kt
+app/src/main/java/com/claudewidgets/alarmweather/WallpaperTickService.kt
+app/src/main/java/com/claudewidgets/alarmweather/WidgetClockFormat.kt
+app/src/main/res/layout/widget_layout.xml
+app/src/test/java/com/claudewidgets/alarmweather/WidgetClockFormatTest.kt

@@ -1,0 +1,24 @@
+LANDING-GEAR STRIP
+Christopher Olsen. Locked 2026-08-20.
+
+Weight is the switch. Gear down, trailer mass on the pad, that
+segment conducts. Gear up, idle, dark.
+
+THREE ACTIVATION FAMILIES (do not pick a winner yet)
+  1. Materials: pressure-conductive layer. Squish, it conducts.
+  2. Mechanical: plunger / rocker / contact closes under load.
+  3. Hybrid: material plus mechanical.
+
+REPLACEABLE WEAR ITEM
+Landing gear walks. Forklifts chew the yard. The strip dies.
+Design a snap-out length, not a poured forever bus.
+Swap time, life cycles, wet/oil/ice, 53-ft and 28-ft gear spacing
+are the product.
+
+THIS IS A COMPANY
+Make the strip. Replace the strip. Recycle the worn length.
+One specialist (Strip Electrical) owns the physics and the plant.
+Not a charger bolted to a dock wall. A consumable busbar.
+
+Idle segments do not conduct.
+Multiple tie-ins into the building bank, not one feeder.

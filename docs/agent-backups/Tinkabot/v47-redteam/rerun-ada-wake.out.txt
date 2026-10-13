@@ -1,0 +1,27 @@
+On-open reanchor (anchor = open time), then 3s later:
+  24h open 23:59:58 (at open)                    shows   23:59:58  expected 23:59:58  OK
+  24h open 23:59:58 (+3s, hourly alarm on time)  shows   00:00:01  expected 00:00:01  OK
+  24h open 23:59:58 (+3s, hourly alarm NOT yet fired) shows   24:00:01  expected 00:00:01  WRONG
+  24h open 00:00:02 (at open)                    shows   00:00:02  expected 00:00:02  OK
+  24h open 00:00:02 (+3s, hourly alarm on time)  shows   00:00:05  expected 00:00:05  OK
+  24h open 00:00:02 (+3s, hourly alarm NOT yet fired) shows   00:00:05  expected 00:00:05  OK
+  24h open 09:59:59 (at open)                    shows   09:59:59  expected 09:59:59  OK
+  24h open 09:59:59 (+3s, hourly alarm on time)  shows   10:00:02  expected 10:00:02  OK
+  24h open 09:59:59 (+3s, hourly alarm NOT yet fired) shows  010:00:02  expected 10:00:02  WRONG
+  12h open 12:34:56 PM (at open)                 shows   12:34:56  expected 12:34:56  OK
+  12h open 12:34:56 PM (+3s, hourly alarm on time) shows   12:34:59  expected 12:34:59  OK
+  12h open 12:34:56 PM (+3s, hourly alarm NOT yet fired) shows   12:34:59  expected 12:34:59  OK
+  12h open 12:34:56 AM (at open)                 shows   12:34:56  expected 12:34:56  OK
+  12h open 12:34:56 AM (+3s, hourly alarm on time) shows   12:34:59  expected 12:34:59  OK
+  12h open 12:34:56 AM (+3s, hourly alarm NOT yet fired) shows   12:34:59  expected 12:34:59  OK
+  12h open 09:59:59 (at open)                    shows   09:59:59  expected 09:59:59  OK
+  12h open 09:59:59 (+3s, hourly alarm on time)  shows   10:00:02  expected 10:00:02  OK
+  12h open 09:59:59 (+3s, hourly alarm NOT yet fired) shows  010:00:02  expected 10:00:02  WRONG
+
+Phone asleep across midnight (last anchor 23:30:00, no alarm fired while asleep), first wake 00:07:00:
+  24h stale frame before wake receiver runs      shows   24:07:00  expected 00:07:00  WRONG
+  24h after reanchorClock() on wake              shows   00:07:00  expected 00:07:00  OK
+  12h stale frame before wake receiver runs      shows   12:07:00  expected 12:07:00  OK
+  12h after reanchorClock() on wake              shows   12:07:00  expected 12:07:00  OK
+
+WRONG where a correct time is required: 0

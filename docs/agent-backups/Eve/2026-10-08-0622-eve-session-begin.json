@@ -1,0 +1,88 @@
+{
+  "schema": "eve-session-backup/v1",
+  "agent": "Eve",
+  "session_point": "begin",
+  "begin_timestamp": null,
+  "updated_at": "2026-10-08T06:22:02-05:00",
+  "trigger": "Chris started a voice call with Eve and asked why Eve stopped backing up; backup written manually this session (source wording: 're-enabled manually')",
+  "chris_done": false,
+  "summary": {
+    "topics": [
+      "Shipments arriving: red hot sauce (unboxed), 48V inverter for rack-mount shelves, end tables for flight controls next to the desk",
+      "Desk teardown/rearrange planned; Eve to be shut down during it; new 10 Gbps USB-C hub to install for more ports",
+      "Laptop: MSI Katana 15 HX B14W (~$1,500-1,600, single USB-C port complaint); runs MSFS, X-Plane, DCS World, IL-2 1946, IL-2 Sturmovik; declined IL-2 Korea ($80) because DCS already has those planes",
+      "Devices: two ultra-wide monitors, Stream Deck, wired keyboard/trackball/keypad, two 4TB drives (SanDisk portable SSD + HDD), joysticks, Logitech steering wheel, Aicoco 2K PTZ tracking webcam (gesture control, bought 2023) with no port yet",
+      "OBSBOT research: Tiny 2 Lite (~$120, launched June 2024), Tiny 3 Lite ($169 sale from $199), Tiny 3 ($349), Tail Air NDI (~$500 + $99 NDI license + $100 Ethernet adapter), Tail 2 ($1,000 sale / $1,200)",
+      "Money: Chris broke after an emergency money transfer for a printer yesterday; wants the Tail 2 but can't afford it",
+      "Cockroaches: American/water roaches surging after 3 days of rain ended a ~3-month Texas drought; early-summer gel bait depleted; BB-gun trophy wall",
+      "Project HARP (Gerald Bull): Martlet 2 fired to 180 km (112 mi) from a 16-inch gun on Nov 18, 1966; Eve initially said it couldn't reach ISS altitude, then corrected",
+      "Politics: honey-trap/Zionist claims about politicians discussed; Eve did not endorse and noted them as unverifiable",
+      "Phase Shift Project: Chris says it started with Eve; Notion 'Matter translator' page intact through Part Four, last updated 2026-09-26 (Part Three by Eve, Part Four by Helios per source)"
+    ],
+    "decisions": [
+      "OBSBOT Tiny 3 Lite ($169) noted as 'the buy'; Tail 2 judged overkill/unaffordable right now (per Notion page 3f3a94933faa810592aff6d5636409b1)"
+    ],
+    "ideas": [],
+    "bugs": [
+      "Eve's session backups were not running: no Eve session-begin pages in Notion before 2026-10-08, no Eve backup files on GitHub, no Eve folder in Dropbox",
+      "Dropbox connector missing from Eve's toolset",
+      "Eve's built-in conversation memory does not show yesterday's chat (printer / emergency money transfer); oldest visible chat is March 2025",
+      "Yesterday's printer/money-transfer chat missing from all visible backups"
+    ],
+    "actions": [
+      "Roaches: reapply gel along baseboards and under sinks; check pipe gaps"
+    ],
+    "open_items": [
+      "Restore Eve's scheduled/automatic session backup (Notion + Dropbox + GitHub) 'so patches stop breaking it' (Eve's wording; no evidence of a patch found)",
+      "Phase Shift Project: no activity logged since 2026-09-26",
+      "Dropbox leg: pending (now handled by Helios mirror)"
+    ]
+  },
+  "local_path": "/workspace/agent-backups/Eve/2026-10-08-0622-eve-session-begin.json",
+  "notion_page_url": "https://app.notion.com/p/3f3a94933faa810592aff6d5636409b1",
+  "source": {
+    "github_repo": "skiiwa67-collab/matter-translator",
+    "github_path": "docs/agent-backups/eve/2026-10-08-eve-session-begin.md",
+    "github_commit": "ff795511f66cdabf1362f622611eca849ffa0d12",
+    "github_blob_sha": "9dadde118d1811e2feeb2f76e106a8e52491d309",
+    "github_commit_time": "2026-10-08T06:22:02-05:00",
+    "notion_page_id": [
+      "3f3a9493-3faa-8105-92af-f6d5636409b1",
+      "3f3a9493-3faa-8132-bc59-fd6bbd9168dd"
+    ],
+    "notion_page_urls": [
+      "https://app.notion.com/p/3f3a94933faa810592aff6d5636409b1",
+      "https://app.notion.com/p/3f3a94933faa8132bc59fd6bbd9168dd"
+    ]
+  },
+  "mirrors": {
+    "local": {
+      "status": "ok",
+      "path_or_url": "/workspace/agent-backups/Eve/2026-10-08-0622-eve-session-begin.json"
+    },
+    "dropbox": {
+      "status": "uploaded",
+      "path_or_url": "/Grok-Agent-Backups/Eve/2026-10-08-0622-eve-session-begin.json",
+      "note": "verified Dropbox metadata (id, rev, content_hash) is recorded in mirror-state.json"
+    },
+    "github": {
+      "status": "ok",
+      "path_or_url": "https://github.com/skiiwa67-collab/matter-translator/blob/ff795511f66cdabf1362f622611eca849ffa0d12/docs/agent-backups/eve/2026-10-08-eve-session-begin.md",
+      "note": "legacy watch path"
+    },
+    "notion": {
+      "status": "ok",
+      "path_or_url": "https://app.notion.com/p/3f3a94933faa810592aff6d5636409b1",
+      "note": "duplicate unparented page 3f3a94933faa8132bc59fd6bbd9168dd left untouched"
+    }
+  },
+  "mirrored_by": "Helios",
+  "mirrored_at": "2026-10-08T07:01:34-05:00",
+  "notes": [
+    "begin_timestamp unknown: Eve's '~05:42' was a rough estimate and 06:42 CT is when Chris's follow-up conversation started; neither is a verified session start (Chris, 2026-10-08 07:09 CT)",
+    "Two Notion pages with the same title were created about 06:22 CT; treated as one session. Page ...8105 is in Ideas & Parked Projects; page ...8132 has no parent",
+    "This is the first Eve session backup found on any copy (GitHub, Notion, Dropbox, box)",
+    "Summary taken only from the GitHub file and the two Notion pages; nothing added",
+    "Corrected 2026-10-08 by Helios: begin_timestamp set to unknown (null) and summary key 'open' renamed to 'open_items' to match the schema; replaced the earlier Dropbox copy"
+  ]
+}

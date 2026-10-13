@@ -1,0 +1,500 @@
+diff --git a/app/src/main/java/com/claudewidgets/alarmweather/AlarmWidgetProvider.kt b/app/src/main/java/com/claudewidgets/alarmweather/AlarmWidgetProvider.kt
+index 9912c42..28c51a4 100644
+--- a/app/src/main/java/com/claudewidgets/alarmweather/AlarmWidgetProvider.kt
++++ b/app/src/main/java/com/claudewidgets/alarmweather/AlarmWidgetProvider.kt
+@@ -168,7 +168,7 @@ class AlarmWidgetProvider : AppWidgetProvider() {
+             val hideClock = false
+             for (line in 1..4) {
+                 try {
+-                    applyLine(context, views, prefs, appWidgetId, line, nextAlarmMillis, weather, use24h, fitScales[line] ?: 1f, availableWidthPx, hideClock)
++                    applyLine(context, views, prefs, line, nextAlarmMillis, weather, use24h, fitScales[line] ?: 1f, availableWidthPx, hideClock)
+                 } catch (e: Exception) {
+                     android.util.Log.w("AlarmWidgetProvider", "line $line render failed", e)
+                 }
+@@ -562,7 +562,6 @@ class AlarmWidgetProvider : AppWidgetProvider() {
+             context: Context,
+             views: RemoteViews,
+             prefs: WidgetPreferences,
+-            appWidgetId: Int,
+             line: Int,
+             nextAlarmMillis: Long?,
+             weather: WeatherFetcher.WeatherData?,
+@@ -635,29 +634,72 @@ class AlarmWidgetProvider : AppWidgetProvider() {
+                 views.setViewVisibility(chronoId, android.view.View.VISIBLE)
+                 views.setTextColor(chronoId, color)
+                 views.setTextViewTextSize(chronoId, android.util.TypedValue.COMPLEX_UNIT_SP, sizeSp)
+-                // tip46: base from live System.currentTimeMillis(); Soft-FAIL Till % DAY_MS (84h Soft-PASS).
+-                applyTimerChronometerBase(views, chronoId, nextAlarmMillis)
++
++                if (nextAlarmMillis != null) {
++                    // Chronometer base from wall time so Till never drifts vs phone clock.
++                    // Counts DOWN (setCountDown, API 24+) to alarm trigger; no 1Hz redraw.
++                    val nowElapsed = android.os.SystemClock.elapsedRealtime()
++                    val nowWall = System.currentTimeMillis()
++                    val baseElapsed = nowElapsed + (nextAlarmMillis - nowWall)
++                    views.setChronometerCountDown(chronoId, true)
++                    views.setChronometer(chronoId, baseElapsed, null, true)
++                } else {
++                    views.setChronometer(chronoId, android.os.SystemClock.elapsedRealtime(), null, false)
++                    views.setTextViewText(chronoId, "No alarm set")
++                }
+             } else if (field == FieldType.CLOCK) {
+-                // tip46 Helios Soft-PASS: CLOCK digits are padded "HH:MM:SS" painted each
+-                // wall-second via setTextViewText on the existing Chronometer id (extends
+-                // TextView). Soft-FAIL Chronometer DateUtils auto-tick (omits/unpads hours).
+-                // 1Hz reanchorChronometersFromWallClock + vc38 day-roll keep wall sync;
+-                // Rule1 modulo-24 / Rule2 12h hour digit live inside applyClockChronometerBase.
+-                // Soft-FAIL invent TextClock / custom Chronometer subclass / bitmap clock.
++                // Live clock, ticking to the second via the exact same
++                // Chronometer mechanism as the alarm countdown above - just
++                // counting UP from an anchor point instead of DOWN to an
++                // alarm, so it gets the same "keeps ticking even with the
++                // screen off, no permissions needed" behavior.
++                //
++                // Chronometer has no built-in concept of wrapping at 12 or 24
++                // hours - left alone it would just keep counting forever.
++                // Re-anchoring the base here every time the widget refreshes
++                // (which happens far more often than once a cycle under any
++                // normal refresh interval) is what keeps this from ever
++                // drifting or overflowing. Worst case, even if refresh were
++                // somehow set longer than a cycle, it would resync at the next
++                // refresh - never more than one cycle stale.
++                //
++                // 24-hour mode anchors to midnight (elapsed runs 0:00:00 -
++                // 23:59:59). 12-hour mode anchors to the nearest 12-hour
++                // boundary - noon or midnight - instead (elapsed runs 0:00:00
++                // - 11:59:59). Either way, Chronometer only knows how to
++                // format *elapsed duration*, not wall-clock hour-of-day with
++                // AM/PM. Under 1h Chronometer prints "M:SS" (no hour digit) —
++                // Soft-FAIL #3 at 12:44 → "44:00". Soft-PASS: see −12h base
++                // shift below for the 12 o'clock hour only (still stock Chronometer).
+                 val now = Calendar.getInstance()
+-                // vc37 KEEP: Chronometer view id for CLOCK (no outline bitmap on ticking digits).
++                // vc37: always Chronometer for CLOCK (wall-anchored base). No outline bitmap on ticking digits.
+                 val chronoId = chronoIdFor(ids, fontStyle)
+                 views.setViewVisibility(chronoId, android.view.View.VISIBLE)
+                 views.setTextColor(chronoId, color)
+                 views.setTextViewTextSize(chronoId, android.util.TypedValue.COMPLEX_UNIT_SP, sizeSp)
+ 
+-                // tip46: live Calendar / System.currentTimeMillis() → padded six-digit text.
+-                // vc38 KEEP: day-roll full update re-anchors 23→00 + date badges.
+-                applyClockChronometerBase(views, chronoId, use24h)
+-                if (use24h) {
+-                    RefreshScheduler.scheduleNextLocalMidnight(context, appWidgetId)
++                val nowElapsed = android.os.SystemClock.elapsedRealtime()
++                val boundaryHour = if (use24h || now.get(Calendar.HOUR_OF_DAY) < 12) 0 else 12
++                val boundary = (now.clone() as Calendar).apply {
++                    set(Calendar.HOUR_OF_DAY, boundaryHour)
++                    set(Calendar.MINUTE, 0)
++                    set(Calendar.SECOND, 0)
++                    set(Calendar.MILLISECOND, 0)
++                }
++                val millisSinceBoundary = now.timeInMillis - boundary.timeInMillis
++                // baseElapsed = elapsedRealtime at today's AM/PM or midnight boundary (wall-derived).
++                var baseElapsed = nowElapsed - millisSinceBoundary
++                // Soft-PASS #3: Chronometer prints M:SS under 1h (12:44 → "44:00").
++                // In the 12 o'clock hour (HOUR_OF_DAY 0 or 12), shift base −12h so
++                // elapsed shows 12:MM:SS. Stock Chronometer only; 1–11 already OK.
++                if (!use24h && now.get(Calendar.HOUR_OF_DAY) % 12 == 0) {
++                    baseElapsed -= 12L * 60L * 60L * 1000L
+                 }
+ 
++                views.setChronometerCountDown(chronoId, false)
++                views.setChronometer(chronoId, baseElapsed, null, true)
++
++
+                 // Date badge (left) and AM/PM or MIL/TIME badge (right),
+                 // flanking the clock - or stacked below it if there isn't
+                 // enough width left over. Decided HERE, dynamically, from
+@@ -783,103 +825,6 @@ class AlarmWidgetProvider : AppWidgetProvider() {
+             }
+         }
+ 
+-
+-        /**
+-         * tip46 Helios Soft-PASS: lean CLOCK/TIMER re-anchor from live System.currentTimeMillis().
+-         * CLOCK: padded six-digit setTextViewText (Soft-FAIL DateUtils auto-tick); Rule1 modulo-24 on CLOCK only.
+-         * TIMER: pre-tip46 stock countdown base Soft-FAIL % DAY_MS (84h Soft-PASS).
+-         * Partial update only — no weather/wallpaper rebuild. Call each wall-clock second.
+-         */
+-        fun reanchorChronometersFromWallClock(
+-            context: Context,
+-            appWidgetManager: AppWidgetManager,
+-            appWidgetId: Int,
+-            nextAlarmMillis: Long?
+-        ) {
+-            val prefs = WidgetPreferences(context, appWidgetId)
+-            val use24h = prefs.is24HourFormat()
+-            val views = RemoteViews(context.packageName, R.layout.widget_layout)
+-            var any = false
+-            for (line in 1..4) {
+-                if (!prefs.isLineEnabled(line)) continue
+-                val field = prefs.getLineField(line)
+-                if (field != FieldType.CLOCK && field != FieldType.TIMER) continue
+-                val ids = lineViewIds(line)
+-                val chronoId = chronoIdFor(ids, prefs.getLineFontStyle(line))
+-                when (field) {
+-                    FieldType.TIMER -> applyTimerChronometerBase(views, chronoId, nextAlarmMillis)
+-                    FieldType.CLOCK -> applyClockChronometerBase(views, chronoId, use24h)
+-                    else -> { /* filtered above */ }
+-                }
+-                any = true
+-            }
+-            if (!any) return
+-            appWidgetManager.partiallyUpdateAppWidget(appWidgetId, views)
+-            WallpaperTickService.markPaintedWallSec(appWidgetId)
+-        }
+-
+-        /**
+-         * tip46: Till-alarm Chronometer base from live wall clock + elapsedRealtime.
+-         * Soft-FAIL Rule1 remainingMs % DAY_MS — Chris Soft-PASS multi-day Till
+-         * (e.g. 84h) is CORRECT stock countdown; Soft-FAIL invent Till wrap/UX.
+-         * Soft-FAIL touch TIMER display format beyond pre-tip46 re-anchor from live wall.
+-         */
+-        private fun applyTimerChronometerBase(
+-            views: RemoteViews,
+-            chronoId: Int,
+-            nextAlarmMillis: Long?
+-        ) {
+-            if (nextAlarmMillis != null) {
+-                val nowElapsed = android.os.SystemClock.elapsedRealtime()
+-                val nowWall = System.currentTimeMillis()
+-                // pre-tip46 / stock: full remaining (84h Soft-PASS; Soft-FAIL % DAY_MS).
+-                val baseElapsed = nowElapsed + (nextAlarmMillis - nowWall)
+-                views.setChronometerCountDown(chronoId, true)
+-                views.setChronometer(chronoId, baseElapsed, null, true)
+-            } else {
+-                views.setChronometer(chronoId, android.os.SystemClock.elapsedRealtime(), null, false)
+-                views.setTextViewText(chronoId, "No alarm set")
+-            }
+-        }
+-
+-        /**
+-         * tip46 Helios Soft-PASS six-digit CLOCK:
+-         * Soft-FAIL stock Chronometer DateUtils.formatElapsedTime (omits hour under 1h,
+-         * unpadded hour under 10h). Soft-PASS: each 1Hz re-anchor from live Calendar /
+-         * System.currentTimeMillis(), paint padded "HH:MM:SS" via setTextViewText on the
+-         * existing Chronometer id (extends TextView). Soft-FAIL start Chronometer so
+-         * DateUtils Soft-FAIL overwrites padded text mid-second.
+-         * KEEP Rule1 modulo-24 (HOUR_OF_DAY 00–23); KEEP Rule2 12h hour digit 01–12
+-         * (12 o'clock hour → 12, not 00 / Soft-FAIL M:SS); KEEP vc38 day-roll caller.
+-         * Soft-FAIL invent TextClock / PaddedHoursChronometer / bitmap clock.
+-         */
+-        private fun applyClockChronometerBase(
+-            views: RemoteViews,
+-            chronoId: Int,
+-            use24h: Boolean
+-        ) {
+-            val now = Calendar.getInstance()
+-            // Soft-FAIL Chronometer auto-tick (DateUtils path). Started=false so 1Hz
+-            // setTextViewText owns the visible digits.
+-            views.setChronometerCountDown(chronoId, false)
+-            views.setChronometer(chronoId, android.os.SystemClock.elapsedRealtime(), null, false)
+-
+-            val hour24 = now.get(Calendar.HOUR_OF_DAY) % 24 // Rule1 modulo-24
+-            val hh = if (use24h) {
+-                hour24
+-            } else {
+-                // Rule2 Soft-PASS #3 equivalent: 12h digit 1–12 (0→12, 13→1 … 23→11).
+-                val h12 = hour24 % 12
+-                if (h12 == 0) 12 else h12
+-            }
+-            val mm = now.get(Calendar.MINUTE)
+-            val ss = now.get(Calendar.SECOND)
+-            views.setTextViewText(
+-                chronoId,
+-                String.format(Locale.US, "%02d:%02d:%02d", hh, mm, ss)
+-            )
+-        }
+-
+         private fun chronoIdFor(ids: LineViewIds, fontStyle: FontStyleOption): Int = when (fontStyle) {
+             FontStyleOption.BOLD -> ids.chronoBold
+             FontStyleOption.BLACK -> ids.chronoBlack
+diff --git a/app/src/main/java/com/claudewidgets/alarmweather/RefreshReceiver.kt b/app/src/main/java/com/claudewidgets/alarmweather/RefreshReceiver.kt
+index acc4432..da6b41a 100644
+--- a/app/src/main/java/com/claudewidgets/alarmweather/RefreshReceiver.kt
++++ b/app/src/main/java/com/claudewidgets/alarmweather/RefreshReceiver.kt
+@@ -29,13 +29,10 @@ class RefreshReceiver : BroadcastReceiver() {
+ 
+     companion object {
+         const val ACTION_REFRESH = "com.claudewidgets.alarmweather.ACTION_REFRESH"
+-        const val ACTION_DAY_ROLL = "com.claudewidgets.alarmweather.ACTION_DAY_ROLL"
+         const val EXTRA_APPWIDGET_ID = "extra_appwidget_id"
+     }
+ 
+     override fun onReceive(context: Context, intent: Intent) {
+-        val action = intent.action
+-        if (action != ACTION_REFRESH && action != ACTION_DAY_ROLL) return
+         val appWidgetId = intent.getIntExtra(EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
+         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return
+ 
+diff --git a/app/src/main/java/com/claudewidgets/alarmweather/RefreshScheduler.kt b/app/src/main/java/com/claudewidgets/alarmweather/RefreshScheduler.kt
+index 0560d2e..008f59b 100644
+--- a/app/src/main/java/com/claudewidgets/alarmweather/RefreshScheduler.kt
++++ b/app/src/main/java/com/claudewidgets/alarmweather/RefreshScheduler.kt
+@@ -61,35 +61,6 @@ object RefreshScheduler {
+         }
+     }
+ 
+-
+-    /**
+-     * vc38 restore (tip46): wall-clock day roll. Chronometer 24h paints elapsed-since-local-midnight;
+-     * at the next local midnight we must re-anchor base + refresh date badges so
+-     * hours roll 23→00 (never 24+/30+) and the date advances with the day.
+-     */
+-    fun scheduleNextLocalMidnight(context: Context, appWidgetId: Int) {
+-        val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+-        val nextMidnight = java.util.Calendar.getInstance().apply {
+-            add(java.util.Calendar.DAY_OF_YEAR, 1)
+-            set(java.util.Calendar.HOUR_OF_DAY, 0)
+-            set(java.util.Calendar.MINUTE, 0)
+-            set(java.util.Calendar.SECOND, 1)
+-            set(java.util.Calendar.MILLISECOND, 0)
+-        }.timeInMillis
+-        val intent = Intent(context, RefreshReceiver::class.java).apply {
+-            action = RefreshReceiver.ACTION_DAY_ROLL
+-            putExtra(RefreshReceiver.EXTRA_APPWIDGET_ID, appWidgetId)
+-            data = Uri.parse("alarmweatherwidget://dayroll/$appWidgetId")
+-        }
+-        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+-        val pi = PendingIntent.getBroadcast(context, 10_000 + appWidgetId, intent, flags)
+-        if (hasExactAlarmPermission(context)) {
+-            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, nextMidnight, pi)
+-        } else {
+-            am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, nextMidnight, pi)
+-        }
+-    }
+-
+     fun cancel(context: Context, appWidgetId: Int) {
+         val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+         am.cancel(pendingIntent(context, appWidgetId))
+diff --git a/app/src/main/java/com/claudewidgets/alarmweather/WallpaperTickService.kt b/app/src/main/java/com/claudewidgets/alarmweather/WallpaperTickService.kt
+index 5cc76db..daff9af 100644
+--- a/app/src/main/java/com/claudewidgets/alarmweather/WallpaperTickService.kt
++++ b/app/src/main/java/com/claudewidgets/alarmweather/WallpaperTickService.kt
+@@ -21,10 +21,9 @@ import android.util.Log
+  * kill the loop. Keep-alive only restarts this sampler.
+  *
+  * vc37 pivot: CLOCK+TIMER always Chronometer. Overlay-only wallpaper ticks
+- * must not thrash them with outline bitmaps. tip46: re-anchor Chronometer
+- * bases from live System.currentTimeMillis() each wall-clock second (lean
+- * partial update) so digits never drift off phone time.
+- * SCREEN_ON remains a bonus full wake rebuild.
++ * must not thrash them. No foreground 1Hz wall-clock redraw, no exact-30s
++ * time floor, no pretty-font second-aligned bitmap refresh for time.
++ * SCREEN_ON remains a bonus wake rebuild only.
+  */
+ class WallpaperTickService : Service() {
+     private val handler = Handler(Looper.getMainLooper())
+@@ -116,8 +115,6 @@ class WallpaperTickService : Service() {
+ 
+         /** Last wall-clock second stamped for CLOCK/TIMER Chronometer re-anchor (WakeRefresh/drift). */
+         private val lastPaintedWallSec = java.util.concurrent.ConcurrentHashMap<Int, Long>()
+-        /** vc38 restore (tip46): civil local day for 23→00 Chronometer + date-badge day-roll. */
+-        private val lastClockLocalDay = java.util.concurrent.ConcurrentHashMap<Int, Int>()
+ 
+         fun markPaintedWallSec(appWidgetId: Int, wallSec: Long = System.currentTimeMillis() / 1000L) {
+             lastPaintedWallSec[appWidgetId] = wallSec
+@@ -144,27 +141,12 @@ class WallpaperTickService : Service() {
+ 
+         fun startIfNeeded(context: Context) {
+             try {
+-                // tip46: keep sampler alive for Chronometer wall-clock re-anchor even if wallpaper Off.
+-                if (anyWallpaperOn(context) || anyClockOrTimer(context)) start(context) else stop(context)
++                if (anyWallpaperOn(context)) start(context) else stop(context)
+             } catch (e: Exception) {
+                 Log.w(TAG, "startIfNeeded failed", e)
+             }
+         }
+ 
+-        /** True if any widget line shows CLOCK or Till-alarm (TIMER). */
+-        fun anyClockOrTimer(context: Context): Boolean {
+-            val mgr = AppWidgetManager.getInstance(context)
+-            val ids = mgr.getAppWidgetIds(ComponentName(context, AlarmWidgetProvider::class.java))
+-            return ids.any { id ->
+-                val prefs = WidgetPreferences(context, id)
+-                (1..4).any { ln ->
+-                    prefs.isLineEnabled(ln) && prefs.getLineField(ln).let {
+-                        it == FieldType.CLOCK || it == FieldType.TIMER
+-                    }
+-                }
+-            }
+-        }
+-
+         /** True if any instance has HEX, FLAME, MATRIX, or RAIN (anything != Off). */
+         fun anyWallpaperOn(context: Context): Boolean {
+             val mgr = AppWidgetManager.getInstance(context)
+@@ -205,7 +187,7 @@ class WallpaperTickService : Service() {
+ 
+         fun scheduleKeepAlive(context: Context) {
+             try {
+-                if (!anyWallpaperOn(context) && !anyClockOrTimer(context)) {
++                if (!anyWallpaperOn(context)) {
+                     cancelKeepAlive(context)
+                     return
+                 }
+@@ -255,7 +237,7 @@ class WallpaperTickService : Service() {
+         /** If the sampler died, push one f(t) so rain does not freeze until restart. */
+         fun sampleIfSamplerStale(context: Context) {
+             try {
+-                if (!anyWallpaperOn(context) && !anyClockOrTimer(context)) return
++                if (!anyWallpaperOn(context)) return
+                 val now = SystemClock.elapsedRealtime()
+                 if (now - lastSampleElapsed < sampleTickMs(context) * 2) return
+                 lastSampleElapsed = now
+@@ -280,41 +262,48 @@ class WallpaperTickService : Service() {
+                 try {
+                     val prefs = WidgetPreferences(context, id)
+                     val type = prefs.getWallpaperAnimationType()
+-                    // HEX, FLAME, MATRIX, RAIN all tick. Off skips wallpaper bitmap only.
+-                    if (type != WidgetPreferences.WALLPAPER_OFF && ProAccess.isProUnlocked(context)) {
+-                        val effect = when (type) {
+-                            WidgetPreferences.WALLPAPER_FLAME -> ParticleOverlayView.Effect.FLAME
+-                            WidgetPreferences.WALLPAPER_MATRIX -> ParticleOverlayView.Effect.MATRIX
+-                            WidgetPreferences.WALLPAPER_RAIN -> ParticleOverlayView.Effect.GLASS_RAIN
+-                            WidgetPreferences.WALLPAPER_METEORS -> ParticleOverlayView.Effect.METEORS
+-                            else -> ParticleOverlayView.Effect.HEX
+-                        }
+-                        Log.i(TAG, "sampled type=$type effect=$effect widget=$id t=$t")
+-                        val (widthPx, heightPx) = AlarmWidgetProvider.currentWidgetSizePx(context, mgr, id)
+-                        val (capW, capH) = capWallpaperSize(widthPx, heightPx)
+-                        val tint = prefs.getFlameColor()
+-                        val family = if (ProAccess.isProUnlocked(context)) prefs.getFontFamily() else WidgetFonts.FAMILY_DEFAULT
+-                        val tf = WidgetFonts.matrixGlyphTypeface(context, family)
+-                        // Rain: overlayA is the dark-veil alpha only. Drops blit at
+-                        // full sprite alpha inside drawWpGlassRain (slider does not hide rain).
+-                        // Hex/Flame/Meteors: same slider alpha path (pixel aMul in draw).
+-                        // Matrix: hardcoded 255 — do not change Matrix look/alpha.
+-                        val sliderA = WidgetPreferences.sliderToAlpha(prefs.getBackgroundTransparency())
+-                        val overlayA = when (type) {
+-                            WidgetPreferences.WALLPAPER_RAIN,
+-                            WidgetPreferences.WALLPAPER_HEX,
+-                            WidgetPreferences.WALLPAPER_FLAME,
+-                            WidgetPreferences.WALLPAPER_METEORS -> sliderA
+-                            else -> 255
+-                        }
+-                        val bmp = ParticleOverlayView.renderWallpaper(capW, capH, null, effect, t, tint, tf, context.resources, overlayA)
+-                        val views = android.widget.RemoteViews(context.packageName, R.layout.widget_layout)
+-                        views.setImageViewBitmap(R.id.animation_overlay, bmp)
+-                        views.setInt(R.id.animation_overlay, "setImageAlpha", ParticleOverlayView.WALLPAPER_ALPHA)
+-                        views.setViewVisibility(R.id.animation_overlay, android.view.View.VISIBLE)
+-                        mgr.partiallyUpdateAppWidget(id, views)
++                    // HEX, FLAME, MATRIX, RAIN all tick. Off skips.
++                    if (type == WidgetPreferences.WALLPAPER_OFF) continue
++                    if (!ProAccess.isProUnlocked(context)) continue
++                    val effect = when (type) {
++                        WidgetPreferences.WALLPAPER_FLAME -> ParticleOverlayView.Effect.FLAME
++                        WidgetPreferences.WALLPAPER_MATRIX -> ParticleOverlayView.Effect.MATRIX
++                        WidgetPreferences.WALLPAPER_RAIN -> ParticleOverlayView.Effect.GLASS_RAIN
++                        WidgetPreferences.WALLPAPER_METEORS -> ParticleOverlayView.Effect.METEORS
++                        else -> ParticleOverlayView.Effect.HEX
++                    }
++                    Log.i(TAG, "sampled type=$type effect=$effect widget=$id t=$t")
++                    val (widthPx, heightPx) = AlarmWidgetProvider.currentWidgetSizePx(context, mgr, id)
++                    val (capW, capH) = capWallpaperSize(widthPx, heightPx)
++                    val tint = when (type) {
++                        // Any live wallpaper (!= OFF): user flame/tint color wins - no silent default blue.
++                        WidgetPreferences.WALLPAPER_HEX,
++                        WidgetPreferences.WALLPAPER_FLAME,
++                        WidgetPreferences.WALLPAPER_MATRIX,
++                        WidgetPreferences.WALLPAPER_RAIN,
++                        WidgetPreferences.WALLPAPER_METEORS -> prefs.getFlameColor()
++                        else -> prefs.getFlameColor()
+                     }
+-                    // tip46: Chronometer re-anchor even when wallpaper Off.
++                    val family = if (ProAccess.isProUnlocked(context)) prefs.getFontFamily() else WidgetFonts.FAMILY_DEFAULT
++                    val tf = WidgetFonts.matrixGlyphTypeface(context, family)
++                    // Rain: overlayA is the dark-veil alpha only. Drops blit at
++                    // full sprite alpha inside drawWpGlassRain (slider does not hide rain).
++                    // Hex/Flame/Meteors: same slider alpha path (pixel aMul in draw).
++                    // Matrix: hardcoded 255 Ã¢â‚¬â€ do not change Matrix look/alpha.
++                    val sliderA = WidgetPreferences.sliderToAlpha(prefs.getBackgroundTransparency())
++                    val overlayA = when (type) {
++                        WidgetPreferences.WALLPAPER_RAIN,
++                        WidgetPreferences.WALLPAPER_HEX,
++                        WidgetPreferences.WALLPAPER_FLAME,
++                        WidgetPreferences.WALLPAPER_METEORS -> sliderA
++                        else -> 255
++                    }
++                    val bmp = ParticleOverlayView.renderWallpaper(capW, capH, null, effect, t, tint, tf, context.resources, overlayA)
++                    val views = android.widget.RemoteViews(context.packageName, R.layout.widget_layout)
++                    views.setImageViewBitmap(R.id.animation_overlay, bmp)
++                    views.setInt(R.id.animation_overlay, "setImageAlpha", ParticleOverlayView.WALLPAPER_ALPHA)
++                    views.setViewVisibility(R.id.animation_overlay, android.view.View.VISIBLE)
++                    mgr.partiallyUpdateAppWidget(id, views)
+                     maybeRefreshCustomFontClock(context, mgr, id, prefs)
+                 } catch (e: Exception) {
+                     Log.w(TAG, "sample t=$t failed widget=$id", e)
+@@ -323,12 +312,11 @@ class WallpaperTickService : Service() {
+         }
+ 
+         /**
+-         * tip46 Helios Soft-PASS + vc38 day-roll restore:
+-         * - Civil day change → full update (Chronometer 23→00 + date badges).
+-         * - Else every wall-clock second → lean Chronometer re-anchor from
+-         *   live System.currentTimeMillis() (kills cached/drifted base).
+-         * CLOCK: padded HH:MM:SS on existing Chronometer id (Soft-FAIL DateUtils /
+-         * TextClock / outline time bitmaps). TIMER: stock countdown Soft-FAIL % DAY_MS.
++         * vc37: CLOCK+TIMER are always Chronometer — never push outline/time bitmaps from
++         * the wallpaper sampler. Overlay-only partials must not thrash Chronometer.
++         * Bonus only: if painted wall-sec drifted >= 30s, re-anchor via full update
++         * (Chronometer base from wall time). No 1Hz pretty-font redraw. No outline stroke
++         * on ticking digits (outline stays on static next-alarm + weather in provider).
+          */
+         private fun maybeRefreshCustomFontClock(
+             context: Context,
+@@ -344,37 +332,20 @@ class WallpaperTickService : Service() {
+             if (!needsTick) return
+ 
+             val wallSec = System.currentTimeMillis() / 1000L
+-            val cal = java.util.Calendar.getInstance()
+-            val localDay = cal.get(java.util.Calendar.YEAR) * 1000 + cal.get(java.util.Calendar.DAY_OF_YEAR)
+-            val prevDay = lastClockLocalDay[id]
+-
+-            // vc38: day roll is wall-clock math — 24h Chronometer base is today's
+-            // local midnight; civil day change re-anchors hours 23→00 + date badges.
+-            if (prevDay != null && prevDay != localDay) {
+-                Log.i(TAG, "vc38 day-roll re-anchor widget=$id day $prevDay -> $localDay")
+-                lastClockLocalDay[id] = localDay
+-                lastPaintedWallSec[id] = wallSec
+-                lastFullTextUpdateElapsed = SystemClock.elapsedRealtime()
+-                pushFullClockTimer(context, mgr, id, prefs)
+-                return
+-            }
+-            lastClockLocalDay[id] = localDay
+-
+-            // tip46: every wall second, recompute Chronometer base from device wall clock.
+             val last = lastPaintedWallSec[id] ?: 0L
+-            if (wallSec != last) {
++            val absDrift = kotlin.math.abs(wallSec - last)
++
++            // Drift re-anchor only (bonus). Never 1Hz outline/time bitmap refresh.
++            if (last != 0L && absDrift >= 60L) {
++                Log.w(TAG, "vc37 chronometer re-anchor widget=$id absDrift=${absDrift}s")
+                 lastPaintedWallSec[id] = wallSec
+                 lastFullTextUpdateElapsed = SystemClock.elapsedRealtime()
+-                val nextAlarm = try {
+-                    (context.getSystemService(Context.ALARM_SERVICE) as AlarmManager)
+-                        .nextAlarmClock?.triggerTime
+-                } catch (_: Exception) {
+-                    null
+-                }
+-                AlarmWidgetProvider.reanchorChronometersFromWallClock(context, mgr, id, nextAlarm)
++                pushFullClockTimer(context, mgr, id, prefs)
+             }
++            // else: wallpaper stays overlay-only; Chronometer self-ticks in launcher.
+         }
+ 
++
+         private fun pushFullClockTimer(
+             context: Context,
+             mgr: AppWidgetManager,
+@@ -391,8 +362,5 @@ class WallpaperTickService : Service() {
+                 context, mgr, id, nextAlarm, WeatherFetcher.forDisplay(prefs)
+             )
+         }
+-
+-
+-
+     }
+ }

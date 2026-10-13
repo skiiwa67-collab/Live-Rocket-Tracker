@@ -1,0 +1,17 @@
+SOFT-FAIL / CONTINUATION NEEDED (updated CT 2026-09-21T13:48:24-05:00):
+Seq 02 Soft-PASS on Dropbox via parts:
+  part1of3 (12152), part2of3.a (7450), part2of3.b (4760), part3of3 (7298)
+Also uploaded: 08.part5of5, 08.part1of5.b, 09.part5of5, 11.part3of3, 14.part3of3
+
+STILL MISSING covering parts for:
+  08: part1.a, part2, part3, part4 (local 50787 bytes)
+  09: part1-4 (local 50448 bytes)
+  11: part1-2 (local 34834 bytes)
+  14: part1-2 (local 27107 bytes)
+
+Payloads ready:
+  /workspace/agent-backups/helios/voice-exports/_for_mcp_upload/{seq}.part*.json
+  /tmp/mcp_create_args_small/ (≈6KB .a/.b)
+
+Voice-call-summaries: Soft-PASS (already on Dropbox).
+Local Soft-PASS untouched; no local deletes.

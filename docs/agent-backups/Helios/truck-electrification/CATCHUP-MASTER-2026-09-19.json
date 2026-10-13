@@ -1,0 +1,91 @@
+{
+  "softpass": true,
+  "project": "Truck-Electrification-Network",
+  "captured_at": "2026-09-19T10:36:00-05:00",
+  "captured_by": "Helios (Elon Musk #1 Advisor copy)",
+  "reason": "Chris voice: memory wipe recovery + mandatory multi-mirror backup after Strip/Yard/PowerPod dumps",
+  "status": "SPEC not live; DFW Node dark",
+  "sources": {
+    "Strip Electrical": "softpass-strip-2026-09-19.json + GEN1-PAD-SPEC.md",
+    "Yard Software": "voice Soft-PASS dump 2026-09-19 + ROUTER-SPEC.txt rewrite",
+    "Power Pod": "softpass-power-pod-2026-09-19.json"
+  },
+  "repos": {
+    "pitch_live": "https://skiiwa67-collab.github.io/yard-energy-console/",
+    "github": "https://github.com/skiiwa67-collab/yard-energy-console",
+    "related": "https://github.com/skiiwa67-collab/carry-hud",
+    "windows_home": "C:\\\\Users\\\\skiiw\\\\Projects\\\\Truck-Electrification-Network",
+    "box_mirror": "/workspace/christopher-olsen-projects/04-truck-electrification-network"
+  },
+  "layers": {
+    "yard": "Roof/skin PV \u2192 building bank \u2192 flush landing-gear PAD (weight switch) \u2192 shoe \u2192 HV jumper INSIDE gear legs \u2192 trailer junction \u2192 snap-in modules \u2192 Power Pod / BEV pack (bidirectional)",
+    "city": "DFW prototype ARL \u2194 Dallas \u2194 GRP \u2194 Lone Star; verbs EXPORT/CHARGE/ISLAND; NO signed interconnect; Gen1 ship = YARD-ONLY",
+    "power_pod": "Diesel axle1; axle2 dual Tesla-class wheel motors (analog not PO); snap-on liquid cool orange HV; energy from trailer modules; Gen1 charge money = dropped trailer on pad; Gen1 hitch = manual HV + HVIL",
+    "strip_pad": "Flush modular recycled-tire cassettes at GEAR LINE; Gen1 mechanical plunger; both shoes or no watts; one WORN/FAULT bay does not kill neighbors; first article = bay 62 one cassette one lateral"
+  },
+  "hud_chips_locked": {
+    "doors": "201 EST Loop 820",
+    "bank_mwh": "22.0 MWh EST",
+    "soc": "dash until measured \u2014 no fake %",
+    "fleet_stamps": [
+      "BEV SEMI",
+      "DIESEL DOUBLES",
+      "DIESEL+POD"
+    ]
+  },
+  "lamps": {
+    "CONDUCTING": "green",
+    "IDLE": "dim",
+    "WORN": "amber",
+    "FAULT": "red"
+  },
+  "dispatch_key": "Watts \u2192 CONDUCTING cassette ID, NOT door number",
+  "first_check": [
+    "Show HUD",
+    "One believer",
+    "One node Loop 820 (~201 doors)",
+    "Film"
+  ],
+  "who_pays": "Public: warehouse electrify + truck + hybrid-axle write-off. Private freight. No radios in this HUD.",
+  "mpg": "No kit number. NREL Coca-Cola Eaton hybrid +13.7% in-service analog; +22\u201330% city EST; ~0\u20136% highway; DFW P&D 180\u2013280 mi = city case",
+  "do_not_invent": [
+    "pad V/A/AWG",
+    "lateral spacing",
+    "cassette length",
+    "band width",
+    "wall-to-band offset",
+    "53 vs pup offset",
+    "round shoe diameter",
+    "SKU price",
+    "Tesla PO/logos",
+    "fake SOC%",
+    "motor kW",
+    "pack kWh",
+    "hitch pinout",
+    "insurance %",
+    "signed interconnect MW",
+    "radios/911"
+  ],
+  "gaps_open": [
+    "MiniME offline \u2014 Win home not verified this turn",
+    "No measured SOC/V/A/fault current",
+    "City interconnect unsigned",
+    "53 vs 28-ft offset tape pending",
+    "Steve cassette-ID coding status UNKNOWN since Aug",
+    "Live telemetry: none"
+  ],
+  "files_bundled": [
+    "DFW-DAILY-POWER.txt",
+    "FIRST-CHECK.txt",
+    "GEN1-PAD-SPEC.md",
+    "HYBRID-MPG.txt",
+    "PAD-SPEC.txt",
+    "POWER-POD.txt",
+    "ROUTER-SPEC.txt",
+    "STRIP.txt",
+    "TAP-LINK.txt",
+    "WHO-PAYS.txt",
+    "softpass-power-pod-2026-09-19.json",
+    "softpass-strip-2026-09-19.json"
+  ]
+}

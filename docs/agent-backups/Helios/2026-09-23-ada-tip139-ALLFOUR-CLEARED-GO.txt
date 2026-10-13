@@ -1,0 +1,17 @@
+Chris/Helios Soft-PASS GO — tip139 ALL FOUR CLEARED.
+
+READ_FILE /workspace/agent-backups/Helios/2026-09-23-tip139-art-review.md
+READ_FILE /workspace/agent-backups/Helios/2026-09-23-tip139-ALLFOUR-contents.md
+
+Rebuild tip139 / 1.0.129 WITH art:
+1) Wire VehicleCatalog + drawables for cz6a, sr75, nuri; refresh h3 GOLD trio
+2) Pack Helios-PASS GOLD from:
+   - /workspace/lrt-cz6a-pack-20260923/
+   - /workspace/lrt-sr75-pack-20260923/
+   - /workspace/lrt-nuri-pack-20260923/
+   - /workspace/lrt-h3-pack-20260923/
+3) Keep tip138 code base (pad font + fetch race fix)
+4) BUILD ONLY — Soft-FAIL phone/Studio push until Chris go
+5) Stage APK; report version + full contents + art Soft-PASS list
+6) Dual-write tip139 ship-lock Notion+GitHub
+7) Soft-FAIL interrupt Chris during CZ-8A window

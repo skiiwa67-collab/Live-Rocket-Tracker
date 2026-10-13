@@ -1,0 +1,11 @@
+# nuri plume-anchor Soft-PASS 2026-09-23
+# Soft-FAIL stack/cutaway/shell/side/tank
+c02dd46aa5b832bcc9eb7791bdb0eab2  vehicle_nuri_flame_ship.png
+ea6f49731b520f793e9137da54846ee2  vehicle_nuri_engine_ship.png
+c02dd46aa5b832bcc9eb7791bdb0eab2  vehicle_nuri_flame_s2.png
+c02dd46aa5b832bcc9eb7791bdb0eab2  vehicle_nuri_exhaust_ship.png
+b4a9069c8869ac17cd9e6c11c567c448  compare_nuri_postsep.png
+637c69ab85d6859d4223b1294b9299be  _proof_nuri_postsep.png
+0f5111a272ddb2f9876784100e86bd46  lib_side_bell.py
+# stack Soft-FAIL unchanged c4ed89d5cd0d170164f7ce160c19abb8
+# ship Soft-FAIL unchanged e39e182485b6dc9dbe50c5c6082ff1fe

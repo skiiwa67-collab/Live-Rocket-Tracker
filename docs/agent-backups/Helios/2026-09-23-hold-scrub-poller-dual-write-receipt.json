@@ -1,0 +1,35 @@
+{
+  "task": "LRT hold/scrub poller Soft-PASS design dual-write",
+  "owner": "Chris Olsen",
+  "agent": "Helios",
+  "where_we_are": "2026-09-23 ~08:40 CDT Soft-PASS design locked; Ada implements after Chris Soft-PASS",
+  "timestamp_ct": "2026-09-23 08:40 CDT",
+  "local_path": "/workspace/agent-backups/Helios/2026-09-23-lrt-hold-scrub-poller-design.md",
+  "github_url": "https://github.com/skiiwa67-collab/Live-Rocket-Tracker/issues/62",
+  "notion_url": "https://app.notion.com/p/3e4a94933faa819595afe92456360ebe?pvs=204",
+  "github": {
+    "status": "Soft-PASS",
+    "owner": "skiiwa67-collab",
+    "repo": "Live-Rocket-Tracker",
+    "issue_number": 62,
+    "title": "Hold/scrub poller for live sim — Soft-PASS design",
+    "url": "https://github.com/skiiwa67-collab/Live-Rocket-Tracker/issues/62"
+  },
+  "notion": {
+    "status": "Soft-PASS",
+    "destination": "Focus Tasks",
+    "data_source_id": "c924ca98-d41b-47be-91ef-81212cb6a60b",
+    "page_id": "3e4a9493-3faa-8195-95af-e92456360ebe",
+    "url": "https://app.notion.com/p/3e4a94933faa819595afe92456360ebe?pvs=204",
+    "task_name": "LRT hold/scrub poller Soft-PASS design — Ada after Chris Soft-PASS",
+    "task_status": "In progress"
+  },
+  "soft_fail": [
+    "Play publish forever per HARD-no-agent-play-publish",
+    "device/adb push",
+    "invent telemetry",
+    "implement Android code in this task"
+  ],
+  "next": "Chris Soft-PASS design → Ada implements in LRT Android (Studio/git only)",
+  "overall": "Soft-PASS design + dual-write complete; Soft-FAIL Play/device/invent/implement"
+}

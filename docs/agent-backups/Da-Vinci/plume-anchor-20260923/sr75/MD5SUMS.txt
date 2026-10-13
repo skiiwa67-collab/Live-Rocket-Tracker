@@ -1,0 +1,7 @@
+# sr75 Soft-FAIL HOLD — no Soft-PASS writes this run
+577f9382ed993ca2056b1346233ae1f4  vehicle_sr75_engine_ship.png (EMPTY unchanged)
+577f9382ed993ca2056b1346233ae1f4  vehicle_sr75_flame_ship.png (EMPTY unchanged)
+577f9382ed993ca2056b1346233ae1f4  vehicle_sr75_flame_s2.png (EMPTY unchanged)
+577f9382ed993ca2056b1346233ae1f4  vehicle_sr75_exhaust_ship.png (EMPTY unchanged)
+e36d5fd9c3f7e5d5b80179f6c0d5b8d1  vehicle_sr75_engine_booster.png (WAVE1 KEEP — real HyPLOX-75)
+6c61b6a0ed3626bede65b20974a99663  vehicle_sr75_stack.png Soft-FAIL untouched

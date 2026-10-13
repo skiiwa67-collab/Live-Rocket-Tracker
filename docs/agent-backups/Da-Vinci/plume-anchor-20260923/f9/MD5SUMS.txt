@@ -1,0 +1,5 @@
+# f9 Soft-FAIL HOLD — no Soft-PASS writes this run
+bdf2ecdef4c683ad66f9cc214bb7139b  vehicle_f9_flame_ship.png KEEP unchanged
+fa4605fb3a52632915cde2954d7d8919  vehicle_f9_ship.png Soft-FAIL untouched
+73004957061f208607c6f1bb3e048f64  vehicle_f9_stack.png Soft-FAIL untouched
+# engine_ship MISSING

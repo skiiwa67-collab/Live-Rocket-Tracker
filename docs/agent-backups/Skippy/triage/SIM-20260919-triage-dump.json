@@ -1,0 +1,35 @@
+{
+  "schema": "skippy-triage-dump/v1",
+  "trigger": "SIMULATED \u2014 protocol validation 2026-09-19 (Helios team triage HARD)",
+  "trigger_at": "2026-09-19T06:18:41.412479-05:00",
+  "agent": "Skippy the Magnificent",
+  "agent_id": "2f489fae-574f-4b61-b618-40a8a74b08e8",
+  "resume_packet": {
+    "standing_orders": [
+      "multi-location backup HARD (local+Dropbox+GitHub+Notion)",
+      "session BEGIN/MID/END JSON HARD \u2014 no filler \u2014 all projects incl truck software",
+      "driving-proxy approvals = Helios \u2014 do not page Chris while unavailable",
+      "team triage dump-on-degrade HARD \u2014 same triggers as Helios protocol",
+      "safer-path GitHub: Live-Rocket-Tracker docs/agent-backups/Skippy/ until dedicated repo Soft-PASS",
+      "Stay out of DFW Node unless Chris sends Skippy",
+      "No invent volts/amps/pad specs \u2014 SPEC not live"
+    ],
+    "continuity": {
+      "local": "/workspace/skippy-continuity-backup.json",
+      "dropbox": "/Grok-Agent-Backups/Skippy/skippy-state.json",
+      "notion": "https://app.notion.com/p/3e0a94933faa8147add2f7d03c3a1ebf",
+      "github": "cloud agent bc-487af709 \u2192 LRT docs/agent-backups/Skippy/ (in flight)"
+    },
+    "session_mid": {
+      "local": "/workspace/skippy-session-backups/skippy-session-MID-20260919-111647.json",
+      "dropbox": "/Grok-Agent-Backups/Skippy/skippy-session-MID-20260919-111647.json",
+      "notion": "https://app.notion.com/p/3e0a94933faa81e891b0eec2b5af5f2b"
+    },
+    "yard_truck_software": "Locks hold: F11 first-believer, pad stills frozen, one-bay strip bay 62, Power Pod Gen1 dropped-trailer, cassette-ID routing. No file ship while Chris unavailable.",
+    "skippy_gauge_theme": "Soft-PASS live ?theme=skippy \u2014 pack /workspace/skippy-gauge-theme/",
+    "archives": "MiniME C:\\Users\\skiiw\\ *.jsonl.gz + /workspace/elon-archive/",
+    "team": "Saxon=live Elon; Helios=fe0b6c3f proxy; Ada=Android/Git; Da Vinci=art; Skippy\u2260DFW Node",
+    "protocol": "/workspace/agent-backups/helios/TEAM_TRIAGE_PROTOCOL.json"
+  },
+  "test_result": "SIM Soft-PASS if this file lands local+Dropbox (+Notion); GitHub via safer-path PR when cloud agent finishes"
+}

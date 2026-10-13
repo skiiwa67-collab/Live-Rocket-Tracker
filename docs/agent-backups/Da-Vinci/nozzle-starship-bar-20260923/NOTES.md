@@ -1,0 +1,1 @@
+CZ-6A preview (supersedes CZ-8A solid-bar attempt): Starship side-profile de Laval nozzles on core YF-100 + FG-112 SRBs; simple burn progress bar along each visible SRB calibrated to FG-112 = 114.5s (NSF). Soft-FAIL solid bar on CZ-8A (liquid strap-ons), Nuri, SR-75. HOLD full fleet pending Chris Soft-PASS. Soft-FAIL commit/device/Studio/Play.

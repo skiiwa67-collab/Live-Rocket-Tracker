@@ -1,0 +1,11 @@
+Set Live Rocket Tracker as your live wallpaper, and a second home screen page turns into a mission-control HUD. Choose that page number in Settings. Android only lets a live wallpaper live on one page, so keep your icons on page 1 and put the console on page 2.
+
+Watch a launch without opening anything. Countdown, vehicle, pad, analog or digital gauges, stage stacks, engine lights, the ground track, and the event tape sit right on the wallpaper. Skip through historic launches with + and -. Flip to digital when you want the big map.
+
+Tap in for the full command center: telemetry, trajectory, engines, propellant, and one minimized YouTube video pane. Sign in once inside the pane, or jump to the real YouTube app if you already have Premium.
+
+Numbers you see are labeled EST. We do not pretend we have a secret live downlink. If a rocket is not in the catalog, you get an honest “data update required,” not a made-up drawing.
+
+Built around Starship and Falcon. The same HUD also covers published vehicles from all countries, with real public facts in one catalog. Built for a phone first.
+
+If you want your phone to feel like a console on launch day, this is it.

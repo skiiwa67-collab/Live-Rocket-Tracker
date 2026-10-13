@@ -1,0 +1,29 @@
+{
+  "agent": "Yard Software",
+  "session": "BEGIN",
+  "ts": "2026-09-19T10:34:14-05:00",
+  "project": "Truck-Electrification-Network",
+  "signal": {
+    "live_pitch": "https://skiiwa67-collab.github.io/yard-energy-console/",
+    "repo": "https://github.com/skiiwa67-collab/yard-energy-console",
+    "home_win": "C:\\Users\\skiiw\\Projects\\Truck-Electrification-Network",
+    "box_mirror": "/workspace/christopher-olsen-projects/04-truck-electrification-network",
+    "spec": "ROUTER-SPEC.txt",
+    "hud": "CARRY-HUD-SEND.html",
+    "locks": {
+      "doors_est": 201,
+      "bank_mwh_est": 22.0,
+      "yards": ["ARL", "Dallas", "GRP", "Lone Star"],
+      "dispatch": "cassette-ID not door-number",
+      "gen1": "mechanical pad, yard-only ship",
+      "soc": "dash until measured log",
+      "city_verbs": "EXPORT/CHARGE/ISLAND parked until interconnect"
+    },
+    "blockers": ["MiniME offline — cannot read Win home",
+                 "no measured SOC log",
+                 "no V/A until Strip defends patch",
+                 "city interconnect unsigned",
+                 "Steve waiting real landing-gear photo composites"]
+  },
+  "helios_soft_pass": "sent 2026-09-19"
+}
