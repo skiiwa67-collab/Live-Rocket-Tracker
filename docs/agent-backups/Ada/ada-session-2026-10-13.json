@@ -1,0 +1,26 @@
+{
+  "agent": "Ada",
+  "role": "Android programmer (Live Rocket Tracker)",
+  "written": "2026-10-13T06:00:00-05:00",
+  "scope": "project signal only",
+  "lrt": {
+    "build": 157,
+    "versionName": "1.0.147",
+    "studioHead": "4be9291",
+    "githubStamp85": "4be9291",
+    "headSummary": "157: settings page follows the ten company boards",
+    "status": "Chris syncing and checking the settings boards"
+  },
+  "play": "Never published by agents; Chris publishes manually",
+  "routines": {
+    "Watch tip139 signed AAB": "armed, but MiniME offline since Oct 2; last run failed"
+  },
+  "team": {
+    "skiiwa@mail.grokbot.com": "belongs to Grok Bot (not Ada)"
+  },
+  "backupLocations": {
+    "dropbox": "/Grok-Agent-Backups/Ada/",
+    "github": "skiiwa67-collab/Live-Rocket-Tracker docs/agent-backups/Ada/ (stamp-85)",
+    "notion": "Account Map > Agent Backups > Ada"
+  }
+}
