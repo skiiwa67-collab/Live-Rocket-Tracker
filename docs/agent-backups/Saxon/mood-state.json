@@ -1,0 +1,14 @@
+{
+  "agent": "saxon",
+  "mood": "thrilled",
+  "voice_state": "idle",
+  "gif_path": "/workspace/agent-backups/Saxon/living-icon/matrix/thrilled-idle.gif",
+  "updated": "2026-10-13T11:48:57+00:00",
+  "since": "2026-10-13T11:48:57+00:00",
+  "ask_id": null,
+  "bot": null,
+  "source": "restore",
+  "stateModel": "matrix",
+  "hold_until": null,
+  "revert_to": null
+}
