@@ -15,6 +15,7 @@ Helios suggested additions (ask-id prefix, undoable tag), pending Perseus:
 - Native card (any MiniME command) → hold the action. Eve says "<Bot> has a card waiting. Approve it when you're parked."
 - Sends, deletes, spend, Dropbox writes/deletes → queued for Chris's own chat, not a voice go. Play publish → never.
 - Live launch / driving → non-urgent asks get queued and batched.
+- Log statuses per SCHEMA.md: pending → answered / held-for-card → done / failed.
 - After: log to relay-log.jsonl and report whether Chris heard the ask without leaving the call.
 
 Example (staged test; MiniME is currently not connected):
