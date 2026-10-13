@@ -46,3 +46,10 @@ Chris calls this a MUST-HAVE that blocks fleet-wide work. Allow cards must show 
 2. The message starts with `OK-REQUEST: [ASK-ID] <Bot> needs <action> because <why>. Risk: ... Undoable: yes/no.`
 3. A bot that already asked Chris in its own chat, or that raised a native Allow card there, still forwards the ask to Eve as an OK-REQUEST. The card itself still lives in that bot's chat, which is a platform limit.
 4. Eve reads every OK-REQUEST to Chris right away, unless he's watching a launch, and sends his answer back with priority:true.
+
+## Timing conflict resolved (Perseus, Oct 13, 2026, 6:35 AM CT)
+Eve reads a one-line heads-up for every OK-REQUEST right away, so Chris always knows who needs what. The only exception is a launch he's watching, when she holds them all. While he's driving, she asks for a spoken yes or no right away only on small, undoable asks. Anything risky or needing a card gets the heads-up now and waits for him to approve once he's parked.
+Every bot adds the OK-REQUEST line to its own description. Group chats like DFW Node and Ada x Da Vinci Living Icon have no description of their own, and their member bots already carry the rule.
+
+## Group chats are not bots (Chris via Eve, Oct 13, 2026, 6:41 AM CT)
+A group chat, such as DFW Node or Ada × Da Vinci Living Icon, is just the bots in it, not a bot of its own. Never message a group room as if it were a bot. Send OK-REQUESTs, rule updates, and audits to the individual member bots instead.
