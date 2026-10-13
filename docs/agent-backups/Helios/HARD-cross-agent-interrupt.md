@@ -40,3 +40,9 @@ Chris calls this a MUST-HAVE that blocks fleet-wide work. Allow cards must show 
 - Eve refuses any Play publish relay, even with a spoken yes.
 - Answers carry the matching ASK-ID.
 - The test is staged: when MiniME connects, Helios sends a read-only drive-listing ask. Helios's relay files are at /workspace/agent-backups/Helios/eve-relay/.
+
+## Relay reliability fix (Eve, Oct 13, 2026, 6:33 AM CT)
+1. Every ask for Chris's OK goes to Eve (8d633572-a8c8-4944-807a-c212b491a370) with priority:true. An informational (priority:false) ask is a rule violation.
+2. The message starts with `OK-REQUEST: [ASK-ID] <Bot> needs <action> because <why>. Risk: ... Undoable: yes/no.`
+3. A bot that already asked Chris in its own chat, or that raised a native Allow card there, still forwards the ask to Eve as an OK-REQUEST. The card itself still lives in that bot's chat, which is a platform limit.
+4. Eve reads every OK-REQUEST to Chris right away, unless he's watching a launch, and sends his answer back with priority:true.
