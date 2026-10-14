@@ -1,0 +1,12 @@
+# Bug-Out hunt, UX / family / messaging / hardware + no-absolutes (Skippy, 2026-10-13)
+one-to-many @ 4d59e3f (0.6.13). Read-only. The 6 issues already sent to Ada are not repeated. Tinkabot's easy-wins file (/workspace/agent-backups/Tinkabot/2026-10-13-bugout-easy-wins.md) does not exist, so there was nothing to dedupe against.
+
+1. ABSOLUTE: Schools and places of worship are still silently excluded from every suggestion (Hotspots.kt:55, Hotspots.kt:76), even though they're often real shelters. Fix: include them ranked lower with a "check if open" note, and add a Settings toggle.
+2. ABSOLUTE: Suggestions beyond 120 min are silently dropped (Hotspots.kt:17, :56, :60; MainActivity.kt:524 shows "≤120 min"), so a slow walker can get "no hotspot" with no options. Fix: show the nearest ones anyway, flagged "over 2 h", and make the limit a Settings starting value.
+3. ABSOLUTE: Low-battery mode can't be turned off once the battery is at 20% or below (auto = manual || pct ≤ 20, Freshness.kt:29), and it caps the map at 60 hotspots (Freshness.kt:27, :31). Fix: add a three-way setting (Auto / Always / Never), make the cap and the 20% threshold adjustable, and show "60 of N shown".
+4. ABSOLUTE: The final card silently keeps only the first 8 route steps (FinalCard.kt:55, :61), and nobody can see the steps that were cut. Fix: show all steps, or "+N more steps" plus the final turn and destination.
+5. ABSOLUTE / HOLE (UX): "Safe" targets are only fire stations and FEMA NSS shelters (Routing.kt:132). Nearest-safe, the outside-town pick and the final card's safe spot all use this list (Routing.kt:152, :184; FinalCard.kt:62), so rec centers, community centers and hospitals never come up. Fix: use a wider ranked category list that users can adjust.
+6. ABSOLUTE: Map hotspots are only drawn within 0.5 mi of a route (Hotspots.kt:82, "tunable" but no Settings path found; filter used at MainActivity.kt:297). Fix: add a Settings slider and a "show all nearby" chip.
+7. HOLE (UX): The dog is dropped from the destination family list (MainActivity.kt:235, family.filter { !it.isDog }), so a pet alone is never a meet target, and the map gives no hint of that. Fix: include pets as an opt-in target, or show "pets not routed".
+8. EASY: The member popup thread shows only the last 4 messages, with no way to scroll back (MainActivity.kt:714). Fix: add a "show earlier" button.
+9. EASY: The final card's safe spot says "none found offline" with no fallback (FinalCard.kt:62). Fix: fall back to the nearest hotspot of any category, plus its heading.

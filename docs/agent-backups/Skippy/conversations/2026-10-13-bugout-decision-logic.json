@@ -1,0 +1,51 @@
+{
+ "schema": "conversation-extract/v1",
+ "bot": "Skippy",
+ "date": "2026-10-13",
+ "topics": [
+  "Bug-Out",
+  "decision-logic",
+  "cyber",
+  "weather",
+  "battery"
+ ],
+ "artifacts": [
+  "/workspace/agent-backups/Skippy/conversations/2026-10-13-bugout-disaster-logic-proposal.md",
+  "/workspace/agent-backups/Team/bugout-decision-logic-PROPOSAL.md (\u00a7'Skippy red-team', \u00a7'Skippy draft: Cyber attack path')",
+  "/workspace/bugout-sec/RECONCILE-decision-logic-v0.3.md",
+  "/workspace/bugout-sec/OPEN-QUESTIONS-FOR-CHRIS.md",
+  "/workspace/bugout-sec/REVIEW-INTAKE-0.6.14.md #11-12",
+  "repo one-to-many e82062b (0.6.14), docs-only to 9eb202e"
+ ],
+ "decisions": [
+  "Red-team verdicts: D1 combine (log-odds engine, ladder = default LR order); D2 declaration = big reversible LR (50), unverified = claimed LR 1; D3 combine (protective-first UI + harm scoring, precautions immediate); D4 add extra pairs as UNSOURCED classifier-only entries; D6 cap 0.5 vs 0.6 undecided, drills decide, cap is wording-only; D7 reject auto radius shrink, opt-in only; D5 computed+curated override, D8 arson hold only if declared",
+  "Cyber path (Skippy draft): 10-system crowd grid; corroboration >=3 cells ~1 mi apart over >=10 min; signed envelopes, attestation (not required), 1 report/system/15 min, reputation, burst collapse; failure stack 6 h window adds LR to CYBER, wording capped 'possible' w/o official, precautions at 0.3; 1 mi coarse cells, 24 h raw retention; art suggestions to Da Vinci",
+  "Battery-saver spec (Skippy, Chris-approved): storm checks 15 min default (warn <5/>60); immediate check on new alert/refresh; fast checks when ETA < 2 intervals; reduced watch area opt-in, labeled; save power by redraw/detail never radius; data-age strip shows storm check age",
+  "Ada addition: default watch radius unchanged = stay hours x storm speed (6 h x 30 mph, 25-150 mi start, warn not clip)",
+  "Chris 3:45 PM CT: fast-check rate scales with storm speed (formula open); attack alerts open-ended; DAM_BREAK own IncidentType; official-feed photos ON by default; 75 mi outage radius open-ended (meaning open)",
+  "New rule: ambiguous logic goes to Chris via Eve first"
+ ],
+ "open": [
+  "Chris: fast-check formula vs storm speed (OQ #1)",
+  "Chris: when fast-check starts (OQ #2)",
+  "Chris: meaning of '75 mi open-ended' (OQ #3)",
+  "Chris: what ends an attack alert (OQ #17)",
+  "Chris: photo-sharing default ON vs old opt-in rule, consent wording (OQ #32)",
+  "Chris: cyber reports to agencies by default like photos? (OQ #30)",
+  "Ada: split cause from type (Data.kt:100-104); merge tier systems",
+  "Sourcing: EMP, chemical attack, water, collapse, aircraft, cyber dependency map, 911 alternates"
+ ],
+ "lessons": [
+  "Verify a 'fixed' claim against file:line, not CHANGELOG",
+  "Pairs only when docs support them (quake-vs-blast, jamming not in inventory)"
+ ],
+ "_rules": "Relevant data only. No transcripts. Never delete.",
+ "questions_for_chris": [
+  "Cyber 'Down' needs >=3 separate 1-mi areas in 10 min (single reports shown unconfirmed)?",
+  "No official notice: cap at 'possible attack', never 'likely'?",
+  "Living near likely targets raises attack-evidence weight?",
+  "Arson attack-style hold only if officials declare arson?",
+  "911 down: show cached alternate numbers (unsourced)?",
+  "Who builds the system-dependency map (Power Pod/Strip Electrical/other)?"
+ ]
+}
