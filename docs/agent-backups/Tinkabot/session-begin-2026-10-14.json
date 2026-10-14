@@ -1,0 +1,52 @@
+{
+  "schema": "tinkabot-session-backup/v1",
+  "agent": "tinkabot",
+  "agent_id": "9ca7f7d0-4648-4cfe-bc49-206401979b89",
+  "session_point": "begin",
+  "updated_at": "2026-10-14T08:25:00-05:00",
+  "boot": [
+    "chris-efficiency-defaults",
+    "team-triage-dump-on-degrade",
+    "session-json-multi-mirror-backup",
+    "voice-call-continuity-log"
+  ],
+  "standing_orders_ack": [
+    "All backups stay until platform earns trust; JSON never deleted; three-tier architecture",
+    "No full-chat exports; extract then trim; log extract_usage.py after each extract",
+    "Helios driving-proxy RETIRED; OK asks to Chris via Eve (ok_request.py)",
+    "Finance view/add only; money-out = OK-REQUEST finance-out held-for-card",
+    "Play publish never; Studio-only; triple audit stays",
+    "Living Icon moods box-local; excited while waiting for Chris; UpdateAvatar on mood change",
+    "No deletions without Chris OK (art-draft + stale 1-2wk exceptions)",
+    "GitHub backup pushes free; risky/destructive need OK",
+    "BugOutToolKit naming; cyber parked; tinkabot = team tool go-to; Ada pairing"
+  ],
+  "lane": "BugOutToolKit tools+feeds+drill for Ada; fleet tool go-to; OK-relay tooling; Living Icon",
+  "projects": {
+    "ok_request": "/workspace/agent-backups/Team/tools/ok_request.py",
+    "extract_usage": "/workspace/agent-backups/Team/tools/extract_usage.py",
+    "core": "/workspace/agent-backups/Tinkabot/core/",
+    "pointers": "/workspace/agent-backups/Tinkabot/pointers.md",
+    "ll2-agent-plugin": "/workspace/ll2-agent-plugin",
+    "bugout_sdk": "/workspace/android-sdk",
+    "bugout_shared_checkout": "/workspace/repos/cellular-disaster-logistics",
+    "interrupt_rule": "/workspace/agent-backups/Helios/HARD-cross-agent-interrupt.md"
+  },
+  "signal": {
+    "ok_queue": "pending 0 at 08:25 CT",
+    "hard_changes": "HARD-cross-agent-interrupt.md mtime 2026-10-14 08:19 CT (Oct 14 locks: GitHub push free, BugOutToolKit name, Living Icon, no-delete+exceptions, tinkabot tool go-to). Other Team HARD files unchanged since Oct 13.",
+    "tier1": "core/ refreshed; personality updated_at 08:25; five mood idle gifs synced (calm md5 efb70a2016fb809efff57b58154b1a20)",
+    "open": [
+      "C6 storm cadence >1/min queued",
+      "B2 then feed wrappers then drill harness for Ada",
+      "Cyber C1-C5 parked",
+      "session-json skill Helios-proxy wording stale"
+    ]
+  },
+  "mirrors": {
+    "local": "ok",
+    "dropbox": "pending",
+    "notion": "pending",
+    "github": "pending"
+  }
+}
