@@ -1,0 +1,60 @@
+{
+  "schema": "tinkabot-session-backup/v1",
+  "agent": "tinkabot",
+  "agent_id": "9ca7f7d0-4648-4cfe-bc49-206401979b89",
+  "session_point": "begin",
+  "updated_at": "2026-10-15T08:25:00-05:00",
+  "boot": [
+    "chris-efficiency-defaults",
+    "team-triage-dump-on-degrade",
+    "session-json-multi-mirror-backup",
+    "voice-call-continuity-log"
+  ],
+  "standing_orders_ack": [
+    "All backups stay until platform earns trust; JSON never deleted; three-tier architecture",
+    "No full-chat exports; extract then trim; log extract_usage.py after each extract",
+    "Helios driving-proxy RETIRED; OK asks to Chris via Eve (ok_request.py)",
+    "Finance view/add only; money-out = OK-REQUEST finance-out held-for-card",
+    "Play publish never; Studio-only; triple audit stays",
+    "Living Icon moods box-local; excited while waiting for Chris; UpdateAvatar on mood change",
+    "No deletions without Chris OK (art-draft + stale 1-2wk exceptions)",
+    "GitHub backup pushes free; risky/destructive need OK",
+    "BugOutToolKit naming; cyber C1-C5 UNPARKED (Chris 9:51 Oct 14) -> settings+safe defaults w/ Perseus/Ada; tinkabot = team tool go-to; Ada pairing",
+    "HARD 12:11 CT Oct 14: never interrupt Ada mid-build; queue non-priority",
+    "Ada alone pushes to Moto G; others one headless KVM on box or Studio on MiniME",
+    "Never delete progress shots, cdlp-2013 jpgs, old screenshot archives"
+  ],
+  "lane": "BugOutToolKit tools+feeds+drill for Ada; fleet tool go-to; OK-relay tooling; Living Icon",
+  "projects": {
+    "ok_request": "/workspace/agent-backups/Team/tools/ok_request.py",
+    "extract_usage": "/workspace/agent-backups/Team/tools/extract_usage.py",
+    "core": "/workspace/agent-backups/Tinkabot/core/",
+    "pointers": "/workspace/agent-backups/Tinkabot/pointers.md",
+    "ll2-agent-plugin": "/workspace/ll2-agent-plugin",
+    "bugout_sdk": "/workspace/android-sdk",
+    "bugout_shared_checkout": "/workspace/repos/cellular-disaster-logistics",
+    "interrupt_rule": "/workspace/agent-backups/Helios/HARD-cross-agent-interrupt.md",
+    "conversation_extract": "/workspace/agent-backups/Tinkabot/conversations/2026-10-15-session-begin-triage.json"
+  },
+  "signal": {
+    "ok_queue": "pending 0 at 08:23 CT (heads-ups excluded)",
+    "hard_changes": "No new HARD since last begin beyond known Oct 14 locks. HARD-cross-agent-interrupt.md mtime 2026-10-14 12:12 CT: after 08:19 it added 9:16 settings-not-debate, 11:03 red-dot rule, 12:07 hand-off web research, 12:11 no-interrupt-Ada (all already known via memory). Team/HARD*.md mtimes 10:41-10:44 Oct 14 = bulk restore copy; latest dated content 2026-09-29.",
+    "tier1": "core/ refreshed; personality+persona-profile updated_at 2026-10-15 08:25; living-icon-state checked_at; growth.md 10-15 line; five idle gifs verified identical (calm md5 efb70a2016fb809efff57b58154b1a20), no copy needed",
+    "open": [
+      "B2 then feed wrappers then drill harness for Ada (queued non-priority)",
+      "Cyber C1-C5 unparked: resolve w/ Perseus/Ada as settings+safe defaults",
+      "C6 storm cadence >1/min queued",
+      "Mesh radio needs real phones later",
+      "session-json skill Helios-proxy wording stale",
+      "Cleanup deletes on hold pending Chris OK"
+    ],
+    "extract_usage": "msgs=4 chars=2573 tools=5 kind=proxy spike=false"
+  },
+  "mirrors": {
+    "local": "ok",
+    "agent_backups_copy": "ok /home/box/sand-data/agents/9ca7f7d0-4648-4cfe-bc49-206401979b89/backups/session-begin-2026-10-15.json",
+    "dropbox": "ok /Grok-Agent-Backups/Tinkabot/session-begin-2026-10-15.json + conversations/2026-10-15-session-begin-triage.json",
+    "github": "ok skiiwa67-collab/Live-Rocket-Tracker main docs/agent-backups/Tinkabot/ (session + conversations/), Contents API new files",
+    "notion": "ok appended '2026-10-15 session begin' to https://app.notion.com/p/3f7a94933faa816db96acc994df6feb5"
+  }
+}
