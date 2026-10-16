@@ -57,8 +57,8 @@
   "mirrors": {
     "local": "ok",
     "agent_backups_copy": "ok /home/box/sand-data/agents/9ca7f7d0-4648-4cfe-bc49-206401979b89/backups/session-begin-2026-10-16.json",
-    "dropbox": "ok /Grok-Agent-Backups/Tinkabot/session-begin-2026-10-16.json + conversations/2026-10-16-session-begin-triage.json (session pending re-upload)",
-    "github": "ok skiiwa67-collab/Live-Rocket-Tracker main docs/agent-backups/Tinkabot/ commits 76a9b23 (session initial) + 2ce32b9 (extract); session final re-push pending",
+    "dropbox": "ok /Grok-Agent-Backups/Tinkabot/session-begin-2026-10-16.json + conversations/2026-10-16-session-begin-triage.json",
+    "github": "ok skiiwa67-collab/Live-Rocket-Tracker main docs/agent-backups/Tinkabot/ (session cabf807 + extract 2ce32b9; session final re-push after)",
     "notion": "ok appended 2026-10-16 session begin to https://app.notion.com/p/3f7a94933faa816db96acc994df6feb5"
   }
 }
