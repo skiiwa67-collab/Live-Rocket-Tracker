@@ -32,6 +32,7 @@ enum class EnginePattern {
     PROTON6,
     RD180_2,
     VIKAS2,
+    VIKAS4,
     UNKNOWN
 }
 
@@ -394,7 +395,7 @@ object VehicleCatalog {
         VehicleSpec(
             id = "isro",
             family = "isro",
-            tokens = listOf("pslv", "gslv"),
+            tokens = listOf("pslv"),
             s1Engines = 0,
             s2Engines = 0,
             recoverable = false,
@@ -410,7 +411,7 @@ object VehicleCatalog {
             chamberBar = "—",
             s1Dry = "—",
             s1Prop = "—",
-            nerdNote = "PSLV and GSLV Mk II are not one vehicle. Add a row per stack. We will not invent a drawing.",
+            nerdNote = "PSLV is not in the book yet. We will not invent a drawing.",
             verified = false,
             drawFamily = "generic",
             s1Pattern = EnginePattern.UNKNOWN,
@@ -488,6 +489,38 @@ object VehicleCatalog {
             drawFamily = "lvm3",
             s1Pattern = EnginePattern.VIKAS2,
             s2Pattern = EnginePattern.VACUUM1
+        ),
+        VehicleSpec(
+            id = "gslv2",
+            family = "gslv2",
+            tokens = listOf(
+                "gslv mk ii", "gslv mk-ii", "gslv-mk2", "gslv mk2",
+                "gslv-f", "gisat", "gslv"
+            ),
+            s1Engines = 4,
+            s2Engines = 1,
+            recoverable = false,
+            methalox = false,
+            fuelName = "HTPB",
+            oxName = "N2O4",
+            boostbackLit = 0,
+            landingLit = 0,
+            engineName = "VIKAS L40",
+            s1Thrust = "4800 kN S139",
+            s2Thrust = "846 kN",
+            ispVac = "—",
+            mixRatio = "—",
+            chamberBar = "—",
+            s1Dry = "—",
+            s1Prop = "420 t GLOW",
+            nerdNote = "ISRO GSLV Mk II (isro.gov.in/GSLV_CON). 3 stages, 51.73 m ogive PLF, 420 t. GS1 S139 HTPB solid + 4 L40 Vikas liquid strap-ons. GS2 1 Vikas UH25/N2O4 846 kN. CUS CE-7.5 LOX/LH2 75 kN. Solid core is not a liquid bell.",
+            verified = true,
+            drawFamily = "gslv2",
+            s1Pattern = EnginePattern.VIKAS4,
+            s2Pattern = EnginePattern.VACUUM1,
+            s1Name = "GS1 S139 + L40",
+            s2Name = "GS2 / CUS",
+            s2EngineName = "VIKAS / CE-7.5"
         ),
         VehicleSpec(
             id = "atlas",
@@ -578,6 +611,16 @@ object VehicleCatalog {
     fun family(launch: LaunchSnapshot?): String = spec(launch).family
 
     fun drawFamily(launch: LaunchSnapshot?): String = spec(launch).drawFamily
+
+    /** Short rocket on the HUD map. Not the mission string. */
+    fun hudRocket(launch: LaunchSnapshot?): String {
+        val s = spec(launch)
+        return when (s.family) {
+            "gslv2" -> "GSLV Mk II"
+            "lvm3" -> "LVM3"
+            else -> launch?.rocketName?.trim()?.take(16).orEmpty().ifBlank { "—" }
+        }
+    }
 
     fun isVerified(launch: LaunchSnapshot?): Boolean = spec(launch).verified
 

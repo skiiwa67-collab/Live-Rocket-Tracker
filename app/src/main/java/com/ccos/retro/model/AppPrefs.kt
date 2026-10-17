@@ -87,7 +87,10 @@ class AppPrefs(context: Context) {
      */
     var textScale: Float
         get() = when (activeModuleId) {
-            MODULE_TELEMETRY -> prefs.getFloat("text_scale_tel", 3.6f).coerceIn(2.8f, 9.0f)
+            MODULE_TELEMETRY -> {
+                bumpTelOffSm()
+                prefs.getFloat("text_scale_tel", 5.6f).coerceIn(2.8f, 9.0f)
+            }
             MODULE_SYSTEM -> prefs.getFloat("text_scale_sys", 1.8f).coerceIn(0.9f, 2.6f)
             else -> prefs.getFloat("text_scale_rkt", 1.8f).coerceIn(0.9f, 2.6f)
         }
@@ -101,6 +104,17 @@ class AppPrefs(context: Context) {
                     prefs.edit().putFloat("text_scale_rkt", v.coerceIn(0.9f, 2.6f)).apply()
             }
         }
+
+    /** Old factory default 3.6 snapped to SM. One bump to MD. Do not guess LG. */
+    private fun bumpTelOffSm() {
+        if (prefs.getBoolean("text_scale_tel_off_sm_v1", false)) return
+        val e = prefs.edit()
+        if (prefs.contains("text_scale_tel")) {
+            val v = prefs.getFloat("text_scale_tel", 5.6f)
+            if (v <= 4.0f) e.putFloat("text_scale_tel", 5.6f)
+        }
+        e.putBoolean("text_scale_tel_off_sm_v1", true).apply()
+    }
 
 
 
@@ -123,7 +137,7 @@ class AppPrefs(context: Context) {
         get() = prefs.getString("tel_launch_id", "") ?: ""
         set(v) = prefs.edit().putString("tel_launch_id", v).apply()
 
-    /** LCK: pin current flight across wallpaper + MCC. Does not expire. */
+    /** AUTO double-tap pin: current flight across wallpaper + MCC. Does not expire. */
     /**
      * One UTC T0 per launch.
      * Live: the book's netMs. Persist so a later empty fetch does not invent a local clock.
@@ -240,6 +254,21 @@ class AppPrefs(context: Context) {
     var launcherPageCount: Int
         get() = prefs.getInt("launcher_pages", 1).coerceIn(1, 12)
         set(v) = prefs.edit().putInt("launcher_pages", v.coerceIn(1, 12)).apply()
+
+    /**
+     * HUD bottom gap. Auto = this page: search row only on first home
+     * (Pixel glued bar). Extra pages get dock + nav. Dock-only / Dock+search
+     * are overrides.
+     */
+    var bottomGapMode: String
+        get() = when (prefs.getString("bottom_gap_mode", "auto")) {
+            "dock", "dock_search" -> prefs.getString("bottom_gap_mode", "auto")!!
+            else -> "auto"
+        }
+        set(v) = prefs.edit().putString(
+            "bottom_gap_mode",
+            when (v) { "dock", "dock_search" -> v; else -> "auto" }
+        ).apply()
 
     /**
      * Look-only data for a specific launcher page.

@@ -17,7 +17,7 @@ import com.ccos.retro.model.AppPrefs
  *  4 PAD  → pad + location + weather placeholder
  *  5 VID  → webcast hint / open stream action
  *  6 MSK  → mission overview + agency
- *  7 AUTO → toggle auto-next mode
+ *  7 AUTO → toggle auto-next mode. Double-tap pins / unpins. Lock light when pinned.
  *
  * Selecting a launch (or Auto) reskins the entire surface via agency tokens.
  */
@@ -55,10 +55,10 @@ class RocketTelemetryModule(
     /** Force status overlay e.g. "Scrubbed" for testing. */
     var forceStatus: String? = null
 
-    /** Last snapshot that matched the LCK id. Survives a catalog miss of findById. */
+    /** Last snapshot that matched the AUTO pin. Survives a catalog miss of findById. */
     private var pinnedSnapshot: LaunchSnapshot? = null
 
-    /** Auto mode: always lock to the next upcoming launch. LCK forces this off. */
+    /** Auto mode: always lock to the next upcoming launch. Pin (AUTO double-tap) forces this off. */
     var autoMode: Boolean
         get() = prefs.telemetryAuto && !prefs.telemetryPinned
         set(v) {
@@ -72,7 +72,7 @@ class RocketTelemetryModule(
     override fun onModuleButton(index: Int): Boolean {
         if (index == 7) {
             if (prefs.telemetryPinned) {
-                // LCK wins. AUTO is browse; do not steal the pin or light the lamp.
+                // Pin wins. AUTO is browse; do not steal the pin. Lock light stays on AUTO.
                 prefs.telemetryAuto = false
                 if (activePage == 7) activePage = 2
                 return true
@@ -89,7 +89,7 @@ class RocketTelemetryModule(
         }
         activePage = index.coerceIn(0, 6)
         val launch = tracked
-        if (index == 1 && launch != null && launch.isReplayable() && simSecondsFromNet == null) {
+        if (index == 1 && launch != null && !isLiveWallClock() && simSecondsFromNet == null) {
             jumpTo(-30f)
         }
         return true
@@ -137,20 +137,40 @@ class RocketTelemetryModule(
         persistEventCursor(null)
     }
 
+    /**
+     * Live current flights use Launch Library 2 NET only.
+     * Theater (demo / historic scrub) may use the event cursor.
+     * Never let a leftover T-30 cursor lie about a live Owl-class lift.
+     */
+    fun isLiveWallClock(now: Long = System.currentTimeMillis()): Boolean {
+        val t = tracked ?: return true
+        if (t.id.startsWith("demo-")) return false
+        if (prefs.telemetryListMode == "historical") return false
+        if (simSecondsFromNet != null) return false
+        return true
+    }
+
     /** Effective seconds from NET for display/metrics (sim or real). */
     fun effectiveSecondsFromNet(now: Long = System.currentTimeMillis()): Float {
         val launch = tracked ?: return 0f
-        val sim = simSecondsFromNet ?: prefs.eventCursorSec(launch.id)
-        if (sim != null) {
-            // Advance sim slowly when looping so wallpaper "flies"
-            return sim
+        if (!isLiveWallClock(now)) {
+            val sim = simSecondsFromNet ?: prefs.eventCursorSec(launch.id)
+            if (sim != null) return sim
         }
-        val t0 = prefs.pinnedNetMs(launch.id, launch.netMs)
+        val t0 = if (launch.id.startsWith("demo-")) {
+            prefs.pinnedNetMs(launch.id, launch.netMs)
+        } else {
+            launch.netMs
+        }
+        if (t0 <= 0L) return 0f
         return (now - t0) / 1000f
     }
 
     fun clockIsEst(): Boolean {
         val launch = tracked ?: return false
+        if (isLiveWallClock() && launch.netMs > 0L) {
+            return provider.catalogStale()
+        }
         if (simSecondsFromNet != null) return true
         if (prefs.usingFallbackT0(launch.id, launch.netMs)) return true
         return provider.catalogStale()
@@ -187,7 +207,7 @@ class RocketTelemetryModule(
     fun resolveTracked(now: Long = System.currentTimeMillis()) {
         val prevId = tracked?.id
         if (prefs.telemetryPinned) {
-            // LCK is a hard pin. AUTO must not run, even if findById misses this tick.
+            // AUTO double-tap pin is hard. Browse must not run, even if findById misses this tick.
             if (prefs.telemetryAuto) prefs.telemetryAuto = false
             val pinId = prefs.telemetryLaunchId.ifBlank { tracked?.id ?: pinnedSnapshot?.id ?: "" }
             if (pinId.isNotBlank() && prefs.telemetryLaunchId.isBlank()) {
@@ -243,26 +263,28 @@ class RocketTelemetryModule(
             }
         }
         val t = tracked ?: return
-        if (prevId != null && t.id != prevId) {
-            simSecondsFromNet = prefs.eventCursorSec(t.id)
-            if (simSecondsFromNet == null) {
+        if (t.id.startsWith("demo-") || prefs.telemetryListMode == "historical") {
+            if (prevId != null && t.id != prevId) {
+                simSecondsFromNet = prefs.eventCursorSec(t.id)
+                if (simSecondsFromNet == null) {
+                    forceStatus = null
+                    loopReplay = false
+                } else {
+                    loopReplay = true
+                }
+            } else {
+                restoreEventCursor()
+            }
+            if (t.isReplayable(now)) {
+                if (prevId != null && t.id != prevId && simSecondsFromNet == null && !prefs.telemetryPinned) {
+                    jumpTo(-30f)
+                }
+            } else if (prefs.eventCursorSec(t.id) == null) {
+                simSecondsFromNet = null
                 forceStatus = null
                 loopReplay = false
-            } else {
-                loopReplay = true
             }
-        } else {
-            restoreEventCursor()
-        }
-        if (t.isReplayable(now)) {
-            // Only jump theater when THIS module already had a different flight.
-            // Fresh MCC / wallpaper process: prevId is null — keep wall-clock, do not T-30 a LIVE launch.
-            if (prevId != null && t.id != prevId && simSecondsFromNet == null && !prefs.telemetryPinned) {
-                jumpTo(-30f)
-            }
-        } else if (prefs.eventCursorSec(t.id) == null) {
-            // Live wall-clock. Keep a walked cursor; do not persist-wipe it every tick.
-            simSecondsFromNet = null
+        } else if (simSecondsFromNet == null) {
             forceStatus = null
             loopReplay = false
         }
@@ -314,7 +336,7 @@ class RocketTelemetryModule(
         tracked = provider.findById(id)
         holdFor(prefs.telemetryHoldDurationMs)
         val t = tracked
-        if (t != null && (t.id.startsWith("demo-") || t.secondsToNet() < -60)) {
+        if (t != null && (t.id.startsWith("demo-") || prefs.telemetryListMode == "historical")) {
             jumpTo(-30f)
         } else {
             clearSim()

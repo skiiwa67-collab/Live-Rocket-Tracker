@@ -264,9 +264,13 @@ object WebcastResolver {
 
     private fun watchUrl(id: String): String = "https://www.youtube.com/watch?v=$id"
 
+    /**
+     * Channel /@handle/search 404s in mobile WebView (PrimeTestLab M-01, historic Electron).
+     * Results search with the handle in the query actually loads. Never invent a video id.
+     */
     private fun channelSearch(handle: String, query: String): String {
-        val q = encode(query)
-        return "https://www.youtube.com/$handle/search?query=$q"
+        val joined = listOf(handle, query).filter { it.isNotBlank() }.joinToString(" ")
+        return resultsSearch(joined)
     }
 
     private fun resultsSearch(query: String): String {

@@ -102,6 +102,43 @@ object PadBook {
         return "${padShort(launch)}  ${if (isSea(launch)) "WATER" else "LAND"}"
     }
 
+    /**
+     * Tiny map caption from published LL2 / PadBook text only.
+     * Does not invent FLP/SLP — those appear only if the pad string already has them.
+     */
+    fun mapPadLine(launch: LaunchSnapshot?): String {
+        if (launch == null) return ""
+        val padRaw = launch.pad.trim()
+        val locRaw = launch.location.trim().ifBlank { find(launch)?.location.orEmpty() }
+        val siteName = find(launch)?.name.orEmpty()
+        val blob = "$padRaw $locRaw $siteName"
+        val low = blob.lowercase()
+        val place = when {
+            "satish" in low -> "Satish Dhawan"
+            "sriharikota" in low || "sdsc" in low -> "Sriharikota"
+            locRaw.isNotBlank() -> locRaw.split(',').first().trim().take(22)
+            siteName.isNotBlank() && "unknown" !in siteName.lowercase() -> siteName.take(22)
+            else -> ""
+        }
+        val padId = when {
+            padRaw.contains("FLP", ignoreCase = true) ||
+                padRaw.contains("First Launch", ignoreCase = true) -> "FLP"
+            padRaw.contains("SLP", ignoreCase = true) ||
+                padRaw.contains("Second Launch", ignoreCase = true) -> "SLP"
+            else -> {
+                val short = padShort(launch)
+                if (short == "—" || short.equals(place, ignoreCase = true)) "" else short
+            }
+        }
+        return listOf(place, padId).filter { it.isNotBlank() }.joinToString(" · ")
+    }
+
+    fun fmtLonLat(lon: Float, lat: Float): String {
+        val ns = if (lat >= 0f) "N" else "S"
+        val ew = if (lon >= 0f) "E" else "W"
+        return String.format("%.2f%s %.2f%s", abs(lat), ns, abs(lon), ew)
+    }
+
     fun find(launch: LaunchSnapshot?): Site? {
         if (launch == null) return null
         val id = launch.id

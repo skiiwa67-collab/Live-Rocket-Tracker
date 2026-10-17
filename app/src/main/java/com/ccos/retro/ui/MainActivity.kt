@@ -168,6 +168,18 @@ class MainActivity : AppCompatActivity() {
             prefs.launcherPageCount = (prefs.launcherPageCount + 1).coerceAtMost(12)
             refreshPageLabels()
         }
+        findViewById<Button>(R.id.btn_gap_auto).setOnClickListener {
+            prefs.bottomGapMode = "auto"
+            refreshTrackingUi()
+        }
+        findViewById<Button>(R.id.btn_gap_dock).setOnClickListener {
+            prefs.bottomGapMode = "dock"
+            refreshTrackingUi()
+        }
+        findViewById<Button>(R.id.btn_gap_search).setOnClickListener {
+            prefs.bottomGapMode = "dock_search"
+            refreshTrackingUi()
+        }
         refreshPageLabels()
 
         findViewById<Button>(R.id.btn_refresh_launches).setOnClickListener {
@@ -317,6 +329,9 @@ class MainActivity : AppCompatActivity() {
         styleChip(R.id.btn_auto_off, !prefs.telemetryAuto)
         styleChip(R.id.btn_units_mph, prefs.useImperial)
         styleChip(R.id.btn_units_kmh, !prefs.useImperial)
+        styleChip(R.id.btn_gap_auto, prefs.bottomGapMode == "auto")
+        styleChip(R.id.btn_gap_dock, prefs.bottomGapMode == "dock")
+        styleChip(R.id.btn_gap_search, prefs.bottomGapMode == "dock_search")
 
         val lampStep = prefs.lampStepIndex()
         styleChip(R.id.btn_lamp_dim, lampStep == 0)
