@@ -123,6 +123,17 @@ data class LaunchSnapshot(
         if (id.startsWith("demo-")) return true
         return secondsToNet(now) <= -600
     }
+
+    /**
+     * Terminal = the launch has resolved and will never return to the live catalog:
+     * a clean success, a failure/partial failure, or a scrub. Detected from the
+     * LL2 status text so refresh can safely drop it. A "Go"/"Hold"/"TBC"/"In Flight"
+     * launch is NEVER terminal, so it is preserved on an upsert merge.
+     */
+    fun isTerminal(): Boolean {
+        val hay = "$statusName $statusAbbrev".lowercase()
+        return "success" in hay || "failure" in hay || "scrub" in hay
+    }
 }
 
 /**

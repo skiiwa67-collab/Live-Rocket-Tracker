@@ -84,6 +84,8 @@ class RetroCommandWallpaperService : WallpaperService() {
         private lateinit var license: ModuleLicense
         private val systemRenderer = SystemMetricsRenderer()
         private var lastLaunchRefresh = 0L
+        /** Last non-null tracked launch actually drawn. Holds the center through a transient null. */
+        private var lastGoodTelLaunch: com.ccos.retro.data.LaunchSnapshot? = null
         private var trajLandBmp: Bitmap? = null
         private var trajLandKey = Long.MIN_VALUE
         @Volatile private var trajLandBusy = false
@@ -2462,7 +2464,10 @@ class RetroCommandWallpaperService : WallpaperService() {
         // ------------------------------------------------------------------
 
         private fun drawTelemetrySurface(canvas: Canvas, now: Long) {
-            val launch = telemetryModule.tracked
+            // CHRIS RULE at the draw layer: a transient null (mid catalog refresh /
+            // findById miss) must not blank the center. Hold the last good bird until
+            // the module resolves a real launch again.
+            val launch = telemetryModule.tracked?.also { lastGoodTelLaunch = it } ?: lastGoodTelLaunch
             val skin = TelemetrySkin.forLaunch(launch)
             // Full per-module text scale — do NOT clamp (was killing slider effect)
             val ts = prefs.textScale
