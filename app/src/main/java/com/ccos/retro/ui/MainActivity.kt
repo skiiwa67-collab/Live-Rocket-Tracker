@@ -168,6 +168,18 @@ class MainActivity : AppCompatActivity() {
             prefs.launcherPageCount = (prefs.launcherPageCount + 1).coerceAtMost(12)
             refreshPageLabels()
         }
+        findViewById<Button>(R.id.btn_gap_auto).setOnClickListener {
+            prefs.bottomGapMode = "auto"
+            refreshTrackingUi()
+        }
+        findViewById<Button>(R.id.btn_gap_dock).setOnClickListener {
+            prefs.bottomGapMode = "dock"
+            refreshTrackingUi()
+        }
+        findViewById<Button>(R.id.btn_gap_search).setOnClickListener {
+            prefs.bottomGapMode = "dock_search"
+            refreshTrackingUi()
+        }
         refreshPageLabels()
 
         findViewById<Button>(R.id.btn_refresh_launches).setOnClickListener {
@@ -226,21 +238,25 @@ class MainActivity : AppCompatActivity() {
     private fun populateLaunchSpinner() {
         val now = System.currentTimeMillis()
         val all = launchProvider.allSelectable()
-        val liveOnly = launchProvider.getCached()?.launches.orEmpty()
-            .filter { !it.id.startsWith("demo-") && it.isUpcoming(now) }
+        val keepId = prefs.telemetryLaunchId
+        val liveOnly = launchProvider.livePool()
+            .filter { !it.id.startsWith("demo-") && (it.isUpcoming(now) || it.isActiveWatch(now) || it.id == keepId) }
         val horizonMs = prefs.telemetryHorizonDays * 24L * 3600L * 1000L
         val historic = prefs.telemetryListMode == "historical"
 
         launchList = if (historic) {
             val pool = all.filter {
-                it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) < -60
+                it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) < -60 ||
+                    it.isActiveWatch(now) || it.id == keepId
             }
             val filtered = pool.filter { matchesHistoric(it, historicQuery) }
             if (historicQuery.isNotBlank()) filtered.take(80) else filtered.take(40)
         } else {
-            liveOnly.filter { it.netMs <= now + horizonMs }
+            val window = liveOnly.filter { it.netMs <= now + horizonMs || it.isActiveWatch(now) || it.id == keepId }
                 .sortedBy { it.netMs }
-                .take(10)
+            val keep = all.firstOrNull { it.id == keepId }
+            val withKeep = if (keep != null && window.none { it.id == keep.id }) listOf(keep) + window else window
+            withKeep.take(12)
         }
 
         val labels = launchList.map { l ->
@@ -317,6 +333,9 @@ class MainActivity : AppCompatActivity() {
         styleChip(R.id.btn_auto_off, !prefs.telemetryAuto)
         styleChip(R.id.btn_units_mph, prefs.useImperial)
         styleChip(R.id.btn_units_kmh, !prefs.useImperial)
+        styleChip(R.id.btn_gap_auto, prefs.bottomGapMode == "auto")
+        styleChip(R.id.btn_gap_dock, prefs.bottomGapMode == "dock")
+        styleChip(R.id.btn_gap_search, prefs.bottomGapMode == "dock_search")
 
         val lampStep = prefs.lampStepIndex()
         styleChip(R.id.btn_lamp_dim, lampStep == 0)

@@ -69,7 +69,7 @@ class LaunchDataProvider {
         for (l in live + past) {
             if (l.id in seen) continue
             seen += l.id
-            out += l
+            out += PublishedLaunchFacts.apply(l)
         }
         return out
     }
@@ -80,15 +80,48 @@ class LaunchDataProvider {
             ?.minByOrNull { it.netMs }
             ?: demoCatalog.firstOrNull { it.isSpaceX() }
 
-    fun getNextAny(now: Long = System.currentTimeMillis()): LaunchSnapshot? =
-        cache.get()?.launches
-            ?.filter { !it.id.startsWith("demo-") && it.isUpcoming(now) }
-            ?.minByOrNull { it.netMs }
+    fun livePool(): List<LaunchSnapshot> {
+        val seen = linkedSetOf<String>()
+        val out = mutableListOf<LaunchSnapshot>()
+        for (l in cache.get()?.launches.orEmpty() + pastCache.get()?.launches.orEmpty()) {
+            if (l.id.startsWith("demo-") || l.id in seen) continue
+            seen += l.id
+            out += PublishedLaunchFacts.apply(l)
+        }
+        return out
+    }
 
-    fun findById(id: String): LaunchSnapshot? =
-        cache.get()?.launches?.firstOrNull { it.id == id }
+    fun getNextAny(now: Long = System.currentTimeMillis()): LaunchSnapshot? {
+        val live = livePool()
+        val watch = live.filter { it.isActiveWatch(now) }
+            .minByOrNull { kotlin.math.abs(it.secondsToNet(now)) }
+        if (watch != null) return watch
+        return live.filter { it.isUpcoming(now) }.minByOrNull { it.netMs }
+    }
+
+    fun findById(id: String): LaunchSnapshot? {
+        val raw = cache.get()?.launches?.firstOrNull { it.id == id }
             ?: pastCache.get()?.launches?.firstOrNull { it.id == id }
             ?: demoCatalog.firstOrNull { it.id == id }
+        return raw?.let { PublishedLaunchFacts.apply(it) }
+    }
+
+    private fun enrich(result: LaunchListResult): LaunchListResult =
+        result.copy(launches = result.launches.map { PublishedLaunchFacts.apply(it) })
+
+    /** In-flight / HOLD / webcast-live must stay in the live cache even if LL2 moved them to previous. */
+    private fun mergeWatch(upcoming: LaunchListResult, previous: LaunchListResult?): LaunchListResult {
+        val now = System.currentTimeMillis()
+        val seen = upcoming.launches.associateBy { it.id }.toMutableMap()
+        for (p in previous?.launches.orEmpty()) {
+            if (p.id in seen) continue
+            if (p.isActiveWatch(now) || PublishedLaunchFacts.isOwl(p)) {
+                seen[p.id] = p
+            }
+        }
+        val merged = seen.values.sortedBy { it.netMs }
+        return upcoming.copy(launches = merged)
+    }
 
     fun refreshIfNeeded(force: Boolean = false, onDone: ((LaunchListResult?) -> Unit)? = null) {
         val now = System.currentTimeMillis()
@@ -118,9 +151,9 @@ class LaunchDataProvider {
                 if (previous == null) {
                     previous = fetchList(DEV_PREVIOUS, "lldev")
                 }
-                previous?.let { pastCache.set(it) }
+                previous?.let { pastCache.set(enrich(it)) }
                 if (upcoming != null && upcoming.launches.isNotEmpty()) {
-                    cache.set(upcoming)
+                    cache.set(mergeWatch(enrich(upcoming), pastCache.get()))
                     lastFetchMs = System.currentTimeMillis()
                     sharedCount = upcoming.launches.size
                     sharedSource = source
@@ -222,6 +255,7 @@ class LaunchDataProvider {
                     imageUrl = strOrNull(o, "image"),
                     webcastUrl = refs.firstOrNull()?.url,
                     webcasts = refs,
+                    webcastLive = o.optBoolean("webcast_live", false),
                     probability = if (o.has("probability") && !o.isNull("probability"))
                         o.optInt("probability") else null,
                     holdReason = strOrNull(o, "holdreason")?.takeIf { it.isNotBlank() },

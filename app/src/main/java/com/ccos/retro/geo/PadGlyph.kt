@@ -49,7 +49,7 @@ object PadGlyph {
             family == "electron" || "mahia" in blob || "rocket lab" in blob -> Kind.ELECTRON
             family == "glenn" || "new glenn" in blob || "lc-36" in blob || "slc-36" in blob -> Kind.GLENN
             "sriharikota" in blob || "satish" in blob || "sdsc" in blob ||
-                family == "lvm3" || family == "isro" -> Kind.SDSC_TOWER
+                family == "lvm3" || family == "gslv2" || family == "isro" -> Kind.SDSC_TOWER
             "tanegashima" in blob || family == "h3" -> Kind.CASC_TOWER
             launch.isChinese() || family == "lm" || family == "lm5" || family == "zq" ||
                 "jiuquan" in blob || "wenchang" in blob || "taiyuan" in blob ||

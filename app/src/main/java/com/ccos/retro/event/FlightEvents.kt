@@ -438,6 +438,17 @@ object MissionFacts {
             "Not three sats. V3. Twenty of them. First time Starship hauled the big ones.",
             false
         )
+        if (com.ccos.retro.data.PublishedLaunchFacts.isOwl(launch) ||
+            ("owl" in n && ("strix" in n || "synspective" in n))
+        ) {
+            return Classified(
+                "STRIX", "SAR SAT", "1",
+                "575 km LEO  38°",
+                "Deliver 1x StriX (Synspective) to 575 km LEO at 38 deg.",
+                "Rocket Lab Electron. Pad Launch Complex 1 Māhia, this flight LC-1B.",
+                false
+            )
+        }
         return when {
             "starlink" in n -> Classified("STARLINK", "BROADBAND SAT", "STACK", "LEO  ·  SHELL", "Orbital insertion. Deploy the stack. Grow the constellation.", "Same joke every time: internet from a flying trash can. It works.", false)
             "crew" in n || "astronaut" in n || "dragon" in n && "cargo" !in n ->

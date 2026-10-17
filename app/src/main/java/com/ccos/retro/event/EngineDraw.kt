@@ -67,6 +67,7 @@ object EngineDraw {
                 nozzle(canvas, cx, cy, half * 0.62f, lit > 0, vacuum = true, faceted = false)
             }
             EnginePattern.REAVER4 -> rs25(canvas, cx, cy, half, lit)
+            EnginePattern.VIKAS4 -> rs25(canvas, cx, cy, half, lit)
             EnginePattern.PROTON6, EnginePattern.SOLIDS, EnginePattern.UNKNOWN -> plateCircle(canvas, cx, cy, half * 0.72f)
         }
         canvas.restore()
