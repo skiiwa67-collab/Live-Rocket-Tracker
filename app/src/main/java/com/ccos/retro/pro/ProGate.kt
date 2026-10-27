@@ -13,6 +13,8 @@ object ProGate {
         // B1 (Skippy vc159): isReplayable flips at NET+60 whatever the status, so a long coast or a
         // still-streaming webcast used to lock mid-flight. An unfinished real launch is never locked.
         if (isStillLive(l)) return false
+        // Chris 07:53: a real launch that has not lifted off (hold / slip past NET) is never locked.
+        if (!l.id.startsWith("demo-") && LiveTrackingAllowance.liftoffMs(l) == null) return false
         return !DemoSet.isFreeDemo(l)
     }
 

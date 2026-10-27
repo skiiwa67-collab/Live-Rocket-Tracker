@@ -100,6 +100,10 @@ class CommandCenterActivity : AppCompatActivity() {
                 ProUi.showUpsell(this, prefs, l.takeIf { hook.kind == com.ccos.retro.pro.ProHook.Kind.LAUNCH })
             }
         }
+        // vc159 (Chris 07:53): free hour of live tracking after liftoff is up -> one card per launch, nothing locks.
+        telemetryModule.onLiveAllowanceUsed = { l ->
+            runOnUiThread { ProUi.showUpsell(this, prefs, l, liveAllowance = true) }
+        }
 
         console = findViewById(R.id.console_view)
         console.bind(telemetryModule, prefs)

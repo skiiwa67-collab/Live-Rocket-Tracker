@@ -35,6 +35,9 @@
     <string name="pro_pill_included">Included</string>
     <string name="pro_badge">PRO</string>
     <string name="pro_cd_badge">Pro feature</string>
+    <!-- Live tracking allowance card (Chris 10-27 07:51/07:53 CT). NEW, needs Da Vinci OK. Never say "locked". -->
+    <string name="pro_allowance_title">Keep tracking with Pro</string>
+    <string name="pro_allowance_context">Your free hour of live tracking for %1$s is up.</string>
     <!-- Toasts (v1 §7) -->
     <string name="pro_toast_on">Pro is on. Thanks for supporting LRT.</string>
     <string name="pro_toast_theme_locked">Pro theme. Open LRT to unlock.</string>

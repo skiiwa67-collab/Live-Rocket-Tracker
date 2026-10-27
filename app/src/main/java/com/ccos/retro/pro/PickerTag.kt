@@ -19,6 +19,7 @@ object PickerTag {
         // vc159 spec call: a launch still inside its live window (NET+60 min) is never a Pro row.
         !l.isReplayable(now) -> null
         ProGate.isStillLive(l) -> null // B1: In Flight / streaming past NET+60 is still live, not a Pro row
+        LiveTrackingAllowance.liftoffMs(l) == null -> null // Chris 07:53: no liftoff yet (hold / slip) is never a Pro row
         else -> PRO
     }
 }

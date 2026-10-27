@@ -12,6 +12,7 @@ import com.ccos.retro.model.AppPrefs
 import com.ccos.retro.pro.ProAccess
 import com.ccos.retro.pro.ProHook
 import com.ccos.retro.pro.ProPolicy
+import com.ccos.retro.pro.LiveTrackingAllowance
 
 /**
  * Live Rocket Telemetry Module — mission-control surface for any tracked launch.
@@ -175,6 +176,22 @@ class RocketTelemetryModule(
 
     /** vc159: Pro entitlement, read at each gate (prefs-backed cache, cheap). Tests may swap it. */
     var isProProvider: () -> Boolean = { ProAccess(prefs.proStore()).isPro }
+
+    /**
+     * vc159 (Chris 07:53): a free user's tracking of a live launch ran past the free hour after liftoff.
+     * Activities show the "Keep tracking with Pro" card; the wallpaper leaves it null so the card waits for the app.
+     */
+    var onLiveAllowanceUsed: ((LaunchSnapshot) -> Unit)? = null
+
+    /** Once per launch (ProStore key), only when a handler is set. Never locks: the launch keeps tracking. */
+    fun checkLiveTrackingAllowance(now: Long = System.currentTimeMillis()) {
+        val handler = onLiveAllowanceUsed ?: return
+        val l = tracked ?: return
+        val store = prefs.proStore()
+        if (!LiveTrackingAllowance.shouldShowCard(l, isProProvider(), store, now)) return
+        LiveTrackingAllowance.markShown(store, l)
+        handler(l)
+    }
 
     /** vc159: called when a Pro gate refuses (MainActivity opens the sheet, wallpaper toasts). */
     var onProBlocked: ((ProHook, LaunchSnapshot?) -> Unit)? = null
@@ -551,6 +568,7 @@ class RocketTelemetryModule(
     fun resolveTracked(now: Long = System.currentTimeMillis()) {
         // Stamp 59: restore before resolve
         if (tracked == null) keepTrackedOrLastGood(now)
+        checkLiveTrackingAllowance(now)
         val prevId = tracked?.id
         // Stamp 85: LCK lifetime = NET + telemetryHoldDurationMs (30m|1h|2h|24h|48h). Never forever-pin.
         if (prefs.telemetryPinned) {

@@ -62,7 +62,8 @@ object ProUi {
         activity: Activity,
         prefs: AppPrefs,
         context: LaunchSnapshot? = null,
-        onOwned: (() -> Unit)? = null
+        onOwned: (() -> Unit)? = null,
+        liveAllowance: Boolean = false
     ) {
         if (activity.isFinishing) return
         val access = access(prefs)
@@ -78,9 +79,11 @@ object ProUi {
         val accent = skinTitleColor(prefs.consoleSkin)
         val buy = com.ccos.retro.pro.ProContrast.buyButtonForSkin(prefs.consoleSkin)
         v.findViewById<View>(R.id.pro_sheet_rule).setBackgroundColor(accent)
+        if (liveAllowance) v.findViewById<TextView>(R.id.pro_sheet_title).setText(R.string.pro_allowance_title)
         v.findViewById<TextView>(R.id.pro_sheet_context).apply {
             if (context != null) {
-                text = activity.getString(R.string.pro_sheet_context, context.name.substringAfter(" | ").ifBlank { context.name })
+                val shortName = context.name.substringAfter(" | ").ifBlank { context.name }
+                text = activity.getString(if (liveAllowance) R.string.pro_allowance_context else R.string.pro_sheet_context, shortName)
                 visibility = View.VISIBLE
             }
         }
