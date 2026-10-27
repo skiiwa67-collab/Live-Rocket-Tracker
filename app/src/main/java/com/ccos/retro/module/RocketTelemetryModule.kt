@@ -175,7 +175,7 @@ class RocketTelemetryModule(
     }
 
     /** vc159: Pro entitlement, read at each gate (prefs-backed cache, cheap). Tests may swap it. */
-    var isProProvider: () -> Boolean = { ProAccess(prefs.proStore()).isPro }
+    var isProProvider: () -> Boolean = { ProAccess(prefs.proStore()).isPro || !com.ccos.retro.pro.ProConfig.gatesEnabled() }
 
     /**
      * vc159 (Chris 07:53): a free user's tracking of a live launch ran past the free hour after liftoff.

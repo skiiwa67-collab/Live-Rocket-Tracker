@@ -40,9 +40,10 @@ object ProPolicy {
         launch: LaunchSnapshot? = null,
         skinId: String? = null,
         store: ProStore? = null,
-        now: Long = System.currentTimeMillis()
+        now: Long = System.currentTimeMillis(),
+        gatesOn: Boolean = ProConfig.gatesEnabled()
     ): Boolean {
-        if (isPro) return true
+        if (isPro || !gatesOn) return true // B4: release switch off = everything allowed
         return when (hook.kind) {
             ProHook.Kind.LAUNCH -> !ProGate.isLocked(launch, false, now)
             ProHook.Kind.JUMP_SKIP -> ProGate.canJumpOrSkip(launch, false, now)

@@ -33,8 +33,10 @@ import java.util.Date
 
 /** vc159: Android glue for the Pro UI (Da Vinci v1.1 + erratum, v1.2 one-time). Pure rules live in pro/. */
 object ProUi {
-    /** Billing seam. Stub until Play Billing is linked; swap here only. */
-    @JvmStatic var billing: ProBilling = StubProBilling
+    /** Billing seam, owned by ProConfig (B4 release switch reads it). */
+    @JvmStatic var billing: ProBilling
+        get() = com.ccos.retro.pro.ProConfig.billing
+        set(v) { com.ccos.retro.pro.ProConfig.billing = v }
 
     private val toastLimiter = ProToastLimiter()
 
@@ -66,6 +68,7 @@ object ProUi {
         liveAllowance: Boolean = false
     ) {
         if (activity.isFinishing) return
+        if (!com.ccos.retro.pro.ProConfig.gatesEnabled()) return // B4: no sheet while billing is a stub
         val access = access(prefs)
         if (access.isPro) return
         val dialog = BottomSheetDialog(activity)

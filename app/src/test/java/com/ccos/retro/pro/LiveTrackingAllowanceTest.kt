@@ -8,6 +8,10 @@ import org.junit.Test
 
 /** Chris 07:51/07:53 CT: live launches never lock; free users get one hour of tracking from actual liftoff. */
 class LiveTrackingAllowanceTest {
+    // B4: gates are off by default until billing is real; these tests exercise the gated (forced-on) state.
+    @org.junit.Before fun gatesOn() { ProConfig.debugForceGates = true }
+    @org.junit.After fun gatesReset() { ProConfig.debugForceGates = false }
+
     private fun inFlight(liftoffAgo: Long) = snap(net = NOW - liftoffAgo, abbrev = "In Flight", status = "Launch in Flight")
     private val launchAndJump = ProHook.values().filter { it.kind != ProHook.Kind.THEME }
 

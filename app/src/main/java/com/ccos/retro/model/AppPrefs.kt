@@ -9,6 +9,14 @@ class AppPrefs(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("ccos_prefs", Context.MODE_PRIVATE)
 
+    init {
+        // vc159 B4: debug-only reviewer switch that forces Pro gates on. Release builds never read it.
+        if (com.ccos.retro.BuildConfig.DEBUG) {
+            com.ccos.retro.pro.ProConfig.debugForceGates =
+                prefs.getBoolean(com.ccos.retro.pro.ProConfig.KEY_DEBUG_FORCE_GATES, false)
+        }
+    }
+
     companion object {
         const val MODULE_ROCKET = "vector_rocket"
         const val MODULE_SYSTEM = "system_metrics"

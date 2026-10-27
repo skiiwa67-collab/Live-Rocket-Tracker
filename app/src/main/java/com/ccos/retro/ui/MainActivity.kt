@@ -60,7 +60,8 @@ class MainActivity : AppCompatActivity() {
     /** vc159: Settings LRT Pro row restore state (v1 section 6). */
     private var proRestoreState = RestoreState.IDLE
 
-    private fun isPro(): Boolean = ProUi.access(prefs).isPro
+    /** B4: with the release switch off every user is treated as unlocked (no locks, badges or Pro rows: vc158 UI). */
+    private fun isPro(): Boolean = ProUi.access(prefs).isPro || !com.ccos.retro.pro.ProConfig.gatesEnabled()
 
     /** vc159: Pro turned on (purchase / restore) or entitlement refreshed: unlock in place. */
     private fun onProChanged() {
@@ -72,6 +73,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun bindProRow() {
+        findViewById<View>(R.id.row_lrt_pro)?.visibility =
+            if (com.ccos.retro.pro.ProConfig.gatesEnabled()) View.VISIBLE else View.GONE // B4
         val r = ProSettingsRowModel.render(isPro(), proRestoreState)
         findViewById<TextView>(R.id.txt_lrt_pro_title)?.setText(r.titleRes)
         findViewById<TextView>(R.id.txt_lrt_pro_status)?.apply {
@@ -119,6 +122,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs = AppPrefs(this)
+        // vc159 B4: debug builds only. adb shell am start -n com.liverockettracker/com.ccos.retro.ui.MainActivity --ez <EXTRA> true|false
+        val forceExtra = com.ccos.retro.pro.ProConfig.EXTRA_DEBUG_FORCE_GATES
+        if (com.ccos.retro.BuildConfig.DEBUG && intent?.hasExtra(forceExtra) == true) {
+            val on = intent.getBooleanExtra(forceExtra, false)
+            prefs.proStore().putBoolean(com.ccos.retro.pro.ProConfig.KEY_DEBUG_FORCE_GATES, on)
+            com.ccos.retro.pro.ProConfig.debugForceGates = on
+        }
         MissionTapeStore.ensure(this)
         prefs.restoreCommandPageHud()
         prefs.ensurePaidAppDefaults()
@@ -520,7 +530,7 @@ class MainActivity : AppCompatActivity() {
             val tags = launchList.map { l ->
                 val secs = l.secondsToNet(now)
                 // v1.1 copy (Da Vinci + erratum): [INCLUDED] / [PRO]; never "demo" on screen.
-                PickerTag.proTag(l, historic, now) ?: when {
+                PickerTag.proTag(l, historic, now).takeIf { com.ccos.retro.pro.ProConfig.gatesEnabled() } ?: when {
                     l.isHold() -> "[HOLD] "
                     l.isActiveWatch(now) && secs <= 0 -> "[LIVE] "
                     // A finished flight stays Past inside the 48h window (Flight 14). T+ is only a non-terminal clock.

@@ -7,6 +7,10 @@ import org.junit.Test
 
 /** B1 regression (Skippy vc159): an unfinished launch in flight or streaming is never locked, at any T+. */
 class ProGateLiveTest {
+    // B4: gates are off by default until billing is real; these tests exercise the gated (forced-on) state.
+    @org.junit.Before fun gatesOn() { ProConfig.debugForceGates = true }
+    @org.junit.After fun gatesReset() { ProConfig.debugForceGates = false }
+
     private val launchAndJump = ProHook.values().filter { it.kind != ProHook.Kind.THEME }
 
     private fun assertOpenOnAllHooks(l: com.ccos.retro.data.LaunchSnapshot) {

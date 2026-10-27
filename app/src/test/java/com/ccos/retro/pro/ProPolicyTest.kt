@@ -13,6 +13,10 @@ import java.io.File
  * jump/skip on non-live missions are gated.
  */
 class ProPolicyTest {
+    // B4: gates are off by default until billing is real; these tests exercise the gated (forced-on) state.
+    @org.junit.Before fun gatesOn() { ProConfig.debugForceGates = true }
+    @org.junit.After fun gatesReset() { ProConfig.debugForceGates = false }
+
 
     private val launchHooks = ProHook.values().filter { it.kind != ProHook.Kind.THEME }
     private val themeHooks = ProHook.values().filter { it.kind == ProHook.Kind.THEME }
