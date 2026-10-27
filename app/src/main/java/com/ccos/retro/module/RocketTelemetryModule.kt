@@ -364,7 +364,8 @@ class RocketTelemetryModule(
      */
     internal fun gateRestoredLaunch(now: Long = System.currentTimeMillis()) {
         val saved = tracked ?: return
-        if (!com.ccos.retro.pro.ProGate.isLocked(saved, isProProvider(), now)) return
+        // Through ProPolicy (not raw ProGate): honours Pro and the B4 release switch; silent, no sheet.
+        if (com.ccos.retro.pro.ProPolicy.allowsLaunch(ProHook.SELECT_LAUNCH, isProProvider(), saved, now)) return
         val f13 = historicFallback() ?: return
         prefs.telemetryLaunchId = f13.id
         rememberTracked(f13)
