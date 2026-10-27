@@ -23,6 +23,11 @@ object LiveClockGate {
         if (t >= 0f && !liftoffConfirmed(launch, now, liftoffSeen)) {
             t = -0.5f
         }
+        // Helios P1-A: a plain Failure with NET reached and no liftoff evidence is a pad abort: hold at -0.5 s
+        // immediately (no lagged countdown inside the 5/30 s trail implying a liftoff is still coming).
+        if (launch.isPlainFailure() && launch.secondsToNet(now) <= 0L && !liftoffConfirmed(launch, now, liftoffSeen)) {
+            t = -0.5f
+        }
         return t
     }
 
