@@ -39,11 +39,12 @@ class ProGateTest {
         assertFalse(ProGate.isLocked(realF13, false, NOW))
     }
 
-    @Test fun europeJapanIndiaDemosFreeForFreeUsers() {
+    @Test fun removedMadeUpCountrySamplesAreNotFree() {
+        // Chris 8:22: samples are ALWAYS real launches; the made-up per-country ones are no longer free.
         for (id in listOf("demo-esa-ariane", "demo-jaxa-h3", "demo-isro-lvm3")) {
             val l = snap(id = id, net = NOW - 10L * 24 * HOUR)
-            assertFalse(id, ProGate.isLocked(l, false, NOW))
-            assertTrue(id, ProGate.canJumpOrSkip(l, false, NOW))
+            assertTrue(id, ProGate.isLocked(l, false, NOW))
+            assertFalse(id, ProGate.canJumpOrSkip(l, false, NOW))
         }
     }
 
@@ -63,7 +64,7 @@ class ProGateTest {
         assertTrue(ProGate.canJumpOrSkip(snap(net = NOW - 10 * MIN, abbrev = "Go", status = "Go for Launch"), false, NOW))
         assertFalse(ProGate.canJumpOrSkip(snap(net = NOW - 5 * HOUR), false, NOW))
         assertTrue(ProGate.canJumpOrSkip(snap(net = NOW - 5 * HOUR), true, NOW))
-        assertTrue(ProGate.canJumpOrSkip(snap(id = "demo-soyuz", net = NOW - 5 * HOUR), false, NOW))
+        assertTrue(ProGate.canJumpOrSkip(snap(id = "demo-starship-f13", net = NOW - 5 * HOUR), false, NOW))
         assertTrue(ProGate.canJumpOrSkip(null, false, NOW))
     }
 

@@ -23,6 +23,8 @@ class LaunchDataProvider {
 
     companion object {
         private const val TAG = "CCOS.Launch"
+        /** Starship Flight 13 real T-0, 2026-07-24T22:51:00Z (lrt-mission-tapes v1/starship/flight-13.json). */
+        const val STARSHIP_F13_T0_MS = 1_784_933_460_000L
         private const val DEV_UPCOMING = "https://lldev.thespacedevs.com/2.2.0/launch/upcoming/?limit=50&mode=detailed"
         private const val DEV_PREVIOUS = "https://lldev.thespacedevs.com/2.2.0/launch/previous/?limit=25&mode=detailed"
         private const val PROD_UPCOMING = "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=50&mode=detailed"
@@ -1038,6 +1040,8 @@ class LaunchDataProvider {
      * NET times are relative so countdown / in-flight states are useful.
      */
     private fun buildDemoCatalog(): List<LaunchSnapshot> {
+        // Chris 8:22: the made-up per-country samples (SLS, Long March, Soyuz, Electron, Ariane, H3, LVM3) are gone.
+        // No other country has a complete real tape bundled, so it is skipped rather than faked (notes-vc159.md).
         val now = System.currentTimeMillis()
         return listOf(
             // SpaceX  -  upcoming-style (T- ~1h for testing countdown)
@@ -1075,9 +1079,11 @@ class LaunchDataProvider {
                 name = "Starship | Flight 13",
                 statusName = "Launch Successful",
                 statusAbbrev = "Success",
-                netMs = now - 26 * 24 * 3600 * 1000L,
-                windowStartMs = now - 26 * 24 * 3600 * 1000L,
-                windowEndMs = now - 26 * 24 * 3600 * 1000L,
+                // Chris 8:22: samples are real launches. Real T-0 (SpaceX published, 2026-07-24 22:51:00 UTC),
+                // fixed so it is always a past replay and never an upcoming countdown in CURRENT.
+                netMs = STARSHIP_F13_T0_MS,
+                windowStartMs = STARSHIP_F13_T0_MS,
+                windowEndMs = STARSHIP_F13_T0_MS,
                 provider = "SpaceX",
                 rocketName = "Starship",
                 missionName = "Flight 13",
@@ -1098,51 +1104,6 @@ class LaunchDataProvider {
                 missionName = "Crew Mission",
                 pad = "LC-39A",
                 location = "Kennedy Space Center, FL, USA"
-            ),
-            // NASA / ULA
-            LaunchSnapshot(
-                id = "demo-nasa-sls",
-                name = "SLS Block 1 | Artemis Mission",
-                statusName = "Go for Launch",
-                statusAbbrev = "Go",
-                netMs = now + 2 * 3600 * 1000L,
-                windowStartMs = now + 2 * 3600 * 1000L,
-                windowEndMs = now + 4 * 3600 * 1000L,
-                provider = "NASA",
-                rocketName = "Space Launch System (SLS)",
-                missionName = "Artemis Mission",
-                pad = "LC-39B",
-                location = "Kennedy Space Center, FL, USA"
-            ),
-            // CASC / Chinese
-            LaunchSnapshot(
-                id = "demo-casc-lm",
-                name = "Long March 5 | Featured Mission",
-                statusName = "Go for Launch",
-                statusAbbrev = "Go",
-                netMs = now + 90 * 60 * 1000L,
-                windowStartMs = now + 90 * 60 * 1000L,
-                windowEndMs = now + 120 * 60 * 1000L,
-                provider = "China Aerospace Science and Technology Corporation",
-                rocketName = "Long March 5",
-                missionName = "Featured Mission",
-                pad = "LC-1",
-                location = "Wenchang, China"
-            ),
-            // Roscosmos
-            LaunchSnapshot(
-                id = "demo-soyuz",
-                name = "Soyuz-2.1a | ISS Crew Mission",
-                statusName = "Go for Launch",
-                statusAbbrev = "Go",
-                netMs = now + 3 * 3600 * 1000L,
-                windowStartMs = now + 3 * 3600 * 1000L,
-                windowEndMs = now + 3 * 3600 * 1000L + 60_000L,
-                provider = "Roscosmos",
-                rocketName = "Soyuz-2.1a",
-                missionName = "ISS Crew Mission",
-                pad = "Site 31/6",
-                location = "Baikonur Cosmodrome, Kazakhstan"
             ),
             LaunchSnapshot(
                 id = "demo-soyuz-inflight",
@@ -1174,20 +1135,6 @@ class LaunchDataProvider {
                 location = "Cape Canaveral SFS, FL, USA"
             ),
             LaunchSnapshot(
-                id = "demo-electron-inflight",
-                name = "Electron | Ascent Profile",
-                statusName = "In Flight",
-                statusAbbrev = "In Flight",
-                netMs = now - 200 * 1000L,
-                windowStartMs = now - 200 * 1000L,
-                windowEndMs = now + 20 * 60 * 1000L,
-                provider = "Rocket Lab",
-                rocketName = "Electron",
-                missionName = "Ascent Profile",
-                pad = "LC-1",
-                location = "Mahia Peninsula, New Zealand"
-            ),
-            LaunchSnapshot(
                 id = "demo-generic",
                 name = "Electron | Featured Flight",
                 statusName = "To Be Confirmed",
@@ -1214,48 +1161,6 @@ class LaunchDataProvider {
                 missionName = "Featured Mission",
                 pad = "LC-36",
                 location = "Cape Canaveral SFS, FL, USA"
-            ),
-            LaunchSnapshot(
-                id = "demo-esa-ariane",
-                name = "Ariane 6 | Featured Flight",
-                statusName = "Go for Launch",
-                statusAbbrev = "Go",
-                netMs = now + 6 * 3600 * 1000L,
-                windowStartMs = now + 6 * 3600 * 1000L,
-                windowEndMs = now + 7 * 3600 * 1000L,
-                provider = "Arianespace",
-                rocketName = "Ariane 6",
-                missionName = "Featured Flight",
-                pad = "ELA-4",
-                location = "Guiana Space Centre, Kourou"
-            ),
-            LaunchSnapshot(
-                id = "demo-isro-lvm3",
-                name = "LVM3 | Featured Mission",
-                statusName = "Go for Launch",
-                statusAbbrev = "Go",
-                netMs = now + 8 * 3600 * 1000L,
-                windowStartMs = now + 8 * 3600 * 1000L,
-                windowEndMs = now + 9 * 3600 * 1000L,
-                provider = "ISRO",
-                rocketName = "LVM3",
-                missionName = "Featured Mission",
-                pad = "SLP",
-                location = "Satish Dhawan Space Centre, India"
-            ),
-            LaunchSnapshot(
-                id = "demo-jaxa-h3",
-                name = "H3 | Featured Flight",
-                statusName = "Go for Launch",
-                statusAbbrev = "Go",
-                netMs = now + 10 * 3600 * 1000L,
-                windowStartMs = now + 10 * 3600 * 1000L,
-                windowEndMs = now + 11 * 3600 * 1000L,
-                provider = "JAXA",
-                rocketName = "H3",
-                missionName = "Featured Flight",
-                pad = "Yoshinobu",
-                location = "Tanegashima Space Center, Japan"
             )
         )
     }

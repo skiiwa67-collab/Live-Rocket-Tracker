@@ -3,8 +3,9 @@ package com.ccos.retro.pro
 import com.ccos.retro.data.LaunchSnapshot
 
 /**
- * R-LRT-FREE-PRO free demo list: Starship Flight 13 + one replay per country that has data.
- * Everything else that is past/missed is Pro.
+ * R-LRT-FREE-PRO free sample list: Starship Flight 13 + one real past launch per country that has complete data.
+ * Chris 8:22: samples are ALWAYS real launches. A country without a complete, unbroken real tape is skipped,
+ * never faked. Everything else that is past/missed is Pro.
  */
 object DemoSet {
     const val STARSHIP_F13_DEMO_ID = "demo-starship-f13"
@@ -12,14 +13,13 @@ object DemoSet {
     data class CountryDemo(val country: String, val demoId: String?, val note: String = "")
 
     val COUNTRY_DEMOS: List<CountryDemo> = listOf(
-        CountryDemo("US", "demo-nasa-sls"),
-        CountryDemo("CN", "demo-casc-lm"),
-        CountryDemo("RU", "demo-soyuz"),
-        CountryDemo("NZ", "demo-electron-inflight", "Electron counts as NZ (Chris 10-27)"),
-        // Chris 10-27: one demo per country; existing synthetic demos from LaunchDataProvider.buildDemoCatalog.
-        CountryDemo("EU", "demo-esa-ariane"),
-        CountryDemo("JP", "demo-jaxa-h3"),
-        CountryDemo("IN", "demo-isro-lvm3")
+        CountryDemo("US", null, "Starship Flight 13 is the US sample (published SpaceX tape)"),
+        CountryDemo("CN", null, "skipped: no complete real tape bundled (Long March 5 TJSW-25)"),
+        CountryDemo("RU", null, "skipped: no complete real tape bundled (Soyuz MS-29)"),
+        CountryDemo("NZ", null, "skipped: no complete real tape bundled (Electron)"),
+        CountryDemo("EU", null, "skipped: no complete real tape bundled (Ariane 62 MTG-I2)"),
+        CountryDemo("JP", null, "skipped: no complete real tape bundled (H3-24 MMX)"),
+        CountryDemo("IN", null, "skipped: no complete real tape bundled (LVM3 Chandrayaan-3)")
     )
 
     val FREE_DEMO_IDS: Set<String> =

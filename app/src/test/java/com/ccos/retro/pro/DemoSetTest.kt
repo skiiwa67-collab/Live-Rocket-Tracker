@@ -3,29 +3,25 @@ package com.ccos.retro.pro
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DemoSetTest {
-    @Test fun allowlistIsF13PlusCountries() = assertEquals(
-        setOf("demo-starship-f13", "demo-nasa-sls", "demo-casc-lm", "demo-soyuz", "demo-electron-inflight",
-            "demo-esa-ariane", "demo-jaxa-h3", "demo-isro-lvm3"),
-        DemoSet.FREE_DEMO_IDS
-    )
+    // Chris 8:22: samples are ALWAYS real launches. Only Starship F13 has a complete real tape bundled.
+    @Test fun allowlistIsRealF13Only() = assertEquals(setOf("demo-starship-f13"), DemoSet.FREE_DEMO_IDS)
 
-    @Test fun electronCountsAsNz() =
-        assertEquals("demo-electron-inflight", DemoSet.COUNTRY_DEMOS.first { it.country == "NZ" }.demoId)
-
-    @Test fun europeJapanIndiaUseExistingDemos() {
-        assertEquals("demo-esa-ariane", DemoSet.COUNTRY_DEMOS.first { it.country == "EU" }.demoId)
-        assertEquals("demo-jaxa-h3", DemoSet.COUNTRY_DEMOS.first { it.country == "JP" }.demoId)
-        assertEquals("demo-isro-lvm3", DemoSet.COUNTRY_DEMOS.first { it.country == "IN" }.demoId)
-        for (id in listOf("demo-esa-ariane", "demo-jaxa-h3", "demo-isro-lvm3")) assertTrue(id, DemoSet.isFreeDemo(snap(id = id)))
+    @Test fun madeUpCountrySamplesAreGoneAndPro() {
+        for (id in listOf("demo-nasa-sls", "demo-casc-lm", "demo-soyuz", "demo-electron-inflight",
+            "demo-esa-ariane", "demo-jaxa-h3", "demo-isro-lvm3")) assertFalse(id, DemoSet.isFreeDemo(snap(id = id)))
     }
 
-    @Test fun oneDemoPerCountryNoTodosLeft() {
+    @Test fun countriesWithoutRealDataAreSkippedNotFaked() {
         assertEquals(listOf("US", "CN", "RU", "NZ", "EU", "JP", "IN"), DemoSet.COUNTRY_DEMOS.map { it.country })
-        for (c in DemoSet.COUNTRY_DEMOS) assertNotNull(c.country, c.demoId)
+        for (c in DemoSet.COUNTRY_DEMOS) {
+            assertNull(c.country, c.demoId)
+            assertTrue(c.country, c.note.isNotBlank())
+        }
     }
 
     @Test fun otherSyntheticDemosAreNotFree() {
