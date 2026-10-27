@@ -20,6 +20,7 @@ import android.view.View
 import com.ccos.retro.pro.KeepOut
 import com.ccos.retro.pro.ProFrameGuard
 import com.ccos.retro.pro.ProGoldMoment
+import com.ccos.retro.pro.ProRay
 import com.ccos.retro.pro.ProSparkleParams
 import com.ccos.retro.pro.ProSparkleSim
 import com.ccos.retro.pro.Resident
@@ -57,6 +58,9 @@ class ProUnlockView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet?
 
     private var keepOutViews: List<View> = emptyList()
     private val keepRects = ArrayList<RectF>()
+    private val rayPts = FloatArray(8)
+    private val rayShaderKey = FloatArray(3)
+    private var rayShader: Shader? = null
     private var residents: List<Resident>? = null
     private var staticField: List<StaticSparkle>? = null
     private val myLoc = IntArray(2)
@@ -184,15 +188,27 @@ class ProUnlockView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet?
             paint.color = params.rayColor
             paint.alpha = if (static) params.staticRayAlpha else (params.rayPeakAlpha * g).toInt()
             val len = radius * 1.4f
-            for (i in 0 until params.rayCount) {
-                val a0 = Math.toRadians((rot + i * 360f / params.rayCount - params.rayHalfAngleDeg).toDouble())
-                val a1 = Math.toRadians((rot + i * 360f / params.rayCount + params.rayHalfAngleDeg).toDouble())
-                path.reset(); path.moveTo(cx, cy)
-                path.lineTo(cx + (cos(a0) * len).toFloat(), cy + (sin(a0) * len).toFloat())
-                path.lineTo(cx + (cos(a1) * len).toFloat(), cy + (sin(a1) * len).toFloat())
-                path.close()
-                canvas.drawPath(path, paint)
+            // Da Vinci 13:18 CT: tapered, feathered rays (ProRay): kite to a point, radial alpha falloff, halo + core.
+            val baseAlpha = paint.alpha
+            if (rayShader == null || rayShaderKey[0] != cx || rayShaderKey[1] != cy || rayShaderKey[2] != len) {
+                val rc = params.rayColor
+                val cols = IntArray(ProRay.FALLOFF_ALPHA.size) { Color.argb((255 * ProRay.FALLOFF_ALPHA[it]).toInt(), Color.red(rc), Color.green(rc), Color.blue(rc)) }
+                rayShader = RadialGradient(cx, cy, len, cols, ProRay.FALLOFF_STOPS, Shader.TileMode.CLAMP)
+                rayShaderKey[0] = cx; rayShaderKey[1] = cy; rayShaderKey[2] = len
             }
+            paint.shader = rayShader
+            for ((halfScale, alphaScale) in ProRay.PASSES) {
+                paint.alpha = (baseAlpha * alphaScale).toInt()
+                for (i in 0 until params.rayCount) {
+                    val k = ProRay.kite(rot + i * 360f / params.rayCount, params.rayHalfAngleDeg * halfScale, len, rayPts)
+                    path.reset(); path.moveTo(cx + k[0], cy + k[1])
+                    path.lineTo(cx + k[2], cy + k[3]); path.lineTo(cx + k[4], cy + k[5]); path.lineTo(cx + k[6], cy + k[7])
+                    path.close()
+                    canvas.drawPath(path, paint)
+                }
+            }
+            paint.shader = null
+            paint.alpha = 255
         }
 
         // Padlock: 88dp, appears closed 0-130, shackle opens 130-450.

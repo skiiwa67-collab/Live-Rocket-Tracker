@@ -72,6 +72,8 @@ object ProUi {
         liveAllowance: Boolean = false,
         /** DEBUG builds only (MainActivity extra): show the gold look / moment without buying or writing any flag. */
         goldPreview: GoldPreview? = null,
+        /** DEBUG builds only (Settings "Test Pro unlock"): run the real Get Pro handler against TestOwnedBilling. */
+        debugTestPurchase: Boolean = false,
         // Keep onOwned LAST: every caller passes it as a trailing lambda (B2 appended liveAllowance after it,
         // which bound those lambdas to the Boolean and broke compileDebugKotlin).
         onOwned: (() -> Unit)? = null
@@ -80,6 +82,9 @@ object ProUi {
         if (!com.ccos.retro.pro.ProConfig.gatesEnabled()) return // B4: no sheet while billing is a stub
         val access = access(prefs)
         if (goldPreview != null && !com.ccos.retro.BuildConfig.DEBUG) return
+        if (debugTestPurchase && !com.ccos.retro.BuildConfig.DEBUG) return
+        val sheetBilling: ProBilling =
+            if (com.ccos.retro.BuildConfig.DEBUG && debugTestPurchase) com.ccos.retro.pro.ProDebugTest.TestOwnedBilling else billing
         if (access.isPro) return
         // Helios no-badger: one sheet per tap; held / repeated presses never stack or reopen it.
         if (!sheetDebounce.tryOpen(android.os.SystemClock.uptimeMillis())) return
@@ -222,7 +227,7 @@ object ProUi {
 
         fun load() {
             apply(SheetState.LOADING)
-            billing.loadProduct(ProConfig.PLAY_PRODUCT_ID) { p ->
+            sheetBilling.loadProduct(ProConfig.PLAY_PRODUCT_ID) { p ->
                 activity.runOnUiThread {
                     product = p
                     apply(UpsellSheetModel.afterLoad(p))
@@ -232,7 +237,7 @@ object ProUi {
 
         primary.setOnClickListener {
             apply(SheetState.PURCHASING)
-            billing.purchase(activity, ProConfig.PLAY_PRODUCT_ID) { o ->
+            sheetBilling.purchase(activity, ProConfig.PLAY_PRODUCT_ID) { o ->
                 activity.runOnUiThread {
                     if (o is PurchaseOutcome.Pending) sawPending = true
                     val next = UpsellSheetModel.afterPurchase(o)
@@ -248,7 +253,7 @@ object ProUi {
         buttons[SheetSecondary.TRY_AGAIN]?.setOnClickListener { load() }
         buttons[SheetSecondary.RESTORE]?.setOnClickListener {
             apply(SheetState.LOADING)
-            billing.restore { res ->
+            sheetBilling.restore { res ->
                 activity.runOnUiThread {
                     when (res) {
                         EntitlementResult.Owned -> {
@@ -270,7 +275,11 @@ object ProUi {
         glintCancel = { ctaGlint.cancel() }
         dialog.show()
         when (goldPreview) {
-            null -> load()
+            null -> if (com.ccos.retro.BuildConfig.DEBUG && debugTestPurchase) {
+                // Same handler a real Get Pro tap runs: PURCHASING -> Owned -> cache -> claim -> moment.
+                apply(SheetState.READY)
+                momentHandler.postDelayed({ if (dialog.isShowing) primary.performClick() }, 400L)
+            } else load()
             GoldPreview.SHEET -> {
                 // Enabled gold CTA look only; tapping it does nothing (stub billing, no grant).
                 primary.setOnClickListener(null)

@@ -80,7 +80,42 @@ class MainActivity : AppCompatActivity() {
     private var rowGlintArmed = false
     private var lockGlintArmed = false
 
+    /** Chris 13:21 CT: DEBUG-only Settings "Test Pro unlock" / "Test Pro lock". Stock Button built in code, so
+     *  release has no view, no string and (R8 strips BuildConfig.DEBUG-dead code) no handler. */
+    private var proTestButton: Button? = null
+
+    private fun bindProTestButton() {
+        if (!com.ccos.retro.BuildConfig.DEBUG) return
+        val row = findViewById<View>(R.id.row_lrt_pro) ?: return
+        val parent = row.parent as? LinearLayout ?: return
+        val b = proTestButton ?: Button(this).also { btn ->
+            btn.isAllCaps = false
+            btn.setOnClickListener { onProTestTapped() }
+            parent.addView(btn, parent.indexOfChild(row) + 1,
+                LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
+            proTestButton = btn
+        }
+        b.text = com.ccos.retro.pro.ProDebugTest.label(ProUi.access(prefs).isPro, com.ccos.retro.pro.ProConfig.gatesEnabled())
+    }
+
+    private fun onProTestTapped() {
+        if (!com.ccos.retro.BuildConfig.DEBUG) return
+        val store = prefs.proStore()
+        val owned = ProUi.access(prefs).isPro && com.ccos.retro.pro.ProConfig.gatesEnabled()
+        if (owned) {
+            // Tap 2: not owned + debug gates on, so the padlocks show again.
+            com.ccos.retro.pro.ProDebugTest.lock(store)
+            onProChanged()
+        } else {
+            // Tap 1: not owned + gates on + moment flag cleared, then the real sheet's real Get Pro handler.
+            com.ccos.retro.pro.ProDebugTest.armUnlock(store)
+            onProChanged()
+            ProUi.showUpsell(this, prefs, debugTestPurchase = true) { onProChanged() }
+        }
+    }
+
     private fun bindProRow() {
+        if (com.ccos.retro.BuildConfig.DEBUG) bindProTestButton()
         findViewById<View>(R.id.row_lrt_pro)?.visibility =
             if (com.ccos.retro.pro.ProConfig.gatesEnabled()) View.VISIBLE else View.GONE // B4
         val r = ProSettingsRowModel.render(isPro() || goldRowPreview, proRestoreState)
@@ -143,7 +178,7 @@ class MainActivity : AppCompatActivity() {
     private fun chipLockForeground(glint: GoldGlintDrawable? = null): android.graphics.drawable.Drawable? {
         // vc160 Da Vinci Pro Gold v1 4.2: gold padlock (ic_pro_lock kept, not overwritten).
         val d = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_pro_lock_gold) ?: return null
-        val px = (18 * resources.displayMetrics.density).toInt()
+        val px = (com.ccos.retro.pro.ProChip.LOCK_BADGE_DP * resources.displayMetrics.density).toInt()
         val layers = if (glint != null) arrayOf(d, glint) else arrayOf(d)
         return android.graphics.drawable.LayerDrawable(layers).apply {
             for (i in layers.indices) {
@@ -945,7 +980,10 @@ class MainActivity : AppCompatActivity() {
             // Pro theme (the selected chip) shows no badge.
             val skinId = AppPrefs.CONSOLE_SKIN_IDS.getOrNull(i) ?: continue
             val locked = !ProPolicy.allowsTheme(ProHook.THEME_PICK_SETTINGS, pro, skinId, store)
-            b?.foreground = if (locked && i != sel) {
+            val badged = locked && i != sel
+            // Da Vinci 13:18 CT art gate (2): the label never sits under the padlock badge. Inset its end by the badge.
+            b?.let { it.setPaddingRelative(it.paddingStart, it.paddingTop, com.ccos.retro.pro.ProChip.endPadPx(badged, resources.displayMetrics.density), it.paddingBottom) }
+            b?.foreground = if (badged) {
                 val g = if (glintLocks && b != null) GoldGlintDrawable(listOf(ProGold.LOCK_GLINT_POINT), listOf(lockN++ % 6),
                     ProGold.GOLD_PALE, null, 2.5f * resources.displayMetrics.density) else null
                 chipLockForeground(g).also { if (g != null && b != null) ProGold.startIdleGlint(b, g, true) }
@@ -954,23 +992,8 @@ class MainActivity : AppCompatActivity() {
                 if (locked) R.string.pro_cd_theme_locked else R.string.pro_cd_theme_free, labels[i]
             )
         }
-        findViewById<LinearLayout>(R.id.row_console_skin_3)?.post {
-            val w = section.width
-            if (w <= 0) return@post
-            val row = findViewById<LinearLayout>(R.id.row_console_skin_3) ?: return@post
-            val h = (w * 0.10f).toInt()
-            for (i in 0 until row.childCount) {
-                val child = row.getChildAt(i)
-                val lp = child.layoutParams ?: continue
-                if (lp.height != h) {
-                    lp.height = h
-                    child.layoutParams = lp
-                }
-                if (child is android.widget.Button) {
-                    child.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, h * 0.32f)
-                }
-            }
-        }
+        // Da Vinci 13:18 CT art gate (1): row 3 (JAXA, ISRO) uses the same 40dp / 11sp / 2dp-margin chips as rows 1-2
+        // in activity_main.xml. The old runtime resize (efe00ee4, 2026-09-29: height = 10% of width, text 32%) is gone.
         findViewById<View>(R.id.section_telemetry)?.let { tel ->
             when (skin) {
                 AppPrefs.CONSOLE_SKIN_ROS -> tel.setBackgroundResource(R.drawable.bg_console_ros)

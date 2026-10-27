@@ -287,3 +287,50 @@ class ProSparkleSim(private val p: ProSparkleParams = ProSparkleParams.current, 
         }
     }
 }
+
+/**
+ * Da Vinci 13:18 CT art gate (SHOULD-FIX 3): unlock rays read as light, not flat hard-edged wedges.
+ * Each ray is a kite (centre, shoulder, tip, shoulder) that is widest at [WIDE_AT] of its length and
+ * tapers to a point at the tip. Edges are feathered by two passes (a wide faint halo, then a narrow
+ * brighter core) under one radial alpha falloff that reaches 0 at the tip. Two paths a ray, one shared
+ * shader a frame: cheap enough for the frame guard. Pure JVM so tests cover the shape.
+ */
+object ProRay {
+    const val WIDE_AT = 0.42f
+    /** (shoulder half-angle scale vs rayHalfAngleDeg, alpha scale): halo first, core second. */
+    val PASSES: List<Pair<Float, Float>> = listOf(1.6f to 0.5f, 0.7f to 0.85f)
+    /** Radial falloff along the ray (fraction of length -> alpha 0..1). Ends at 0: the tip has no hard edge. */
+    val FALLOFF_STOPS = floatArrayOf(0f, 0.35f, 1f)
+    val FALLOFF_ALPHA = floatArrayOf(1f, 0.7f, 0f)
+
+    /** Kite points relative to the centre: (0,0), shoulder a, tip, shoulder b as x,y pairs. */
+    fun kite(axisDeg: Float, shoulderHalfDeg: Float, len: Float, out: FloatArray = FloatArray(8)): FloatArray {
+        val ax = axisDeg * PI / 180.0
+        val h = shoulderHalfDeg * PI / 180.0
+        val r = WIDE_AT * len
+        out[0] = 0f; out[1] = 0f
+        out[2] = (cos(ax - h) * r).toFloat(); out[3] = (sin(ax - h) * r).toFloat()
+        out[4] = (cos(ax) * len).toFloat(); out[5] = (sin(ax) * len).toFloat()
+        out[6] = (cos(ax + h) * r).toFloat(); out[7] = (sin(ax + h) * r).toFloat()
+        return out
+    }
+}
+
+/**
+ * Da Vinci 13:18 CT art gate (MUST-FIX 2): the console chip padlock badge (top-end corner) never covers the label.
+ * A badged chip insets its label end by the badge, so the centred label ends before the badge starts.
+ */
+object ProChip {
+    const val LOCK_BADGE_DP = 18f
+    const val LABEL_PAD_DP = 2f
+
+    fun endPadDp(badged: Boolean): Float = if (badged) LABEL_PAD_DP + LOCK_BADGE_DP else LABEL_PAD_DP
+    fun endPadPx(badged: Boolean, density: Float): Int = (endPadDp(badged) * density + 0.5f).toInt()
+
+    /** Left/right (dp) of a label of [labelW] centred between the start pad and the end pad of a [chipW] chip. */
+    fun labelSpanDp(chipW: Float, labelW: Float, badged: Boolean): Pair<Float, Float> {
+        val inner = chipW - LABEL_PAD_DP - endPadDp(badged)
+        val left = LABEL_PAD_DP + (inner - labelW) / 2f
+        return left to left + labelW
+    }
+}

@@ -60,7 +60,8 @@ object ProGoldMoment {
 
     /**
      * Decide and, when it will play, persist [KEY_SHOWN] = true first (synchronous commit). The caller only
-     * starts drawing after this returns. Never cleared by code, not even on restore.
+     * starts drawing after this returns. Never cleared by code, not even on restore; the one exception is the
+     * DEBUG-only Settings "Test Pro unlock" (ProDebugTest.armUnlock, Chris 13:21 CT), which release refuses.
      */
     fun claim(
         source: Source,
