@@ -10,8 +10,15 @@ object ProGate {
     fun isLocked(l: LaunchSnapshot?, isPro: Boolean, now: Long = System.currentTimeMillis()): Boolean {
         if (l == null || isPro) return false
         if (!l.isReplayable(now)) return false // live + upcoming always free
+        // B1 (Skippy vc159): isReplayable flips at NET+60 whatever the status, so a long coast or a
+        // still-streaming webcast used to lock mid-flight. An unfinished real launch is never locked.
+        if (isStillLive(l)) return false
         return !DemoSet.isFreeDemo(l)
     }
+
+    /** Real (non-catalog) launch that LL2 still reports In Flight or webcast_live, at any T+. */
+    fun isStillLive(l: LaunchSnapshot): Boolean =
+        !l.id.startsWith("demo-") && !l.isTerminal() && (l.isInFlightStatus() || l.isWebcastLive())
 
     /** CDT jump / event skip. Free on live; only blocked on a locked replay. */
     fun canJumpOrSkip(l: LaunchSnapshot?, isPro: Boolean, now: Long = System.currentTimeMillis()): Boolean =
