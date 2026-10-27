@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- vc160 Da Vinci Pro Gold v1 section 4.3: owned LRT Pro row plate, vertical #322A18 -> #1E1A10, 8dp corners, 3dp gold left bar.
+     The 1.5dp pro_gold_metal border is a 5-stop gradient (XML takes 3), so ProGold.ownedRowBackground() wraps this plate. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:angle="270" android:startColor="#322A18" android:endColor="#1E1A10" />
+            <corners android:radius="7dp" />
+        </shape>
+    </item>
+    <item android:gravity="start|fill_vertical" android:width="3dp" android:top="6dp" android:bottom="6dp" android:left="4dp">
+        <shape android:shape="rectangle"><solid android:color="#FFD700" /><corners android:radius="1.5dp" /></shape>
+    </item>
+</layer-list>

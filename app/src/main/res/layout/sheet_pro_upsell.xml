@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- vc159: Da Vinci v1 section 5 upsell sheet (v1.1 copy + erratum, v1.2 one-time). Never opens on its own. -->
+<!-- vc159: Da Vinci v1 section 5 upsell sheet (v1.1 copy + erratum, v1.2 one-time). Never opens on its own.
+     vc160: Da Vinci Pro Gold v1 section 4.1 (gold rule, title, checks, CTA; 16sp lines) + 4.4 unlock panel overlay. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -9,10 +10,17 @@
     <View
         android:id="@+id/pro_sheet_rule"
         android:layout_width="match_parent"
-        android:layout_height="2dp"
-        android:background="#FFB000" />
+        android:layout_height="3dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:background="#FFD700" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
     <LinearLayout
+        android:id="@+id/pro_sheet_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -27,7 +35,7 @@
             android:layout_height="wrap_content"
             android:accessibilityHeading="true"
             android:text="@string/pro_sheet_title"
-            android:textColor="#FFFFFF"
+            android:textColor="#FFD700"
             android:textSize="22sp"
             android:textStyle="bold" />
 
@@ -54,7 +62,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:drawableStart="@drawable/ic_pro_check"
+            android:drawableStart="@drawable/ic_pro_check_gold"
             android:drawablePadding="10dp"
             android:gravity="center_vertical"
             android:text="@string/pro_sheet_item_past"
@@ -65,7 +73,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:drawableStart="@drawable/ic_pro_check"
+            android:drawableStart="@drawable/ic_pro_check_gold"
             android:drawablePadding="10dp"
             android:gravity="center_vertical"
             android:text="@string/pro_sheet_item_replay"
@@ -76,7 +84,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:drawableStart="@drawable/ic_pro_check"
+            android:drawableStart="@drawable/ic_pro_check_gold"
             android:drawablePadding="10dp"
             android:gravity="center_vertical"
             android:text="@string/pro_sheet_item_themes"
@@ -89,7 +97,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:drawableStart="@drawable/ic_pro_check"
+            android:drawableStart="@drawable/ic_pro_check_gold"
             android:drawablePadding="10dp"
             android:gravity="center_vertical"
             android:text="@string/pro_sheet_item_live"
@@ -103,7 +111,7 @@
             android:layout_marginTop="12dp"
             android:text="@string/pro_sheet_included"
             android:textColor="#8AA0B0"
-            android:textSize="14sp" />
+            android:textSize="16sp" />
 
         <FrameLayout
             android:layout_width="match_parent"
@@ -114,10 +122,10 @@
                 android:id="@+id/pro_sheet_primary"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
-                android:background="@drawable/bg_pro_primary"
+                android:background="@drawable/bg_pro_cta_gold"
                 android:text="@string/pro_get"
                 android:textAllCaps="false"
-                android:textColor="#0B0F14"
+                android:textColor="#1A1200"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
@@ -141,7 +149,7 @@
             android:gravity="center_horizontal"
             android:text="@string/pro_confirm_one_time"
             android:textColor="#C8D4DC"
-            android:textSize="14sp" />
+            android:textSize="16sp" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -197,4 +205,7 @@
                 android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
+
+    <include layout="@layout/view_pro_unlock" />
+    </FrameLayout>
 </LinearLayout>

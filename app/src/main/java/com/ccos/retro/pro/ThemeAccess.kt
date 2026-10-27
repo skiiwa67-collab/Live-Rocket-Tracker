@@ -17,6 +17,13 @@ object ThemeAccess {
         AppPrefs.CONSOLE_SKIN_CNSA, AppPrefs.CONSOLE_SKIN_MCC
     )
 
+    /**
+     * vc160 (Chris 11:11, Da Vinci Pro Gold v2 answer 3): console themes that are always free and never get a padlock.
+     * TODO(O1, davinci-lrt-pro-gold-v1.md): Starship, Tesla and Roadster go here when their skins ship.
+     * Empty on purpose: no IDs exist at b70dbc5 and none are invented. Tests key off this set.
+     */
+    val FREE_THEME_IDS: Set<String> = emptySet()
+
     /** TODO(davinci): more European-style theme art for this pool. Today only ARIANE. */
     val EURO_POOL: List<String> = listOf(AppPrefs.CONSOLE_SKIN_ARIANE)
 
@@ -32,7 +39,7 @@ object ThemeAccess {
         return pick
     }
 
-    fun freeSet(store: ProStore): Set<String> = FREE_BASE + freeEuroSkin(store)
+    fun freeSet(store: ProStore): Set<String> = FREE_BASE + FREE_THEME_IDS + freeEuroSkin(store)
 
     fun canPickManually(id: String, isPro: Boolean, store: ProStore): Boolean {
         val n = AppPrefs.normalizeConsoleSkin(id)

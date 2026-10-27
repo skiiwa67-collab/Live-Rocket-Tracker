@@ -72,10 +72,40 @@ class MainActivity : AppCompatActivity() {
         bindProRow()
     }
 
+    /** vc160 DEBUG only: PRO_GOLD_PREVIEW extra (sheet | moment | static | row). Never grants Pro or writes a flag. */
+    private var goldPreviewPending: String? = null
+    private var goldRowPreview = false
+    /** Da Vinci v2 section 2: ambient glints play once per opened Settings screen (armed in onResume). */
+    private var rowGlint: GoldGlintDrawable? = null
+    private var rowGlintArmed = false
+    private var lockGlintArmed = false
+
     private fun bindProRow() {
         findViewById<View>(R.id.row_lrt_pro)?.visibility =
             if (com.ccos.retro.pro.ProConfig.gatesEnabled()) View.VISIBLE else View.GONE // B4
-        val r = ProSettingsRowModel.render(isPro(), proRestoreState)
+        val r = ProSettingsRowModel.render(isPro() || goldRowPreview, proRestoreState)
+        // vc160 Da Vinci Pro Gold v1 4.3: owned row = gold plate + metal border + PRO pill + sparkle. Free row unchanged.
+        val ownedGold = goldRowPreview || (ProUi.access(prefs).isPro && com.ccos.retro.pro.ProConfig.gatesEnabled())
+        findViewById<View>(R.id.row_lrt_pro)?.background =
+            if (ownedGold) ProGold.ownedRowBackground(this) else android.graphics.drawable.ColorDrawable(0xFF0F1620.toInt())
+        findViewById<View>(R.id.txt_lrt_pro_pill)?.visibility = if (ownedGold) View.VISIBLE else View.GONE
+        // Static sparkle = the rest state the v2 row glints settle on.
+        findViewById<View>(R.id.img_lrt_pro_sparkle)?.visibility = if (ownedGold) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.row_lrt_pro)?.let { row ->
+            if (!ownedGold) {
+                rowGlint?.cancel(); rowGlint = null; row.foreground = null
+            } else if (rowGlintArmed) {
+                rowGlintArmed = false
+                val gates = goldRowPreview || com.ccos.retro.pro.ProConfig.gatesEnabled()
+                if (ProGold.idleGlintAllowed(this, gates)) {
+                    val g = GoldGlintDrawable(ProGold.ROW_GLINT_POINTS, ProGold.ROW_GLINT_POINTS.indices.toList(),
+                        ProGold.GOLD_PALE, null, 3f * resources.displayMetrics.density)
+                    rowGlint?.cancel(); rowGlint = g
+                    row.foreground = g
+                    ProGold.startIdleGlint(row, g, gates)
+                }
+            }
+        }
         findViewById<TextView>(R.id.txt_lrt_pro_title)?.setText(r.titleRes)
         findViewById<TextView>(R.id.txt_lrt_pro_status)?.apply {
             if (r.statusRes != null) { setText(r.statusRes); visibility = View.VISIBLE } else visibility = View.GONE
@@ -110,12 +140,37 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** v1 section 1: 18dp lock badge, top-end corner of a chip. */
-    private fun chipLockForeground(): android.graphics.drawable.Drawable? {
-        val d = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_pro_lock) ?: return null
+    private fun chipLockForeground(glint: GoldGlintDrawable? = null): android.graphics.drawable.Drawable? {
+        // vc160 Da Vinci Pro Gold v1 4.2: gold padlock (ic_pro_lock kept, not overwritten).
+        val d = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_pro_lock_gold) ?: return null
         val px = (18 * resources.displayMetrics.density).toInt()
-        return android.graphics.drawable.LayerDrawable(arrayOf(d)).apply {
-            setLayerGravity(0, Gravity.TOP or Gravity.END)
-            setLayerSize(0, px, px)
+        val layers = if (glint != null) arrayOf(d, glint) else arrayOf(d)
+        return android.graphics.drawable.LayerDrawable(layers).apply {
+            for (i in layers.indices) {
+                setLayerGravity(i, Gravity.TOP or Gravity.END)
+                setLayerSize(i, px, px)
+            }
+        }
+    }
+
+    /** DEBUG only. adb shell am start -S -n com.liverockettracker/com.ccos.retro.ui.MainActivity --es com.ccos.retro.extra.PRO_GOLD_PREVIEW moment */
+    private fun runGoldPreview(what: String) {
+        if (!com.ccos.retro.BuildConfig.DEBUG) return
+        val root = window.decorView
+        when (what) {
+            "row" -> {
+                goldRowPreview = true
+                bindProRow()
+                root.postDelayed({
+                    val row = findViewById<View>(R.id.row_lrt_pro) ?: return@postDelayed
+                    (findViewById<android.view.ViewGroup>(android.R.id.content)?.getChildAt(0) as? android.widget.ScrollView)
+                        ?.smoothScrollTo(0, (row.top - 200).coerceAtLeast(0))
+                }, 400L)
+            }
+            "sheet", "moment", "static" -> root.postDelayed({
+                val p = when (what) { "sheet" -> ProUi.GoldPreview.SHEET; "moment" -> ProUi.GoldPreview.MOMENT; else -> ProUi.GoldPreview.STATIC }
+                ProUi.showUpsell(this, prefs, goldPreview = p)
+            }, 500L)
         }
     }
 
@@ -138,6 +193,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         setContentView(R.layout.activity_main)
+        if (com.ccos.retro.BuildConfig.DEBUG) goldPreviewPending = intent?.getStringExtra(ProGold.EXTRA_PRO_GOLD_PREVIEW)
         launchProvider = LaunchDataProvider()
         launchProvider.bindAppContext(applicationContext)
                 telemetryModule = RocketTelemetryModule(prefs, launchProvider)
@@ -410,6 +466,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        rowGlintArmed = true
+        lockGlintArmed = true
         // Stamp 57: never force AUTO on resume  -  MANUAL pick must stick (Soyuz stay Soyuz).
         // tip150: re-tint settings chrome from prefs.consoleSkin (tip149 forLaunch may change it off-screen).
         // Chris 8:22: Pro theme gate first, so a free user never resumes on a Pro theme.
@@ -419,6 +477,8 @@ class MainActivity : AppCompatActivity() {
         // vc159: entitlement refresh (stub billing = Unavailable, cache kept).
         ProUi.access(prefs).refresh { runOnUiThread { bindProRow() } }
         bindProRow()
+        goldPreviewPending?.let { runGoldPreview(it) }
+        goldPreviewPending = null
         syncHistoricQueryFromBox()
         populateLaunchSpinner()
         updateLaunchStatus(launchProvider.lastStatus)
@@ -873,6 +933,10 @@ class MainActivity : AppCompatActivity() {
         }
         val pro = isPro()
         val store = prefs.proStore()
+        // v2 section 2: one #FFFACD glint at each gold padlock's ring, staggered over the six slots, once per open.
+        val glintLocks = lockGlintArmed && ProGold.idleGlintAllowed(this, com.ccos.retro.pro.ProConfig.gatesEnabled())
+        lockGlintArmed = false
+        var lockN = 0
         for (i in buttons.indices) {
             val b = buttons[i]
             b?.text = labels[i]
@@ -881,7 +945,11 @@ class MainActivity : AppCompatActivity() {
             // Pro theme (the selected chip) shows no badge.
             val skinId = AppPrefs.CONSOLE_SKIN_IDS.getOrNull(i) ?: continue
             val locked = !ProPolicy.allowsTheme(ProHook.THEME_PICK_SETTINGS, pro, skinId, store)
-            b?.foreground = if (locked && i != sel) chipLockForeground() else null
+            b?.foreground = if (locked && i != sel) {
+                val g = if (glintLocks && b != null) GoldGlintDrawable(listOf(ProGold.LOCK_GLINT_POINT), listOf(lockN++ % 6),
+                    ProGold.GOLD_PALE, null, 2.5f * resources.displayMetrics.density) else null
+                chipLockForeground(g).also { if (g != null && b != null) ProGold.startIdleGlint(b, g, true) }
+            } else null
             b?.contentDescription = getString(
                 if (locked) R.string.pro_cd_theme_locked else R.string.pro_cd_theme_free, labels[i]
             )

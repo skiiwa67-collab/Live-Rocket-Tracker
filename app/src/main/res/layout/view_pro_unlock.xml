@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- vc160 Da Vinci Pro Gold v1 section 4.4: one-time "unlocked" panel inside the Pro sheet (GONE by default).
+     Clipped to the sheet; never covers the rocket, map or readouts. Decorative layers are not focusable. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/pro_unlock_panel"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:minHeight="320dp"
+    android:visibility="gone">
+
+    <com.ccos.retro.ui.ProUnlockView
+        android:id="@+id/pro_unlock_art"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:id="@+id/pro_unlock_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="40dp">
+
+        <TextView
+            android:id="@+id/pro_unlock_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="@string/pro_settings_owned"
+            android:textColor="#FFD700"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/pro_unlock_body"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="@string/pro_toast_on"
+            android:textColor="#E8EEF4"
+            android:textSize="16sp" />
+    </LinearLayout>
+</FrameLayout>

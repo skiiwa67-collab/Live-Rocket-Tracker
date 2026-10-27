@@ -11,6 +11,8 @@ interface ProStore {
     fun putString(key: String, value: String)
     fun getBoolean(key: String, default: Boolean = false): Boolean
     fun putBoolean(key: String, value: Boolean)
+    /** vc160: synchronous write for flags that must hit disk before something user-visible happens. */
+    fun commitBoolean(key: String, value: Boolean) = putBoolean(key, value)
 }
 
 class SharedPrefsProStore(private val prefs: SharedPreferences) : ProStore {
@@ -18,4 +20,5 @@ class SharedPrefsProStore(private val prefs: SharedPreferences) : ProStore {
     override fun putString(key: String, value: String) { prefs.edit().putString(key, value).apply() }
     override fun getBoolean(key: String, default: Boolean): Boolean = prefs.getBoolean(key, default)
     override fun putBoolean(key: String, value: Boolean) { prefs.edit().putBoolean(key, value).apply() }
+    override fun commitBoolean(key: String, value: Boolean) { prefs.edit().putBoolean(key, value).commit() }
 }

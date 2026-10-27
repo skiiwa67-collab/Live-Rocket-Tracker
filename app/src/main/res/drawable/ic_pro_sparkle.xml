@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- vc160 Da Vinci Pro Gold v1 section 4.3: one static decorative #FFFACD 4-point sparkle. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="16dp"
+    android:height="16dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFACD"
+        android:pathData="M12,1L13.6,10.4L23,12L13.6,13.6L12,23L10.4,13.6L1,12L10.4,10.4Z" />
+</vector>

@@ -715,6 +715,24 @@
             android:background="#0F1620"
             android:layout_marginBottom="20dp">
 
+            <!-- vc160 Da Vinci Pro Gold v1 section 4.3: owned-only PRO pill (decorative; the title says it). -->
+            <TextView
+                android:id="@+id/txt_lrt_pro_pill"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:layout_marginStart="6dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/bg_pro_pill_gold"
+                android:gravity="center"
+                android:importantForAccessibility="no"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:text="@string/pro_badge"
+                android:textColor="#1A1200"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -739,6 +757,16 @@
                     android:textSize="14sp"
                     android:visibility="gone" />
             </LinearLayout>
+
+            <ImageView
+                android:id="@+id/img_lrt_pro_sparkle"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="4dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_pro_sparkle"
+                android:visibility="gone" />
 
             <Button
                 android:id="@+id/btn_lrt_pro_restore"

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- vc160 Da Vinci Pro Gold v1 section 3: CTA vertical gold #FFE680 -> #FFD700 -> #E6B800, 10dp corners, 1dp #B8860B border,
+     1dp #FFF4C0 inner top highlight inset 10dp, 1dp #1A1200 outer keyline. Disabled state unchanged (#26323E, no gradient). -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false">
+        <shape android:shape="rectangle"><solid android:color="#26323E" /><corners android:radius="10dp" /></shape>
+    </item>
+    <item>
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle"><solid android:color="#1A1200" /><corners android:radius="11dp" /></shape>
+            </item>
+            <item android:left="1dp" android:top="1dp" android:right="1dp" android:bottom="1dp">
+                <shape android:shape="rectangle">
+                    <gradient android:angle="270" android:startColor="#FFE680" android:centerColor="#FFD700" android:endColor="#E6B800" />
+                    <stroke android:width="1dp" android:color="#B8860B" />
+                    <corners android:radius="10dp" />
+                </shape>
+            </item>
+            <item android:left="11dp" android:top="2dp" android:right="11dp" android:gravity="top" android:height="1dp">
+                <shape android:shape="rectangle"><solid android:color="#FFF4C0" /></shape>
+            </item>
+        </layer-list>
+    </item>
+</selector>

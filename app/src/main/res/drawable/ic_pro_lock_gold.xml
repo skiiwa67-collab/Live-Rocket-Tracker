@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- vc160 Da Vinci Pro Gold v1 section 4.2: disc #0B0F14, gold ring #FFD700, glyph #FFD27A, 1dp #1A1200 keyline outside
+     the ring (keeps the ring readable next to MCC / ARIANE / ULA gold-hued accents). ic_pro_lock.xml is kept unchanged. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#0B0F14"
+        android:strokeColor="#1A1200"
+        android:strokeWidth="1.0"
+        android:pathData="M12,0.5a11.5,11.5 0,1 1,0 23a11.5,11.5 0,1 1,0 -23z" />
+    <path
+        android:fillColor="#0B0F14"
+        android:strokeColor="#FFD700"
+        android:strokeWidth="1.2"
+        android:pathData="M12,1.6a10.4,10.4 0,1 1,0 20.8a10.4,10.4 0,1 1,0 -20.8z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFD27A"
+        android:strokeWidth="1.6"
+        android:pathData="M9,11V8.6a3,3 0,0 1,6 0V11" />
+    <path
+        android:fillColor="#FFD27A"
+        android:pathData="M7.6,11h8.8a0.8,0.8 0,0 1,0.8 0.8v5.4a0.8,0.8 0,0 1,-0.8 0.8h-8.8a0.8,0.8 0,0 1,-0.8 -0.8v-5.4a0.8,0.8 0,0 1,0.8 -0.8z" />
+</vector>

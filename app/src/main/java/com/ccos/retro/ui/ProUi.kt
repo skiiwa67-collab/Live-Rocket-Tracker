@@ -18,6 +18,8 @@ import com.ccos.retro.pro.EntitlementResult
 import com.ccos.retro.pro.ProAccess
 import com.ccos.retro.pro.ProBilling
 import com.ccos.retro.pro.ProConfig
+import com.ccos.retro.pro.ProGoldMoment
+import com.ccos.retro.pro.PurchaseOutcome
 import com.ccos.retro.pro.ProHook
 import com.ccos.retro.pro.ProPolicy
 import com.ccos.retro.pro.ProProduct
@@ -68,6 +70,8 @@ object ProUi {
         prefs: AppPrefs,
         context: LaunchSnapshot? = null,
         liveAllowance: Boolean = false,
+        /** DEBUG builds only (MainActivity extra): show the gold look / moment without buying or writing any flag. */
+        goldPreview: GoldPreview? = null,
         // Keep onOwned LAST: every caller passes it as a trailing lambda (B2 appended liveAllowance after it,
         // which bound those lambdas to the Boolean and broke compileDebugKotlin).
         onOwned: (() -> Unit)? = null
@@ -75,11 +79,19 @@ object ProUi {
         if (activity.isFinishing) return
         if (!com.ccos.retro.pro.ProConfig.gatesEnabled()) return // B4: no sheet while billing is a stub
         val access = access(prefs)
+        if (goldPreview != null && !com.ccos.retro.BuildConfig.DEBUG) return
         if (access.isPro) return
         // Helios no-badger: one sheet per tap; held / repeated presses never stack or reopen it.
         if (!sheetDebounce.tryOpen(android.os.SystemClock.uptimeMillis())) return
         val dialog = BottomSheetDialog(activity)
-        dialog.setOnDismissListener { sheetDebounce.onDismissed(android.os.SystemClock.uptimeMillis()) }
+        val momentHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        var unlockArt: ProUnlockView? = null
+        var glintCancel: (() -> Unit)? = null
+        dialog.setOnDismissListener { sheetDebounce.onDismissed(android.os.SystemClock.uptimeMillis())
+            momentHandler.removeCallbacksAndMessages(null)
+            unlockArt?.stop()
+            glintCancel?.invoke()
+        }
         val v = LayoutInflater.from(activity).inflate(R.layout.sheet_pro_upsell, null, false)
         dialog.setContentView(v)
         dialog.behavior.maxWidth = (560 * activity.resources.displayMetrics.density).toInt()
@@ -87,9 +99,10 @@ object ProUi {
         // Material draws its own sheet background; ours has the 20dp corners.
         (v.parent as? View)?.setBackgroundColor(Color.TRANSPARENT)
 
-        val accent = skinTitleColor(prefs.consoleSkin)
-        val buy = com.ccos.retro.pro.ProContrast.buyButtonForSkin(prefs.consoleSkin)
-        v.findViewById<View>(R.id.pro_sheet_rule).setBackgroundColor(accent)
+        // vc160 Da Vinci Pro Gold v1 4.1: gold for every skin (rule, hairline, CTA); the skin accent no longer drives them.
+        val buy = com.ccos.retro.pro.ProContrast.buyButtonGold()
+        v.background = ProGold.sheetBackground(activity)
+        v.findViewById<View>(R.id.pro_sheet_rule).background = ProGold.metalRect()
         if (liveAllowance) v.findViewById<TextView>(R.id.pro_sheet_title).setText(R.string.pro_allowance_title)
         v.findViewById<TextView>(R.id.pro_sheet_context).apply {
             if (context != null) {
@@ -112,11 +125,82 @@ object ProUi {
             SheetSecondary.CLOSE to v.findViewById<Button>(R.id.pro_sheet_close)
         )
         var product: ProProduct? = null
+        var sawPending = false
+        // Da Vinci v2 section 2: once-per-sheet ambient glint on the gold CTA (off with animations removed / low RAM).
+        val dp = activity.resources.displayMetrics.density
+        val ctaGlint = GoldGlintDrawable(ProGold.CTA_GLINT_POINTS, ProGold.CTA_GLINT_POINTS.indices.toList(),
+            Color.WHITE, ProGold.GOLD_DEEP, 3.5f * dp)
+        var ctaGlinted = false
+        fun maybeCtaGlint() {
+            if (ctaGlinted || !primary.isEnabled) return
+            ctaGlinted = true
+            primary.post {
+                if (!dialog.isShowing || !primary.isEnabled) return@post
+                if (ProGold.idleGlintAllowed(activity, gatesOn = true)) {
+                    primary.foreground = ctaGlint
+                    ProGold.startIdleGlint(primary, ctaGlint, gatesOn = true)
+                }
+            }
+        }
 
-        fun apply(state: SheetState) {
+        /** v1 4.4: the one-time unlock moment inside this sheet. [preview] = DEBUG only, no flag, no grant. */
+        fun playMoment(mode: ProGoldMoment.Mode) {
+            val content = v.findViewById<View>(R.id.pro_sheet_content)
+            val panel = v.findViewById<View>(R.id.pro_unlock_panel)
+            val art = v.findViewById<ProUnlockView>(R.id.pro_unlock_art).also { unlockArt = it }
+            val textBlock = v.findViewById<View>(R.id.pro_unlock_text)
+            val title = v.findViewById<TextView>(R.id.pro_unlock_title)
+            val body = v.findViewById<TextView>(R.id.pro_unlock_body)
+            val animated = mode == ProGoldMoment.Mode.ANIMATED
+            ctaGlint.cancel()
+            // Skip: tap anywhere on the sheet, Back, swipe-down, or an outside tap. Pro is already on.
+            val skip = View.OnClickListener { if (dialog.isShowing) dialog.dismiss() }
+            panel.setOnClickListener(skip)
+            v.setOnClickListener(skip)
+            dialog.setCancelable(true)
+            dialog.setCanceledOnTouchOutside(true)
+            panel.visibility = View.VISIBLE
+            if (animated) {
+                content.animate().alpha(0f).setDuration(ProGoldMoment.CONTENT_FADE_MS)
+                    .withEndAction { content.visibility = View.INVISIBLE }.start()
+                panel.alpha = 0f
+                panel.animate().alpha(1f).setDuration(ProGoldMoment.PLATE_FADE_MS)
+                    .setInterpolator(android.view.animation.DecelerateInterpolator(1.5f)).start()
+                textBlock.alpha = 0f
+                textBlock.animate().alpha(1f).setStartDelay(ProGoldMoment.TEXT_IN_START_MS)
+                    .setDuration(ProGoldMoment.TEXT_IN_END_MS - ProGoldMoment.TEXT_IN_START_MS).start()
+                momentHandler.postDelayed({ shimmerOnce(title) }, ProGoldMoment.SHIMMER_START_MS)
+            } else {
+                content.visibility = View.INVISIBLE // keeps the sheet height; no fade, burst, rays or shimmer
+                panel.alpha = 1f
+                textBlock.alpha = 1f
+            }
+            art.setKeepOutViews(title, body) // v2: sparkles never over the text
+            art.play(mode)
+            panel.announceForAccessibility("${title.text}. ${body.text}")
+            val hold = ProGoldMoment.holdMs(mode, ProGold.talkBackOn(activity))
+            momentHandler.postDelayed({
+                if (!dialog.isShowing) return@postDelayed
+                if (!animated) dialog.window?.setWindowAnimations(0) // static: no slide
+                dialog.dismiss()
+            }, hold)
+        }
+
+        fun apply(state: SheetState, source: ProGoldMoment.Source? = null) {
             if (activity.isFinishing) return
             val r = UpsellSheetModel.render(state, product)
             if (r.dismiss) {
+                // vc160: plays once, only for a fresh purchase; the flag is committed before it plays.
+                // Restore / pending-confirmed / refresh keep the old dismiss + toast (O2/O3 default).
+                val mode = if (source == null) ProGoldMoment.Mode.NONE else ProGoldMoment.claim(
+                    source, prefs.proStore(), activity.isFinishing,
+                    ProGold.animatorsEnabled(activity), ProGold.isLowRam(activity)
+                )
+                if (mode != ProGoldMoment.Mode.NONE) {
+                    onOwned?.invoke()
+                    playMoment(mode)
+                    return
+                }
                 dialog.dismiss()
                 Toast.makeText(activity, R.string.pro_toast_on, Toast.LENGTH_SHORT).show()
                 onOwned?.invoke()
@@ -127,7 +211,9 @@ object ProUi {
             primary.isEnabled = r.primaryEnabled
             // vc159 Da Vinci: accent only if WCAG label >= 4.5:1 and fill-vs-sheet >= 3:1, else #90E0FF / #1A1A22.
             primary.setTextColor(if (r.primaryEnabled) buy.label else 0xFF8AA0B0.toInt())
-            primary.backgroundTintList = if (r.primaryEnabled) android.content.res.ColorStateList.valueOf(buy.fill) else null
+            // Gold gradient comes from bg_pro_cta_gold (selector); a tint would flatten it.
+            primary.backgroundTintList = null
+            if (state == SheetState.READY) maybeCtaGlint() else ctaGlint.cancel()
             progress.visibility = if (r.showProgress) View.VISIBLE else View.GONE
             message.setText(r.messageRes)
             for ((k, b) in buttons) b.visibility = if (k in r.secondary) View.VISIBLE else View.GONE
@@ -148,9 +234,12 @@ object ProUi {
             apply(SheetState.PURCHASING)
             billing.purchase(activity, ProConfig.PLAY_PRODUCT_ID) { o ->
                 activity.runOnUiThread {
+                    if (o is PurchaseOutcome.Pending) sawPending = true
                     val next = UpsellSheetModel.afterPurchase(o)
-                    if (next == SheetState.OWNED) prefs.proStore().putBoolean(ProAccess.KEY_PURCHASED, true)
-                    apply(next)
+                    if (next == SheetState.OWNED) {
+                        prefs.proStore().putBoolean(ProAccess.KEY_PURCHASED, true)
+                        apply(next, ProGoldMoment.sourceForPurchase(sawPending))
+                    } else apply(next)
                 }
             }
         }
@@ -178,8 +267,49 @@ object ProUi {
                 }
             }
         }
+        glintCancel = { ctaGlint.cancel() }
         dialog.show()
-        load()
+        when (goldPreview) {
+            null -> load()
+            GoldPreview.SHEET -> {
+                // Enabled gold CTA look only; tapping it does nothing (stub billing, no grant).
+                primary.setOnClickListener(null)
+                primary.isEnabled = true
+                primary.setText(R.string.pro_get)
+                primary.setTextColor(buy.label)
+                primary.backgroundTintList = null
+                message.setText(R.string.pro_confirm_one_time)
+                for ((k, b) in buttons) b.visibility = if (k == SheetSecondary.NOT_NOW || k == SheetSecondary.RESTORE) View.VISIBLE else View.GONE
+                maybeCtaGlint()
+            }
+            GoldPreview.MOMENT, GoldPreview.STATIC -> {
+                apply(SheetState.READY)
+                momentHandler.postDelayed({
+                    if (dialog.isShowing) playMoment(if (goldPreview == GoldPreview.MOMENT) ProGoldMoment.Mode.ANIMATED else ProGoldMoment.Mode.STATIC)
+                }, 700L)
+            }
+        }
+    }
+
+    /** DEBUG-only previews of the gold sheet / unlock moment (no purchase, no flag, Pro locks stay on). */
+    enum class GoldPreview { SHEET, MOMENT, STATIC }
+
+    /** v1 4.4 900-1500 ms: one pale-gold band across the title, once; never loops. */
+    private fun shimmerOnce(title: TextView) {
+        val w = title.width.toFloat().takeIf { it > 0f } ?: return
+        val anim = android.animation.ValueAnimator.ofFloat(-0.3f, 1.3f)
+        anim.duration = ProGoldMoment.SHIMMER_END_MS - ProGoldMoment.SHIMMER_START_MS
+        anim.addUpdateListener { a ->
+            val x = (a.animatedValue as Float) * w
+            title.paint.shader = android.graphics.LinearGradient(x - w * 0.15f, 0f, x + w * 0.15f, 0f,
+                intArrayOf(ProGold.GOLD, ProGold.GOLD_PALE, ProGold.GOLD), floatArrayOf(0f, 0.5f, 1f),
+                android.graphics.Shader.TileMode.CLAMP)
+            title.invalidate()
+        }
+        anim.addListener(object : android.animation.AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: android.animation.Animator) { title.paint.shader = null; title.invalidate() }
+        })
+        anim.start()
     }
 
     /** B6: true when [text] fits [maxLines] lines at [textSizePx] in [widthPx] (StaticLayout never splits a word unless it is wider than a line). */

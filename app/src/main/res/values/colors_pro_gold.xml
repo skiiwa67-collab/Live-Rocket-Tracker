@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- vc160 Da Vinci LRT Pro Gold v1 section 2 palette (Alarm Pro gold: #FFD700 strokes, #FFD27A highlight, #322A18 plate). -->
+<resources>
+    <color name="pro_gold">#FFD700</color>
+    <color name="pro_gold_hi">#FFD27A</color>
+    <color name="pro_gold_pale">#FFFACD</color>
+    <color name="pro_gold_deep">#B8860B</color>
+    <color name="pro_gold_cta_top">#FFE680</color>
+    <color name="pro_gold_cta_bottom">#E6B800</color>
+    <color name="pro_gold_plate">#322A18</color>
+    <color name="pro_gold_plate_end">#1E1A10</color>
+    <color name="pro_gold_plate_stroke">#FFD54F</color>
+    <color name="pro_gold_ink">#1A1200</color>
+    <color name="pro_gold_cta_highlight">#FFF4C0</color>
+    <color name="pro_lock_disc">#0B0F14</color>
+</resources>

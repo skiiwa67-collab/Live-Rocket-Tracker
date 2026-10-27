@@ -55,4 +55,9 @@ object ProContrast {
     }
 
     fun buyButtonForSkin(skin: String): ButtonColors = buyButton(accentFor(skin))
+
+    /** vc160 Da Vinci Pro Gold v1 4.1: gold CTA for every skin; label #1A1200 (the guard still runs, gold passes). */
+    const val GOLD = 0xFFFFD700.toInt()
+    const val GOLD_LABEL = 0xFF1A1200.toInt()
+    fun buyButtonGold(): ButtonColors = buyButton(GOLD, accentLabel = GOLD_LABEL)
 }
