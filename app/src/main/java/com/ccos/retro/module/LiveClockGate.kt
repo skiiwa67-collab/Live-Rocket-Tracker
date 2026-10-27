@@ -41,7 +41,7 @@ object LiveClockGate {
      * In Flight; isGo() is false for those, so the clock froze at T-00:00 for the 60 min live window.
      * Terminal before NET does NOT lift off early (NET check comes first).
      * Helios P1-A (pad abort): Success and Partial Failure imply liftoff. A plain Failure counts only with evidence:
-     * [liftoffSeen] (sticky per-launch flag: this app saw In Flight, or webcast_live with NET reached) or an LL2
+     * [liftoffSeen] (sticky per-launch flag: this app saw LL2 In Flight; webcast_live is not evidence, Skippy N2) or an LL2
      * failreason that describes a post-liftoff failure. Otherwise the clock holds at -0.5 s; the status still says Failure.
      */
     fun liftoffConfirmed(launch: LaunchSnapshot, now: Long, liftoffSeen: Boolean = false): Boolean {
@@ -53,10 +53,14 @@ object LiveClockGate {
         return launch.isGo() && !launch.isHold() && !launch.isScrubStatus()
     }
 
-    /** P1-A: the observation that sets the sticky liftoffSeen flag (In Flight, or webcast_live with NET reached). */
-    fun observedLiftoff(launch: LaunchSnapshot, now: Long): Boolean =
-        !launch.id.startsWith("demo-") &&
-            (launch.isInFlightStatus() || (launch.isWebcastLive() && launch.secondsToNet(now) <= 0L))
+    /**
+     * P1-A: the observation that sets the sticky liftoffSeen flag: LL2 In Flight only.
+     * Skippy N2 (vc159 re-review): webcast_live with NET reached is NOT liftoff evidence. Webcasts are live at T-0 on
+     * nearly every streamed launch, including pad aborts, so it marked "liftoff seen" and a later plain Failure ran the
+     * flight clock. Trade-off: a real in-flight Failure never seen as In Flight, with an empty failreason, holds at -0.5 s.
+     */
+    fun observedLiftoff(launch: LaunchSnapshot, @Suppress("UNUSED_PARAMETER") now: Long): Boolean =
+        !launch.id.startsWith("demo-") && launch.isInFlightStatus()
 
     private val PAD_WORDS = listOf("pad abort", "on the pad", "before liftoff", "before lift-off", "prior to liftoff",
         "prior to lift-off", "did not lift off", "didn't lift off", "never left the pad", "never lifted off", "abort at t-0",

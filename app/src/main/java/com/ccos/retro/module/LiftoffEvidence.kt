@@ -5,7 +5,7 @@ import com.ccos.retro.pro.ProStore
 
 /**
  * Helios P1-A: sticky per-launch "liftoff seen" flag, persisted in prefs so it survives a process restart.
- * Set when this app observed In Flight, or webcast_live with NET reached ([LiveClockGate.observedLiftoff]).
+ * Set when this app observed LL2 In Flight ([LiveClockGate.observedLiftoff]); webcast_live is not evidence (Skippy N2).
  * A plain LL2 Failure runs the clock only with this flag or a post-liftoff failreason.
  */
 object LiftoffEvidence {

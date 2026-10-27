@@ -63,13 +63,38 @@ class PadAbortFailureTest {
         assertFalse(LiveClockGate.liftoffConfirmed(fail, netMs - 1000L, liftoffSeen = true))
     }
 
-    @Test fun flagIsSetByInFlightOrLiveWebcastAfterNet() {
+    @Test fun flagIsSetByInFlightOnly() {
         val now = netMs + 10_000L
         assertTrue(LiveClockGate.observedLiftoff(snap("In Flight", "Launch in Flight"), now))
-        assertTrue(LiveClockGate.observedLiftoff(snap("Go", "Go for Launch", webcastLive = true), now))
+        assertFalse("Skippy N2: webcast live at/after NET is not liftoff", LiveClockGate.observedLiftoff(snap("Go", "Go for Launch", webcastLive = true), now))
+        assertFalse(LiveClockGate.observedLiftoff(snap("Hold", "On Hold", webcastLive = true), now))
         assertFalse("webcast before NET", LiveClockGate.observedLiftoff(snap("Go", "Go for Launch", webcastLive = true), netMs - 10_000L))
         assertFalse(LiveClockGate.observedLiftoff(snap("Go", "Go for Launch"), now))
         assertFalse("built-in sample", LiveClockGate.observedLiftoff(snap("In Flight", "Launch in Flight", id = "demo-x"), now))
+    }
+
+    /** Skippy N2: streamed pad abort. Go + webcast_live at T-0, then LL2 flips to Failure (empty failreason). */
+    @Test fun webcastLiveAtT0ThenFailureHoldsAtMinusHalf() {
+        val prefs = MemProStore()
+        val go = snap("Go", "Go for Launch", webcastLive = true)
+        // The module marks the sticky flag only when observedLiftoff is true (RocketTelemetryModule.liftoffSeen).
+        for (s in listOf(0, 5, 30, 120)) if (LiftoffEvidence.observedLiftoff(go, netMs + s * 1000L)) LiftoffEvidence.mark(prefs, go.id)
+        val seen = LiftoffEvidence.isSeen(prefs, go.id)
+        assertFalse("webcast at T-0 must not mark liftoff", seen)
+        for (r in listOf<String?>(null, "")) for (live in listOf(true, false)) {
+            val f = snap("Failure", "Launch Failure", failReason = r, webcastLive = live)
+            for (s in listOf(0, 30, 600)) assertEquals("T+$s live=$live", -0.5f, t(f, s, seen), 0.001f)
+            assertFalse(LiveClockGate.liftoffConfirmed(f, netMs + 600_000L, seen))
+        }
+    }
+
+    @Test fun inFlightSeenThenFailureRuns() {
+        val prefs = MemProStore()
+        val fl = snap("In Flight", "Launch in Flight", webcastLive = true)
+        if (LiftoffEvidence.observedLiftoff(fl, netMs + 60_000L)) LiftoffEvidence.mark(prefs, fl.id)
+        val seen = LiftoffEvidence.isSeen(prefs, fl.id)
+        assertTrue(seen)
+        assertTrue(t(snap("Failure", "Launch Failure"), 600, seen) > 0f)
     }
 
     @Test fun flagSurvivesProcessRestart() {
