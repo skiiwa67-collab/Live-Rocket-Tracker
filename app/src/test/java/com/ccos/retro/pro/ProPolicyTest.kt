@@ -40,7 +40,7 @@ class ProPolicyTest {
     }
 
     @Test fun everyLaunchHookKeepsIncludedLaunchesOpenForFree() {
-        for (hook in launchHooks) for ((why, l) in includedLaunches()) {
+        for (hook in launchHooks.filter { it.kind == ProHook.Kind.LAUNCH }) for ((why, l) in includedLaunches()) {
             assertTrue("$hook must allow $why for a free user", ProPolicy.allows(hook, isPro = false, launch = l, now = NOW))
         }
     }
@@ -76,6 +76,19 @@ class ProPolicyTest {
         for (hook in listOf(ProHook.JUMP, ProHook.SKIP_EVENT)) {
             assertTrue(ProPolicy.allows(hook, false, launch = live, now = NOW))
             assertFalse(ProPolicy.allows(hook, false, launch = lockedReplay(), now = NOW))
+        }
+    }
+
+    @Test fun plusMinusIsProOnStarshipFlight13() {
+        val builtIn = snap(id = DemoSet.STARSHIP_F13_DEMO_ID, net = NOW - 400L * 24 * HOUR)
+        val real = snap(id = "ll2-f13", net = NOW - 200L * 24 * HOUR, rocket = "Starship",
+            mission = "Flight 13", name = "Starship | Flight 13")
+        for (l in listOf(builtIn, real)) {
+            assertTrue("viewing ${l.id} stays free", ProPolicy.allows(ProHook.SELECT_LAUNCH, false, launch = l, now = NOW))
+            for (h in listOf(ProHook.JUMP, ProHook.SKIP_EVENT)) {
+                assertFalse("$h free on ${l.id}", ProPolicy.allows(h, false, launch = l, now = NOW))
+                assertTrue("$h Pro on ${l.id}", ProPolicy.allows(h, true, launch = l, now = NOW))
+            }
         }
     }
 

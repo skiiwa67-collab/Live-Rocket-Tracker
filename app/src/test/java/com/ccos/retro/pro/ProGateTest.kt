@@ -64,7 +64,7 @@ class ProGateTest {
         assertTrue(ProGate.canJumpOrSkip(snap(net = NOW - 10 * MIN, abbrev = "Go", status = "Go for Launch"), false, NOW))
         assertFalse(ProGate.canJumpOrSkip(snap(net = NOW - 5 * HOUR), false, NOW))
         assertTrue(ProGate.canJumpOrSkip(snap(net = NOW - 5 * HOUR), true, NOW))
-        assertTrue(ProGate.canJumpOrSkip(snap(id = "demo-starship-f13", net = NOW - 5 * HOUR), false, NOW))
+        assertFalse(ProGate.canJumpOrSkip(snap(id = "demo-starship-f13", net = NOW - 5 * HOUR), false, NOW))
         assertTrue(ProGate.canJumpOrSkip(null, false, NOW))
     }
 

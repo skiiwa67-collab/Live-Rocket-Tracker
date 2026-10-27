@@ -22,9 +22,17 @@ object ProGate {
     fun isStillLive(l: LaunchSnapshot): Boolean =
         !l.id.startsWith("demo-") && !l.isTerminal() && (l.isInFlightStatus() || l.isWebcastLive())
 
-    /** CDT jump / event skip. Free on live; only blocked on a locked replay. */
-    fun canJumpOrSkip(l: LaunchSnapshot?, isPro: Boolean, now: Long = System.currentTimeMillis()): Boolean =
-        !isLocked(l, isPro, now)
+    /**
+     * CDT jump / event skip. Free on live / upcoming / still-in-flight. Pro on every historic and
+     * replay, including Included samples (Starship Flight 13). Viewing F13 stays free; +/- does not.
+     */
+    fun canJumpOrSkip(l: LaunchSnapshot?, isPro: Boolean, now: Long = System.currentTimeMillis()): Boolean {
+        if (isPro || l == null) return true
+        if (!l.isReplayable(now)) return true
+        if (isStillLive(l)) return true
+        if (!l.id.startsWith("demo-") && LiveTrackingAllowance.liftoffMs(l) == null) return true
+        return false
+    }
 
     // vc159: wired only through ProPolicy (see ProHook for every call site); UI callers never call this directly.
 }

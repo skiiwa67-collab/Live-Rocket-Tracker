@@ -2,6 +2,7 @@ package com.ccos.retro.data
 
 import android.content.Context
 import android.util.Log
+import com.ccos.retro.BuildConfig
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -25,6 +26,33 @@ class LaunchDataProvider {
         private const val TAG = "CCOS.Launch"
         /** Starship Flight 13 real T-0, 2026-07-24T22:51:00Z (lrt-mission-tapes v1/starship/flight-13.json). */
         const val STARSHIP_F13_T0_MS = 1_784_933_460_000L
+        /**
+         * Built-in catalog ids with invented relative NETs. Debug / skin-testing only; never release,
+         * never a live or upcoming countdown (even in debug).
+         */
+        val FABRICATED_BUILTIN_IDS: Set<String> = setOf(
+            "demo-spacex-f9",
+            "demo-spacex-inflight",
+            "demo-spacex-crew",
+            "demo-soyuz-inflight",
+            "demo-spacex-fail",
+            "demo-generic",
+            "demo-blueorigin"
+        )
+
+        fun isFabricatedBuiltIn(id: String): Boolean = id in FABRICATED_BUILTIN_IDS
+
+        /** Built-in catalog entries never appear as a real live / upcoming countdown. */
+        fun isEligibleForLiveUpcomingList(l: LaunchSnapshot): Boolean = !l.id.startsWith("demo-")
+
+        fun keepInLiveUpcomingList(l: LaunchSnapshot, now: Long): Boolean =
+            isEligibleForLiveUpcomingList(l) && (l.isActiveWatch(now) || l.isHold() || l.secondsToNet(now) > 0)
+
+        fun builtInCatalogIds(debug: Boolean): Set<String> {
+            val ids = mutableSetOf("demo-starship-f13")
+            if (debug) ids.addAll(FABRICATED_BUILTIN_IDS)
+            return ids
+        }
         private const val DEV_UPCOMING = "https://lldev.thespacedevs.com/2.2.0/launch/upcoming/?limit=50&mode=detailed"
         private const val DEV_PREVIOUS = "https://lldev.thespacedevs.com/2.2.0/launch/previous/?limit=25&mode=detailed"
         private const val PROD_UPCOMING = "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=50&mode=detailed"
@@ -166,7 +194,11 @@ class LaunchDataProvider {
             pastSorted.take(HISTORIC_DEFAULT_N).forEach { add(it) }
             // Fallback only: no real past yet (fetch fail / fresh install).
             if (out.isEmpty()) {
-                for (l in demoCatalog) add(l)
+                // Release catalog is F13 only. Debug fabricated entries with a future NET must not
+                // show as a real countdown even on the historic empty-cache fallback.
+                for (l in demoCatalog) {
+                    if (l.secondsToNet(now) <= 0) add(l)
+                }
             }
             return out
         }
@@ -1036,14 +1068,37 @@ class LaunchDataProvider {
 
 
     /**
-     * Curated offline launches for testing every agency skin + button set.
-     * NET times are relative so countdown / in-flight states are useful.
+     * Curated offline launches. Release: real historic samples only (Starship Flight 13).
+     * Debug: plus fabricated entries with invented relative NETs (DEV DATA) for skin / button testing.
+     * Those fabricated rows must never appear on a live / upcoming list as a real countdown.
      */
-    private fun buildDemoCatalog(): List<LaunchSnapshot> {
+    internal fun buildDemoCatalog(
+        debug: Boolean = BuildConfig.DEBUG,
+        now: Long = System.currentTimeMillis()
+    ): List<LaunchSnapshot> {
         // Chris 8:22: the made-up per-country samples (SLS, Long March, Soyuz, Electron, Ariane, H3, LVM3) are gone.
         // No other country has a complete real tape bundled, so it is skipped rather than faked (notes-vc159.md).
-        val now = System.currentTimeMillis()
-        return listOf(
+        val historic = listOf(
+            LaunchSnapshot(
+                id = "demo-starship-f13",
+                name = "Starship | Flight 13",
+                statusName = "Launch Successful",
+                statusAbbrev = "Success",
+                // Chris 8:22: samples are real launches. Real T-0 (SpaceX published, 2026-07-24 22:51:00 UTC),
+                // fixed so it is always a past replay and never an upcoming countdown in CURRENT.
+                netMs = STARSHIP_F13_T0_MS,
+                windowStartMs = STARSHIP_F13_T0_MS,
+                windowEndMs = STARSHIP_F13_T0_MS,
+                provider = "SpaceX",
+                rocketName = "Starship",
+                missionName = "Flight 13",
+                pad = "Orbital Launch Pad 2",
+                location = "SpaceX Starbase, TX, USA"
+            )
+        )
+        if (!debug) return historic
+        // DEV DATA: invented relative NETs. Debug builds only. Never a live/upcoming countdown.
+        val fabricated = listOf(
             // SpaceX  -  upcoming-style (T- ~1h for testing countdown)
             LaunchSnapshot(
                 id = "demo-spacex-f9",
@@ -1073,22 +1128,6 @@ class LaunchDataProvider {
                 missionName = "Ascent Profile",
                 pad = "LC-39A",
                 location = "Kennedy Space Center, FL, USA"
-            ),
-            LaunchSnapshot(
-                id = "demo-starship-f13",
-                name = "Starship | Flight 13",
-                statusName = "Launch Successful",
-                statusAbbrev = "Success",
-                // Chris 8:22: samples are real launches. Real T-0 (SpaceX published, 2026-07-24 22:51:00 UTC),
-                // fixed so it is always a past replay and never an upcoming countdown in CURRENT.
-                netMs = STARSHIP_F13_T0_MS,
-                windowStartMs = STARSHIP_F13_T0_MS,
-                windowEndMs = STARSHIP_F13_T0_MS,
-                provider = "SpaceX",
-                rocketName = "Starship",
-                missionName = "Flight 13",
-                pad = "Orbital Launch Pad 2",
-                location = "SpaceX Starbase, TX, USA"
             ),
             // SpaceX historical success
             LaunchSnapshot(
@@ -1163,6 +1202,7 @@ class LaunchDataProvider {
                 location = "Cape Canaveral SFS, FL, USA"
             )
         )
+        return historic + fabricated
     }
 }
 

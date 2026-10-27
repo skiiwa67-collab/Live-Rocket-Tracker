@@ -80,6 +80,21 @@ object LiveTrackingAllowance {
     fun isHandoffDone(store: ProStore, id: String): Boolean = idsContain(store, KEY_HANDOFF_DONE_IDS, id)
     fun markHandoffDone(store: ProStore, id: String) = addId(store, KEY_HANDOFF_DONE_IDS, id)
 
+    fun removeId(store: ProStore, key: String, id: String) {
+        if (id.isBlank() || !idsContain(store, key, id)) return
+        store.putString(key, ids(store, key).filter { it != id }.joinToString(","))
+    }
+
+    /**
+     * User-initiated re-select of a launch whose free hour is already over. Clears the once-per-launch
+     * flags so the fading note can show again, then the existing handoff switches. Automatic A→B→A
+     * still uses [shouldShowCard] / [isHandoffDone] and does not re-show (not badgering).
+     */
+    fun clearHandoffForUserReselect(store: ProStore, id: String) {
+        removeId(store, KEY_CARD_SHOWN_ID, id)
+        removeId(store, KEY_HANDOFF_DONE_IDS, id)
+    }
+
     /** Note opacity at [elapsedMs] since it started: 300 ms in, 5 s hold, 600 ms out, then 0 (gone by itself). */
     fun noteAlpha(elapsedMs: Long): Float = when {
         elapsedMs < 0L -> 0f

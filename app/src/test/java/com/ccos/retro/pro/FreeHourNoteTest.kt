@@ -148,6 +148,19 @@ class FreeHourNoteTest {
         assertTrue(LiveTrackingAllowance.isHandoffDone(store, "L"))
     }
 
+    @Test fun userReselectAfterFreeHourShowsNoteAgainThenSwitches() {
+        val store = MemProStore()
+        val l = inFlight(61 * MIN, "L")
+        LiveTrackingAllowance.markShown(store, l)
+        LiveTrackingAllowance.markHandoffDone(store, "L")
+        assertFalse("automatic path stays once-per-launch", LiveTrackingAllowance.shouldShowCard(l, false, store, NOW))
+        assertEquals(LiveTrackingAllowance.Handoff.CANCEL, decide(store = store, now = NOW + HOUR))
+        assertTrue(LiveTrackingAllowance.isFreeHourOver(l, false, NOW, true))
+        LiveTrackingAllowance.clearHandoffForUserReselect(store, "L")
+        assertTrue("user re-select shows the note again", LiveTrackingAllowance.shouldShowCard(l, false, store, NOW))
+        assertEquals(LiveTrackingAllowance.Handoff.SWITCH, decide(store = store, now = NOW + 5_900))
+    }
+
     @Test fun recentTouchDefersUntilFiveSecondsIdle() {
         val touch = NOW + 5_000
         assertEquals(LiveTrackingAllowance.Handoff.WAIT, decide(touch = touch, now = NOW + 6_000))
@@ -176,6 +189,15 @@ class FreeHourNoteTest {
 
     private val module by lazy { file("src/main/java/com/ccos/retro/module/RocketTelemetryModule.kt") }
     private fun body(name: String): String = module.substringAfter("fun $name(").substringBefore("\n    fun ")
+
+    @Test fun userReselectIsWiredOnSelectLaunch() {
+        val sel = body("selectLaunch")
+        assertTrue(sel.contains("rearmFreeHourNoteOnUserSelect("))
+        val rearm = module.substringAfter("private fun rearmFreeHourNoteOnUserSelect(").substringBefore("\n    fun ")
+        assertTrue(rearm.contains("LiveTrackingAllowance.clearHandoffForUserReselect"))
+        assertTrue(rearm.contains("checkLiveTrackingAllowance"))
+        assertTrue(rearm.contains("isFreeHourOver"))
+    }
 
     @Test fun wallpaperShowsNoNoteButStillMoves() {
         val wp = file("src/main/java/com/ccos/retro/wallpaper/RetroCommandWallpaperService.kt")

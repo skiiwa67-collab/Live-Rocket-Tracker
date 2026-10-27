@@ -13,7 +13,7 @@ class RealSamplesTest {
     private val catalog by lazy {
         val src = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
             .resolve("com/ccos/retro/data/LaunchDataProvider.kt").readText().replace("\r\n", "\n")
-        src.substringAfter("private fun buildDemoCatalog()").substringBefore("\n    }\n")
+        src.substringAfter("fun buildDemoCatalog(").substringBefore("\n    }\n")
     }
 
     @Test fun f13UsesRealFixedT0() {

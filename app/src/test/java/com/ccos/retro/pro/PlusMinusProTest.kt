@@ -20,6 +20,19 @@ class PlusMinusProTest {
         }
     }
 
+    @Test fun plusMinusOnStarshipFlight13IsProToo() {
+        val f13 = snap(id = DemoSet.STARSHIP_F13_DEMO_ID, net = NOW - 90L * 24 * HOUR,
+            rocket = "Starship", mission = "Flight 13")
+        val real = snap(id = "ll2-f13", net = NOW - 90L * 24 * HOUR, rocket = "Starship", mission = "Flight 13")
+        for (l in listOf(f13, real)) {
+            assertFalse("viewing ${l.id} is still Included", ProGate.isLocked(l, false, NOW))
+            for (h in listOf(ProHook.SKIP_EVENT, ProHook.JUMP)) {
+                assertFalse("$h free on ${l.id}", ProPolicy.allows(h, false, launch = l, now = NOW, gatesOn = true))
+                assertTrue("$h for Pro", ProPolicy.allows(h, true, launch = l, now = NOW, gatesOn = true))
+            }
+        }
+    }
+
     @Test fun everyPlusMinusButtonGoesThroughTheGate() {
         val cc = src("ui/CommandCenterActivity.kt")
         assertTrue(cc.contains("R.id.btn_event_prev).setOnClickListener {\n            telemetryModule.skipEvent(-1)"))

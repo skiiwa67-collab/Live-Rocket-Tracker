@@ -517,12 +517,13 @@ class MainActivity : AppCompatActivity() {
             } else {
                 val keepId = prefs.telemetryLaunchId
                 // Stamp 55: CURRENT keep only HOLD/in-flight/webcast/T+/upcoming  -  past -> HISTORIC.
+                // Built-in fabricated / sample rows never appear as a real countdown (even in debug).
                 val keep = liveOnly.firstOrNull { it.id == keepId }
                     ?: launchProvider.findById(keepId)?.takeIf {
-                        it.isActiveWatch(now) || it.isHold() || it.secondsToNet(now) > 0
+                        LaunchDataProvider.keepInLiveUpcomingList(it, now)
                     }
                     ?: telemetryModule.tracked?.takeIf {
-                        it.id == keepId && (it.isActiveWatch(now) || it.isHold() || it.secondsToNet(now) > 0)
+                        it.id == keepId && LaunchDataProvider.keepInLiveUpcomingList(it, now)
                     }
                 val base = liveOnly.toMutableList()
                 if (keep != null && base.none { it.id == keep.id }) base.add(0, keep)

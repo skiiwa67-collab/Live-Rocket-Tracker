@@ -1131,6 +1131,7 @@ class RocketTelemetryModule(
         } else {
             clearSim()
         }
+            rearmFreeHourNoteOnUserSelect(found ?: tracked)
             return
         }
 
@@ -1167,6 +1168,21 @@ class RocketTelemetryModule(
         } else {
             clearSim()
         }
+        rearmFreeHourNoteOnUserSelect(found ?: tracked)
+    }
+
+    /**
+     * User re-selected a launch whose free hour is already over: show the fading note again (user-initiated,
+     * not badgering) then switch. Automatic resolve never clears the once-per-launch flags.
+     */
+    private fun rearmFreeHourNoteOnUserSelect(l: LaunchSnapshot?, now: Long = System.currentTimeMillis()) {
+        val launch = l ?: return
+        val store = prefs.proStore()
+        val pro = isProProvider()
+        if (!LiveTrackingAllowance.isFreeHourOver(launch, pro, now, com.ccos.retro.pro.ProConfig.gatesEnabled())) return
+        LiveTrackingAllowance.clearHandoffForUserReselect(store, launch.id)
+        if (freeHourPendingId == launch.id) freeHourPendingId = null
+        checkLiveTrackingAllowance(now)
     }
 
     fun holdFor(durationMs: Long, now: Long = System.currentTimeMillis()) {
@@ -1213,12 +1229,13 @@ class RocketTelemetryModule(
     fun selectableLaunches(): List<LaunchSnapshot> {
         val now = System.currentTimeMillis()
         val live = provider.pickerPool(now, prefs.telemetryHorizonDays)
+            .filter { LaunchDataProvider.isEligibleForLiveUpcomingList(it) }
         val keep = provider.findById(prefs.telemetryLaunchId) ?: tracked
         // Stamp 55: keep only HOLD / active-watch / upcoming — past Spectrum stays HISTORIC.
-        if (keep == null) return live
+        // Built-in fabricated / sample rows never appear here as a real countdown (even in debug).
+        if (keep == null || !LaunchDataProvider.isEligibleForLiveUpcomingList(keep)) return live
         if (live.any { it.id == keep.id }) return live
-        val tSec = keep.secondsToNet(now)
-        if (keep.isActiveWatch(now) || keep.isHold() || tSec > 0) {
+        if (LaunchDataProvider.keepInLiveUpcomingList(keep, now)) {
             return listOf(keep) + live
         }
         return live

@@ -6,9 +6,9 @@ import com.ccos.retro.data.LaunchSnapshot
  * vc159 (R-NO-DEMO-NAMING steering): every Pro gate in the app goes through one of these hooks so the
  * gated surface is a closed, testable list. Gated for a free user ONLY:
  *  - starting a replay of a past launch that is not in the Included set (select, historic roll, picker row),
- *  - jump / event skip while such a locked replay is on screen,
+ *  - jump / event skip on historic and replay (including Included Starship Flight 13),
  *  - manually picking a non-free console theme; Chris 8:22: Auto theming applies only free themes too.
- * Everything else (live + upcoming launches, live jump/skip, Starship F13, the free themes,
+ * Everything else (live + upcoming launches, live jump/skip, viewing Starship F13, the free themes,
  * HISTORIC list + search, settings) never consults a gate.
  */
 enum class ProHook(val kind: Kind) {
