@@ -1137,6 +1137,7 @@ class RetroCommandWallpaperService : WallpaperService() {
             val shown = minOf(ids.size, consoleRockerRects.size)
             for (i in 0 until shown) {
                 val skinId = ids[i]
+                // TODO(davinci): rocker theme pick. Gate with ThemeAccess.canPickManually; locked -> toast (see pro-ui-brief.md).
                 extraRockerHits.add(consoleRockerRects[i] to { prefs.consoleSkin = skinId })
             }
         }
@@ -1239,6 +1240,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                 }
                 canvas.drawText(label, r.centerX(), r.centerY() + size * 0.35f, hudPaint)
                 val skinId = ids[i]
+                // TODO(davinci): rocker theme pick (second path). Same gate as above.
                 extraRockerHits.add(r to { prefs.consoleSkin = skinId })
             }
             fillPaint.color = Color.parseColor("#1A2228")

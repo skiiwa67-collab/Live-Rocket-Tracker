@@ -802,6 +802,7 @@ class MainActivity : AppCompatActivity() {
         applySettingsBoard()
     }
 
+// TODO(davinci): theme chips. ThemeAccess.canPickManually -> lock badge on Pro themes; save via ThemeAccess.recordManualPick.
 private fun wireConsoleSkin() {
         fun pick(id: String) {
             prefs.consoleSkin = id
@@ -885,6 +886,7 @@ private fun wireConsoleSkin() {
             tracking = line("TRACKING", local[1]),
             live = line("LIVE", local[2]),
             current = btn("CURRENT", local[3]),
+            // TODO(davinci): lock badge on HISTORIC chip for free users; locked historic rows via ProGate.isLocked.
             historic = line("HISTORIC", local[4]),
             historicButton = btn("HISTORIC", local[5]),
             search = line("SEARCH HISTORIC", local[6]),

@@ -171,6 +171,7 @@ class RocketTelemetryModule(
     }
 
     /** Jump simulation to a key mission timestamp (seconds from NET). */
+    // TODO(davinci): Pro gate hook. if (!ProGate.canJumpOrSkip(trackedLaunch, isPro)) -> upsell; live is always free.
     fun jumpTo(secFromNet: Float) {
         simSecondsFromNet = secFromNet
         forceStatus = null
@@ -183,6 +184,7 @@ class RocketTelemetryModule(
     }
 
     /** Jump to the next (+) or previous (-) catalog event. For testing, not a 2-hour sit. */
+    // TODO(davinci): Pro gate hook. Same as jumpTo: ProGate.canJumpOrSkip; event skip on live is free.
     fun skipEvent(dir: Int) {
         val launch = tracked ?: return
         val t = effectiveSecondsFromNet()
@@ -458,6 +460,7 @@ class RocketTelemetryModule(
         hasSearchScopedHistoric() && prefs.telemetryPinned && prefs.telemetryAuto
 
     /** Stamp 78: HISTORICAL same-launch chip loop — NEVER advance to next historic/Soyuz. */
+    // TODO(wire): Pro gate. Roll stays same-launch; for free users only start rolls on ProGate-unlocked launches (DemoSet).
     private fun maybeAdvanceHistoricRoll(now: Long) {
         if (prefs.telemetryListMode != "historical") return
         val searchScoped = provider.hasActiveHistoricSearch()
@@ -940,6 +943,7 @@ class RocketTelemetryModule(
         else SPARSE_WALL_LAG_SEC
     }
 
+    // TODO(davinci): defense-in-depth gate. ProGate.isLocked(hint, isPro) -> do not select; show upsell sheet.
     fun selectLaunch(id: String, hint: LaunchSnapshot? = null) {
         if (id.isBlank()) return
         // Stamp 108: spinner/search snapshot sticks before findById — upsert into pastCache.
