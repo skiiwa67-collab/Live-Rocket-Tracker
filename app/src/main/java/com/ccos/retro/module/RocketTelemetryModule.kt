@@ -357,6 +357,17 @@ class RocketTelemetryModule(
         lastCursorWriteMs = System.currentTimeMillis()
     }
 
+    /**
+     * Helios P2-A: Historic fallback when nothing resolves. Always an Included launch (Starship Flight 13: the real LL2
+     * replay when cached, else the built-in one), never the first catalog entry (a Pro launch that bypassed the gate).
+     */
+    internal fun historicFallback(): LaunchSnapshot? {
+        val pool = provider.getPast()?.launches.orEmpty() + provider.getCached()?.launches.orEmpty()
+        return com.ccos.retro.pro.DemoSet.starshipF13(pool,
+            provider.demoCatalog.firstOrNull { it.id == com.ccos.retro.pro.DemoSet.STARSHIP_F13_DEMO_ID })
+            ?: provider.demoCatalog.firstOrNull { com.ccos.retro.pro.DemoSet.isFreeDemo(it) }
+    }
+
     /** Helios P1-A: sticky per-launch liftoffSeen flag in prefs (shared with the other module instance). */
     private val liftoffSeenMem = HashSet<String>()
     private fun liftoffSeen(launch: LaunchSnapshot, now: Long): Boolean {
@@ -643,7 +654,7 @@ class RocketTelemetryModule(
             ?: if (id.isNotBlank()) provider.findById(id) else null
             ?: provider.getNextAny(now)
             ?: provider.getNextSpaceX(now)
-            ?: if (prefs.telemetryListMode == "historical") provider.demoCatalog.firstOrNull() else null
+            ?: if (prefs.telemetryListMode == "historical") historicFallback() else null
         if (keep != null) {
             tracked = keep
             lastGoodSnapshot = keep
@@ -757,7 +768,7 @@ class RocketTelemetryModule(
                     ?: provider.getCached()?.launches
                         ?.filter { it.isUpcoming(now) && !it.id.startsWith("demo-") }
                         ?.minByOrNull { it.netMs }
-                    ?: if (prefs.telemetryListMode == "historical") provider.demoCatalog.firstOrNull() else null
+                    ?: if (prefs.telemetryListMode == "historical") historicFallback() else null
                 if (next != null) {
                     rememberTracked(next)
                     if (prefs.telemetryLaunchId != next.id) {
@@ -831,7 +842,7 @@ class RocketTelemetryModule(
                     ?: sharedLastGood?.takeIf { it.isReplayable(now) || it.id.startsWith("demo-") }
                     ?: provider.historicPool(now).filter { it.isReplayable(now) || it.id.startsWith("demo-") }
                         .maxByOrNull { it.netMs }
-                    ?: if (prefs.telemetryListMode == "historical") provider.demoCatalog.firstOrNull() else null
+                    ?: if (prefs.telemetryListMode == "historical") historicFallback() else null
                 if (keep != null) {
                     rememberTracked(keep)
                     if (prefs.telemetryLaunchId != keep.id) prefs.telemetryLaunchId = keep.id
@@ -864,7 +875,7 @@ class RocketTelemetryModule(
                 ?: provider.getCached()?.launches
                     ?.filter { it.isUpcoming(now) && !it.id.startsWith("demo-") }
                     ?.minByOrNull { it.netMs }
-                ?: if (prefs.telemetryListMode == "historical") provider.demoCatalog.firstOrNull() else null
+                ?: if (prefs.telemetryListMode == "historical") historicFallback() else null
             if (next != null) {
                 rememberTracked(next)
                 if (prefs.telemetryLaunchId != next.id) {
@@ -890,7 +901,7 @@ class RocketTelemetryModule(
                 if (tracked == null) {
                     rememberTracked(
                         provider.getNextSpaceX(now)
-                            ?: if (prefs.telemetryListMode == "historical") provider.demoCatalog.firstOrNull() else null
+                            ?: if (prefs.telemetryListMode == "historical") historicFallback() else null
                     )
                 }
                 if (tracked == null && !provider.isFetching) {
@@ -927,7 +938,7 @@ class RocketTelemetryModule(
                                             ?: provider.getCached()?.launches
                                                 ?.filter { it.isUpcoming(now2) && !it.id.startsWith("demo-") }
                                                 ?.minByOrNull { it.netMs }
-                                            ?: if (prefs.telemetryListMode == "historical") provider.demoCatalog.firstOrNull() else null
+                                            ?: if (prefs.telemetryListMode == "historical") historicFallback() else null
                                     )
                                 }
                                 resolveTracked()
@@ -942,7 +953,7 @@ class RocketTelemetryModule(
                             ?: provider.getCached()?.launches
                                 ?.filter { it.isUpcoming(now) && !it.id.startsWith("demo-") }
                                 ?.minByOrNull { it.netMs }
-                            ?: if (prefs.telemetryListMode == "historical") provider.demoCatalog.firstOrNull() else null
+                            ?: if (prefs.telemetryListMode == "historical") historicFallback() else null
                     )
                 }
             } else {
@@ -952,7 +963,7 @@ class RocketTelemetryModule(
                         ?: provider.getCached()?.launches
                             ?.filter { it.isUpcoming(now) && !it.id.startsWith("demo-") }
                             ?.minByOrNull { it.netMs }
-                        ?: if (prefs.telemetryListMode == "historical") provider.demoCatalog.firstOrNull() else null
+                        ?: if (prefs.telemetryListMode == "historical") historicFallback() else null
                 )
             }
         }
