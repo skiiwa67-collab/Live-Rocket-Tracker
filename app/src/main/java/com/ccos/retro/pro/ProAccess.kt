@@ -50,7 +50,7 @@ class ProAccess(
     val isPurchased: Boolean get() = store.getBoolean(KEY_PURCHASED, false)
     val isGrandfathered: Boolean get() = store.getBoolean(KEY_GRANDFATHERED, false)
 
-    /** Call on app start / onResume (TODO(wire): MainActivity.onResume, wallpaper onVisibilityChanged). */
+    /** Call on app start / onResume (vc159: MainActivity.onResume, wallpaper onVisibilityChanged). */
     fun refresh(onDone: ((Boolean) -> Unit)? = null) {
         if (grandfather.isGrandfathered() == true) markGrandfathered()
         source.query { r ->

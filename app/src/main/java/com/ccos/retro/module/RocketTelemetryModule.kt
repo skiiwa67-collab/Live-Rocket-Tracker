@@ -9,6 +9,9 @@ import com.ccos.retro.data.LaunchWindow
 import com.ccos.retro.event.FlightEventCatalog
 import com.ccos.retro.event.FlightProfiles
 import com.ccos.retro.model.AppPrefs
+import com.ccos.retro.pro.ProAccess
+import com.ccos.retro.pro.ProHook
+import com.ccos.retro.pro.ProPolicy
 
 /**
  * Live Rocket Telemetry Module — mission-control surface for any tracked launch.
@@ -170,9 +173,23 @@ class RocketTelemetryModule(
         return true
     }
 
+    /** vc159: Pro entitlement, read at each gate (prefs-backed cache, cheap). Tests may swap it. */
+    var isProProvider: () -> Boolean = { ProAccess(prefs.proStore()).isPro }
+
+    /** vc159: called when a Pro gate refuses (MainActivity opens the sheet, wallpaper toasts). */
+    var onProBlocked: ((ProHook, LaunchSnapshot?) -> Unit)? = null
+
+    /** vc159: single gate entry for this module. Live / upcoming / Included launches always pass. */
+    private fun proAllows(hook: ProHook, launch: LaunchSnapshot?, notify: Boolean = true): Boolean {
+        val ok = ProPolicy.allowsLaunch(hook, isProProvider(), launch)
+        if (!ok && notify) onProBlocked?.invoke(hook, launch)
+        return ok
+    }
+
     /** Jump simulation to a key mission timestamp (seconds from NET). */
-    // TODO(davinci): Pro gate hook. if (!ProGate.canJumpOrSkip(trackedLaunch, isPro)) -> upsell; live is always free.
+    // vc159: Pro gate. Blocked only on a locked replay; live jump is always free.
     fun jumpTo(secFromNet: Float) {
+        if (!proAllows(ProHook.JUMP, tracked)) return
         simSecondsFromNet = secFromNet
         forceStatus = null
         loopReplay = true
@@ -184,9 +201,10 @@ class RocketTelemetryModule(
     }
 
     /** Jump to the next (+) or previous (-) catalog event. For testing, not a 2-hour sit. */
-    // TODO(davinci): Pro gate hook. Same as jumpTo: ProGate.canJumpOrSkip; event skip on live is free.
+    // vc159: Pro gate, same as jumpTo. Event skip on live is free.
     fun skipEvent(dir: Int) {
         val launch = tracked ?: return
+        if (!proAllows(ProHook.SKIP_EVENT, launch)) return
         val t = effectiveSecondsFromNet()
         val marks = FlightEventCatalog.timeline(launch).map { it.tSec }.toMutableList()
         for (p in floatArrayOf(-60f, -30f, -10f)) {
@@ -457,7 +475,7 @@ class RocketTelemetryModule(
         hasSearchScopedHistoric() && prefs.telemetryPinned && prefs.telemetryAuto
 
     /** Stamp 78: HISTORICAL same-launch chip loop — NEVER advance to next historic/Soyuz. */
-    // TODO(wire): Pro gate. Roll stays same-launch; for free users only start rolls on ProGate-unlocked launches (DemoSet).
+    // vc159: Pro gate. For free users the roll only lands on unlocked launches (Included set + live window).
     private fun maybeAdvanceHistoricRoll(now: Long) {
         if (prefs.telemetryListMode != "historical") return
         val searchScoped = provider.hasActiveHistoricSearch()
@@ -487,7 +505,7 @@ class RocketTelemetryModule(
             provider.historicPool(now).filter { // Stamp 93: no live upcoming
                 it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) < -60
             }.sortedBy { it.netMs }
-        }
+        }.filter { proAllows(ProHook.HISTORIC_ROLL, it, notify = false) }
         if (pool.isEmpty()) return
         val idx = pool.indexOfFirst { it.id == cur.id }
         val next = if (idx < 0) pool.first() else pool[(idx + 1) % pool.size]
@@ -936,9 +954,11 @@ class RocketTelemetryModule(
 
     /** tip146 Phase 1: gold 5s when LL2 webcast_live / In Flight; sparse trail up to 30s. */
 
-    // TODO(davinci): defense-in-depth gate. ProGate.isLocked(hint, isPro) -> do not select; show upsell sheet.
+    // vc159: defense-in-depth Pro gate. A locked replay is not selected; UI shows the sheet / toast.
     fun selectLaunch(id: String, hint: LaunchSnapshot? = null) {
         if (id.isBlank()) return
+        val gateTarget = hint?.takeIf { it.id == id } ?: provider.findById(id)
+        if (!proAllows(ProHook.SELECT_LAUNCH, gateTarget)) return
         // Stamp 108: spinner/search snapshot sticks before findById — upsert into pastCache.
         if (hint != null && hint.id == id) {
             provider.rememberHistoricSelection(hint)

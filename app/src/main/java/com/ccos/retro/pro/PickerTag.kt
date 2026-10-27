@@ -16,6 +16,8 @@ object PickerTag {
         !historic -> null
         l.isHold() -> null
         l.isActiveWatch(now) && l.secondsToNet(now) <= 0 -> null
+        // vc159 spec call: a launch still inside its live window (NET+60 min) is never a Pro row.
+        !l.isReplayable(now) -> null
         else -> PRO
     }
 }

@@ -703,6 +703,54 @@
             </LinearLayout>
         </LinearLayout>
 
+        <!-- vc159: Da Vinci v1 section 6 LRT Pro row (end of the settings column). -->
+        <LinearLayout
+            android:id="@+id/row_lrt_pro"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:background="#0F1620"
+            android:layout_marginBottom="20dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/txt_lrt_pro_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/pro_settings_row_title"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/txt_lrt_pro_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:accessibilityLiveRegion="polite"
+                    android:textColor="#8AA0B0"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <Button
+                android:id="@+id/btn_lrt_pro_restore"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:text="@string/pro_restore"
+                android:textAllCaps="false"
+                android:textColor="#D0DCE8"
+                android:textSize="16sp"
+                android:backgroundTint="#1A1A22" />
+        </LinearLayout>
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

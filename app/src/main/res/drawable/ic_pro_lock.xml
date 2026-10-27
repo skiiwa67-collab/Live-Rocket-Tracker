@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- vc159: Da Vinci v1 section 1 lock badge. Disc #0B0F14, 1.2dp ring #D0DCE8, glyph #E8EEF4. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#0B0F14"
+        android:strokeColor="#D0DCE8"
+        android:strokeWidth="1.2"
+        android:pathData="M12,0.6a11.4,11.4 0,1 1,0 22.8a11.4,11.4 0,1 1,0 -22.8z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#E8EEF4"
+        android:strokeWidth="1.6"
+        android:pathData="M9,11V8.6a3,3 0,0 1,6 0V11" />
+    <path
+        android:fillColor="#E8EEF4"
+        android:pathData="M7.6,11h8.8a0.8,0.8 0,0 1,0.8 0.8v5.4a0.8,0.8 0,0 1,-0.8 0.8h-8.8a0.8,0.8 0,0 1,-0.8 -0.8v-5.4a0.8,0.8 0,0 1,0.8 -0.8z" />
+</vector>

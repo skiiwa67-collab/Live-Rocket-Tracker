@@ -341,6 +341,9 @@ class AppPrefs(context: Context) {
     /** tip145/tip149: Settings panel chrome skin — 8 chips. Does not replace TelemetrySkin.forLaunch.
      * Manual override sticks in prefs for the current tracked launch; on tracked launch id change
      * auto-selects from TelemetrySkin.forLaunch map (ULA/SPACEX/ROS/…). */
+    /** vc159: Pro cache + theme-access keys live in this same prefs file. */
+    fun proStore(): com.ccos.retro.pro.ProStore = com.ccos.retro.pro.SharedPrefsProStore(prefs)
+
     var consoleSkin: String
         get() {
             val v = prefs.getString("console_skin", CONSOLE_SKIN_MCC) ?: CONSOLE_SKIN_MCC

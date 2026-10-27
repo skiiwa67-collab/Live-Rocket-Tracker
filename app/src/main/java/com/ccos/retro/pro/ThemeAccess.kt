@@ -38,7 +38,7 @@ object ThemeAccess {
         return isPro || n in freeSet(store)
     }
 
-    /** Manual picker entry point. Returns false (and saves nothing) for a locked theme. TODO(davinci): locked chip + toast. */
+    /** Manual picker entry point. Returns false (and saves nothing) for a locked theme. vc159: callers gate via ProPolicy first. */
     fun recordManualPick(store: ProStore, id: String, isPro: Boolean): Boolean {
         if (!canPickManually(id, isPro, store)) return false
         store.putString(KEY_MANUAL_PICK, AppPrefs.normalizeConsoleSkin(id))
@@ -56,7 +56,8 @@ object ThemeAccess {
 
     /**
      * When the Auto-themed live launch ends: keep [current] if the user may pick it, else fall back
-     * to their saved manual pick. TODO(wire): call where the tracked launch leaves active watch.
+     * to their saved manual pick. Not wired in vc159 (deliberately lenient: Auto theming is never
+     * gated, so an Auto-applied theme simply stays until the next Auto or manual change).
      */
     fun skinAfterLiveEnds(current: String, isPro: Boolean, store: ProStore): String =
         if (canPickManually(current, isPro, store)) AppPrefs.normalizeConsoleSkin(current)

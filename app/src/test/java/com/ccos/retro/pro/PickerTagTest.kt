@@ -32,4 +32,9 @@ class PickerTagTest {
 
     @Test fun holdInHistoricKeepsHoldTag() =
         assertNull(PickerTag.proTag(snap(net = NOW - 10 * MIN, abbrev = "Hold", status = "On Hold"), historic = true, now = NOW))
+
+    @Test fun launchInsideLiveWindowIsNeverAProRow() {
+        assertNull(PickerTag.proTag(snap(net = NOW - 30 * MIN), historic = true, now = NOW))
+        assertNull(PickerTag.proTag(snap(net = NOW - 20 * MIN, abbrev = "Failure", status = "Launch Failure"), historic = true, now = NOW))
+    }
 }

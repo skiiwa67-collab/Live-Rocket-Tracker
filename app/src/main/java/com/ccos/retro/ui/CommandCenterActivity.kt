@@ -94,6 +94,12 @@ class CommandCenterActivity : AppCompatActivity() {
         kinetic = KineticFx(this)
         prefs = AppPrefs(this)
         telemetryModule = RocketTelemetryModule(prefs, LaunchDataProvider().also { it.bindAppContext(applicationContext) })
+        // vc159: a refused Pro gate (jump / skip on a locked replay) opens the sheet; live stays free.
+        telemetryModule.onProBlocked = { hook, l ->
+            runOnUiThread {
+                ProUi.showUpsell(this, prefs, l.takeIf { hook.kind == com.ccos.retro.pro.ProHook.Kind.LAUNCH })
+            }
+        }
 
         console = findViewById(R.id.console_view)
         console.bind(telemetryModule, prefs)

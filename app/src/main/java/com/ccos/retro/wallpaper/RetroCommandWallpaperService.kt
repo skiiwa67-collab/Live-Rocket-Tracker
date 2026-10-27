@@ -47,6 +47,10 @@ import com.ccos.retro.ui.MainActivity
 import kotlin.math.abs
 import kotlin.math.acos
 import kotlin.math.cos
+import com.ccos.retro.pro.ProHook
+import com.ccos.retro.pro.ProPolicy
+import com.ccos.retro.pro.ThemeAccess
+import com.ccos.retro.ui.ProUi
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -451,6 +455,12 @@ class RetroCommandWallpaperService : WallpaperService() {
             rocketModule = VectorRocketModule(state)
             systemModule = SystemMetricsModule()
             telemetryModule = RocketTelemetryModule(prefs, launchProvider)
+            // vc159 (v1 section 7): wallpaper never opens the sheet; a refused Pro gate is a short toast.
+            telemetryModule.onProBlocked = { hook, _ ->
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    ProUi.toastBlocked(this@RetroCommandWallpaperService, hook)
+                }
+            }
             license = ModuleLicense(this@RetroCommandWallpaperService)
             ModuleRegistry.register(rocketModule)
             ModuleRegistry.register(systemModule)
@@ -540,6 +550,8 @@ class RetroCommandWallpaperService : WallpaperService() {
             this.visible = visible
             if (visible) {
                 lastTickTime = System.currentTimeMillis()
+                // vc159: entitlement refresh (stub billing keeps the cache).
+                try { ProUi.access(prefs).refresh() } catch (_: Exception) {}
                 handler.post(drawRunnable)
             } else {
                 handler.removeCallbacks(drawRunnable)
@@ -1137,8 +1149,53 @@ class RetroCommandWallpaperService : WallpaperService() {
             val shown = minOf(ids.size, consoleRockerRects.size)
             for (i in 0 until shown) {
                 val skinId = ids[i]
-                // TODO(davinci): rocker theme pick. Gate with ThemeAccess.canPickManually; locked -> toast (see pro-ui-brief.md).
-                extraRockerHits.add(consoleRockerRects[i] to { prefs.consoleSkin = skinId })
+                // vc159: gated theme pick; locked -> toast, current skin kept.
+                extraRockerHits.add(consoleRockerRects[i] to { pickThemeGated(skinId, ProHook.THEME_PICK_WALLPAPER_FLYOUT) })
+            }
+        }
+
+        /** vc159 (v1 section 8): free theme -> saved manual pick; Pro theme for a free user -> toast only. */
+        private fun pickThemeGated(skinId: String, hook: ProHook) {
+            val store = prefs.proStore()
+            val pro = ProUi.access(prefs).isPro
+            if (!ProPolicy.allowsTheme(hook, pro, skinId, store)) {
+                ProUi.toastBlocked(this@RetroCommandWallpaperService, hook)
+                return
+            }
+            ThemeAccess.recordManualPick(store, skinId, pro)
+            prefs.consoleSkin = skinId
+        }
+
+        private val proBadgePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        /** vc159 (v1 sections 1, 8): lock badge at 0.36 x chip height, top-end; none on the selected (Auto) chip. */
+        private fun drawThemeLockBadges(canvas: Canvas, rects: Array<RectF>, hook: ProHook) {
+            val store = prefs.proStore()
+            if (ProUi.access(prefs).isPro) return
+            val ids = AppPrefs.CONSOLE_SKIN_IDS
+            val sel = AppPrefs.consoleSkinIndex(prefs.consoleSkin)
+            val p = proBadgePaint
+            for (i in 0 until minOf(ids.size, rects.size)) {
+                val r = rects[i]
+                if (r.isEmpty || i == sel) continue
+                if (ProPolicy.allowsTheme(hook, false, ids[i], store)) continue
+                val d = r.height() * 0.36f
+                val rad = d / 2f
+                val cx = r.right - rad * 0.9f
+                val cy = r.top + rad * 0.9f
+                p.style = Paint.Style.FILL
+                p.color = Color.parseColor("#0B0F14")
+                canvas.drawCircle(cx, cy, rad, p)
+                p.style = Paint.Style.STROKE
+                p.strokeWidth = (d * 0.05f).coerceAtLeast(1.5f)
+                p.color = Color.parseColor("#D0DCE8")
+                canvas.drawCircle(cx, cy, rad - p.strokeWidth / 2f, p)
+                p.color = Color.parseColor("#E8EEF4")
+                p.strokeWidth = (d * 0.07f).coerceAtLeast(1.5f)
+                val sw = rad * 0.5f
+                canvas.drawArc(cx - sw * 0.6f, cy - rad * 0.55f, cx + sw * 0.6f, cy + rad * 0.05f, 180f, 180f, false, p)
+                p.style = Paint.Style.FILL
+                canvas.drawRect(cx - sw * 0.8f, cy - rad * 0.12f, cx + sw * 0.8f, cy + rad * 0.5f, p)
             }
         }
 
@@ -1240,9 +1297,10 @@ class RetroCommandWallpaperService : WallpaperService() {
                 }
                 canvas.drawText(label, r.centerX(), r.centerY() + size * 0.35f, hudPaint)
                 val skinId = ids[i]
-                // TODO(davinci): rocker theme pick (second path). Same gate as above.
-                extraRockerHits.add(r to { prefs.consoleSkin = skinId })
+                // vc159: same gate as the flyout path.
+                extraRockerHits.add(r to { pickThemeGated(skinId, ProHook.THEME_PICK_WALLPAPER_BOARD) })
             }
+            drawThemeLockBadges(canvas, consoleRockerRects, ProHook.THEME_PICK_WALLPAPER_BOARD)
             fillPaint.color = Color.parseColor("#1A2228")
             canvas.drawRoundRect(consoleBoardBack, 10f, 10f, fillPaint)
             strokePaint.strokeWidth = 3.2f
@@ -2753,6 +2811,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                     consoleAccent, Color.WHITE, RetroSkin.labelMuted,
                     strongSelected = true
                 )
+                drawThemeLockBadges(canvas, consoleRockerRects, ProHook.THEME_PICK_WALLPAPER_FLYOUT)
                 drawConsoleMore(canvas, consoleAccent, Color.WHITE)
                 canvas.drawText("HUD TEXT", panelLeft, textRockerRects[0].top - 10f, labelPaint)
                 drawRockerRow(
@@ -7047,6 +7106,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                 withLamp(consolePanelAccent, lamp), withLamp(skin.text, lamp), withLamp(skin.muted, lamp),
                 strongSelected = true
             )
+            drawThemeLockBadges(canvas, consoleRockerRects, ProHook.THEME_PICK_WALLPAPER_FLYOUT)
             drawConsoleMore(canvas, withLamp(consolePanelAccent, lamp), withLamp(skin.text, lamp))
             rowLabel("HUD TEXT", textRockerRects)
             drawRockerRow(

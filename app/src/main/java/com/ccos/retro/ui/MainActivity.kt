@@ -31,6 +31,11 @@ import com.ccos.retro.data.SearchAliases
 import com.ccos.retro.model.AppPrefs
 import com.ccos.retro.module.RocketTelemetryModule
 import com.ccos.retro.pro.PickerTag
+import com.ccos.retro.pro.ProHook
+import com.ccos.retro.pro.ProPolicy
+import com.ccos.retro.pro.ProSettingsRowModel
+import com.ccos.retro.pro.RestoreState
+import com.ccos.retro.pro.ThemeAccess
 import com.ccos.retro.wallpaper.RetroCommandWallpaperService
 
 /**
@@ -52,6 +57,64 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var historicSearchDebouncePending: Boolean = false
     private var populateDepth = 0
     private val historicSearchRunnable = Runnable { fireHistoricSearchDebounced() }
+    /** vc159: Settings LRT Pro row restore state (v1 section 6). */
+    private var proRestoreState = RestoreState.IDLE
+
+    private fun isPro(): Boolean = ProUi.access(prefs).isPro
+
+    /** vc159: Pro turned on (purchase / restore) or entitlement refreshed: unlock in place. */
+    private fun onProChanged() {
+        if (isFinishing || isDestroyed) return
+        applyConsoleSkin()
+        populateLaunchSpinner()
+        refreshTrackingUi()
+        bindProRow()
+    }
+
+    private fun bindProRow() {
+        val r = ProSettingsRowModel.render(isPro(), proRestoreState)
+        findViewById<TextView>(R.id.txt_lrt_pro_title)?.setText(r.titleRes)
+        findViewById<TextView>(R.id.txt_lrt_pro_status)?.apply {
+            if (r.statusRes != null) { setText(r.statusRes); visibility = View.VISIBLE } else visibility = View.GONE
+        }
+        findViewById<Button>(R.id.btn_lrt_pro_restore)?.apply {
+            visibility = if (r.showRestoreButton) View.VISIBLE else View.GONE
+            isEnabled = r.restoreEnabled
+        }
+        findViewById<View>(R.id.row_lrt_pro)?.apply {
+            // Free: the row opens the sheet (user tap only). Owned: no CTA.
+            isClickable = r.showRestoreButton
+            setOnClickListener(if (r.showRestoreButton) View.OnClickListener { ProUi.showUpsell(this@MainActivity, prefs) { onProChanged() } } else null)
+        }
+    }
+
+    private fun wireProRow() {
+        findViewById<Button>(R.id.btn_lrt_pro_restore)?.setOnClickListener {
+            proRestoreState = RestoreState.CHECKING
+            bindProRow()
+            ProUi.billing.restore { res ->
+                runOnUiThread {
+                    proRestoreState = ProSettingsRowModel.afterRestore(res)
+                    if (proRestoreState == RestoreState.RESTORED) {
+                        prefs.proStore().putBoolean(com.ccos.retro.pro.ProAccess.KEY_PURCHASED, true)
+                        android.widget.Toast.makeText(this, R.string.pro_restored, android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                    onProChanged()
+                }
+            }
+        }
+        bindProRow()
+    }
+
+    /** v1 section 1: 18dp lock badge, top-end corner of a chip. */
+    private fun chipLockForeground(): android.graphics.drawable.Drawable? {
+        val d = androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_pro_lock) ?: return null
+        val px = (18 * resources.displayMetrics.density).toInt()
+        return android.graphics.drawable.LayerDrawable(arrayOf(d)).apply {
+            setLayerGravity(0, Gravity.TOP or Gravity.END)
+            setLayerSize(0, px, px)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,6 +131,12 @@ class MainActivity : AppCompatActivity() {
         launchProvider = LaunchDataProvider()
         launchProvider.bindAppContext(applicationContext)
                 telemetryModule = RocketTelemetryModule(prefs, launchProvider)
+        // vc159: a refused Pro gate (user tap on a locked replay / jump / skip) opens the sheet here.
+        telemetryModule.onProBlocked = { hook, l ->
+            runOnUiThread {
+                ProUi.showUpsell(this, prefs, l.takeIf { hook.kind == ProHook.Kind.LAUNCH }) { onProChanged() }
+            }
+        }
         // Stamp 63 A: onCreate ensureData -> forceRefresh if null -> resolveTracked -> keepTrackedOrLastGood
         telemetryModule.ensureData()
         if (telemetryModule.tracked == null) {
@@ -89,6 +158,7 @@ class MainActivity : AppCompatActivity() {
 
 
         wireConsoleSkin()
+        wireProRow()
 
         findViewById<Button>(R.id.btn_set_wallpaper).setOnClickListener {
             val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER).apply {
@@ -189,6 +259,21 @@ class MainActivity : AppCompatActivity() {
                 if (suppressLaunchSelect) return
                 if (position in launchList.indices) {
                     val launch = launchList[position]
+                    // vc159 (v1 section 3): locked row -> do not start it, restore the previous pick, open the sheet.
+                    if (!ProPolicy.allowsLaunch(ProHook.SELECT_LAUNCH, isPro(), launch)) {
+                        val sp = parent as? Spinner
+                        val prev = launchList.indexOfFirst { it.id == prefs.telemetryLaunchId }
+                            .takeIf { it >= 0 }
+                            ?: launchList.indexOfFirst { ProPolicy.allowsLaunch(ProHook.PICKER_ROW, false, it) }
+                                .coerceAtLeast(0)
+                        if (sp != null) {
+                            suppressLaunchSelect = true
+                            sp.setSelection(prev, false)
+                            sp.post { sp.post { suppressLaunchSelect = false } }
+                        }
+                        ProUi.showUpsell(this@MainActivity, prefs, launch) { onProChanged() }
+                        return
+                    }
                     // Stamp 60: real USER id change always selectLaunch (AUTO off + stick THAT bird).
                     // Programmatic populate still blocked by suppressLaunchSelect.
                     val alreadyTracking = launch.id == prefs.telemetryLaunchId && launch.id == telemetryModule.tracked?.id
@@ -315,6 +400,9 @@ class MainActivity : AppCompatActivity() {
         // tip150: re-tint settings chrome from prefs.consoleSkin (tip149 forLaunch may change it off-screen).
         applyConsoleSkin()
         refreshTrackingUi()
+        // vc159: entitlement refresh (stub billing = Unavailable, cache kept).
+        ProUi.access(prefs).refresh { runOnUiThread { bindProRow() } }
+        bindProRow()
         syncHistoricQueryFromBox()
         populateLaunchSpinner()
         updateLaunchStatus(launchProvider.lastStatus)
@@ -425,10 +513,10 @@ class MainActivity : AppCompatActivity() {
                 base.sortedBy { it.netMs }.take(20)
             }
 
-            val labels = launchList.map { l ->
+            val tags = launchList.map { l ->
                 val secs = l.secondsToNet(now)
                 // v1.1 copy (Da Vinci + erratum): [INCLUDED] / [PRO]; never "demo" on screen.
-                val tag = PickerTag.proTag(l, historic, now) ?: when {
+                PickerTag.proTag(l, historic, now) ?: when {
                     l.isHold() -> "[HOLD] "
                     l.isActiveWatch(now) && secs <= 0 -> "[LIVE] "
                     // A finished flight stays Past inside the 48h window (Flight 14). T+ is only a non-terminal clock.
@@ -437,8 +525,8 @@ class MainActivity : AppCompatActivity() {
                     secs < 86400 -> "[${secs / 3600}h] "
                     else -> "[${secs / 86400}d] "
                 }
-                "$tag${l.name.take(36)} | ${l.provider.take(12)}"
             }
+            val labels = launchList.mapIndexed { i, l -> "${tags[i]}${l.name.take(36)} | ${l.provider.take(12)}" }
             val spinner = findViewById<Spinner>(R.id.spinner_launch)
             suppressLaunchSelect = true
             val emptyMsg = when {
@@ -455,11 +543,16 @@ class MainActivity : AppCompatActivity() {
                     "0 live in cache | ${launchProvider.lastStatus}"
                 else -> "0 in window (live cache=${liveOnly.size}) | try 1 MO / 6 MO"
             }
-            spinner.adapter = ArrayAdapter(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                if (labels.isEmpty()) listOf(emptyMsg) else labels
-            )
+            spinner.adapter = if (historic && labels.isNotEmpty() && !isPro()) {
+                // vc159 (v1 section 3): free users see lock / Included rows in HISTORIC only.
+                ProLaunchRowAdapter(this, launchList, labels, tags, now)
+            } else {
+                ArrayAdapter(
+                    this,
+                    android.R.layout.simple_spinner_dropdown_item,
+                    if (labels.isEmpty()) listOf(emptyMsg) else labels
+                )
+            }
             val idx = launchList.indexOfFirst { it.id == prefs.telemetryLaunchId }
             if (idx >= 0) spinner.setSelection(idx, false)
             // Stamp 55: onItemSelected often fires after this frame  -  hold suppress until post.
@@ -515,6 +608,17 @@ class MainActivity : AppCompatActivity() {
 
         styleChip(R.id.btn_list_current, !historic)
         styleChip(R.id.btn_list_historical, historic)
+        // vc159 (v1 section 2): HISTORIC is never locked; free users see a 20dp badge + description.
+        findViewById<Button>(R.id.btn_list_historical)?.let { b ->
+            val free = !isPro()
+            val badge = if (free) androidx.core.content.ContextCompat.getDrawable(this, R.drawable.ic_pro_lock)?.apply {
+                val px = (20 * resources.displayMetrics.density).toInt()
+                setBounds(0, 0, px, px)
+            } else null
+            b.setCompoundDrawablesRelative(null, null, badge, null)
+            b.compoundDrawablePadding = (12 * resources.displayMetrics.density).toInt()
+            b.contentDescription = if (free) getString(R.string.pro_cd_historic_button) else null
+        }
         styleChip(R.id.btn_horizon_week, prefs.telemetryHorizonDays == 7)
         styleChip(R.id.btn_horizon_month, prefs.telemetryHorizonDays == 30)
         styleChip(R.id.btn_horizon_6mo, prefs.telemetryHorizonDays == 180)
@@ -750,10 +854,20 @@ class MainActivity : AppCompatActivity() {
                 findViewById<View>(android.R.id.content)?.setBackgroundColor(0xFF0A0E14.toInt())
             }
         }
+        val pro = isPro()
+        val store = prefs.proStore()
         for (i in buttons.indices) {
             val b = buttons[i]
             b?.text = labels[i]
             styleConsoleChip(b, i == sel, selectedBg[i], idleBg[i], selText[i], idleText[i])
+            // vc159 (v1 sections 1, 8): lock badge on Pro themes for free users; an Auto-applied
+            // Pro theme (the selected chip) shows no badge.
+            val skinId = AppPrefs.CONSOLE_SKIN_IDS.getOrNull(i) ?: continue
+            val locked = !ProPolicy.allowsTheme(ProHook.THEME_PICK_SETTINGS, pro, skinId, store)
+            b?.foreground = if (locked && i != sel) chipLockForeground() else null
+            b?.contentDescription = getString(
+                if (locked) R.string.pro_cd_theme_locked else R.string.pro_cd_theme_free, labels[i]
+            )
         }
         findViewById<LinearLayout>(R.id.row_console_skin_3)?.post {
             val w = section.width
@@ -804,9 +918,16 @@ class MainActivity : AppCompatActivity() {
         applySettingsBoard()
     }
 
-// TODO(davinci): theme chips. ThemeAccess.canPickManually -> lock badge on Pro themes; save via ThemeAccess.recordManualPick.
-private fun wireConsoleSkin() {
+    // vc159 (v1 section 8): locked chip opens the sheet and saves nothing; free picks save via recordManualPick.
+    private fun wireConsoleSkin() {
         fun pick(id: String) {
+            val store = prefs.proStore()
+            val pro = isPro()
+            if (!ProPolicy.allowsTheme(ProHook.THEME_PICK_SETTINGS, pro, id, store)) {
+                ProUi.showUpsell(this, prefs) { onProChanged() }
+                return
+            }
+            ThemeAccess.recordManualPick(store, id, pro)
             prefs.consoleSkin = id
             applyConsoleSkin()
         }
@@ -888,7 +1009,7 @@ private fun wireConsoleSkin() {
             tracking = line("TRACKING", local[1]),
             live = line("LIVE", local[2]),
             current = btn("CURRENT", local[3]),
-            // TODO(davinci): lock badge on HISTORIC chip for free users; locked historic rows via ProGate.isLocked.
+            // vc159: HISTORIC badge + locked rows are wired in refreshTrackingUi / ProLaunchRowAdapter.
             historic = line("HISTORIC", local[4]),
             historicButton = btn("HISTORIC", local[5]),
             search = line("SEARCH HISTORIC", local[6]),
