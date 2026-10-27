@@ -169,7 +169,7 @@ class RocketTelemetryModule(
         activePage = index.coerceIn(0, 6)
         val launch = tracked
         if (index == 1 && launch != null && launch.isReplayable() && simSecondsFromNet == null) {
-            jumpTo(-30f)
+            jumpToInternal(-30f) // B3: opening the page is not a Pro control
         }
         return true
     }
@@ -207,6 +207,15 @@ class RocketTelemetryModule(
     // vc159: Pro gate. Blocked only on a locked replay; live jump is always free.
     fun jumpTo(secFromNet: Float) {
         if (!proAllows(ProHook.JUMP, tracked)) return
+        jumpToInternal(secFromNet)
+    }
+
+    /**
+     * B3 (Skippy vc159): ungated jump for the module's own theater moves (page switch, bird change, select,
+     * historic roll, event skip after its own gate). Only user controls go through jumpTo / proAllows, so no
+     * sheet or toast ever opens without a tap, and a refused internal jump can't leave replay on the raw clock.
+     */
+    private fun jumpToInternal(secFromNet: Float) {
         simSecondsFromNet = secFromNet
         forceStatus = null
         loopReplay = true
@@ -234,7 +243,7 @@ class RocketTelemetryModule(
         } else {
             marks.lastOrNull { it < t - 0.25f } ?: marks.last()
         }
-        jumpTo(target)
+        jumpToInternal(target)
     }
 
 
@@ -531,7 +540,7 @@ class RocketTelemetryModule(
         rememberTracked(next)
         prefs.telemetryLaunchId = next.id
         if (next.isReplayable(now) || next.id.startsWith("demo-")) {
-            jumpTo(-30f)
+            jumpToInternal(-30f)
         }
     }
 
@@ -913,7 +922,7 @@ class RocketTelemetryModule(
             // Stamp 57: never jumpTo while AUTO/FOLLOW — jumpTo clears tel_auto and blanks live.
             if (prevId != null && t.id != prevId && simSecondsFromNet == null
                 && !prefs.telemetryPinned && !prefs.telemetryAuto) {
-                jumpTo(-30f)
+                jumpToInternal(-30f)
             }
         }
     }
@@ -1011,7 +1020,7 @@ class RocketTelemetryModule(
             val t = found ?: tracked?.takeIf { it.id == id }
             if (t != null && (t.id.startsWith("demo-") || t.isReplayable())) {
             // Stamp 80: theater without auto-LCK so unlocked HISTORICAL can cycle.
-            jumpTo(-30f)
+            jumpToInternal(-30f)
         } else {
             clearSim()
         }
@@ -1047,7 +1056,7 @@ class RocketTelemetryModule(
         val t = holdTarget
         if (t != null && (t.id.startsWith("demo-") || t.isReplayable())) {
             // Stamp 80: theater without auto-LCK so unlocked HISTORICAL can cycle.
-            jumpTo(-30f)
+            jumpToInternal(-30f)
         } else {
             clearSim()
         }
