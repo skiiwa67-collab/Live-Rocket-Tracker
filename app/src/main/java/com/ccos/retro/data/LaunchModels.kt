@@ -176,6 +176,8 @@ data class LaunchSnapshot(
      */
     fun isActiveWatch(now: Long = System.currentTimeMillis()): Boolean {
         if (isTerminal()) return false
+        // vc159 (Chris 07:59): past T+60 an LL2 In Flight / webcast_live bird stays live (Pro, or gates off).
+        if (isExtendedLive(now)) return true
         val t = secondsToNet(now)
         val nearNet = t <= LaunchWindow.GO_WATCH_BEFORE_NET_SEC && t > -LaunchWindow.WATCH_AFTER_NET_SEC
         val holdLive = isHold() && nearNet
@@ -192,6 +194,34 @@ data class LaunchSnapshot(
         return t <= 0 && t > -LaunchWindow.WATCH_AFTER_NET_SEC
     }
 
+    /**
+     * vc159 root cause fix (Chris 07:59 CT: the 60-minute stop "started as a bug"). Stamp 63 time-gated In Flight
+     * and webcast_live to NET + [LaunchWindow.WATCH_AFTER_NET_SEC] (60 min) for everyone, so at T+60 a launch still
+     * flying or streaming stopped being an active watch: isReplayable flipped true, the console left the live wall
+     * clock for the replay cursor, AUTO moved on and CURRENT dropped it. Now, while [LaunchWindow.unlimitedLive]
+     * (Pro, grandfathered, or Pro gates off), a real launch whose LL2 status is In Flight or whose webcast is live
+     * stays live past T+60, up to [LaunchWindow.LIVE_STATUS_MAX_SEC] as a guard against a stale LL2 status.
+     */
+    fun isExtendedLive(now: Long = System.currentTimeMillis()): Boolean {
+        if (!LaunchWindow.unlimitedLive) return false
+        if (id.startsWith("demo-") || isTerminal()) return false
+        if (!isInFlightStatus() && !isWebcastLive()) return false
+        val t = secondsToNet(now)
+        return t <= -LaunchWindow.WATCH_AFTER_NET_SEC && t > -LaunchWindow.LIVE_STATUS_MAX_SEC
+    }
+
+    /**
+     * Still flying or streaming per LL2 and inside the live window (60 min, or the extended window when
+     * [LaunchWindow.unlimitedLive]). AUTO keeps these even after the event tape runs out.
+     */
+    fun isStatusLive(now: Long = System.currentTimeMillis()): Boolean {
+        if (id.startsWith("demo-") || isTerminal()) return false
+        if (!isInFlightStatus() && !isWebcastLive()) return false
+        val t = secondsToNet(now)
+        if (t > 0) return false
+        return t > -LaunchWindow.WATCH_AFTER_NET_SEC || isExtendedLive(now)
+    }
+
     /** Bare LL2 In Flight / In-Flight status (no time gate). */
     fun isInFlightStatus(): Boolean {
         val a = statusAbbrev
@@ -206,6 +236,7 @@ data class LaunchSnapshot(
      */
     fun isInFlight(now: Long = System.currentTimeMillis()): Boolean {
         if (isInFlightStatus()) {
+            if (isExtendedLive(now)) return true
             val t = secondsToNet(now)
             return t <= LaunchWindow.GO_WATCH_BEFORE_NET_SEC && t > -LaunchWindow.WATCH_AFTER_NET_SEC
         }
@@ -242,6 +273,13 @@ object LaunchWindow {
     /** T+ watch after NET so AUTO does not jump to the next bird mid-flight. */
     /** Stamp 63: AUTO post-NET active-watch = 60 minutes. */
     const val WATCH_AFTER_NET_SEC = 60L * 60L
+    /** vc159: ceiling for the extended live window (stale LL2 In Flight / webcast_live guard). Needs Chris OK. */
+    const val LIVE_STATUS_MAX_SEC = 24L * 3600L
+    /**
+     * vc159: true = live tracking is unlimited past T+60 (Pro, grandfathered, or Pro gates off by the B4 switch).
+     * Set by RocketTelemetryModule from its Pro check on every resolve; default true matches gates off.
+     */
+    @Volatile @JvmStatic var unlimitedLive: Boolean = true
     // Stamp 85: no fixed pin ceiling — live LCK lifetime is NET + telemetryHoldDurationMs (1H|2H|48H).
     /** Recent previous that must stay pickable after AUTO leaves. */
     const val PICKER_LOOKBACK_SEC = 48L * 3600L

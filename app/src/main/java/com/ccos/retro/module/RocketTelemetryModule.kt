@@ -575,6 +575,8 @@ class RocketTelemetryModule(
     }
 
     fun resolveTracked(now: Long = System.currentTimeMillis()) {
+        // vc159 (Chris 07:59): Pro / grandfathered / gates-off users track live past T+60 (LaunchSnapshot.isExtendedLive).
+        LaunchWindow.unlimitedLive = isProProvider()
         // Stamp 59: restore before resolve
         if (tracked == null) keepTrackedOrLastGood(now)
         checkLiveTrackingAllowance(now)
@@ -767,11 +769,11 @@ class RocketTelemetryModule(
             // Stamp 103: CURRENT+AUTO only — eject when FlightEventCatalog tape has no upcoming marks
             // (independent of 60m WATCH_AFTER). HISTORICAL+AUTO branch above untouched; isActiveWatch unchanged.
             val live = provider.livePool()
-            val watch = live.filter { it.isActiveWatch(now) && !it.isEventTapeExhausted(now) }
+            val watch = live.filter { it.isActiveWatch(now) && (!it.isEventTapeExhausted(now) || it.isStatusLive(now)) }
                 .minByOrNull { kotlin.math.abs(it.secondsToNet(now)) }
             // Stamp 72: sticky lastGood across one refresh miss before getNextAny retarget.
             fun lastGoodOk(s: LaunchSnapshot) =
-                !s.id.startsWith("demo-") && !s.isTerminal() && !s.isEventTapeExhausted(now) &&
+                !s.id.startsWith("demo-") && !s.isTerminal() && (!s.isEventTapeExhausted(now) || s.isStatusLive(now)) &&
                     (s.isActiveWatch(now) || s.secondsToNet(now) > 0)
             val stickyMiss = listOfNotNull(tracked, lastGoodSnapshot, sharedLastGood)
                 .firstOrNull { lastGoodOk(it) && provider.findById(it.id) == null }
@@ -804,7 +806,7 @@ class RocketTelemetryModule(
             } else {
                 // Stamp 63: NEVER null on cache gap — but dead lastGood must not stick AUTO.
                 val fallback = listOfNotNull(tracked, lastGoodSnapshot, sharedLastGood)
-                    .firstOrNull { !it.isEventTapeExhausted(now) && (it.isActiveWatch(now) || it.secondsToNet(now) > 0) }
+                    .firstOrNull { (!it.isEventTapeExhausted(now) || it.isStatusLive(now)) && (it.isActiveWatch(now) || it.secondsToNet(now) > 0) }
                 rememberTracked(fallback)
                 if (tracked == null) {
                     rememberTracked(

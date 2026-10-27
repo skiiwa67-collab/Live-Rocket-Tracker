@@ -1561,7 +1561,7 @@ class RetroCommandWallpaperService : WallpaperService() {
                                 lastLaunchRefresh = now
                                 val near = telemetryModule.tracked?.let {
                                     val s = it.secondsToNet(now)
-                                    s in -300L..(2 * 3600L) && !it.id.startsWith("demo-")
+                                    (s in -300L..(2 * 3600L) || it.isStatusLive(now)) && !it.id.startsWith("demo-")
                                 } == true
                                 if (near || telemetryModule.autoMode || cold) {
                                     telemetryModule.forceRefresh()
