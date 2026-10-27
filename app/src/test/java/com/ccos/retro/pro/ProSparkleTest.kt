@@ -136,28 +136,53 @@ class ProSparkleTest {
         }
     }
 
-    // --- O9 frame guard ---
-
-    @Test fun frameGuardDegradesDustFirstAfterThreeSlowFrames() {
-        val g = ProFrameGuard()
-        assertEquals(0, g.record(20_000_000)); assertEquals(0, g.record(20_000_000))
-        assertEquals(1, g.record(20_000_000))
-        assertTrue(g.keep("dust", 0)); assertFalse(g.keep("dust", 1))
-        assertTrue(g.keep("back", 1)); assertTrue(g.keep("front", 1)); assertTrue(g.keep("mid", 1))
-        repeat(3) { g.record(20_000_000) }
-        assertEquals(2, g.level)
-        assertFalse(g.keep("dust", 0)); assertFalse(g.keep("back", 1)); assertTrue(g.keep("back", 2))
-        repeat(10) { g.record(40_000_000) }
-        assertEquals(ProFrameGuard.MAX_LEVEL, g.level)
+    @Test fun idleGlintTimesAreStartsWithSin2Shape() {
+        // Da Vinci 12:14 CT: 250/630/1010/1390/1770/2150 are STARTS; 800 ms sin^2 each; last ends 2950.
+        val d = p.idleGlintDurMs
+        for ((i, s0) in p.idleGlintStartsMs.withIndex()) {
+            assertEquals("zero before start", 0f, ProIdleTwinkle.alpha(p, i, s0 - 1), 0f)
+            assertEquals("zero at start", 0f, ProIdleTwinkle.alpha(p, i, s0), 1e-6f)
+            assertEquals("sin^2 quarter", 0.5f, ProIdleTwinkle.alpha(p, i, s0 + d / 4), 1e-4f)
+            assertEquals("peak mid-pulse", 1f, ProIdleTwinkle.alpha(p, i, s0 + d / 2), 1e-4f)
+            assertEquals("sin^2 three-quarter", 0.5f, ProIdleTwinkle.alpha(p, i, s0 + 3 * d / 4), 1e-4f)
+            assertEquals("zero at end", 0f, ProIdleTwinkle.alpha(p, i, s0 + d), 0f)
+            for (k in 0..40) {
+                val tt = s0 + k * d / 40
+                val x = Math.sin(Math.PI * (tt - s0) / d)
+                assertEquals(x * x, ProIdleTwinkle.alpha(p, i, tt).toDouble(), 1e-4)
+            }
+        }
+        assertEquals(380L, p.idleGlintStartsMs.zipWithNext { a, b -> b - a }.distinct().single())
+        assertEquals(2_150L + 800L, ProIdleTwinkle.totalMs(p))
     }
 
-    @Test fun frameGuardIgnoresIsolatedSpikesAndNeverStepsBackUp() {
+    // --- O9 frame guard ---
+
+    @Test fun frameGuardHalvesDustFirstOnFirstSlowFrame() {
+        // Da Vinci 12:14 CT: a frame over 16 ms halves the dust layer FIRST, before cutting anything else.
         val g = ProFrameGuard()
-        repeat(20) { g.record(20_000_000); g.record(5_000_000) }
-        assertEquals(0, g.level)
-        repeat(3) { g.record(20_000_000) }
+        assertEquals(0, g.record(16_000_000)) // exactly on budget: not over
+        assertEquals(0, g.record(10_000_000))
+        assertEquals(1, g.record(16_000_001))
+        val dustKept = (0 until 380).count { g.keep("dust", it) }
+        assertEquals(190, dustKept)
+        for (layer in listOf("back", "mid", "front")) {
+            assertEquals(layer, 1000, (0 until 1000).count { g.keep(layer, it) })
+        }
+    }
+
+    @Test fun frameGuardCutsFurtherOnlyAfterThreeMoreSlowFrames() {
+        val g = ProFrameGuard()
+        g.record(20_000_000); assertEquals(1, g.level)
+        g.record(20_000_000); g.record(20_000_000); assertEquals(1, g.level)
+        g.record(5_000_000); g.record(20_000_000); g.record(20_000_000); assertEquals("streak reset", 1, g.level)
+        g.record(20_000_000); assertEquals(2, g.level)
+        assertFalse(g.keep("dust", 0)); assertFalse(g.keep("back", 1)); assertTrue(g.keep("back", 2))
+        assertTrue(g.keep("mid", 1)); assertTrue(g.keep("front", 1))
+        repeat(10) { g.record(40_000_000) }
+        assertEquals(ProFrameGuard.MAX_LEVEL, g.level)
         repeat(50) { g.record(1_000_000) }
-        assertEquals(1, g.level)
+        assertEquals("never steps back up", ProFrameGuard.MAX_LEVEL, g.level)
         assertTrue(ProFrameGuard().keep("dust", 1))
     }
 

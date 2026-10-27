@@ -17,6 +17,32 @@ class GoldV2WiringTest {
         assertTrue(src("java/com/ccos/retro/ui/ProUi.kt").contains("art.setKeepOutViews(title, body)"))
     }
 
+    @Test fun unlockDrawOrderMatchesDaVinci() {
+        // Da Vinci 12:14 CT: glow -> rays -> rings -> back -> dust -> mid -> residents -> front -> glints -> text.
+        // Glow and rays under the text (not clipped); rings, sparkles, residents and glints clipped off the text.
+        val v = src("java/com/ccos/retro/ui/ProUnlockView.kt")
+        val body = v.substring(v.indexOf("private fun drawMoment("), v.indexOf("private fun drawStatic("))
+        fun at(s: String): Int = body.indexOf(s).also { assertTrue("missing: $s", it >= 0) }
+        val glow = at("RadialGradient(")
+        val rays = at("paint.color = params.rayColor")
+        val clip = at("clipOutText(canvas)")
+        val rings = at("params.ringProgress(i, t)")
+        val layers = at("for (li in params.layers.indices)")
+        val residents = at("drawResidents(canvas, cx, cy, res, t)")
+        val glints = at("params.glintAlpha(i, t)")
+        assertTrue(glow < rays && rays < clip && clip < rings && rings < layers && layers < glints)
+        assertTrue("residents just before front", body.contains("if (params.layers[li].name == \"front\") drawResidents("))
+        assertTrue(residents in layers..glints)
+        val names = ProSparkleParams.V2.layers.map { it.name }
+        assertTrue(names.toString(), names == listOf("back", "dust", "mid", "front"))
+        // keep-out begins exactly when the text starts to appear; rings are over by then
+        assertTrue(ProSparkleParams.V2.textKeepOutMs <= ProGoldMoment.TEXT_IN_START_MS)
+        assertTrue(ProSparkleParams.V2.ringEndMs <= ProSparkleParams.V2.textKeepOutMs)
+        // text block is a later sibling of the art view, so it draws on top
+        val xml = listOf(File("src/main/res/layout/view_pro_unlock.xml"), File("app/src/main/res/layout/view_pro_unlock.xml")).first { it.exists() }.readText()
+        assertTrue(xml.indexOf("@+id/pro_unlock_art") < xml.indexOf("@+id/pro_unlock_text"))
+    }
+
     @Test fun unlockViewStopsAtTheCap() {
         val v = src("java/com/ccos/retro/ui/ProUnlockView.kt")
         assertTrue(v.contains("coerceAtMost(params.totalMs())"))

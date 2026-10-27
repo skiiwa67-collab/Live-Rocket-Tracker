@@ -138,13 +138,20 @@ data class ProSparkleParams(
  * consecutive draws over [budgetNs], degrade one level (1 = halve the dust layer, the least visible; 2 = drop dust and
  * halve the back layer). Never steps back up mid-moment, so there is no flicker between levels.
  */
+/**
+ * O9 degrade guard (Da Vinci 12:14 CT): the FIRST frame over 16 ms halves the dust layer and
+ * nothing else. Only if [strikes] more consecutive frames are still over budget does it cut
+ * further (drop dust, halve back). Never steps back up within one moment.
+ */
 class ProFrameGuard(private val budgetNs: Long = 16_000_000L, private val strikes: Int = 3) {
     var level = 0
         private set
     private var over = 0
     fun record(drawNs: Long): Int {
         if (drawNs > budgetNs) {
-            if (++over >= strikes && level < MAX_LEVEL) { level++; over = 0 }
+            over++
+            val needed = if (level == 0) 1 else strikes
+            if (over >= needed && level < MAX_LEVEL) { level++; over = 0 }
         } else over = 0
         return level
     }
