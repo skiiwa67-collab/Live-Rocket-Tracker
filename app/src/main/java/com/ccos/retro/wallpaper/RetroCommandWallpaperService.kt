@@ -3797,10 +3797,14 @@ class RetroCommandWallpaperService : WallpaperService() {
             val mark = canvas.save()
             canvas.clipRect(left, top, right, bot)
             val placed = ArrayList<Float>()
-            for ((et, label) in events) {
+            // #79: hold the latest past event at top-center until the next one is soon.
+            val held = EventTapeTop.heldIndex(events.map { it.first }, tSec, lead)
+            for ((i, ev) in events.withIndex()) {
+                val (et, label) = ev
                 val dt = et - tSec
-                if (kotlin.math.abs(dt) > window) continue
-                val past = dt < -0.5f
+                val isHeld = i == held
+                if (!isHeld && kotlin.math.abs(dt) > window) continue
+                val past = dt < -0.5f && !isHeld
                 val soon = dt in 0f..lead
                 val now = dt <= 0f && !past
                 val onTop = soon || now

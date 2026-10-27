@@ -261,19 +261,11 @@ class RocketTelemetryModule(
             // pinnedNetMs already re-pins when launch.netMs changes (Hold/slip/fail NET update) → rewind.
             val t0 = prefs.pinnedNetMs(launch.id, launch.netMs)
             val trail = liveTrailSec(launch)
-            var t = (now - t0) / 1000f - trail
-            if (shouldPauseLiveForHoldScrub(launch, now, t)) {
-                // Hold / Scrub / TBD+slip: pause at pad; never fake live past a real hold.
-                if (launch.isScrubStatus()) {
-                    forceStatus = forceStatus ?: "Scrubbed"
-                }
-                t = minOf(t, -0.5f)
+            if (launch.isScrubStatus()) {
+                forceStatus = forceStatus ?: "Scrubbed"
             }
-            // Never ahead of real liftoff without LL2 In Flight or webcast_live past NET.
-            if (t >= 0f && !liveLiftoffConfirmed(launch, now)) {
-                t = -0.5f
-            }
-            return t
+            // Hold/scrub pause + never-ahead gate (158: firm Go at NET counts as liftoff).
+            return LiveClockGate.liveSeconds(launch, now, (now - t0) / 1000f - trail)
         }
         // HISTORICAL / demo theater — sim memory, then prefs cursor, then wall-clock.
         val mem = simSecondsFromNet
@@ -946,26 +938,6 @@ class RocketTelemetryModule(
     private fun liveTrailSec(launch: LaunchSnapshot): Float {
         return if (launch.isWebcastLive() || launch.isInFlightStatus()) LIVE_WALL_LAG_SEC
         else SPARSE_WALL_LAG_SEC
-    }
-
-    /** tip146: liftoff confirmed for past T-0 — LL2 In Flight or webcast_live with NET reached. */
-    private fun liveLiftoffConfirmed(launch: LaunchSnapshot, now: Long): Boolean {
-        if (launch.isInFlightStatus()) return true
-        return launch.isWebcastLive() && launch.secondsToNet(now) <= 0L
-    }
-
-    /**
-     * tip146 hold-scrub: Pause/backup when LL2 Hold, Scrub/cancel, or TBD with slipped NET,
-     * or when NET is still meaningfully in the future while the lagged clock would be past T-0.
-     */
-    private fun shouldPauseLiveForHoldScrub(launch: LaunchSnapshot, now: Long, tLagged: Float): Boolean {
-        if (launch.isHold()) return true
-        if (launch.isScrubStatus()) return true
-        val netAhead = launch.secondsToNet(now)
-        if (launch.isTbd() && netAhead > NET_SLIP_HOLD_SEC) return true
-        // NET slipped later while lagged sim already at/past T-0 (CZ-8A class).
-        if (tLagged >= 0f && netAhead >= NET_SLIP_HOLD_SEC) return true
-        return false
     }
 
     fun selectLaunch(id: String, hint: LaunchSnapshot? = null) {
