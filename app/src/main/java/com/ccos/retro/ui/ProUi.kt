@@ -67,8 +67,10 @@ object ProUi {
         activity: Activity,
         prefs: AppPrefs,
         context: LaunchSnapshot? = null,
-        onOwned: (() -> Unit)? = null,
-        liveAllowance: Boolean = false
+        liveAllowance: Boolean = false,
+        // Keep onOwned LAST: every caller passes it as a trailing lambda (B2 appended liveAllowance after it,
+        // which bound those lambdas to the Boolean and broke compileDebugKotlin).
+        onOwned: (() -> Unit)? = null
     ) {
         if (activity.isFinishing) return
         if (!com.ccos.retro.pro.ProConfig.gatesEnabled()) return // B4: no sheet while billing is a stub
