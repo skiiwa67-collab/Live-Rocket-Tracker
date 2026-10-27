@@ -10,7 +10,7 @@ import java.io.File
 class HistoricFallbackTest {
     private val m by lazy {
         listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-            .resolve("com/ccos/retro/module/RocketTelemetryModule.kt").readText()
+            .resolve("com/ccos/retro/module/RocketTelemetryModule.kt").readText().replace("\r\n", "\n")
     }
 
     @Test fun noFallbackPicksTheFirstCatalogEntry() {

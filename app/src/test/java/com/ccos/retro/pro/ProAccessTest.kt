@@ -45,7 +45,7 @@ class ProAccessTest {
         val src = listOf(java.io.File("src/main/java"), java.io.File("app/src/main/java")).first { it.isDirectory }
             .resolve("com/ccos/retro/pro")
         for (f in listOf("ProAccess.kt", "ProConfig.kt")) {
-            val t = src.resolve(f).readText()
+            val t = src.resolve(f).readText().replace("\r\n", "\n")
             for (w in listOf("GrandfatherCheck", "markGrandfathered", "KEY_GRANDFATHERED", "isGrandfathered")) assertFalse("$f $w", t.contains(w))
         }
     }

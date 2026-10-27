@@ -8,7 +8,7 @@ import java.io.File
 
 /** Helios no-badger: allowance never auto-opens the sheet; a refused gate opens it once per tap, debounced. */
 class NoBadgerTest {
-    private fun src(rel: String) = listOf(File(rel), File("app/$rel")).first { it.exists() }.readText()
+    private fun src(rel: String) = listOf(File(rel), File("app/$rel")).first { it.exists() }.readText().replace("\r\n", "\n")
 
     @Test fun onePressOpensOnce() {
         val d = UpsellDebounce()

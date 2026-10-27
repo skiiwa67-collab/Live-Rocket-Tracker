@@ -125,9 +125,9 @@ class ProPolicyTest {
     private fun srcRoot(): File =
         listOf(File("src/main/java/com/ccos/retro"), File("app/src/main/java/com/ccos/retro")).first { it.isDirectory }
 
-    private fun src(rel: String) = File(srcRoot(), rel).readText()
+    private fun src(rel: String) = File(srcRoot(), rel).readText().replace("\r\n", "\n")
 
     private fun mainSourcesOutsidePro(): List<Pair<String, String>> =
-        srcRoot().walkTopDown().filter { it.isFile && it.extension == "kt" && !it.path.contains("/pro/") }
-            .map { it.name to it.readText() }.toList()
+        srcRoot().walkTopDown().filter { it.isFile && it.extension == "kt" && !it.invariantSeparatorsPath.contains("/pro/") }
+            .map { it.name to it.readText().replace("\r\n", "\n") }.toList()
 }

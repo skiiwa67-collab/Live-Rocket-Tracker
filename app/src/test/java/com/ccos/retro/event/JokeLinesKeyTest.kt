@@ -18,7 +18,7 @@ class JokeLinesKeyTest {
 
     @Test fun flightEventsLineMatchesTheJokeKey() {
         val f = listOf(File("src/main/java/com/ccos/retro/event/FlightEvents.kt"), File("app/src/main/java/com/ccos/retro/event/FlightEvents.kt")).first { it.exists() }
-        assertTrue("FlightEvents must use the exact JokeLines key", f.readText().contains("\"$newEn\""))
+        assertTrue("FlightEvents must use the exact JokeLines key", f.readText().replace("\r\n", "\n").contains("\"$newEn\""))
         assertTrue(JokeLines.beside("ja", newEn) != newEn)
     }
 }

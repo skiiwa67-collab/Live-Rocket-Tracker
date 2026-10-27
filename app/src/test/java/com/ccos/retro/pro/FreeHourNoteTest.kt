@@ -20,7 +20,7 @@ class FreeHourNoteTest {
     private fun upcoming(id: String, inMs: Long, mission: String = "Mission $id") =
         snap(id = id, net = NOW + inMs, abbrev = "Go", status = "Go for Launch", mission = mission)
 
-    private fun file(rel: String) = listOf(File(rel), File("app/$rel")).first { it.exists() }.readText()
+    private fun file(rel: String) = listOf(File(rel), File("app/$rel")).first { it.exists() }.readText().replace("\r\n", "\n")
     private val stringsXml by lazy { file("src/main/res/values/strings_pro.xml") }
     private fun str(name: String): String =
         Regex("""<string name="$name"[^>]*>(.*?)</string>""", RegexOption.DOT_MATCHES_ALL).find(stringsXml)!!.groupValues[1]

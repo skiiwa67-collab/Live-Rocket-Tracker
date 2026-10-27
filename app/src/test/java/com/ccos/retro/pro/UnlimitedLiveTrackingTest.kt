@@ -86,7 +86,7 @@ class UnlimitedLiveTrackingTest {
         assertFalse("Go without stream past T+60", snap(net = NOW - 2 * HOUR, abbrev = "Go", status = "Go for Launch").isActiveWatch(NOW))
     }
 
-    private fun src(rel: String) = listOf(File(rel), File("app/$rel")).first { it.exists() }.readText()
+    private fun src(rel: String) = listOf(File(rel), File("app/$rel")).first { it.exists() }.readText().replace("\r\n", "\n")
 
     @Test fun moduleWiresTheSwitchAndKeepsStatusLiveBirdsPastTapeEnd() {
         val m = src("src/main/java/com/ccos/retro/module/RocketTelemetryModule.kt")

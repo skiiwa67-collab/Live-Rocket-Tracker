@@ -13,7 +13,7 @@ import java.io.File
  */
 class ProInternalJumpTest {
     private val m: String = listOf("src/main/java", "app/src/main/java")
-        .map { File(it, "com/ccos/retro/module/RocketTelemetryModule.kt") }.first { it.isFile }.readText()
+        .map { File(it, "com/ccos/retro/module/RocketTelemetryModule.kt") }.first { it.isFile }.readText().replace("\r\n", "\n")
 
     /** Body of the first `fun <name>(` up to the next member declaration at the same indent. */
     private fun body(name: String): String {

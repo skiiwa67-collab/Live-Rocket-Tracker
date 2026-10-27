@@ -109,7 +109,7 @@ class PadAbortFailureTest {
     }
 
     @Test fun moduleWiresTheStickyFlagAndParsesFailReason() {
-        fun src(rel: String) = listOf(File(rel), File("app/$rel")).first { it.exists() }.readText()
+        fun src(rel: String) = listOf(File(rel), File("app/$rel")).first { it.exists() }.readText().replace("\r\n", "\n")
         val m = src("src/main/java/com/ccos/retro/module/RocketTelemetryModule.kt")
         assertTrue(m.contains("LiveClockGate.liveWallSecondsFromNet(launch, now, t0, liftoffSeen(launch, now))"))
         assertTrue(m.contains("LiftoffEvidence.mark(prefs.proStore(), launch.id)"))

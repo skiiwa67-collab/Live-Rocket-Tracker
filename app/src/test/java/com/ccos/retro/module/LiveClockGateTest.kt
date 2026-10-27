@@ -149,10 +149,10 @@ class LiveClockGateTest {
     @Test fun moduleDelegatesToGate() {
         val f = listOf(java.io.File("src/main/java/com/ccos/retro/module/RocketTelemetryModule.kt"),
             java.io.File("app/src/main/java/com/ccos/retro/module/RocketTelemetryModule.kt")).first { it.exists() }
-        val body = f.readText().substringAfter("fun effectiveSecondsFromNet(").substringBefore("fun clockIsEst(")
+        val body = f.readText().replace("\r\n", "\n").substringAfter("fun effectiveSecondsFromNet(").substringBefore("fun clockIsEst(")
         assertTrue(body.contains("isLiveWallClockBird(launch, now)"))
         // P1-A (27818b1) added the sticky liftoffSeen arg; PadAbortFailureTest pins the exact call.
         assertTrue(body.contains("LiveClockGate.liveWallSecondsFromNet(launch, now, t0, liftoffSeen(launch, now))"))
-        assertTrue(f.readText().contains("LiveClockGate.isLiveWallClock(launch, now, prefs.telemetryListMode == \"historical\")"))
+        assertTrue(f.readText().replace("\r\n", "\n").contains("LiveClockGate.isLiveWallClock(launch, now, prefs.telemetryListMode == \"historical\")"))
     }
 }

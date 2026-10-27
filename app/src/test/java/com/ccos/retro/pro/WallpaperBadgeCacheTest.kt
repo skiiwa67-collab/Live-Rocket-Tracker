@@ -9,7 +9,7 @@ import java.io.File
 /** Helios P2-C: theme lock badges read a cache refreshed on visibility change; nothing allocated or written per frame. */
 class WallpaperBadgeCacheTest {
     private val wp = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-        .resolve("com/ccos/retro/wallpaper/RetroCommandWallpaperService.kt").readText()
+        .resolve("com/ccos/retro/wallpaper/RetroCommandWallpaperService.kt").readText().replace("\r\n", "\n")
 
     @Test fun drawPathAllocatesAndWritesNothing() {
         val draw = wp.substringAfter("private fun drawThemeLockBadges(").substringBefore("\n        private fun ")

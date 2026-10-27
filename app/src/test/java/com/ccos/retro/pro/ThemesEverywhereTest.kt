@@ -9,7 +9,7 @@ import java.io.File
 /** Chris 8:22: Pro unlocks ALL themes; the theme gate stands everywhere, live launches included. */
 class ThemesEverywhereTest {
     private fun src(rel: String) = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-        .resolve("com/ccos/retro/$rel").readText()
+        .resolve("com/ccos/retro/$rel").readText().replace("\r\n", "\n")
 
     @Test fun freeUserNeverGetsAProThemeFromAuto() {
         val s = MemProStore()

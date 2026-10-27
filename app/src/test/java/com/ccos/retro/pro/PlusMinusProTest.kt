@@ -8,7 +8,7 @@ import java.io.File
 /** Chris 8:22 (4): the +/- event controls are Pro on past launches (where they do their work). Verifies the existing gate. */
 class PlusMinusProTest {
     private fun src(rel: String) = listOf(File("src/main/java"), File("app/src/main/java")).first { it.isDirectory }
-        .resolve("com/ccos/retro/$rel").readText()
+        .resolve("com/ccos/retro/$rel").readText().replace("\r\n", "\n")
 
     private val pastReplay = snap(id = "ll2-past", net = NOW - 30L * 24 * HOUR)
 
