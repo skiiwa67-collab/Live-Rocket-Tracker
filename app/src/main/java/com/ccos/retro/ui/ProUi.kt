@@ -60,6 +60,9 @@ object ProUi {
      * v1 section 5 sheet. Opened only by a user tap (locked row, locked theme chip, locked jump/skip, Pro row).
      * Swipe / Back = Not now.
      */
+    /** Helios no-badger: shared by every screen so two activities can't stack sheets either. */
+    val sheetDebounce = com.ccos.retro.pro.UpsellDebounce()
+
     fun showUpsell(
         activity: Activity,
         prefs: AppPrefs,
@@ -71,7 +74,10 @@ object ProUi {
         if (!com.ccos.retro.pro.ProConfig.gatesEnabled()) return // B4: no sheet while billing is a stub
         val access = access(prefs)
         if (access.isPro) return
+        // Helios no-badger: one sheet per tap; held / repeated presses never stack or reopen it.
+        if (!sheetDebounce.tryOpen(android.os.SystemClock.uptimeMillis())) return
         val dialog = BottomSheetDialog(activity)
+        dialog.setOnDismissListener { sheetDebounce.onDismissed(android.os.SystemClock.uptimeMillis()) }
         val v = LayoutInflater.from(activity).inflate(R.layout.sheet_pro_upsell, null, false)
         dialog.setContentView(v)
         dialog.behavior.maxWidth = (560 * activity.resources.displayMetrics.density).toInt()
