@@ -16,7 +16,8 @@ class ThemesEverywhereTest {
         val pro = com.ccos.retro.model.AppPrefs.CONSOLE_SKIN_IDS.filterNot { ThemeAccess.canPickManually(it, false, s) }
         assertTrue(pro.isNotEmpty())
         for (id in pro) {
-            assertFalse(id, ThemeAccess.canPickManually(ThemeAccess.displayedDuringLive(id, false, s), false, s))
+            // Free user: what Auto shows must be a theme they may pick (the old assertFalse was inverted).
+            assertTrue(id, ThemeAccess.canPickManually(ThemeAccess.displayedDuringLive(id, false, s), false, s))
             assertEquals(com.ccos.retro.model.AppPrefs.normalizeConsoleSkin(id), ThemeAccess.displayedDuringLive(id, true, s))
         }
     }

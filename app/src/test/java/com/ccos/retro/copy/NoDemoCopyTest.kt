@@ -22,18 +22,22 @@ class NoDemoCopyTest {
 
     @Test fun builtInMissionDisplayNamesHaveNoDemo() {
         val names = literals(provider, "name") + literals(provider, "missionName")
-        assertTrue("expected the built-in catalog names", names.size >= 30)
+        // Chris 8:22 (313d8b8) removed the made-up per-country samples, so the catalog is ~16 literals now.
+        assertTrue("expected the built-in catalog names", names.size >= 12)
         val bad = names.filter { demo.containsMatchIn(it) }
         assertTrue("visible 'demo' in names: $bad", bad.isEmpty())
     }
 
     @Test fun v11NamesArePresent() {
-        for (n in listOf("Falcon 9 Block 5 | Starlink Mission", "SLS Block 1 | Artemis Mission", "Falcon 9 | Crew Mission (Historical)",
-            "Soyuz-2.1a | ISS Crew Mission", "Falcon 9 | Ascent Anomaly Scenario", "Long March 5 | Featured Mission",
-            "New Glenn | Featured Mission", "LVM3 | Featured Mission", "Electron | Featured Flight", "Ariane 6 | Featured Flight",
-            "H3 | Featured Flight")) assertTrue(n, "name = \"$n\"" in provider)
-        for (m in listOf("Starlink Mission", "Artemis Mission", "Ascent Profile", "Crew Mission", "ISS Crew Mission", "Ascent Anomaly Scenario"))
+        // v1.1 names that survive Chris 8:22 (samples are real launches; made-up per-country ones removed in 313d8b8).
+        for (n in listOf("Falcon 9 Block 5 | Starlink Mission", "Falcon 9 | Crew Mission (Historical)",
+            "Falcon 9 | Ascent Anomaly Scenario", "New Glenn | Featured Mission", "Electron | Featured Flight",
+            "Starship | Flight 13")) assertTrue(n, "name = \"$n\"" in provider)
+        for (m in listOf("Starlink Mission", "Ascent Profile", "Crew Mission", "Ascent Anomaly Scenario", "Flight 13"))
             assertTrue(m, "missionName = \"$m\"" in provider)
+        // ...and the removed made-up samples stay gone.
+        for (n in listOf("SLS Block 1 | Artemis Mission", "Soyuz-2.1a | ISS Crew Mission", "Long March 5 | Featured Mission",
+            "LVM3 | Featured Mission", "Ariane 6 | Featured Flight", "H3 | Featured Flight")) assertFalse(n, "name = \"$n\"" in provider)
     }
 
     @Test fun layoutVisibleAttributesHaveNoDemo() {

@@ -189,7 +189,10 @@ class FreeHourNoteTest {
     }
 
     @Test fun switchIsInternalNeverGatedNeverSheet() {
-        val sw = body("freeHourTick") + module.substringAfter("private fun handoffAfterFreeHour(").substringBefore("\n    fun ")
+        // Slice to each function's own closing brace: the next "\n    fun " lies past the onProBlocked var and
+        // private proAllows, which pulled those neighbours into the scanned text.
+        fun own(sig: String) = module.substringAfter(sig).substringBefore("\n    }\n")
+        val sw = own("fun freeHourTick(") + own("private fun handoffAfterFreeHour(")
         assertFalse(sw.contains("selectLaunch(") || sw.contains("proAllows") || sw.contains("onProBlocked"))
         assertTrue(sw.contains("rememberTracked(next)"))
         assertTrue(sw.contains("LiveTrackingAllowance.nextUpcoming") || module.contains("LiveTrackingAllowance.nextUpcoming(provider.getCached()"))
