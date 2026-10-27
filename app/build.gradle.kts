@@ -11,8 +11,8 @@ android {
         applicationId = "com.liverockettracker"
         minSdk = 24
         targetSdk = 36
-        versionCode = 157
-        versionName = "1.0.147"
+        versionCode = 158
+        versionName = "1.0.148"
         buildConfigField(
             "String",
             "MISSION_TAPE_BASE_URL",
