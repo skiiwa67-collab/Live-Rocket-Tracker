@@ -134,8 +134,9 @@ class LaunchDataProvider {
     fun historicPool(now: Long = System.currentTimeMillis(), query: String = ""): List<LaunchSnapshot> {
         val q = query.trim()
         val qLower = q.lowercase()
-        val wantDemo = "demo" in qLower
-        val tokens = qLower.split(Regex("\\s+")).filter { it.isNotBlank() && it != "demo" }
+        // v1.1 copy: "demo" stays a silent alias; featured / included / pro also list the built-in missions.
+        val wantDemo = SearchAliases.wantsCatalog(q)
+        val tokens = SearchAliases.searchTokens(q)
         val seen = linkedSetOf<String>()
         val out = mutableListOf<LaunchSnapshot>()
 
@@ -206,7 +207,7 @@ class LaunchDataProvider {
         val q = historicSearchInterestQ.trim()
         if (q.isBlank()) return emptyList()
         return historicPool(now, q)
-            .filter { !it.id.startsWith("demo-") || "demo" in q.lowercase() }
+            .filter { !it.id.startsWith("demo-") || SearchAliases.wantsCatalog(q) }
             .filter { it.id.startsWith("demo-") || it.isReplayable(now) || it.secondsToNet(now) < -60 }
             .sortedBy { it.netMs }
     }
@@ -219,7 +220,7 @@ class LaunchDataProvider {
     fun requestHistoricSearch(query: String, onDone: (() -> Unit)? = null) {
         val q = query.trim()
         val qLower = q.lowercase()
-        if (q.isBlank() || ("demo" in qLower && qLower.replace("demo", "").trim().isEmpty())) {
+        if (q.isBlank() || SearchAliases.isAliasOnly(q)) {
             onDone?.invoke()
             return
         }
@@ -1041,7 +1042,7 @@ class LaunchDataProvider {
             // SpaceX  -  upcoming-style (T- ~1h for testing countdown)
             LaunchSnapshot(
                 id = "demo-spacex-f9",
-                name = "Falcon 9 Block 5 | Starlink Demo",
+                name = "Falcon 9 Block 5 | Starlink Mission",
                 statusName = "Go for Launch",
                 statusAbbrev = "Go",
                 netMs = now + 55 * 60 * 1000L,
@@ -1049,7 +1050,7 @@ class LaunchDataProvider {
                 windowEndMs = now + 70 * 60 * 1000L,
                 provider = "SpaceX",
                 rocketName = "Falcon 9 Block 5",
-                missionName = "Starlink Demo",
+                missionName = "Starlink Mission",
                 pad = "SLC-40",
                 location = "Cape Canaveral SFS, FL, USA"
             ),
@@ -1064,7 +1065,7 @@ class LaunchDataProvider {
                 windowEndMs = now + 10 * 60 * 1000L,
                 provider = "SpaceX",
                 rocketName = "Falcon 9 Block 5",
-                missionName = "Ascent Profile Demo",
+                missionName = "Ascent Profile",
                 pad = "LC-39A",
                 location = "Kennedy Space Center, FL, USA"
             ),
@@ -1085,7 +1086,7 @@ class LaunchDataProvider {
             // SpaceX historical success
             LaunchSnapshot(
                 id = "demo-spacex-crew",
-                name = "Falcon 9 | Crew Demo (Historical)",
+                name = "Falcon 9 | Crew Mission (Historical)",
                 statusName = "Launch Successful",
                 statusAbbrev = "Success",
                 netMs = now - 3 * 24 * 3600 * 1000L,
@@ -1093,14 +1094,14 @@ class LaunchDataProvider {
                 windowEndMs = now - 3 * 24 * 3600 * 1000L,
                 provider = "SpaceX",
                 rocketName = "Falcon 9 Block 5",
-                missionName = "Crew Demo",
+                missionName = "Crew Mission",
                 pad = "LC-39A",
                 location = "Kennedy Space Center, FL, USA"
             ),
             // NASA / ULA
             LaunchSnapshot(
                 id = "demo-nasa-sls",
-                name = "SLS Block 1 | Artemis Demo",
+                name = "SLS Block 1 | Artemis Mission",
                 statusName = "Go for Launch",
                 statusAbbrev = "Go",
                 netMs = now + 2 * 3600 * 1000L,
@@ -1108,14 +1109,14 @@ class LaunchDataProvider {
                 windowEndMs = now + 4 * 3600 * 1000L,
                 provider = "NASA",
                 rocketName = "Space Launch System (SLS)",
-                missionName = "Artemis Demo",
+                missionName = "Artemis Mission",
                 pad = "LC-39B",
                 location = "Kennedy Space Center, FL, USA"
             ),
             // CASC / Chinese
             LaunchSnapshot(
                 id = "demo-casc-lm",
-                name = "Long March 5 | Demo Mission",
+                name = "Long March 5 | Featured Mission",
                 statusName = "Go for Launch",
                 statusAbbrev = "Go",
                 netMs = now + 90 * 60 * 1000L,
@@ -1123,14 +1124,14 @@ class LaunchDataProvider {
                 windowEndMs = now + 120 * 60 * 1000L,
                 provider = "China Aerospace Science and Technology Corporation",
                 rocketName = "Long March 5",
-                missionName = "Demo Mission",
+                missionName = "Featured Mission",
                 pad = "LC-1",
                 location = "Wenchang, China"
             ),
             // Roscosmos
             LaunchSnapshot(
                 id = "demo-soyuz",
-                name = "Soyuz-2.1a | ISS Crew Demo",
+                name = "Soyuz-2.1a | ISS Crew Mission",
                 statusName = "Go for Launch",
                 statusAbbrev = "Go",
                 netMs = now + 3 * 3600 * 1000L,
@@ -1138,7 +1139,7 @@ class LaunchDataProvider {
                 windowEndMs = now + 3 * 3600 * 1000L + 60_000L,
                 provider = "Roscosmos",
                 rocketName = "Soyuz-2.1a",
-                missionName = "ISS Crew Demo",
+                missionName = "ISS Crew Mission",
                 pad = "Site 31/6",
                 location = "Baikonur Cosmodrome, Kazakhstan"
             ),
@@ -1159,7 +1160,7 @@ class LaunchDataProvider {
             // Generic / other
             LaunchSnapshot(
                 id = "demo-spacex-fail",
-                name = "Falcon 9 | Ascent Anomaly Demo",
+                name = "Falcon 9 | Ascent Anomaly Scenario",
                 statusName = "In Flight",
                 statusAbbrev = "In Flight",
                 netMs = now - 72 * 1000L,
@@ -1167,7 +1168,7 @@ class LaunchDataProvider {
                 windowEndMs = now + 10 * 60 * 1000L,
                 provider = "SpaceX",
                 rocketName = "Falcon 9 Block 5",
-                missionName = "Ascent Anomaly Demo",
+                missionName = "Ascent Anomaly Scenario",
                 pad = "SLC-40",
                 location = "Cape Canaveral SFS, FL, USA"
             ),
@@ -1187,7 +1188,7 @@ class LaunchDataProvider {
             ),
             LaunchSnapshot(
                 id = "demo-generic",
-                name = "Electron | Demo Flight",
+                name = "Electron | Featured Flight",
                 statusName = "To Be Confirmed",
                 statusAbbrev = "TBC",
                 netMs = now + 5 * 3600 * 1000L,
@@ -1195,13 +1196,13 @@ class LaunchDataProvider {
                 windowEndMs = now + 6 * 3600 * 1000L,
                 provider = "Rocket Lab",
                 rocketName = "Electron",
-                missionName = "Demo Flight",
+                missionName = "Featured Flight",
                 pad = "LC-1",
                 location = "Mahia Peninsula, New Zealand"
             ),
             LaunchSnapshot(
                 id = "demo-blueorigin",
-                name = "New Glenn | Demo Mission",
+                name = "New Glenn | Featured Mission",
                 statusName = "Go for Launch",
                 statusAbbrev = "Go",
                 netMs = now + 4 * 3600 * 1000L,
@@ -1209,13 +1210,13 @@ class LaunchDataProvider {
                 windowEndMs = now + 5 * 3600 * 1000L,
                 provider = "Blue Origin",
                 rocketName = "New Glenn",
-                missionName = "Demo Mission",
+                missionName = "Featured Mission",
                 pad = "LC-36",
                 location = "Cape Canaveral SFS, FL, USA"
             ),
             LaunchSnapshot(
                 id = "demo-esa-ariane",
-                name = "Ariane 6 | Demo Flight",
+                name = "Ariane 6 | Featured Flight",
                 statusName = "Go for Launch",
                 statusAbbrev = "Go",
                 netMs = now + 6 * 3600 * 1000L,
@@ -1223,13 +1224,13 @@ class LaunchDataProvider {
                 windowEndMs = now + 7 * 3600 * 1000L,
                 provider = "Arianespace",
                 rocketName = "Ariane 6",
-                missionName = "Demo Flight",
+                missionName = "Featured Flight",
                 pad = "ELA-4",
                 location = "Guiana Space Centre, Kourou"
             ),
             LaunchSnapshot(
                 id = "demo-isro-lvm3",
-                name = "LVM3 | Demo Mission",
+                name = "LVM3 | Featured Mission",
                 statusName = "Go for Launch",
                 statusAbbrev = "Go",
                 netMs = now + 8 * 3600 * 1000L,
@@ -1237,13 +1238,13 @@ class LaunchDataProvider {
                 windowEndMs = now + 9 * 3600 * 1000L,
                 provider = "ISRO",
                 rocketName = "LVM3",
-                missionName = "Demo Mission",
+                missionName = "Featured Mission",
                 pad = "SLP",
                 location = "Satish Dhawan Space Centre, India"
             ),
             LaunchSnapshot(
                 id = "demo-jaxa-h3",
-                name = "H3 | Demo Flight",
+                name = "H3 | Featured Flight",
                 statusName = "Go for Launch",
                 statusAbbrev = "Go",
                 netMs = now + 10 * 3600 * 1000L,
@@ -1251,7 +1252,7 @@ class LaunchDataProvider {
                 windowEndMs = now + 11 * 3600 * 1000L,
                 provider = "JAXA",
                 rocketName = "H3",
-                missionName = "Demo Flight",
+                missionName = "Featured Flight",
                 pad = "Yoshinobu",
                 location = "Tanegashima Space Center, Japan"
             )

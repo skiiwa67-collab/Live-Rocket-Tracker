@@ -598,7 +598,7 @@ object MissionFacts {
                 "Possibly a cat. The cat has a delta-v budget and a nametag.",
                 "One (1) origami crane with a transponder. Do not unfold it.",
                 "A thermos of tea and a spectrometer. Both are flight-rated.",
-                "Listed as technology demo. The demo is how to be on time.",
+                "Listed as a technology test. The test is how to be on time.",
                 "A lucky cat for the transfer orbit. The paw is the solar array.",
                 "If we told you, it would still be extremely well documented.",
                 "A bento for the Moon. The pickle is classified."

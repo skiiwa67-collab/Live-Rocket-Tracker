@@ -334,7 +334,7 @@
                 android:id="@+id/txt_tracking_help"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Current follows the next real launch. Historic is demos and past flights."
+                android:text="Current follows the next real launch. Historic is featured missions and past flights."
                 android:textColor="#8AA0B0"
                 android:textSize="13sp"
                 android:paddingBottom="8dp"/>

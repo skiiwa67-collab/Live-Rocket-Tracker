@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LRT Pro copy, UNWIRED (no code references yet). Source: Da Vinci v1 + v1.1 delta + v1.1 erratum + v1.2 one-time.
+     One-time purchase: price only from oneTimePurchaseOfferDetails.formattedPrice. No renewal/trial/subscription wording.
+     Never use the word "demo" in user-visible copy (Chris 10-27 7:10 CT). -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="UnusedResources">
+    <!-- Upsell sheet (v1 §5, v1.1 §2, v1.2) -->
+    <string name="pro_sheet_title">LRT Pro</string>
+    <string name="pro_sheet_context">%1$s is a past launch.</string>
+    <string name="pro_sheet_lead">LRT is full-featured. Pro unlocks extras:</string>
+    <string name="pro_sheet_item_past">Watch past and missed launches</string>
+    <string name="pro_sheet_item_replay">Replay their telemetry, with jump and skip</string>
+    <string name="pro_sheet_item_themes">Pick any console theme</string>
+    <string name="pro_sheet_included">Included free: live and upcoming launches, Auto theming, Starship Flight 13, a featured mission from each country, and the free themes.</string>
+    <string name="pro_get_with_price">Get Pro · %1$s</string>
+    <string name="pro_get">Get Pro</string>
+    <string name="pro_confirm_one_time">One-time purchase. You confirm in Google Play.</string>
+    <string name="pro_not_now">Not now</string>
+    <string name="pro_restore">Restore purchases</string>
+    <string name="pro_try_again">Try again</string>
+    <string name="pro_close">Close</string>
+    <!-- Sheet states (v1 §5) -->
+    <string name="pro_state_checking">Checking Google Play</string>
+    <string name="pro_state_unavailable">Google Play isn\'t reachable right now. Live and upcoming launches still work.</string>
+    <string name="pro_state_finishing">Finishing in Google Play</string>
+    <string name="pro_state_pending">Payment pending. Pro turns on when Google Play confirms it.</string>
+    <string name="pro_state_user_cancelled">Purchase cancelled. Nothing was charged.</string>
+    <string name="pro_state_error">Google Play couldn\'t finish that. Try again in a moment.</string>
+    <!-- Restore + Settings row (v1 §6, v1.2) -->
+    <string name="pro_settings_row_title">LRT Pro</string>
+    <string name="pro_settings_owned">LRT Pro · Unlocked</string>
+    <string name="pro_restored">Pro restored.</string>
+    <string name="pro_restore_none">No Pro purchase found for this Google account.</string>
+    <string name="pro_restore_unavailable">Google Play isn\'t reachable right now. Try again later.</string>
+    <!-- Pills (v1.1 §2) -->
+    <string name="pro_pill_included">Included</string>
+    <string name="pro_badge">Pro</string>
+    <!-- Toasts (v1 §7) -->
+    <string name="pro_toast_on">Pro is on. Thanks for supporting LRT.</string>
+    <string name="pro_toast_theme_locked">Pro theme. Open LRT to unlock.</string>
+    <string name="pro_toast_replay_locked">Replay is Pro. Open LRT to unlock.</string>
+    <string name="pro_toast_jump_locked">Jump and skip on replays are Pro. Open LRT to unlock.</string>
+    <!-- contentDescription (v1 §9, v1.1 §2) -->
+    <string name="pro_cd_historic_button">Historic launches. Some replays need Pro.</string>
+    <string name="pro_cd_row_included">%1$s, %2$s, %3$s. Included free.</string>
+    <string name="pro_cd_row_locked">%1$s, %2$s, %3$s. Past launch replay, Pro.</string>
+    <string name="pro_cd_theme_locked">%1$s theme. Pro. Double-tap to see what Pro includes.</string>
+    <string name="pro_cd_theme_free">%1$s theme</string>
+</resources>

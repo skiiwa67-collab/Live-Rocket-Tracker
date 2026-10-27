@@ -27,8 +27,10 @@ import com.ccos.retro.data.MissionTapeStore
 import com.ccos.retro.data.LaunchSnapshot
 import com.ccos.retro.data.autoDwellHint
 import com.ccos.retro.data.LaunchWindow
+import com.ccos.retro.data.SearchAliases
 import com.ccos.retro.model.AppPrefs
 import com.ccos.retro.module.RocketTelemetryModule
+import com.ccos.retro.pro.PickerTag
 import com.ccos.retro.wallpaper.RetroCommandWallpaperService
 
 /**
@@ -174,7 +176,7 @@ class MainActivity : AppCompatActivity() {
                 launchProvider.setHistoricSearchInterest(historicQuery)
                 populateLaunchSpinner()
                 uiHandler.removeCallbacks(historicSearchRunnable)
-                historicSearchDebouncePending = historicQuery.isNotBlank() && "demo" !in historicQuery.lowercase()
+                historicSearchDebouncePending = historicQuery.isNotBlank() && !SearchAliases.wantsCatalog(historicQuery)
                 if (historicSearchDebouncePending) {
                     uiHandler.postDelayed(historicSearchRunnable, historicSearchDebounceMs)
                 }
@@ -334,7 +336,7 @@ class MainActivity : AppCompatActivity() {
         if (isFinishing || isDestroyed) return
         if (prefs.telemetryListMode != "historical") return
         val q = historicQuery
-        if (q.isBlank() || "demo" in q.lowercase()) return
+        if (q.isBlank() || SearchAliases.wantsCatalog(q)) return
         try {
             launchProvider.requestHistoricSearch(q) {
                 uiHandler.post {
@@ -425,8 +427,8 @@ class MainActivity : AppCompatActivity() {
 
             val labels = launchList.map { l ->
                 val secs = l.secondsToNet(now)
-                val tag = when {
-                    l.id.startsWith("demo-") -> "[DEMO] "
+                // v1.1 copy (Da Vinci + erratum): [INCLUDED] / [PRO]; never "demo" on screen.
+                val tag = PickerTag.proTag(l, historic, now) ?: when {
                     l.isHold() -> "[HOLD] "
                     l.isActiveWatch(now) && secs <= 0 -> "[LIVE] "
                     // A finished flight stays Past inside the 48h window (Flight 14). T+ is only a non-terminal clock.

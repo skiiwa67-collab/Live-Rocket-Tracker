@@ -46,7 +46,7 @@ object JokeLines {
         "Possibly a cat. The cat has a delta-v budget and a nametag." to mapOf("ja" to "たぶん猫。デルタVの予算と名札がある。"),
         "One (1) origami crane with a transponder. Do not unfold it." to mapOf("ja" to "折り鶴が一羽、トランスポンダ付き。広げないこと。"),
         "A thermos of tea and a spectrometer. Both are flight-rated." to mapOf("ja" to "お茶の魔法瓶と分光計。どちらも飛行認定済み。"),
-        "Listed as technology demo. The demo is how to be on time." to mapOf("ja" to "技術実証と書いてある。実証しているのは時間を守ること。"),
+        "Listed as a technology test. The test is how to be on time." to mapOf("ja" to "技術実証と書いてある。実証しているのは時間を守ること。"),
         "A lucky cat for the transfer orbit. The paw is the solar array." to mapOf("ja" to "遷移軌道の招き猫。上げた手が太陽電池。"),
         "If we told you, it would still be extremely well documented." to mapOf("ja" to "話しても、文書は相変わらず完璧です。"),
         "A bento for the Moon. The pickle is classified." to mapOf("ja" to "月行きの弁当。漬物は機密。"),
