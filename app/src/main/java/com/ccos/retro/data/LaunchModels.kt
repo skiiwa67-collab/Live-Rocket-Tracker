@@ -211,7 +211,7 @@ data class LaunchSnapshot(
      * and webcast_live to NET + [LaunchWindow.WATCH_AFTER_NET_SEC] (60 min) for everyone, so at T+60 a launch still
      * flying or streaming stopped being an active watch: isReplayable flipped true, the console left the live wall
      * clock for the replay cursor, AUTO moved on and CURRENT dropped it. Now, while [LaunchWindow.unlimitedLive]
-     * (Pro, grandfathered, or Pro gates off), a real launch whose LL2 status is In Flight or whose webcast is live
+     * (Pro, or Pro gates off), a real launch whose LL2 status is In Flight or whose webcast is live
      * stays live past T+60, up to [LaunchWindow.LIVE_STATUS_MAX_SEC] as a guard against a stale LL2 status.
      */
     fun isExtendedLive(now: Long = System.currentTimeMillis()): Boolean {
@@ -288,7 +288,7 @@ object LaunchWindow {
     /** vc159: ceiling for the extended live window (stale LL2 In Flight / webcast_live guard). Needs Chris OK. */
     const val LIVE_STATUS_MAX_SEC = 24L * 3600L
     /**
-     * vc159: true = live tracking is unlimited past T+60 (Pro, grandfathered, or Pro gates off by the B4 switch).
+     * vc159: true = live tracking is unlimited past T+60 (Pro, or Pro gates off by the B4 switch).
      * Set by RocketTelemetryModule from its Pro check on every resolve; default true matches gates off.
      */
     @Volatile @JvmStatic var unlimitedLive: Boolean = true

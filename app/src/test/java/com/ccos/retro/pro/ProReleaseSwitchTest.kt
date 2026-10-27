@@ -5,14 +5,13 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** B4 regression (Skippy vc159): one release switch; all gates OFF while billing or the legacy-buyer check is a stub. */
+/** B4 regression (Skippy vc159): one release switch; all gates OFF while the product id or billing is a stub (no grandfathering, Chris 8:22). */
 class ProReleaseSwitchTest {
     private object RealBilling : ProBilling {
         override fun loadProduct(productId: String, onResult: (ProProduct?) -> Unit) = onResult(ProProduct("$1"))
         override fun purchase(host: Any?, productId: String, onResult: (PurchaseOutcome) -> Unit) = onResult(PurchaseOutcome.Owned)
         override fun restore(onResult: (EntitlementResult) -> Unit) = onResult(EntitlementResult.NotOwned)
     }
-    private object RealGrandfather : GrandfatherCheck { override fun isGrandfathered(): Boolean? = false }
 
     private val oldReplay = snap(net = NOW - 30L * 24 * HOUR)
     private val proSkin = com.ccos.retro.model.AppPrefs.CONSOLE_SKIN_JAXA
@@ -25,10 +24,9 @@ class ProReleaseSwitchTest {
     }
 
     @Test fun everyStubKeepsGatesOff() {
-        assertFalse(ProConfig.gatesEnabled("PLACEHOLDER_SET_BY_CHRIS", RealBilling, RealGrandfather, debugBuild = false))
-        assertFalse(ProConfig.gatesEnabled("lrt_pro", StubProBilling, RealGrandfather, debugBuild = false))
-        assertFalse(ProConfig.gatesEnabled("lrt_pro", RealBilling, NoGrandfatherCheck, debugBuild = false))
-        assertTrue(ProConfig.gatesEnabled("lrt_pro", RealBilling, RealGrandfather, debugBuild = false))
+        assertFalse(ProConfig.gatesEnabled("PLACEHOLDER_SET_BY_CHRIS", RealBilling, debugBuild = false))
+        assertFalse(ProConfig.gatesEnabled("lrt_pro", StubProBilling, debugBuild = false))
+        assertTrue(ProConfig.gatesEnabled("lrt_pro", RealBilling, debugBuild = false))
     }
 
     @Test fun debugForceOnlyWorksInDebugBuilds() {

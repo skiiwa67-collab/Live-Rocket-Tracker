@@ -47,8 +47,12 @@ class UnlimitedLiveTrackingTest {
         }
     }
 
-    @Test fun grandfatheredCountsAsPro() {
-        val store = MemProStore().apply { putBoolean(ProAccess.KEY_GRANDFATHERED, true) }
+    @Test fun unlimitedIsProOnlyNoGrandfathering() {
+        // Chris 8:22: nobody bought the paid app, so a legacy flag grants nothing.
+        val store = MemProStore().apply { putBoolean("pro_grandfathered", true) }
+        assertFalse(ProAccess(store).isPro)
+        assertTrue(LiveTrackingAllowance.shouldShowCard(inFlight(2 * HOUR), ProAccess(store).isPro, store, NOW))
+        store.putBoolean(ProAccess.KEY_PURCHASED, true)
         assertTrue(ProAccess(store).isPro)
         assertFalse(LiveTrackingAllowance.shouldShowCard(inFlight(2 * HOUR), ProAccess(store).isPro, store, NOW))
     }

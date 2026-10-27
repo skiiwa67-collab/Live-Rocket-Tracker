@@ -23,36 +23,21 @@ object NoBillingSource : EntitlementSource {
 }
 
 /**
- * Grandfathered buyers of the paid app get Pro. Real detection needs Play
- * (original purchase / paid-app ownership) and comes later. null = unknown.
- */
-interface GrandfatherCheck {
-    fun isGrandfathered(): Boolean?
-}
-
-object NoGrandfatherCheck : GrandfatherCheck {
-    override fun isGrandfathered(): Boolean? = null
-}
-
-/**
  * Cached Pro entitlement. Default false. Rules:
  * - Owned -> Pro on; NotOwned -> purchase flag off; Unavailable -> keep cache (never clear on transport failure).
- * - Grandfathered is sticky: once granted it is never revoked by NotOwned or unknown.
+ * - Chris 8:22: no grandfathering (nobody bought the paid app). Pro = purchased, nothing else.
  */
 class ProAccess(
     private val store: ProStore,
-    private val source: EntitlementSource = NoBillingSource,
-    private val grandfather: GrandfatherCheck = NoGrandfatherCheck
+    private val source: EntitlementSource = NoBillingSource
 ) {
     val isPro: Boolean
-        get() = isPurchased || isGrandfathered
+        get() = isPurchased
 
     val isPurchased: Boolean get() = store.getBoolean(KEY_PURCHASED, false)
-    val isGrandfathered: Boolean get() = store.getBoolean(KEY_GRANDFATHERED, false)
 
     /** Call on app start / onResume (vc159: MainActivity.onResume, wallpaper onVisibilityChanged). */
     fun refresh(onDone: ((Boolean) -> Unit)? = null) {
-        if (grandfather.isGrandfathered() == true) markGrandfathered()
         source.query { r ->
             when (r) {
                 EntitlementResult.Owned -> store.putBoolean(KEY_PURCHASED, true)
@@ -63,11 +48,7 @@ class ProAccess(
         }
     }
 
-    /** Stubbed grandfathered path: grants Pro permanently. */
-    fun markGrandfathered() = store.putBoolean(KEY_GRANDFATHERED, true)
-
     companion object {
         const val KEY_PURCHASED = "pro_purchased_cache"
-        const val KEY_GRANDFATHERED = "pro_grandfathered"
     }
 }

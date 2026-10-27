@@ -16,9 +16,6 @@ object ProConfig {
     /** Billing seam (moved from ProUi so the release switch can see it). Stub until Play Billing is linked. */
     @JvmStatic @Volatile var billing: ProBilling = StubProBilling
 
-    /** Legacy paid-app buyer check. Stub until Play's original-purchase detection is wired. */
-    @JvmStatic @Volatile var grandfatherCheck: GrandfatherCheck = NoGrandfatherCheck
-
     /** Debug builds only: reviewers force the gates on (adb extra on MainActivity, see AppPrefs). Release ignores it. */
     @JvmStatic @Volatile var debugForceGates: Boolean = false
 
@@ -27,19 +24,18 @@ object ProConfig {
 
     /**
      * B4 (Skippy vc159): the one release switch. Every Pro gate, lock, tag, badge, card and sheet is OFF unless
-     * a real product id, real billing AND the legacy-buyer check are all wired, so a stub can never take
-     * features away from paying users. Debug builds can force it on for design review.
+     * a real product id AND real billing are wired, so a stub can never take features away. Chris 8:22: no
+     * grandfathering, so the legacy-buyer check is gone from the switch. Debug builds can force it on for design review.
      */
     @JvmStatic
     fun gatesEnabled(
         productId: String = PLAY_PRODUCT_ID,
         billing: ProBilling = this.billing,
-        grandfather: GrandfatherCheck = grandfatherCheck,
         debugBuild: Boolean = BuildConfig.DEBUG,
         debugForce: Boolean = debugForceGates
     ): Boolean {
         if (debugBuild && debugForce) return true
-        return isProductIdConfigured(productId) && billing !is StubProBilling && grandfather !is NoGrandfatherCheck
+        return isProductIdConfigured(productId) && billing !is StubProBilling
     }
 
     /** Toast rate limit from Da Vinci v1 section 7. */

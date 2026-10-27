@@ -52,7 +52,7 @@ object LiveTrackingAllowance {
 
     // ---- B6 (Chris 08:11 / 08:13 CT, Da Vinci final 08:12 / 08:13; rules R-LRT-FREE-PRO-x-live-1h-2, R-NO-BADGER) ----
     // At T+60 a free user gets ONE brief fading note (no card, no buttons, no Pro mention), then the tracker moves to the
-    // next upcoming launch. Pro, grandfathered and switch-off users never see it and never switch. Once per launch.
+    // next upcoming launch. Pro and switch-off users never see it and never switch. Once per launch.
 
     const val NOTE_FADE_IN_MS = 300L
     const val NOTE_HOLD_MS = 5_000L
@@ -114,7 +114,7 @@ object LiveTrackingAllowance {
     enum class Handoff { WAIT, SWITCH, CANCEL }
 
     /**
-     * When to move a free user off [launchId] after its note. CANCEL: Pro / grandfathered / switch off, already done,
+     * When to move a free user off [launchId] after its note. CANCEL: Pro / switch off, already done,
      * or the user is no longer viewing that launch (never yank them). WAIT: note still fading or a touch in the last 5 s.
      */
     fun handoffDecision(

@@ -358,6 +358,19 @@ class RocketTelemetryModule(
     }
 
     /**
+     * Helios P2-B (Chris 8:22: no grandfathering): a saved launch that is now Pro is not restored for a free user.
+     * It falls back to Starship Flight 13 like P2-A. Silent (no sheet), restore only, so a launch the user is
+     * watching is never yanked away.
+     */
+    internal fun gateRestoredLaunch(now: Long = System.currentTimeMillis()) {
+        val saved = tracked ?: return
+        if (!com.ccos.retro.pro.ProGate.isLocked(saved, isProProvider(), now)) return
+        val f13 = historicFallback() ?: return
+        prefs.telemetryLaunchId = f13.id
+        rememberTracked(f13)
+    }
+
+    /**
      * Helios P2-A: Historic fallback when nothing resolves. Always an Included launch (Starship Flight 13: the real LL2
      * replay when cached, else the built-in one), never the first catalog entry (a Pro launch that bypassed the gate).
      */
@@ -664,10 +677,13 @@ class RocketTelemetryModule(
     }
 
     fun resolveTracked(now: Long = System.currentTimeMillis()) {
-        // vc159 (Chris 07:59): Pro / grandfathered / gates-off users track live past T+60 (LaunchSnapshot.isExtendedLive).
+        // vc159 (Chris 07:59): Pro / gates-off users track live past T+60 (LaunchSnapshot.isExtendedLive).
         LaunchWindow.unlimitedLive = isProProvider()
         // Stamp 59: restore before resolve
-        if (tracked == null) keepTrackedOrLastGood(now)
+        if (tracked == null) {
+            keepTrackedOrLastGood(now)
+            gateRestoredLaunch(now)
+        }
         // B6: while a free-hour handoff waits (note fading / idle guard) hold this launch so AUTO can't jump early.
         if (freeHourTick(now) || freeHourPendingId != null) return
         val prevId = tracked?.id

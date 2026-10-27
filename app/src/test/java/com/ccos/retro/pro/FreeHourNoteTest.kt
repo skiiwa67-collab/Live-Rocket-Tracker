@@ -56,11 +56,12 @@ class FreeHourNoteTest {
         assertFalse(LiveTrackingAllowance.isNoteVisible(60_000))
     }
 
-    @Test fun neverForProGrandfatheredOrSwitchOff() {
+    @Test fun neverForProOrSwitchOff() {
         val l = inFlight(2 * HOUR)
         assertFalse(LiveTrackingAllowance.isFreeHourOver(l, true, NOW, true))
-        val gf = MemProStore().apply { putBoolean(ProAccess.KEY_GRANDFATHERED, true) }
-        assertFalse(LiveTrackingAllowance.isFreeHourOver(l, ProAccess(gf).isPro, NOW, true))
+        // Chris 8:22: no grandfathering. A stale legacy flag is a free user.
+        val gf = MemProStore().apply { putBoolean("pro_grandfathered", true) }
+        assertTrue(LiveTrackingAllowance.isFreeHourOver(l, ProAccess(gf).isPro, NOW, true))
         assertFalse(LiveTrackingAllowance.isFreeHourOver(l, false, NOW, gatesOn = false))
         assertFalse(LiveTrackingAllowance.shouldShowCard(l, false, MemProStore(), NOW, gatesOn = false))
         assertTrue(LiveTrackingAllowance.isFreeHourOver(l, false, NOW, true))
