@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- LRT Pro copy, UNWIRED (no code references yet). Source: Da Vinci v1 + v1.1 delta + v1.1 erratum + v1.2 one-time.
+<!-- LRT Pro copy. Source: Da Vinci v1 + v1.1 delta + v1.1 erratum + v1.2 one-time.
      One-time purchase: price only from oneTimePurchaseOfferDetails.formattedPrice. No renewal/trial/subscription wording.
      Never use the word "demo" in user-visible copy (Chris 10-27 7:10 CT). -->
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="UnusedResources">

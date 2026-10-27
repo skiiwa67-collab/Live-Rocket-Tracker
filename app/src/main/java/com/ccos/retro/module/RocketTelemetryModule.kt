@@ -1087,8 +1087,6 @@ class RocketTelemetryModule(
         }
     }
 
-    /** tip146 Phase 1: gold 5s when LL2 webcast_live / In Flight; sparse trail up to 30s. */
-
     // vc159: defense-in-depth Pro gate. A locked replay is not selected; UI shows the sheet / toast.
     fun selectLaunch(id: String, hint: LaunchSnapshot? = null) {
         if (id.isBlank()) return
