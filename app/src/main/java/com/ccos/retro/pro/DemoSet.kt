@@ -16,11 +16,10 @@ object DemoSet {
         CountryDemo("CN", "demo-casc-lm"),
         CountryDemo("RU", "demo-soyuz"),
         CountryDemo("NZ", "demo-electron-inflight", "Electron counts as NZ (Chris 10-27)"),
-        // TODO(chris): Europe / Japan / India left open. Candidate synthetic ids already in
-        // LaunchDataProvider.buildDemoCatalog: demo-esa-ariane, demo-jaxa-h3, demo-isro-lvm3.
-        CountryDemo("EU", null, "TODO"),
-        CountryDemo("JP", null, "TODO"),
-        CountryDemo("IN", null, "TODO")
+        // Chris 10-27: one demo per country; existing synthetic demos from LaunchDataProvider.buildDemoCatalog.
+        CountryDemo("EU", "demo-esa-ariane"),
+        CountryDemo("JP", "demo-jaxa-h3"),
+        CountryDemo("IN", "demo-isro-lvm3")
     )
 
     val FREE_DEMO_IDS: Set<String> =

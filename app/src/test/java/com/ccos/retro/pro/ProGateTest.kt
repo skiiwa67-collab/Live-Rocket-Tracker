@@ -39,6 +39,23 @@ class ProGateTest {
         assertFalse(ProGate.isLocked(realF13, false, NOW))
     }
 
+    @Test fun europeJapanIndiaDemosFreeForFreeUsers() {
+        for (id in listOf("demo-esa-ariane", "demo-jaxa-h3", "demo-isro-lvm3")) {
+            val l = snap(id = id, net = NOW - 10L * 24 * HOUR)
+            assertFalse(id, ProGate.isLocked(l, false, NOW))
+            assertTrue(id, ProGate.canJumpOrSkip(l, false, NOW))
+        }
+    }
+
+    @Test fun otherSyntheticDemosStayPro() {
+        for (id in listOf("demo-spacex-f9", "demo-spacex-inflight", "demo-spacex-crew", "demo-soyuz-inflight", "demo-generic", "demo-blueorigin")) {
+            val l = snap(id = id, net = NOW + HOUR)
+            assertTrue(id, ProGate.isLocked(l, false, NOW))
+            assertFalse(id, ProGate.canJumpOrSkip(l, false, NOW))
+            assertFalse(id, ProGate.isLocked(l, true, NOW))
+        }
+    }
+
     @Test fun nonListedSyntheticDemoLockedForFree() =
         assertTrue(ProGate.isLocked(snap(id = "demo-spacex-fail", net = NOW + HOUR), false, NOW))
 
