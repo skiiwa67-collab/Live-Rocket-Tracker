@@ -12,6 +12,24 @@
     android:orientation="vertical"
     android:background="#070A0E">
 
+    <!-- B6: free-hour note slot, above the command row so it never covers the vehicle or telemetry. Not a tap target. -->
+    <TextView
+        android:id="@+id/free_hour_note"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:background="#101C28"
+        android:textColor="#E8EEF4"
+        android:textSize="16sp"
+        android:maxLines="2"
+        android:clickable="false"
+        android:focusable="false"
+        android:accessibilityLiveRegion="polite"
+        android:visibility="gone" />
+
     <LinearLayout
         android:id="@+id/top_chrome"
         android:layout_width="match_parent"

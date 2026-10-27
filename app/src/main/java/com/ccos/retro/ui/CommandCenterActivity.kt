@@ -59,6 +59,7 @@ class CommandCenterActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private var lastSimTickMs = 0L
     private var running = false
+    private var lastFreeHourTickMs = 0L
 
     private val tabIds = intArrayOf(
         R.id.tab_tel, R.id.tab_traj, R.id.tab_stg1, R.id.tab_stg2,
@@ -77,6 +78,11 @@ class CommandCenterActivity : AppCompatActivity() {
                 lastSimTickMs = now
             }
             pushFlightEvents()
+            // B6: free-hour note + handoff check, ~1 Hz (this screen only resolves on resume otherwise).
+            if (now - lastFreeHourTickMs >= 1000L) {
+                lastFreeHourTickMs = now
+                if (telemetryModule.freeHourTick(now)) telemetryModule.resolveTracked(now)
+            }
             console.invalidate()
             handler.postDelayed(this, 100L)
         }
@@ -100,9 +106,10 @@ class CommandCenterActivity : AppCompatActivity() {
                 ProUi.showUpsell(this, prefs, l.takeIf { hook.kind == com.ccos.retro.pro.ProHook.Kind.LAUNCH })
             }
         }
-        // vc159 (Chris 07:53): free hour of live tracking after liftoff is up -> one card per launch, nothing locks.
-        telemetryModule.onLiveAllowanceUsed = { l ->
-            runOnUiThread { ProUi.showUpsell(this, prefs, l, liveAllowance = true) }
+        // B6 (Chris 08:11/08:13, R-NO-BADGER, Helios no-badger): free hour after liftoff is up -> one brief fading note
+        // above the command row, then the module moves to the next upcoming launch. Never opens the sheet.
+        telemetryModule.onLiveAllowanceUsed = { _, next ->
+            runOnUiThread { ProUi.showFreeHourNote(this, findViewById(R.id.free_hour_note), next) }
         }
 
         console = findViewById(R.id.console_view)
@@ -257,6 +264,12 @@ class CommandCenterActivity : AppCompatActivity() {
         val stripped = raw.replace("; wv", "").replace(" Version/4.0", "")
         return if (stripped.contains("Chrome/")) stripped
         else "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36"
+    }
+
+    /** B6 idle guard: any touch on the tracker defers the free-hour switch (5 s with no touches). Never consumes it. */
+    override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
+        if (this::telemetryModule.isInitialized) telemetryModule.noteUserTouch()
+        return super.dispatchTouchEvent(ev)
     }
 
     override fun onResume() {

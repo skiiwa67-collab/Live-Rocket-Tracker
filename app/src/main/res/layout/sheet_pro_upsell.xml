@@ -83,6 +83,19 @@
             android:textColor="#E8EEF4"
             android:textSize="16sp" />
 
+        <!-- B6: unlimited live tracking item (ProUi swaps to pro_sheet_item_live_short past 2 lines). -->
+        <TextView
+            android:id="@+id/pro_sheet_item_live"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:drawableStart="@drawable/ic_pro_check"
+            android:drawablePadding="10dp"
+            android:gravity="center_vertical"
+            android:text="@string/pro_sheet_item_live"
+            android:textColor="#E8EEF4"
+            android:textSize="16sp" />
+
         <TextView
             android:id="@+id/pro_sheet_included"
             android:layout_width="match_parent"

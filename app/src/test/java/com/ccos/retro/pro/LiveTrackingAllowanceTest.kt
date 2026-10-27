@@ -85,7 +85,7 @@ class LiveTrackingAllowanceTest {
         val xml = listOf("src/main/res/values/strings_pro.xml", "app/src/main/res/values/strings_pro.xml")
             .map { java.io.File(it) }.first { it.exists() }.readText()
         val lines = xml.lines().filter { "pro_allowance_" in it && "<string" in it }
-        assertEquals(2, lines.size)
+        assertEquals(5, lines.size) // B6: + note_next / note_none / note_short
         for (ln in lines) assertFalse(ln, ln.lowercase().contains("lock"))
     }
 }

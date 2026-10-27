@@ -10,7 +10,10 @@
     <string name="pro_sheet_item_past">Watch past and missed launches</string>
     <string name="pro_sheet_item_replay">Replay their telemetry, with jump and skip</string>
     <string name="pro_sheet_item_themes">Pick any console theme</string>
-    <string name="pro_sheet_included">Included free: live and upcoming launches, Auto theming, Starship Flight 13, a featured mission from each country, and the free themes.</string>
+    <!-- B6 (Chris 08:11, Da Vinci final 08:12): Pro feature item; short form only if the full one wraps past 2 lines. -->
+    <string name="pro_sheet_item_live">Unlimited live tracking for the whole flight (free covers the first hour after liftoff)</string>
+    <string name="pro_sheet_item_live_short">Unlimited live tracking (free: first hour after liftoff)</string>
+    <string name="pro_sheet_included">Included free: live and upcoming launches (first hour of live tracking), Auto theming, Starship Flight 13, a featured mission from each country, and the free themes.</string>
     <string name="pro_get_with_price">Get Pro · %1$s</string>
     <string name="pro_get">Get Pro</string>
     <string name="pro_confirm_one_time">One-time purchase. You confirm in Google Play.</string>
@@ -38,6 +41,11 @@
     <!-- Live tracking allowance card (Chris 10-27 07:51/07:53 CT). NEW, needs Da Vinci OK. Never say "locked". -->
     <string name="pro_allowance_title">Keep tracking with Pro</string>
     <string name="pro_allowance_context">Your free hour of live tracking for %1$s is up.</string>
+    <!-- B6 free-hour note (Chris 08:11/08:13, Da Vinci final 08:13): fades in 300 ms, holds 5 s, fades out 600 ms, then the
+         tracker moves to the next upcoming launch. Free tier only, once per launch. No Pro mention, no buttons. -->
+    <string name="pro_allowance_note_next">Free live tracking covers the first hour after liftoff. Up next: %1$s</string>
+    <string name="pro_allowance_note_none">Free live tracking covers the first hour after liftoff. Back to launches.</string>
+    <string name="pro_allowance_note_short">Free live tracking covers the first hour after liftoff.</string>
     <!-- Toasts (v1 §7) -->
     <string name="pro_toast_on">Pro is on. Thanks for supporting LRT.</string>
     <string name="pro_toast_theme_locked">Pro theme. Open LRT to unlock.</string>

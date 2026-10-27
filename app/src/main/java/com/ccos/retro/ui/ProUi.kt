@@ -90,6 +90,10 @@ object ProUi {
                 visibility = View.VISIBLE
             }
         }
+        // B6: unlimited live tracking item; short form only if the full one wraps past 2 lines.
+        v.findViewById<TextView>(R.id.pro_sheet_item_live)?.let { item ->
+            item.post { if (item.lineCount > 2) item.setText(R.string.pro_sheet_item_live_short) }
+        }
         val primary = v.findViewById<Button>(R.id.pro_sheet_primary)
         val progress = v.findViewById<ProgressBar>(R.id.pro_sheet_progress)
         val message = v.findViewById<TextView>(R.id.pro_sheet_message)
@@ -168,6 +172,75 @@ object ProUi {
         }
         dialog.show()
         load()
+    }
+
+    /** B6: true when [text] fits [maxLines] lines at [textSizePx] in [widthPx] (StaticLayout never splits a word unless it is wider than a line). */
+    fun fitsLines(text: String, widthPx: Int, textSizePx: Float, maxLines: Int = 2): Boolean {
+        if (widthPx <= 0) return true
+        val paint = android.text.TextPaint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { textSize = textSizePx }
+        @Suppress("DEPRECATION")
+        val layout = if (android.os.Build.VERSION.SDK_INT >= 23)
+            android.text.StaticLayout.Builder.obtain(text, 0, text.length, paint, widthPx)
+                .setBreakStrategy(android.text.Layout.BREAK_STRATEGY_SIMPLE)
+                .setHyphenationFrequency(android.text.Layout.HYPHENATION_FREQUENCY_NONE).build()
+        else android.text.StaticLayout(text, paint, widthPx, android.text.Layout.Alignment.ALIGN_NORMAL, 1f, 0f, false)
+        if (layout.lineCount > maxLines) return false
+        // A single word wider than the line would be split mid-word: treat as not fitting.
+        val words = text.split(' ')
+        return words.all { paint.measureText(it) <= widthPx }
+    }
+
+    /**
+     * B6 (Chris 08:11/08:13, Da Vinci final 08:13, R-NO-BADGER): ONE brief non-modal note at T+60 for free users.
+     * 16sp, 1-2 lines, no buttons, no tap target; fades in 300 ms, holds 5 s, fades out 600 ms, then goes away by itself.
+     * Polite live region so TalkBack announces it once. [slot] sits above the command row (Command Center); null =
+     * a bottom overlay on the activity content (Settings screen, which has no vehicle or telemetry).
+     */
+    fun showFreeHourNote(activity: Activity, slot: TextView?, next: LaunchSnapshot?) {
+        if (activity.isFinishing) return
+        val dm = activity.resources.displayMetrics
+        val tv = slot ?: TextView(activity).also { v ->
+            val root = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
+            val lp = android.widget.FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                android.view.Gravity.BOTTOM)
+            val m = (16 * dm.density).toInt()
+            lp.setMargins(m, m, m, m)
+            v.setBackgroundColor(0xE6101C28.toInt())
+            v.setTextColor(0xFFE8EEF4.toInt())
+            val pad = (12 * dm.density).toInt()
+            v.setPadding(pad, pad, pad, pad)
+            root.addView(v, lp)
+        }
+        tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
+        tv.isClickable = false
+        tv.isFocusable = false
+        tv.isLongClickable = false
+        if (android.os.Build.VERSION.SDK_INT >= 23) {
+            tv.breakStrategy = android.text.Layout.BREAK_STRATEGY_SIMPLE
+            tv.hyphenationFrequency = android.text.Layout.HYPHENATION_FREQUENCY_NONE
+        }
+        val parentW = (tv.parent as? View)?.width?.takeIf { it > 0 } ?: dm.widthPixels
+        val avail = parentW - tv.paddingLeft - tv.paddingRight - (32 * dm.density).toInt()
+        val sizePx = 16f * dm.scaledDensity
+        val text = com.ccos.retro.pro.LiveTrackingAllowance.noteText(
+            next?.let { com.ccos.retro.pro.LiveTrackingAllowance.nextName(it) },
+            activity.getString(R.string.pro_allowance_note_next),
+            activity.getString(R.string.pro_allowance_note_none),
+            activity.getString(R.string.pro_allowance_note_short)
+        ) { fitsLines(it, avail, sizePx, 2) }
+        tv.animate().cancel()
+        tv.alpha = 0f
+        tv.visibility = View.VISIBLE
+        androidx.core.view.ViewCompat.setAccessibilityLiveRegion(tv, androidx.core.view.ViewCompat.ACCESSIBILITY_LIVE_REGION_POLITE)
+        tv.text = text
+        tv.animate().alpha(1f).setDuration(com.ccos.retro.pro.LiveTrackingAllowance.NOTE_FADE_IN_MS).withEndAction {
+            tv.animate().alpha(0f).setStartDelay(com.ccos.retro.pro.LiveTrackingAllowance.NOTE_HOLD_MS)
+                .setDuration(com.ccos.retro.pro.LiveTrackingAllowance.NOTE_FADE_OUT_MS).withEndAction {
+                    androidx.core.view.ViewCompat.setAccessibilityLiveRegion(tv, androidx.core.view.ViewCompat.ACCESSIBILITY_LIVE_REGION_NONE)
+                    tv.visibility = View.GONE
+                    if (slot == null) (tv.parent as? ViewGroup)?.removeView(tv)
+                }.start()
+        }.start()
     }
 
     fun rowDate(l: LaunchSnapshot): String =

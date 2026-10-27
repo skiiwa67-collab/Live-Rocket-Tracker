@@ -178,19 +178,81 @@ class RocketTelemetryModule(
     var isProProvider: () -> Boolean = { ProAccess(prefs.proStore()).isPro || !com.ccos.retro.pro.ProConfig.gatesEnabled() }
 
     /**
-     * vc159 (Chris 07:53): a free user's tracking of a live launch ran past the free hour after liftoff.
-     * Activities show the "Keep tracking with Pro" card; the wallpaper leaves it null so the card waits for the app.
+     * vc159 (Chris 07:53) + B6 (Chris 08:11/08:13, R-NO-BADGER): a free user's tracking of a live launch ran past the
+     * free hour after liftoff. Activities show ONE brief fading note (never the sheet), passing the next upcoming launch
+     * (null = back to launches). The wallpaper leaves this null: no note there, but it still moves on (freeHourTick).
      */
-    var onLiveAllowanceUsed: ((LaunchSnapshot) -> Unit)? = null
+    var onLiveAllowanceUsed: ((LaunchSnapshot, LaunchSnapshot?) -> Unit)? = null
 
-    /** Once per launch (ProStore key), only when a handler is set. Never locks: the launch keeps tracking. */
+    /** B6: launch whose free hour ended while tracked, and when its note (or the wallpaper's silent wait) started. */
+    private var freeHourPendingId: String? = null
+    private var freeHourStartMs: Long = 0L
+    /** B6 idle guard: last time the user touched the tracker (pan / scrub / any touch). */
+    @Volatile var lastUserTouchMs: Long = 0L
+    fun noteUserTouch(now: Long = System.currentTimeMillis()) { lastUserTouchMs = now }
+
+    private fun freeHourNext(current: LaunchSnapshot, now: Long): LaunchSnapshot? =
+        LiveTrackingAllowance.nextUpcoming(provider.getCached()?.launches.orEmpty(), current.id, now)
+
+    /**
+     * Once per launch (ProStore keys). Never locks: the launch keeps its frozen T+60 state. Starts the handoff wait for
+     * the activity (with a note) and the wallpaper (silent); the note shows only where a handler is set.
+     */
     fun checkLiveTrackingAllowance(now: Long = System.currentTimeMillis()) {
-        val handler = onLiveAllowanceUsed ?: return
         val l = tracked ?: return
         val store = prefs.proStore()
-        if (!LiveTrackingAllowance.shouldShowCard(l, isProProvider(), store, now)) return
+        val pro = isProProvider()
+        if (!LiveTrackingAllowance.isFreeHourOver(l, pro, now, gatesOn = com.ccos.retro.pro.ProConfig.gatesEnabled())) return
+        if (LiveTrackingAllowance.isHandoffDone(store, l.id)) return
+        if (freeHourPendingId != l.id) { freeHourPendingId = l.id; freeHourStartMs = now }
+        val handler = onLiveAllowanceUsed ?: return
+        if (!LiveTrackingAllowance.shouldShowCard(l, pro, store, now)) return
         LiveTrackingAllowance.markShown(store, l)
-        handler(l)
+        handler(l, freeHourNext(l, now))
+    }
+
+    /**
+     * B6: after the note fades (300 + 5000 + 600 ms) and 5 s with no touches, move a free user who is still viewing that
+     * launch to the next upcoming real launch (none = default launches view). Internal move: no gate, no sheet (B3).
+     * Returns true when it switched. Called from resolveTracked and the Command Center tick.
+     */
+    fun freeHourTick(now: Long = System.currentTimeMillis()): Boolean {
+        checkLiveTrackingAllowance(now)
+        val id = freeHourPendingId ?: return false
+        val store = prefs.proStore()
+        val pro = isProProvider()
+        when (LiveTrackingAllowance.handoffDecision(id, tracked?.id, freeHourStartMs, lastUserTouchMs, now,
+            pro, com.ccos.retro.pro.ProConfig.gatesEnabled(), store)) {
+            LiveTrackingAllowance.Handoff.WAIT -> return false
+            LiveTrackingAllowance.Handoff.CANCEL -> { freeHourPendingId = null; return false }
+            LiveTrackingAllowance.Handoff.SWITCH -> Unit
+        }
+        freeHourPendingId = null
+        LiveTrackingAllowance.markHandoffDone(store, id)
+        val cur = tracked ?: return false
+        handoffAfterFreeHour(freeHourNext(cur, now), now)
+        return true
+    }
+
+    /** B6: same moves as handoffAutoToNextUpcoming, but to the chosen next launch (never a built-in sample). */
+    private fun handoffAfterFreeHour(next: LaunchSnapshot?, now: Long) {
+        provider.clearHistoricSearchInterest()
+        prefs.telemetryListMode = "current"
+        prefs.telemetryPinned = false
+        pinnedSnapshot = null
+        prefs.telemetryAuto = true
+        releaseHold()
+        simSecondsFromNet = null
+        forceStatus = null
+        loopReplay = false
+        bumpLeaveTheaterEpoch()
+        if (next != null) {
+            rememberTracked(next)
+            prefs.telemetryLaunchId = next.id
+        } else {
+            prefs.telemetryLaunchId = ""
+            resolveTracked(now)
+        }
     }
 
     /** vc159: called when a Pro gate refuses (MainActivity opens the sheet, wallpaper toasts). */
@@ -579,7 +641,8 @@ class RocketTelemetryModule(
         LaunchWindow.unlimitedLive = isProProvider()
         // Stamp 59: restore before resolve
         if (tracked == null) keepTrackedOrLastGood(now)
-        checkLiveTrackingAllowance(now)
+        // B6: while a free-hour handoff waits (note fading / idle guard) hold this launch so AUTO can't jump early.
+        if (freeHourTick(now) || freeHourPendingId != null) return
         val prevId = tracked?.id
         // Stamp 85: LCK lifetime = NET + telemetryHoldDurationMs (30m|1h|2h|24h|48h). Never forever-pin.
         if (prefs.telemetryPinned) {

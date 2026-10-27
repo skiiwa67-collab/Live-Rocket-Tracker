@@ -147,9 +147,9 @@ class MainActivity : AppCompatActivity() {
                 ProUi.showUpsell(this, prefs, l.takeIf { hook.kind == ProHook.Kind.LAUNCH }) { onProChanged() }
             }
         }
-        // vc159 (Chris 07:53): free hour of live tracking after liftoff is up -> one card per launch, nothing locks.
-        telemetryModule.onLiveAllowanceUsed = { l ->
-            runOnUiThread { ProUi.showUpsell(this, prefs, l, liveAllowance = true) }
+        // B6 (Chris 08:11/08:13, R-NO-BADGER): free hour after liftoff is up -> one brief fading note, never the sheet.
+        telemetryModule.onLiveAllowanceUsed = { _, next ->
+            runOnUiThread { ProUi.showFreeHourNote(this, null, next) }
         }
         // Stamp 63 A: onCreate ensureData -> forceRefresh if null -> resolveTracked -> keepTrackedOrLastGood
         telemetryModule.ensureData()
