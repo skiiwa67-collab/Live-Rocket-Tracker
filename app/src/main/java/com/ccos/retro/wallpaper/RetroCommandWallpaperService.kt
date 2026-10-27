@@ -556,6 +556,8 @@ class RetroCommandWallpaperService : WallpaperService() {
                 try {
                     prefs.enforceThemeGate(ProUi.access(prefs).isPro || !com.ccos.retro.pro.ProConfig.gatesEnabled())
                 } catch (_: Exception) {}
+                // Helios P2-C: badge state cached here, never computed (or written) from draw.
+                try { refreshThemeBadgeCache() } catch (_: Exception) {}
                 handler.post(drawRunnable)
             } else {
                 handler.removeCallbacks(drawRunnable)
@@ -1171,30 +1173,46 @@ class RetroCommandWallpaperService : WallpaperService() {
         }
 
         private val proBadgePaint = Paint(Paint.ANTI_ALIAS_FLAG)
+        private val badgeFill = Color.parseColor("#0B0F14")
+        private val badgeRing = Color.parseColor("#D0DCE8")
+        private val badgeGlyph = Color.parseColor("#E8EEF4")
+
+        /** Helios P2-C: Pro themes a free user can't pick; null = Pro / not computed yet (no badges). */
+        @Volatile private var badgeProThemes: Set<String>? = null
+
+        /** Helios P2-C: off the draw path (visibility change). Also where the Euro free pick may be written. */
+        private fun refreshThemeBadgeCache() {
+            if (ProUi.access(prefs).isPro) { badgeProThemes = null; return }
+            val store = prefs.proStore()
+            badgeProThemes = AppPrefs.CONSOLE_SKIN_IDS.filterNot {
+                ProPolicy.allowsTheme(ProHook.THEME_PICK_WALLPAPER_FLYOUT, false, it, store)
+            }.toSet()
+        }
 
         /** vc159 (v1 sections 1, 8): lock badge at 0.36 x chip height, top-end; none on the selected (Auto) chip. */
+        @Suppress("UNUSED_PARAMETER")
         private fun drawThemeLockBadges(canvas: Canvas, rects: Array<RectF>, hook: ProHook) {
-            val store = prefs.proStore()
-            if (ProUi.access(prefs).isPro) return
+            val proThemes = badgeProThemes ?: return
+            if (proThemes.isEmpty()) return
             val ids = AppPrefs.CONSOLE_SKIN_IDS
             val sel = AppPrefs.consoleSkinIndex(prefs.consoleSkin)
             val p = proBadgePaint
             for (i in 0 until minOf(ids.size, rects.size)) {
                 val r = rects[i]
                 if (r.isEmpty || i == sel) continue
-                if (ProPolicy.allowsTheme(hook, false, ids[i], store)) continue
+                if (ids[i] !in proThemes) continue
                 val d = r.height() * 0.36f
                 val rad = d / 2f
                 val cx = r.right - rad * 0.9f
                 val cy = r.top + rad * 0.9f
                 p.style = Paint.Style.FILL
-                p.color = Color.parseColor("#0B0F14")
+                p.color = badgeFill
                 canvas.drawCircle(cx, cy, rad, p)
                 p.style = Paint.Style.STROKE
                 p.strokeWidth = (d * 0.05f).coerceAtLeast(1.5f)
-                p.color = Color.parseColor("#D0DCE8")
+                p.color = badgeRing
                 canvas.drawCircle(cx, cy, rad - p.strokeWidth / 2f, p)
-                p.color = Color.parseColor("#E8EEF4")
+                p.color = badgeGlyph
                 p.strokeWidth = (d * 0.07f).coerceAtLeast(1.5f)
                 val sw = rad * 0.5f
                 canvas.drawArc(cx - sw * 0.6f, cy - rad * 0.55f, cx + sw * 0.6f, cy + rad * 0.05f, 180f, 180f, false, p)
