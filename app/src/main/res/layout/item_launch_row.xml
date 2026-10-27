@@ -74,6 +74,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
+            android:contentDescription="@string/pro_cd_badge"
             android:text="@string/pro_badge"
             android:textColor="#C8D4DC"
             android:textSize="16sp" />

@@ -52,18 +52,7 @@ object ProUi {
     }
 
     /** Settings title colour per skin (matches MainActivity.applyConsoleSkin); sheet top rule uses it. */
-    fun skinTitleColor(skin: String): Int = when (skin) {
-        AppPrefs.CONSOLE_SKIN_ROS -> 0xFFE8F0D8.toInt()
-        AppPrefs.CONSOLE_SKIN_SPACEX -> 0xFF00D26A.toInt()
-        AppPrefs.CONSOLE_SKIN_NASA -> 0xFF6A9AD4.toInt()
-        AppPrefs.CONSOLE_SKIN_CNSA -> 0xFFDE2910.toInt()
-        AppPrefs.CONSOLE_SKIN_ARIANE -> 0xFFFFD100.toInt()
-        AppPrefs.CONSOLE_SKIN_RLAB -> 0xFFFF5A1F.toInt()
-        AppPrefs.CONSOLE_SKIN_ULA -> 0xFFF6A800.toInt()
-        AppPrefs.CONSOLE_SKIN_JAXA -> 0xFFE10600.toInt()
-        AppPrefs.CONSOLE_SKIN_ISRO -> 0xFFFF671F.toInt()
-        else -> 0xFFFFB000.toInt()
-    }
+    fun skinTitleColor(skin: String): Int = com.ccos.retro.pro.ProContrast.accentFor(skin)
 
     /**
      * v1 section 5 sheet. Opened only by a user tap (locked row, locked theme chip, locked jump/skip, Pro row).
@@ -87,6 +76,7 @@ object ProUi {
         (v.parent as? View)?.setBackgroundColor(Color.TRANSPARENT)
 
         val accent = skinTitleColor(prefs.consoleSkin)
+        val buy = com.ccos.retro.pro.ProContrast.buyButtonForSkin(prefs.consoleSkin)
         v.findViewById<View>(R.id.pro_sheet_rule).setBackgroundColor(accent)
         v.findViewById<TextView>(R.id.pro_sheet_context).apply {
             if (context != null) {
@@ -117,8 +107,9 @@ object ProUi {
             primary.text = if (r.priceArg != null) activity.getString(r.primaryTextRes, r.priceArg)
             else activity.getString(r.primaryTextRes)
             primary.isEnabled = r.primaryEnabled
-            primary.setTextColor(if (r.primaryEnabled) 0xFF0B0F14.toInt() else 0xFF8AA0B0.toInt())
-            primary.backgroundTintList = if (r.primaryEnabled) android.content.res.ColorStateList.valueOf(accent) else null
+            // vc159 Da Vinci: accent only if WCAG label >= 4.5:1 and fill-vs-sheet >= 3:1, else #90E0FF / #1A1A22.
+            primary.setTextColor(if (r.primaryEnabled) buy.label else 0xFF8AA0B0.toInt())
+            primary.backgroundTintList = if (r.primaryEnabled) android.content.res.ColorStateList.valueOf(buy.fill) else null
             progress.visibility = if (r.showProgress) View.VISIBLE else View.GONE
             message.setText(r.messageRes)
             for ((k, b) in buttons) b.visibility = if (k in r.secondary) View.VISIBLE else View.GONE

@@ -33,7 +33,8 @@
     <string name="pro_restore_unavailable">Google Play isn\'t reachable right now. Try again later.</string>
     <!-- Pills (v1.1 §2) -->
     <string name="pro_pill_included">Included</string>
-    <string name="pro_badge">Pro</string>
+    <string name="pro_badge">PRO</string>
+    <string name="pro_cd_badge">Pro feature</string>
     <!-- Toasts (v1 §7) -->
     <string name="pro_toast_on">Pro is on. Thanks for supporting LRT.</string>
     <string name="pro_toast_theme_locked">Pro theme. Open LRT to unlock.</string>
