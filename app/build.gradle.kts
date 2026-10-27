@@ -1,11 +1,13 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("app.cash.paparazzi")
 }
 
 android {
     namespace = "com.ccos.retro"
-    compileSdk = 36
+    // Throwaway-only: 35 so Paparazzi 1.3.5 layoutlib can snapshot. Product compileSdk remains 36 on the parent branch.
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.liverockettracker"
