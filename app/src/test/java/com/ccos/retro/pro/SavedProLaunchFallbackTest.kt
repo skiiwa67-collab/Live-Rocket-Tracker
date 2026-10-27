@@ -19,7 +19,9 @@ class SavedProLaunchFallbackTest {
 
     @Test fun gateFallsBackToF13Silently() {
         val body = m.substringAfter("internal fun gateRestoredLaunch(").substringBefore("\n    }\n")
-        assertTrue(body.contains("ProGate.isLocked(saved, isProProvider(), now)"))
+        // Via ProPolicy (honours the B4 gatesEnabled switch); ProPolicyTest forbids raw ProGate.isLocked outside pro/.
+        assertTrue(body.contains("ProPolicy.allowsLaunch(ProHook.SELECT_LAUNCH, isProProvider(), saved, now)"))
+        assertFalse(body.contains("ProGate.isLocked"))
         assertTrue(body.contains("historicFallback()"))
         assertTrue(body.contains("prefs.telemetryLaunchId = f13.id"))
         assertFalse("no sheet on restore (no-badger)", body.contains("onProBlocked") || body.contains("proAllows("))
