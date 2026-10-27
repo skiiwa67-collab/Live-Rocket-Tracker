@@ -18,7 +18,7 @@ class GoldV2WiringTest {
     }
 
     @Test fun unlockDrawOrderMatchesDaVinci() {
-        // Da Vinci 12:14 CT: glow -> rays -> rings -> back -> dust -> mid -> residents -> front -> glints -> text.
+        // Da Vinci 12:16 CT: glow -> rays -> rings -> back -> dust -> mid -> residents -> PADLOCK -> front -> glints -> text.
         // Glow and rays under the text (not clipped); rings, sparkles, residents and glints clipped off the text.
         val v = src("java/com/ccos/retro/ui/ProUnlockView.kt")
         val body = v.substring(v.indexOf("private fun drawMoment("), v.indexOf("private fun drawStatic("))
@@ -31,8 +31,23 @@ class GoldV2WiringTest {
         val residents = at("drawResidents(canvas, cx, cy, res, t)")
         val glints = at("params.glintAlpha(i, t)")
         assertTrue(glow < rays && rays < clip && clip < rings && rings < layers && layers < glints)
-        assertTrue("residents just before front", body.contains("if (params.layers[li].name == \"front\") drawResidents("))
+        assertTrue("residents then padlock just before front",
+            body.contains("if (params.layers[li].name == \"front\") { drawResidents(canvas, cx, cy, res, t); drawLock() }"))
         assertTrue(residents in layers..glints)
+        // the padlock is drawn only via drawLock (not before the rings any more)
+        val lockDef = at("val drawLock: () -> Unit = {")
+        assertTrue(lockDef < clip)
+        assertTrue("padlock drawn once, inside drawLock", Regex("drawPadlock\\(").findAll(body).count() == 1)
+        val lockBody = body.substring(lockDef, body.indexOf("}", body.indexOf("if (keepOutOn) clipOutText(canvas)", lockDef)))
+        // padlock keeps its own clipping: pops the text keep-out clip, draws, restores it
+        assertTrue(lockBody.indexOf("canvas.restore()") < lockBody.indexOf("drawPadlock(") &&
+            lockBody.indexOf("drawPadlock(") < lockBody.indexOf("canvas.save()") &&
+            lockBody.indexOf("canvas.save()") < lockBody.indexOf("clipOutText(canvas)"))
+        // static frame keeps the same order: padlock before the front layer, glints last
+        val st = v.substring(v.indexOf("private fun drawStatic("), v.indexOf("private fun drawResidents("))
+        assertTrue(st.contains("if (!lockDrawn && s.layer == frontIdx) { drawLock(); lockDrawn = true }"))
+        assertTrue(st.indexOf("sortedBy { it.layer }") in 0 until st.indexOf("drawGlint("))
+        assertTrue(st.indexOf("if (!lockDrawn) drawLock()") in 0 until st.indexOf("drawGlint("))
         val names = ProSparkleParams.V2.layers.map { it.name }
         assertTrue(names.toString(), names == listOf("back", "dust", "mid", "front"))
         // keep-out begins exactly when the text starts to appear; rings are over by then

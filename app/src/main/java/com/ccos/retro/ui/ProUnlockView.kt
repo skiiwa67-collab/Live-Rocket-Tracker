@@ -198,15 +198,24 @@ class ProUnlockView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet?
         // Padlock: 88dp, appears closed 0-130, shackle opens 130-450.
         val appear = if (static) 1f else easeOutCubic(span(t, 0, ProGoldMoment.LOCK_APPEAR_MS))
         val open = if (static) 1f else easeOutCubic(span(t, ProGoldMoment.LOCK_APPEAR_MS, ProGoldMoment.SHACKLE_OPEN_END_MS))
-        drawPadlock(canvas, cx, cy, 44f * d * (0.85f + 0.15f * appear), appear, open)
+        val keepOutOn = static || t >= params.textKeepOutMs
+        // Da Vinci 12:16 CT: padlock draws after residents, before front. It keeps its own clipping
+        // (plate only, never cut by the text keep-out): pop the FX clip, draw, then re-apply it.
+        val drawLock: () -> Unit = {
+            canvas.restore()
+            drawPadlock(canvas, cx, cy, 44f * d * (0.85f + 0.15f * appear), appear, open)
+            paint.style = Paint.Style.FILL; paint.shader = null; paint.colorFilter = null
+            canvas.save()
+            if (keepOutOn) clipOutText(canvas)
+        }
 
         // FX layer: hard keep-out of the text boxes from 600 ms (and always in the static frame).
         canvas.save()
-        if (static || t >= params.textKeepOutMs) clipOutText(canvas)
+        if (keepOutOn) clipOutText(canvas)
         val textFade = if (!static && t >= params.textFadeStartMs && t < params.textKeepOutMs)
             (params.textKeepOutMs - t).toFloat() / (params.textKeepOutMs - params.textFadeStartMs).toFloat() else 1f
 
-        if (static) drawStatic(canvas, cx, cy, halfWdp, halfHdp)
+        if (static) drawStatic(canvas, cx, cy, halfWdp, halfHdp, drawLock)
         else {
             // Shock rings 130-600.
             paint.style = Paint.Style.STROKE; paint.strokeWidth = 1.5f * d; paint.color = ProGold.GOLD_HI
@@ -226,9 +235,9 @@ class ProUnlockView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet?
                 while (sm.frame < targetFrame && guard++ < 200) sm.step()
             }
             val res = residents ?: ProSparkleSim.residents(params, halfWdp, halfHdp, keepOutsDp(cx, cy)).also { residents = it }
-            // Order: back -> dust -> mid -> residents -> front -> glints.
+            // Order: back -> dust -> mid -> residents -> padlock -> front -> glints.
             for (li in params.layers.indices) {
-                if (params.layers[li].name == "front") drawResidents(canvas, cx, cy, res, t)
+                if (params.layers[li].name == "front") { drawResidents(canvas, cx, cy, res, t); drawLock() }
                 val L = params.layers[li]
                 var n = 0
                 sm?.live?.forEach { p ->
@@ -240,7 +249,7 @@ class ProUnlockView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet?
                     drawParticle(canvas, L, x, y, p.size * d, p.color, a.toInt())
                 }
             }
-            if (params.layers.none { it.name == "front" }) drawResidents(canvas, cx, cy, res, t)
+            if (params.layers.none { it.name == "front" }) { drawResidents(canvas, cx, cy, res, t); drawLock() }
             for (i in params.glintPeaksMs.indices) {
                 val a = params.glintAlpha(i, t)
                 if (a > 0f) params.glintOffsetsDp.getOrNull(i)?.let { (gx, gy) -> drawGlint(canvas, cx + gx * d, cy + gy * d, a) }
@@ -250,12 +259,17 @@ class ProUnlockView @JvmOverloads constructor(ctx: Context, attrs: AttributeSet?
         canvas.restore()
     }
 
-    private fun drawStatic(c: Canvas, cx: Float, cy: Float, halfWdp: Float, halfHdp: Float) {
+    private fun drawStatic(c: Canvas, cx: Float, cy: Float, halfWdp: Float, halfHdp: Float, drawLock: () -> Unit) {
         val field = staticField ?: ProSparkleSim.staticField(params, halfWdp, halfHdp, keepOutsDp(cx, cy)).also { staticField = it }
-        for (s in field) {
+        val frontIdx = params.layers.indexOfFirst { it.name == "front" }
+        var lockDrawn = false
+        // Static frame: same order, back -> dust -> mid -> padlock -> front -> glints (no residents).
+        for (s in field.sortedBy { it.layer }) {
+            if (!lockDrawn && s.layer == frontIdx) { drawLock(); lockDrawn = true }
             val L = params.layers[s.layer]
             drawParticle(c, L, cx + s.x * d, cy + s.y * d, s.size * d, s.color, (255 * s.alpha).toInt())
         }
+        if (!lockDrawn) drawLock()
         for (i in 0 until minOf(params.staticGlints, params.glintOffsetsDp.size)) {
             val (gx, gy) = params.glintOffsetsDp[i]
             drawGlint(c, cx + gx * d, cy + gy * d, 0.85f)
