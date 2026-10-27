@@ -7,8 +7,9 @@ import java.util.Random
 /**
  * Console theme access (R-LRT-FREE-PRO, Chris 10-27):
  * free = NASA, SPACEX, ROS, CNSA, MCC + one European-style theme picked once per install.
- * Others are Pro for manual picking. Auto theming (AppPrefs.noteConsoleSkinTrackedLaunch) is unchanged:
- * a Pro theme Auto applies shows for that live launch but never becomes a free user's saved manual pick.
+ * Others are Pro. Chris 8:22: Pro unlocks ALL themes and the gate stands everywhere, live launches included.
+ * Auto theming (AppPrefs.noteConsoleSkinTrackedLaunch) only applies a theme a free user may pick; a Pro theme
+ * falls back to their saved manual pick. Live tracking itself is never gated, only the theme choice.
  */
 object ThemeAccess {
     val FREE_BASE: Set<String> = setOf(
@@ -51,13 +52,13 @@ object ThemeAccess {
         return if (canPickManually(s, isPro, store)) s else AppPrefs.CONSOLE_SKIN_MCC
     }
 
-    /** What shows during a live launch: Auto's choice for everyone (unchanged behaviour). */
-    fun displayedDuringLive(autoSkin: String): String = AppPrefs.normalizeConsoleSkin(autoSkin)
+    /** What shows during a live launch (Chris 8:22): Auto's choice if the user may pick it, else their saved pick. */
+    fun displayedDuringLive(autoSkin: String, isPro: Boolean, store: ProStore): String =
+        skinAfterLiveEnds(autoSkin, isPro, store)
 
     /**
      * When the Auto-themed live launch ends: keep [current] if the user may pick it, else fall back
-     * to their saved manual pick. Not wired in vc159 (deliberately lenient: Auto theming is never
-     * gated, so an Auto-applied theme simply stays until the next Auto or manual change).
+     * to their saved manual pick. Also the resume / visibility check (AppPrefs.enforceThemeGate).
      */
     fun skinAfterLiveEnds(current: String, isPro: Boolean, store: ProStore): String =
         if (canPickManually(current, isPro, store)) AppPrefs.normalizeConsoleSkin(current)

@@ -366,17 +366,26 @@ class AppPrefs(context: Context) {
      * [launchId] differs from the last noted id, then set from TelemetrySkin.forLaunch map
      * (not hardcoded MCC). Flyout highlight reads prefs.consoleSkin.
      */
-    fun noteConsoleSkinTrackedLaunch(launchId: String, launch: LaunchSnapshot? = null) {
+    fun noteConsoleSkinTrackedLaunch(launchId: String, launch: LaunchSnapshot? = null, isPro: Boolean) {
         if (launchId.isBlank()) return
         val key = "console_skin_for_launch"
         val prev = prefs.getString(key, "") ?: ""
         if (prev != launchId) {
-            val skinId = consoleSkinIdForLaunch(launch)
+            // Chris 8:22: theme gate stands on live launches too. [isPro] = Pro or gates off.
+            val skinId = com.ccos.retro.pro.ThemeAccess.displayedDuringLive(consoleSkinIdForLaunch(launch), isPro, proStore())
             prefs.edit()
                 .putString("console_skin", skinId)
                 .putString(key, launchId)
                 .apply()
         }
+    }
+
+    /** Chris 8:22: a Pro theme already on screen (old Auto pick, lapsed Pro) drops to the free user's saved pick. */
+    fun enforceThemeGate(isPro: Boolean) {
+        if (isPro) return
+        val cur = consoleSkin
+        val ok = com.ccos.retro.pro.ThemeAccess.skinAfterLiveEnds(cur, false, proStore())
+        if (ok != cur) consoleSkin = ok
     }
 
     /**

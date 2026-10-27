@@ -89,14 +89,14 @@ class ProPolicyTest {
         }
     }
 
-    @Test fun autoThemingIsNeverGated() {
-        // Auto theming runs through AppPrefs (no ProPolicy / ThemeAccess gate in its path).
+    @Test fun autoThemingIsGatedToo() {
+        // Chris 8:22: Pro unlocks ALL themes; the gate stands on live launches too. The Auto map stays pure,
+        // and the apply step only uses a theme the user may pick.
         val prefs = src("model/AppPrefs.kt")
-        val auto = Regex("""fun (consoleSkinIdForLaunch|noteConsoleSkinTrackedLaunch)\b[\s\S]*?\n    }""").findAll(prefs).toList()
-        assertTrue("auto theming functions found", auto.isNotEmpty())
-        for (m in auto) {
-            for (gate in listOf("ProPolicy", "ThemeAccess", "ProGate", "isPro")) assertFalse("${m.groupValues[1]} uses $gate", m.value.contains(gate))
-        }
+        val map = Regex("""fun consoleSkinIdForLaunch\b[\s\S]*?\n        }""").find(prefs)!!.value
+        for (gate in listOf("ProPolicy", "ThemeAccess", "ProGate", "isPro")) assertFalse("map uses $gate", map.contains(gate))
+        val apply = Regex("""fun noteConsoleSkinTrackedLaunch\b[\s\S]*?\n    }""").find(prefs)!!.value
+        assertTrue(apply.contains("ThemeAccess.displayedDuringLive(consoleSkinIdForLaunch(launch), isPro, proStore())"))
     }
 
     @Test fun everyHookIsWiredOutsidePro() {

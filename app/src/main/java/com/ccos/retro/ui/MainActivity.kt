@@ -412,6 +412,8 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         // Stamp 57: never force AUTO on resume  -  MANUAL pick must stick (Soyuz stay Soyuz).
         // tip150: re-tint settings chrome from prefs.consoleSkin (tip149 forLaunch may change it off-screen).
+        // Chris 8:22: Pro theme gate first, so a free user never resumes on a Pro theme.
+        prefs.enforceThemeGate(isPro())
         applyConsoleSkin()
         refreshTrackingUi()
         // vc159: entitlement refresh (stub billing = Unavailable, cache kept).

@@ -7,9 +7,9 @@ import com.ccos.retro.data.LaunchSnapshot
  * gated surface is a closed, testable list. Gated for a free user ONLY:
  *  - starting a replay of a past launch that is not in the Included set (select, historic roll, picker row),
  *  - jump / event skip while such a locked replay is on screen,
- *  - manually picking a non-free console theme.
- * Everything else (live + upcoming launches, live jump/skip, Auto theming, Starship F13, the featured
- * mission per country, the free themes, HISTORIC list + search, settings) never consults a gate.
+ *  - manually picking a non-free console theme; Chris 8:22: Auto theming applies only free themes too.
+ * Everything else (live + upcoming launches, live jump/skip, Starship F13, the free themes,
+ * HISTORIC list + search, settings) never consults a gate.
  */
 enum class ProHook(val kind: Kind) {
     /** MainActivity spinner pick and RocketTelemetryModule.selectLaunch (defense in depth). */

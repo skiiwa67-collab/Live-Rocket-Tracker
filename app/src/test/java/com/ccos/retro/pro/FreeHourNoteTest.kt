@@ -76,8 +76,8 @@ class FreeHourNoteTest {
         assertEquals("Free live tracking covers the first hour after liftoff.", str("pro_allowance_note_short"))
         assertEquals("Unlimited live tracking for the whole flight (free covers the first hour after liftoff)", str("pro_sheet_item_live"))
         assertEquals("Unlimited live tracking (free: first hour after liftoff)", str("pro_sheet_item_live_short"))
-        assertEquals("Included free: live and upcoming launches (first hour of live tracking), Auto theming, Starship Flight 13, " +
-            "a featured mission from each country, and the free themes.", str("pro_sheet_included"))
+        assertEquals("Included free: live and upcoming launches (first hour of live tracking), Starship Flight 13, " +
+            "and the free themes.", str("pro_sheet_included"))
     }
 
     @Test fun noteCopyHasNoLockDemoOrPro() {

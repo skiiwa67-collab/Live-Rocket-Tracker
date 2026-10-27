@@ -13,7 +13,7 @@
     <!-- B6 (Chris 08:11, Da Vinci final 08:12): Pro feature item; short form only if the full one wraps past 2 lines. -->
     <string name="pro_sheet_item_live">Unlimited live tracking for the whole flight (free covers the first hour after liftoff)</string>
     <string name="pro_sheet_item_live_short">Unlimited live tracking (free: first hour after liftoff)</string>
-    <string name="pro_sheet_included">Included free: live and upcoming launches (first hour of live tracking), Auto theming, Starship Flight 13, a featured mission from each country, and the free themes.</string>
+    <string name="pro_sheet_included">Included free: live and upcoming launches (first hour of live tracking), Starship Flight 13, and the free themes.</string>
     <string name="pro_get_with_price">Get Pro · %1$s</string>
     <string name="pro_get">Get Pro</string>
     <string name="pro_confirm_one_time">One-time purchase. You confirm in Google Play.</string>

@@ -552,6 +552,10 @@ class RetroCommandWallpaperService : WallpaperService() {
                 lastTickTime = System.currentTimeMillis()
                 // vc159: entitlement refresh (stub billing keeps the cache).
                 try { ProUi.access(prefs).refresh() } catch (_: Exception) {}
+                // Chris 8:22: Pro theme gate stands everywhere, live included.
+                try {
+                    prefs.enforceThemeGate(ProUi.access(prefs).isPro || !com.ccos.retro.pro.ProConfig.gatesEnabled())
+                } catch (_: Exception) {}
                 handler.post(drawRunnable)
             } else {
                 handler.removeCallbacks(drawRunnable)

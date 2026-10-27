@@ -497,7 +497,7 @@ class RocketTelemetryModule(
             lastBoundTrackedId = s.id
             trackedGeneration++
             // tip149: consoleSkin manual override sticks for this launch; on id change map from forLaunch.
-            prefs.noteConsoleSkinTrackedLaunch(s.id, s)
+            prefs.noteConsoleSkinTrackedLaunch(s.id, s, isProProvider())
             // Do not keep prior-flight theater/cursor on a new bird (agency mix FAIL).
             if (!s.id.startsWith("demo-") && simSecondsFromNet != null) {
                 clearSim()

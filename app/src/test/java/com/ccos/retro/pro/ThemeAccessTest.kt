@@ -41,10 +41,13 @@ class ThemeAccessTest {
         assertEquals("ISRO", ThemeAccess.savedManualPick(s, true))
     }
 
-    @Test fun autoProThemeShowsLiveButIsNotSavedPick() {
+    @Test fun autoProThemeIsGatedOnLiveToo() {
+        // Chris 8:22: free users never see a Pro theme, live launches included.
         val s = MemProStore()
         ThemeAccess.recordManualPick(s, "NASA", false)
-        assertEquals("ULA", ThemeAccess.displayedDuringLive("ULA"))
+        assertEquals("NASA", ThemeAccess.displayedDuringLive("ULA", false, s))
+        assertEquals("ULA", ThemeAccess.displayedDuringLive("ULA", true, s))
+        assertEquals("SPACEX", ThemeAccess.displayedDuringLive("SPACEX", false, s))
         assertEquals("NASA", ThemeAccess.skinAfterLiveEnds("ULA", false, s))
         assertEquals("NASA", ThemeAccess.savedManualPick(s, false))
         assertEquals("CNSA", ThemeAccess.skinAfterLiveEnds("CNSA", false, s))
@@ -65,6 +68,7 @@ class ThemeAccessTest {
         assertEquals("JAXA", AppPrefs.consoleSkinIdForLaunch(snap(provider = "JAXA", rocket = "H3")))
         assertEquals("ISRO", AppPrefs.consoleSkinIdForLaunch(snap(provider = "ISRO", rocket = "LVM3")))
         assertEquals("MCC", AppPrefs.consoleSkinIdForLaunch(null))
-        assertEquals("ULA", ThemeAccess.displayedDuringLive(AppPrefs.consoleSkinIdForLaunch(snap(provider = "United Launch Alliance"))))
+        assertEquals("ULA", ThemeAccess.displayedDuringLive(AppPrefs.consoleSkinIdForLaunch(snap(provider = "United Launch Alliance")), true, MemProStore()))
+        assertEquals("MCC", ThemeAccess.displayedDuringLive(AppPrefs.consoleSkinIdForLaunch(snap(provider = "United Launch Alliance")), false, MemProStore()))
     }
 }
