@@ -47,7 +47,9 @@ data class LaunchSnapshot(
     val webcastLive: Boolean = false,
     val probability: Int? = null,    // 0-100 or null
     val holdReason: String? = null,
-    val lastUpdatedMs: Long = System.currentTimeMillis()
+    val lastUpdatedMs: Long = System.currentTimeMillis(),
+    /** LL2 `failreason` (Helios P1-A: evidence that a plain Failure happened after liftoff). */
+    val failReason: String? = null
 ) {
     fun isSpaceX(): Boolean = provider.contains("SpaceX", ignoreCase = true)
     fun isNasa(): Boolean = provider.contains("NASA", ignoreCase = true) ||
@@ -137,6 +139,16 @@ data class LaunchSnapshot(
         val blob = "$statusAbbrev $statusName".lowercase()
         if ("fairing" in blob) return false
         return "scrub" in blob || "cancel" in blob
+    }
+
+    /**
+     * Helios P1-A: LL2 plain "Failure" (not Partial Failure, not Success). LL2 also uses it for a pad abort that never
+     * left the pad, so on its own it is not proof of liftoff.
+     */
+    fun isPlainFailure(): Boolean {
+        val blob = "$statusAbbrev $statusName".lowercase()
+        if ("success" in blob || "completed" in blob || "partial" in blob) return false
+        return "failure" in blob || ("fail" in blob && "fairing" !in blob)
     }
 
     fun isTerminal(): Boolean {

@@ -96,7 +96,8 @@ class LiveClockGateTest {
     // ---- 159: Helios P1-1, terminal status without ever seeing In Flight ----
 
     @Test fun terminalWithoutInFlightRunsAtTPlus600() {
-        for ((a, n) in listOf("Success" to "Launch Successful", "Failure" to "Launch Failure", "Partial Failure" to "Launch was a Partial Failure")) {
+        // Helios P1-A: plain Failure now needs liftoff evidence (PadAbortFailureTest); Success / Partial still run.
+        for ((a, n) in listOf("Success" to "Launch Successful", "Partial Failure" to "Launch was a Partial Failure")) {
             val t = tick(snap(abbrev = a, name = n), 600)
             assertEquals("$a froze", 600f - RocketTelemetryModule.SPARSE_WALL_LAG_SEC, t, 0.001f)
             assertTrue(LiveClockGate.liftoffConfirmed(snap(abbrev = a, name = n), netMs + 600_000L))

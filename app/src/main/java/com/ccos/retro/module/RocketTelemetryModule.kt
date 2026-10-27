@@ -357,6 +357,21 @@ class RocketTelemetryModule(
         lastCursorWriteMs = System.currentTimeMillis()
     }
 
+    /** Helios P1-A: sticky per-launch liftoffSeen flag in prefs (shared with the other module instance). */
+    private val liftoffSeenMem = HashSet<String>()
+    private fun liftoffSeen(launch: LaunchSnapshot, now: Long): Boolean {
+        if (launch.id in liftoffSeenMem) return true
+        if (LiftoffEvidence.observedLiftoff(launch, now)) {
+            LiftoffEvidence.mark(prefs.proStore(), launch.id)
+            liftoffSeenMem += launch.id
+            return true
+        }
+        if (!launch.isPlainFailure()) return false
+        val seen = LiftoffEvidence.isSeen(prefs.proStore(), launch.id)
+        if (seen) liftoffSeenMem += launch.id
+        return seen
+    }
+
     fun effectiveSecondsFromNet(now: Long = System.currentTimeMillis()): Float {
         val launch = tracked ?: return 0f
         // Stamp 86: live CURRENT/AUTO watch = wall-clock only (fixes T+165h sim stick on Soyuz).
@@ -370,7 +385,8 @@ class RocketTelemetryModule(
                 forceStatus = forceStatus ?: "Scrubbed"
             }
             // Hold/scrub pause + never-ahead gate (158: firm Go at NET; 159: terminal past NET = liftoff).
-            return LiveClockGate.liveWallSecondsFromNet(launch, now, t0)
+            // Helios P1-A: a plain Failure runs only with liftoff evidence (sticky flag, survives restarts).
+            return LiveClockGate.liveWallSecondsFromNet(launch, now, t0, liftoffSeen(launch, now))
         }
         // HISTORICAL / demo theater — sim memory, then prefs cursor, then wall-clock.
         val mem = simSecondsFromNet

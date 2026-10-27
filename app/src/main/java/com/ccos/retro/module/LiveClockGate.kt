@@ -13,14 +13,14 @@ object LiveClockGate {
      * Lagged live seconds from NET after hold/scrub pause and the liftoff gate.
      * [tLagged] = (now - pinnedNet) / 1000 - trail.
      */
-    fun liveSeconds(launch: LaunchSnapshot, now: Long, tLagged: Float): Float {
+    fun liveSeconds(launch: LaunchSnapshot, now: Long, tLagged: Float, liftoffSeen: Boolean = false): Float {
         var t = tLagged
         if (shouldPauseForHoldScrub(launch, now, t)) {
             // Hold / Scrub / TBD+slip: pause at pad; never fake live past a real hold.
             t = minOf(t, -0.5f)
         }
         // Never past T-0 without a liftoff signal.
-        if (t >= 0f && !liftoffConfirmed(launch, now)) {
+        if (t >= 0f && !liftoffConfirmed(launch, now, liftoffSeen)) {
             t = -0.5f
         }
         return t
@@ -35,13 +35,37 @@ object LiveClockGate {
      * passed also counts. Sparse / 429 polling often jumps Go -> Success without ever showing
      * In Flight; isGo() is false for those, so the clock froze at T-00:00 for the 60 min live window.
      * Terminal before NET does NOT lift off early (NET check comes first).
+     * Helios P1-A (pad abort): Success and Partial Failure imply liftoff. A plain Failure counts only with evidence:
+     * [liftoffSeen] (sticky per-launch flag: this app saw In Flight, or webcast_live with NET reached) or an LL2
+     * failreason that describes a post-liftoff failure. Otherwise the clock holds at -0.5 s; the status still says Failure.
      */
-    fun liftoffConfirmed(launch: LaunchSnapshot, now: Long): Boolean {
+    fun liftoffConfirmed(launch: LaunchSnapshot, now: Long, liftoffSeen: Boolean = false): Boolean {
         if (launch.isInFlightStatus()) return true
         if (launch.secondsToNet(now) > 0L) return false
+        if (launch.isPlainFailure()) return liftoffSeen || observedLiftoff(launch, now) || failReasonShowsLiftoff(launch.failReason)
         if (launch.isWebcastLive()) return true
         if (launch.isTerminal()) return true
         return launch.isGo() && !launch.isHold() && !launch.isScrubStatus()
+    }
+
+    /** P1-A: the observation that sets the sticky liftoffSeen flag (In Flight, or webcast_live with NET reached). */
+    fun observedLiftoff(launch: LaunchSnapshot, now: Long): Boolean =
+        !launch.id.startsWith("demo-") &&
+            (launch.isInFlightStatus() || (launch.isWebcastLive() && launch.secondsToNet(now) <= 0L))
+
+    private val PAD_WORDS = listOf("pad abort", "on the pad", "before liftoff", "before lift-off", "prior to liftoff",
+        "prior to lift-off", "did not lift off", "didn't lift off", "never left the pad", "never lifted off", "abort at t-0",
+        "aborted at t-0", "aborted at t-", "hold-down", "rsrs", "engine cutoff at ignition", "shutdown at ignition")
+    private val FLIGHT_WORDS = listOf("after liftoff", "after lift-off", "after launch", "in flight", "during flight",
+        "during ascent", "ascent", "max q", "max-q", "meco", "seco", "stage separation", "second stage", "upper stage",
+        "third stage", "fairing", "orbit", "trajectory", "flight termination", "self-destruct", "exploded", "t+")
+
+    /** P1-A: an LL2 failreason that clearly describes a failure after liftoff (pad-abort wording always wins). */
+    fun failReasonShowsLiftoff(reason: String?): Boolean {
+        val r = reason?.lowercase()?.trim().orEmpty()
+        if (r.isEmpty()) return false
+        if (PAD_WORDS.any { it in r }) return false
+        return FLIGHT_WORDS.any { it in r }
     }
 
     /**
@@ -74,6 +98,6 @@ object LiveClockGate {
     }
 
     /** Live branch of RocketTelemetryModule.effectiveSecondsFromNet (pure; P2-7 wiring test target). */
-    fun liveWallSecondsFromNet(launch: LaunchSnapshot, now: Long, pinnedNetMs: Long): Float =
-        liveSeconds(launch, now, (now - pinnedNetMs) / 1000f - trailSec(launch))
+    fun liveWallSecondsFromNet(launch: LaunchSnapshot, now: Long, pinnedNetMs: Long, liftoffSeen: Boolean = false): Float =
+        liveSeconds(launch, now, (now - pinnedNetMs) / 1000f - trailSec(launch), liftoffSeen)
 }

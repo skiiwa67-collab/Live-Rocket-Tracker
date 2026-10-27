@@ -959,7 +959,8 @@ class LaunchDataProvider {
             probability = if (o.has("probability") && !o.isNull("probability"))
                 o.optInt("probability") else null,
             holdReason = strOrNull(o, "holdreason")?.takeIf { it.isNotBlank() },
-            lastUpdatedMs = System.currentTimeMillis()
+            lastUpdatedMs = System.currentTimeMillis(),
+            failReason = strOrNull(o, "failreason")?.takeIf { it.isNotBlank() }
         )
     }
 
