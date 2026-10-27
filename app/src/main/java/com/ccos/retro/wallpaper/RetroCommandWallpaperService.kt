@@ -201,7 +201,7 @@ class RetroCommandWallpaperService : WallpaperService() {
 
         // CMD double-tap (within 400ms) opens Settings / MainActivity
         private var lastCmdTapTime = 0L
-        private val doubleTapMs = 400L
+        private val doubleTapMs = WallpaperCmdTap.DOUBLE_TAP_MS
 
         // Launcher page tracking — buttons only on command page (left of home)
         private var onCommandPage = true
@@ -796,13 +796,13 @@ class RetroCommandWallpaperService : WallpaperService() {
             if (i == 0) {
                 // CMD: double-tap → Settings; single → panel
                 val now = System.currentTimeMillis()
-                if (now - lastCmdTapTime <= doubleTapMs) {
-                    lastCmdTapTime = 0L
+                val tap = WallpaperCmdTap.decide(lastCmdTapTime, now, doubleTapMs)
+                lastCmdTapTime = tap.nextLastTapMs
+                if (tap.opensApp) {
                     showPanel = false
                     openSettings()
                     return
                 }
-                lastCmdTapTime = now
             }
 
             when {
@@ -878,12 +878,10 @@ class RetroCommandWallpaperService : WallpaperService() {
 
 
         private fun openSettings() {
-            try {
-                val intent = Intent(this@RetroCommandWallpaperService, MainActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                startActivity(intent)
-            } catch (_: Exception) { }
+            val intent = Intent(this@RetroCommandWallpaperService, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            WallpaperOwnActivityLaunch.start(this@RetroCommandWallpaperService, intent)
         }
 
         /** Open official webcast / mission search for the *currently tracked* launch only. */
