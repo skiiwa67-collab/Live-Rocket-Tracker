@@ -238,10 +238,8 @@ class RocketTelemetryModule(
         isLiveWallClockBird(launch, now)
 
     private fun isLiveWallClockBird(launch: LaunchSnapshot, now: Long): Boolean {
-        if (launch.id.startsWith("demo-")) return false
-        if (prefs.telemetryListMode == "historical") return false
-        // Active watch OR not yet past the live window (upcoming / early flight).
-        return launch.isActiveWatch(now) || !launch.isReplayable(now)
+        // Active watch OR not yet past the live window (upcoming / early flight). 159: pure, in LiveClockGate.
+        return LiveClockGate.isLiveWallClock(launch, now, prefs.telemetryListMode == "historical")
     }
 
     private fun scrubLiveSim(launch: LaunchSnapshot) {
@@ -262,12 +260,11 @@ class RocketTelemetryModule(
             scrubLiveSim(launch)
             // pinnedNetMs already re-pins when launch.netMs changes (Hold/slip/fail NET update) → rewind.
             val t0 = prefs.pinnedNetMs(launch.id, launch.netMs)
-            val trail = liveTrailSec(launch)
             if (launch.isScrubStatus()) {
                 forceStatus = forceStatus ?: "Scrubbed"
             }
-            // Hold/scrub pause + never-ahead gate (158: firm Go at NET counts as liftoff).
-            return LiveClockGate.liveSeconds(launch, now, (now - t0) / 1000f - trail)
+            // Hold/scrub pause + never-ahead gate (158: firm Go at NET; 159: terminal past NET = liftoff).
+            return LiveClockGate.liveWallSecondsFromNet(launch, now, t0)
         }
         // HISTORICAL / demo theater — sim memory, then prefs cursor, then wall-clock.
         val mem = simSecondsFromNet
@@ -938,10 +935,6 @@ class RocketTelemetryModule(
     }
 
     /** tip146 Phase 1: gold 5s when LL2 webcast_live / In Flight; sparse trail up to 30s. */
-    private fun liveTrailSec(launch: LaunchSnapshot): Float {
-        return if (launch.isWebcastLive() || launch.isInFlightStatus()) LIVE_WALL_LAG_SEC
-        else SPARSE_WALL_LAG_SEC
-    }
 
     // TODO(davinci): defense-in-depth gate. ProGate.isLocked(hint, isPro) -> do not select; show upsell sheet.
     fun selectLaunch(id: String, hint: LaunchSnapshot? = null) {
